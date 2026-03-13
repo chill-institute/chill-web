@@ -1,0 +1,175 @@
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Loader } from "lucide-react";
+
+import { getPutioStartURL } from "@/lib/api";
+import { ACCESS_DENIED_ERROR, SESSION_EXPIRED_ERROR, UNKNOWN_AUTH_ERROR } from "@/lib/auth-errors";
+import { useAuth } from "@/lib/auth";
+
+export const Route = createFileRoute("/sign-in")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    error: typeof search.error === "string" ? search.error : undefined,
+    callbackUrl: typeof search.callbackUrl === "string" ? search.callbackUrl : undefined,
+  }),
+  component: SignInPage,
+});
+
+function SignInPage() {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const search = Route.useSearch();
+  const [loading, setLoading] = useState<null | "help" | "sign-in">(null);
+
+  const error = useMemo(() => {
+    if (!search.error) {
+      return null;
+    }
+    if (search.error === ACCESS_DENIED_ERROR) {
+      return {
+        actionLabel: "learn more",
+        actionURL:
+          "https://www.notion.so/chill-institute/About-the-Institute-5ef08a1494ea438d87ab23d4870015c6?pvs=4#1c3613a322bf4ad29240e3a294b42f37",
+        message: (
+          <p>
+            The Institute is an exclusive extension for put.io users and it requires an active
+            put.io membership in to work.
+            <br />
+          </p>
+        ),
+        type: ACCESS_DENIED_ERROR,
+      };
+    }
+    if (search.error === SESSION_EXPIRED_ERROR) {
+      return {
+        message: "Your session has expired, please sign in again.",
+        type: SESSION_EXPIRED_ERROR,
+      };
+    }
+    return {
+      message: (
+        <p>
+          An error occurred while signing you in.
+          <br />
+          Please try clearing your cookies or signing in with a different browser.
+        </p>
+      ),
+      type: UNKNOWN_AUTH_ERROR,
+    };
+  }, [search.error]);
+
+  useEffect(() => {
+    if (!auth.isAuthenticated) {
+      return;
+    }
+    const callback = search.callbackUrl?.trim();
+    const normalized = callback ? normalizeCallbackPath(callback) : null;
+    if (normalized) {
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (current !== normalized) {
+        window.location.replace(normalized);
+        return;
+      }
+    }
+    void navigate({ to: "/", replace: true });
+  }, [auth.isAuthenticated, navigate, search.callbackUrl]);
+
+  if (auth.isAuthenticated) {
+    return <p>Redirecting...</p>;
+  }
+
+  return (
+    <div className="flex justify-center">
+      {error ? (
+        <div className="flex flex-col space-y-4 items-center">
+          <div className="flex flex-col items-center text-center">{error.message}</div>
+          <div className="flex flex-row space-x-4">
+            <AuthButton
+              busy={loading === "help"}
+              onClick={() => {
+                setLoading("help");
+                window.location.href = error.actionURL ?? "/about";
+              }}
+            >
+              {error.actionLabel ?? "get help"}
+            </AuthButton>
+            <AuthButton
+              busy={loading === "sign-in"}
+              onClick={() => {
+                setLoading("sign-in");
+                const callback = search.callbackUrl?.trim();
+                if (callback) {
+                  const normalized = normalizeCallbackPath(callback);
+                  if (normalized) {
+                    auth.setPendingCallbackURL(normalized);
+                  }
+                }
+                window.location.href = getPutioStartURL();
+              }}
+            >
+              {error.type === SESSION_EXPIRED_ERROR ? "sign in again" : "try again"}
+            </AuthButton>
+          </div>
+        </div>
+      ) : (
+        <AuthButton
+          busy={loading === "sign-in"}
+          onClick={() => {
+            setLoading("sign-in");
+            const callback = search.callbackUrl?.trim();
+            if (callback) {
+              const normalized = normalizeCallbackPath(callback);
+              if (normalized) {
+                auth.setPendingCallbackURL(normalized);
+              }
+            }
+            window.location.href = getPutioStartURL();
+          }}
+        >
+          authenticate at put.io
+        </AuthButton>
+      )}
+    </div>
+  );
+}
+
+function AuthButton({
+  busy = false,
+  children,
+  onClick,
+}: {
+  busy?: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className={`btn ${busy ? "cursor-wait" : ""}`} onClick={onClick}>
+      <span className="flex flex-row space-x-1 items-center justify-center text-sm">
+        {busy ? <Loader className="animate-spin text-xs" /> : null}
+        <span className="leading-none">{children}</span>
+      </span>
+    </button>
+  );
+}
+
+function normalizeCallbackPath(raw: string): null | string {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  try {
+    const parsed = new URL(trimmed, window.location.origin);
+    if (parsed.origin !== window.location.origin) {
+      return null;
+    }
+    if (
+      parsed.pathname === "/sign-in" ||
+      parsed.pathname === "/sign-out" ||
+      parsed.pathname.startsWith("/auth/")
+    ) {
+      return null;
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
