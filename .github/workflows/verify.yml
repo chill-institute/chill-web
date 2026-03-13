@@ -21,12 +21,14 @@ jobs:
           cache: true
           run-install: false
 
+      - name: Install dependencies
+        run: vp install
+
       - name: Install Playwright browser
         run: vp exec playwright install --with-deps chromium
 
       - name: Verify
         run: |
-          vp install
           vp check
           vp run test
           vp build
