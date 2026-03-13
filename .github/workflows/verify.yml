@@ -19,6 +19,7 @@ jobs:
         with:
           node-version-file: ".tool-versions"
           cache: true
+          run-install: false
 
       - name: Install Playwright browser
         run: vp exec playwright install --with-deps chromium
