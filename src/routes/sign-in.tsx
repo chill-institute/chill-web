@@ -19,6 +19,10 @@ function SignInPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const [loading, setLoading] = useState<null | "help" | "sign-in">(null);
+  const authSuccessURL = useMemo(
+    () => new URL("/auth/success", window.location.origin).toString(),
+    [],
+  );
 
   const error = useMemo(() => {
     if (!search.error) {
@@ -103,7 +107,7 @@ function SignInPage() {
                     auth.setPendingCallbackURL(normalized);
                   }
                 }
-                window.location.href = getPutioStartURL();
+                window.location.href = getPutioStartURL(authSuccessURL);
               }}
             >
               {error.type === SESSION_EXPIRED_ERROR ? "sign in again" : "try again"}
@@ -122,7 +126,7 @@ function SignInPage() {
                 auth.setPendingCallbackURL(normalized);
               }
             }
-            window.location.href = getPutioStartURL();
+            window.location.href = getPutioStartURL(authSuccessURL);
           }}
         >
           authenticate at put.io
