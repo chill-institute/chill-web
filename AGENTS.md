@@ -18,11 +18,11 @@ Keep this file short and repo-specific. General workspace rules live in `../AGEN
 Run these before finishing meaningful changes:
 
 - `vp install`
-- `pnpm check`
-- `pnpm test`
-- `pnpm knip`
-- `pnpm build`
-- `pnpm e2e`
+- `vp check`
+- `vp run test`
+- `vp run knip`
+- `vp build`
+- `vp run e2e`
 
 If you only touch a narrow area, run the smallest relevant subset too, but do not skip the main checks before commit.
 

@@ -33,11 +33,11 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pnpm test
+          vp run test
 
       - name: Detect unused files and dependencies
         run: |
-          pnpm knip
+          vp run knip
 
       - name: Build
         run: |
