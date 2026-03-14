@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect } from "./support/fixtures";
 
 test.describe("sign-in page", () => {
   test("shows access denied error with learn more action", async ({ page }) => {

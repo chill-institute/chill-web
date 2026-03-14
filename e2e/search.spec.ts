@@ -1,5 +1,11 @@
-import { test, expect } from "./fixtures";
-import { indexer, indexersResponse, searchResponse, searchResult, userSettings } from "./seeds";
+import { test, expect } from "./support/fixtures";
+import {
+  indexer,
+  indexersResponse,
+  searchResponse,
+  searchResult,
+  userSettings,
+} from "./support/seeds";
 import { SearchResultDisplayBehavior } from "@chill-institute/contracts/chill/v4/api_pb";
 
 const defaultMethods = (overrides?: Record<string, unknown>) => ({

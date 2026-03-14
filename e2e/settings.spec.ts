@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect } from "./support/fixtures";
 import {
   downloadFolderResponse,
   folderResponse,
@@ -8,7 +8,7 @@ import {
   topMoviesResponse,
   userSettings,
   userFile,
-} from "./seeds";
+} from "./support/seeds";
 
 const profileResponse = {
   userId: "1",

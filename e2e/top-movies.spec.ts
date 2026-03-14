@@ -1,5 +1,5 @@
-import { test, expect } from "./fixtures";
-import { topMovie, topMoviesResponse, userSettings } from "./seeds";
+import { test, expect } from "./support/fixtures";
+import { topMovie, topMoviesResponse, userSettings } from "./support/seeds";
 import { TopMoviesDisplayType } from "@chill-institute/contracts/chill/v4/api_pb";
 
 const movies = [

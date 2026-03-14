@@ -1,5 +1,5 @@
-import { test, expect } from "./fixtures";
-import { userSettings } from "./seeds";
+import { test, expect } from "./support/fixtures";
+import { userSettings } from "./support/seeds";
 
 test.describe("shell search form", () => {
   test("/ keyboard shortcut focuses search input", async ({ authenticatedPage, mockRpc }) => {
