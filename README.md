@@ -15,6 +15,7 @@ curl -fsSL https://viteplus.dev/install.sh | sh
 ```
 
 Docs:
+
 - [viteplus.dev/guide](https://viteplus.dev/guide/)
 
 Then:

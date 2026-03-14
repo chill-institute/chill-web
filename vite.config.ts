@@ -10,8 +10,7 @@ function resolveRelease() {
     return explicit;
   }
 
-  const ciSha =
-    process.env.CF_PAGES_COMMIT_SHA?.trim() || process.env.GITHUB_SHA?.trim();
+  const ciSha = process.env.CF_PAGES_COMMIT_SHA?.trim() || process.env.GITHUB_SHA?.trim();
   if (ciSha) {
     return ciSha.slice(0, 7);
   }
