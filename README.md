@@ -1,12 +1,8 @@
 # chill-institute/web
 
-![React](https://img.shields.io/badge/React-19-black?logo=react)
-![Vite+](https://img.shields.io/badge/Vite%2B-toolchain-black)
-![SPA](https://img.shields.io/badge/runtime-SPA-black)
-
 ![chill.institute web](./public/banner.png)
 
-Web client for  `chill.institute`
+Web client for [chill.institute](https://chill.institute), your favorite [put.io](https://put.io) extension since 2018.
 
 ## Contributing
 
