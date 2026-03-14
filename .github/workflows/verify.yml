@@ -21,19 +21,14 @@ jobs:
           cache: true
           run-install: false
 
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.15.1 --activate
-
       - name: Install dependencies
         run: vp install
 
       - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
+        run: vp exec playwright install --with-deps chromium
 
       - name: Verify
         run: |
-          pnpm check
-          pnpm build
-          pnpm e2e
+          vp check
+          vp build
+          vp run e2e
