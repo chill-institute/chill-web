@@ -1,7 +1,5 @@
 # web Agent Notes
 
-Keep this file short and repo-specific. General workspace rules live in [chill-institute/runbook/AGENTS.md](https://github.com/chill-institute/runbook/blob/main/AGENTS.md).
-
 ## Purpose
 
 `web` is the `chill.institute` React SPA.
