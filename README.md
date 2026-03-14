@@ -6,7 +6,7 @@ Web client for [chill.institute](https://chill.institute), your favorite [put.io
 
 ## Docs
 
-- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- [Architecture](./docs/ARCHITECTURE.md)
 
 ## Contributing
 
