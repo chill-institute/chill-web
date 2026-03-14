@@ -121,8 +121,13 @@ function withSettingsDefaults(settings: UserSettings): UserSettings {
   };
 }
 
-export function getPutioStartURL() {
-  return `${getPublicAPIBaseURL()}/auth/putio/start`;
+export function getPutioStartURL(successURL?: string) {
+  const url = new URL(`${getPublicAPIBaseURL()}/auth/putio/start`);
+  const trimmed = successURL?.trim() ?? "";
+  if (trimmed.length > 0) {
+    url.searchParams.set("success_url", trimmed);
+  }
+  return url.toString();
 }
 
 async function getUserProfile(authToken: string, signal?: AbortSignal): Promise<UserProfile> {
