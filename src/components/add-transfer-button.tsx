@@ -56,7 +56,7 @@ export function AddTransferButton({ children = "send to put.io", className = "",
     >
       <span
         key={phase}
-        className="flex flex-row space-x-1 items-center justify-center text-sm animate-reveal"
+        className="flex flex-row space-x-1 items-center justify-center text-sm animate-feedback-in"
       >
         {icon ? <span className="text-xs">{icon}</span> : null}
         <span className="leading-none">{text}</span>

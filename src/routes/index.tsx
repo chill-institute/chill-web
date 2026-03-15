@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
     const settingsPromise = queryClient.ensureQueryData(settingsQueryOptions(token));
     void settingsPromise.then((settings) => {
       if (settings.showTopMovies) {
-        void queryClient.ensureQueryData(topMoviesQueryOptions(token, settings.topMoviesSource));
+        void queryClient.ensureQueryData(topMoviesQueryOptions(token));
       }
     });
   },
@@ -39,10 +39,7 @@ function HomePage() {
 
   const saveConfigMutation = useSaveSettings();
 
-  const topMoviesQuery = useTopMoviesQuery(
-    configQuery.data?.topMoviesSource,
-    configQuery.data?.showTopMovies === true,
-  );
+  const topMoviesQuery = useTopMoviesQuery(configQuery.data?.showTopMovies === true);
 
   function patchConfig(patch: Partial<UserSettings>) {
     if (!configQuery.data) {
@@ -89,6 +86,11 @@ function HomePage() {
         ))
         .with({ status: "success" }, (tq) => {
           const movies = tq.data.movies;
+          const hasMatchingSource = tq.data.source === config.topMoviesSource;
+          if (!hasMatchingSource) {
+            return <TopMoviesSkeleton displayType={config.topMoviesDisplayType} />;
+          }
+
           if (movies.length === 0) {
             if (tq.isFetching) {
               return <TopMoviesSkeleton displayType={config.topMoviesDisplayType} />;
@@ -100,14 +102,14 @@ function HomePage() {
 
           return match(config.topMoviesDisplayType)
             .with(TopMoviesDisplayType.COMPACT, () => (
-              <div className="mt-2 gap-4 grid sm:grid-cols-2 md:grid-cols-3 animate-reveal">
+              <div className="mt-2 gap-4 grid sm:grid-cols-2 md:grid-cols-3">
                 {movies.map((movie) => (
                   <MovieCompactRow key={movie.id} movie={movie} />
                 ))}
               </div>
             ))
             .with(TopMoviesDisplayType.EXPANDED, () => (
-              <div className="mt-2 gap-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 animate-reveal">
+              <div className="mt-2 gap-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
                 {movies.map((movie) => (
                   <MovieExpandedCard key={movie.id} movie={movie} />
                 ))}
@@ -118,7 +120,7 @@ function HomePage() {
         .exhaustive();
 
       return (
-        <div className="w-full max-w-5xl mx-auto my-6 md:my-12 px-4 xl:px-0 animate-reveal">
+        <div data-page="home" className="w-full max-w-5xl mx-auto my-6 md:my-12 px-4 xl:px-0">
           <div className="flex flex-col space-y-2 xs:space-y-0 xs:flex-row xs:justify-between xs:items-end">
             <div>
               <TopMoviesSourceSelect

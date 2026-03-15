@@ -196,22 +196,32 @@ export function SettingsPanel() {
             </div>
           </div>
         ))
-        .with({ status: "success" }, (dq) => (
-          <div className="flex flex-row space-x-2 p-2 items-center rounded border border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900">
-            <div className="w-full flex items-center space-x-2">
-              <Folder />
-              <span>{dq.data.folder?.name ?? "Unknown"}</span>
+        .with({ status: "success" }, (dq) => {
+          const hasMatchingFolder =
+            effective.downloadFolderId === undefined ||
+            dq.data.folder?.id === effective.downloadFolderId;
+
+          if (!hasMatchingFolder) {
+            return <Skeleton className="h-10 w-full" />;
+          }
+
+          return (
+            <div className="flex flex-row space-x-2 p-2 items-center rounded border border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900">
+              <div className="w-full flex items-center space-x-2">
+                <Folder />
+                <span>{dq.data.folder?.name ?? "Unknown"}</span>
+              </div>
+              <div className="ml-auto">
+                {dq.data.folder?.id ? (
+                  <DownloadFolderPicker
+                    folderId={dq.data.folder.id}
+                    onSave={(id) => persistPatch({ downloadFolderId: id })}
+                  />
+                ) : null}
+              </div>
             </div>
-            <div className="ml-auto">
-              {dq.data.folder?.id ? (
-                <DownloadFolderPicker
-                  folderId={dq.data.folder.id}
-                  onSave={(id) => persistPatch({ downloadFolderId: id })}
-                />
-              ) : null}
-            </div>
-          </div>
-        ))
+          );
+        })
         .exhaustive();
 
       return (

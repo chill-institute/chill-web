@@ -1,6 +1,11 @@
 import { test, expect } from "./support/fixtures";
-import { topMovie, topMoviesResponse, userSettings } from "./support/seeds";
-import { TopMoviesDisplayType } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  topMovie,
+  topMoviesResponse,
+  topMoviesResponseForSource,
+  userSettings,
+} from "./support/seeds";
+import { TopMoviesDisplayType, TopMoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 const movies = [
   topMovie({
@@ -20,6 +25,19 @@ const movies = [
     rating: 8.7,
     link: "magnet:?xt=urn:btih:interstellar",
     posterUrl: "/test/baggio.jpg",
+  }),
+];
+
+const ytsMovies = [
+  topMovie({
+    id: "y1",
+    title: "The Raid",
+    titlePretty: "The Raid",
+    year: 2011,
+    rating: 7.6,
+    link: "magnet:?xt=urn:btih:raid",
+    posterUrl: "/test/baggio.jpg",
+    source: TopMoviesSource.YTS,
   }),
 ];
 
@@ -178,6 +196,131 @@ test.describe("top movies", () => {
 
     // Proto JSON serializes enums as strings
     await expect.poll(() => savedDisplayType).toBe("TOP_MOVIES_DISPLAY_TYPE_EXPANDED");
+  });
+
+  test("changing source does not re-show stale movies while waiting for the new source", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource = TopMoviesSource.IMDB_MOVIEMETER;
+
+    await mockRpc(
+      homeMethods({
+        GetUserSettings: userSettings({
+          showTopMovies: true,
+          topMoviesSource: TopMoviesSource.IMDB_MOVIEMETER,
+        }),
+      }),
+    );
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTopMovies", async (route) => {
+      const response =
+        currentSource === TopMoviesSource.YTS
+          ? topMoviesResponseForSource(TopMoviesSource.YTS, ytsMovies)
+          : topMoviesResponseForSource(TopMoviesSource.IMDB_MOVIEMETER, movies);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: { topMoviesSource?: string | number };
+      };
+
+      const nextSource = String(body.settings?.topMoviesSource ?? "");
+      if (nextSource.includes("YTS") || nextSource === String(TopMoviesSource.YTS)) {
+        currentSource = TopMoviesSource.YTS;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          userSettings({
+            showTopMovies: true,
+            topMoviesSource: currentSource,
+          }),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/");
+
+    await expect(authenticatedPage.getByText("Inception")).toBeVisible();
+
+    await authenticatedPage.getByRole("combobox").click();
+    await authenticatedPage.getByRole("option", { name: "Trending movies from YTS" }).click();
+
+    await expect(authenticatedPage.getByText("Inception")).toBeHidden({ timeout: 400 });
+    await expect(authenticatedPage.getByText("The Raid")).toBeVisible({ timeout: 2000 });
+  });
+
+  test("changing source only refetches top movies once after save", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource = TopMoviesSource.IMDB_MOVIEMETER;
+    let topMoviesRequests = 0;
+
+    await mockRpc(
+      homeMethods({
+        GetUserSettings: userSettings({
+          showTopMovies: true,
+          topMoviesSource: TopMoviesSource.IMDB_MOVIEMETER,
+        }),
+      }),
+    );
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTopMovies", async (route) => {
+      topMoviesRequests += 1;
+
+      const response =
+        currentSource === TopMoviesSource.YTS
+          ? topMoviesResponseForSource(TopMoviesSource.YTS, ytsMovies)
+          : topMoviesResponseForSource(TopMoviesSource.IMDB_MOVIEMETER, movies);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: { topMoviesSource?: string | number };
+      };
+
+      const nextSource = String(body.settings?.topMoviesSource ?? "");
+      if (nextSource.includes("YTS") || nextSource === String(TopMoviesSource.YTS)) {
+        currentSource = TopMoviesSource.YTS;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          userSettings({
+            showTopMovies: true,
+            topMoviesSource: currentSource,
+          }),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/");
+    await expect(authenticatedPage.getByText("Inception")).toBeVisible();
+    await expect.poll(() => topMoviesRequests).toBe(1);
+
+    await authenticatedPage.getByRole("combobox").click();
+    await authenticatedPage.getByRole("option", { name: "Trending movies from YTS" }).click();
+
+    await expect(authenticatedPage.getByText("The Raid")).toBeVisible({ timeout: 2000 });
+    await expect.poll(() => topMoviesRequests).toBe(2);
   });
 
   test("error state shows error message", async ({ authenticatedPage, mockRpc }) => {

@@ -1,5 +1,5 @@
 import { test, expect } from "./support/fixtures";
-import { userSettings } from "./support/seeds";
+import { indexer, indexersResponse, searchResponse, userSettings } from "./support/seeds";
 
 test.describe("shell search form", () => {
   test("/ keyboard shortcut focuses search input", async ({ authenticatedPage, mockRpc }) => {
@@ -38,6 +38,29 @@ test.describe("shell search form", () => {
 
     await authenticatedPage.waitForURL("**/search**");
     expect(authenticatedPage.url()).toContain("q=test+query");
+  });
+
+  test("search submit does not animate the route shell or content", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings({ showTopMovies: false }),
+      GetIndexers: indexersResponse([indexer()]),
+      Search: searchResponse("test query", []),
+    });
+
+    await authenticatedPage.goto("/");
+
+    await authenticatedPage.locator("#search-global").fill("test query");
+    await authenticatedPage.getByRole("button", { name: "and chill" }).click();
+    await authenticatedPage.waitForURL("**/search**");
+
+    const animationName = await authenticatedPage
+      .locator('[data-page="search"]')
+      .evaluate((element) => getComputedStyle(element).animationName);
+
+    expect(animationName).toBe("none");
   });
 
   test("empty search is not submitted", async ({ authenticatedPage, mockRpc }) => {

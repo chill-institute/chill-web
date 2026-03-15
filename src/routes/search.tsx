@@ -148,7 +148,7 @@ function SearchPage() {
                 <br />
                 Like...{" "}
                 <Link
-                  className="inline-block hover:animate-matrix dark:text-stone-400 text-stone-600"
+                  className="inline-block underline decoration-stone-400 decoration-1 underline-offset-3 transition-[color,transform,text-decoration-color] duration-150 hover:-translate-y-px hover:text-stone-950 hover:decoration-stone-950 dark:text-stone-400 dark:hover:text-stone-100 dark:hover:decoration-stone-100"
                   to="/search"
                   search={{ q: "The Matrix" }}
                 >
@@ -177,7 +177,7 @@ function SearchPage() {
         .exhaustive();
 
       return (
-        <section className="animate-reveal">
+        <section data-page="search">
           <SearchFilterBar
             filters={filters}
             onResolutionChange={(next) => {

@@ -92,10 +92,14 @@ export function topMovie(init?: TopMovieInit) {
 }
 
 export function topMoviesResponse(movies: TopMovie[]) {
+  return topMoviesResponseForSource(TopMoviesSource.IMDB_MOVIEMETER, movies);
+}
+
+export function topMoviesResponseForSource(source: TopMoviesSource, movies: TopMovie[]) {
   return toJson(
     UserGetTopMoviesResponseSchema,
     create(UserGetTopMoviesResponseSchema, {
-      source: TopMoviesSource.IMDB_MOVIEMETER,
+      source,
       movies,
     }),
   );

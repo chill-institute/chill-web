@@ -82,7 +82,10 @@ export function ShellSearchForm({
         if (query.length === 0) {
           return;
         }
-        void navigate({ to: "/search", search: { q: query } });
+        void navigate({
+          to: "/search",
+          search: { q: query },
+        });
       }}
     >
       <fieldset>

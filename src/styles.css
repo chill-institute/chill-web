@@ -166,6 +166,28 @@
   }
 }
 
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes soft-pop {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes enter {
   from {
     opacity: var(--tw-enter-opacity, 1);
@@ -185,11 +207,11 @@
 }
 
 @utility animate-collapsible-down {
-  animation: collapsible-down 550ms cubic-bezier(0.32, 0.72, 0, 1);
+  animation: collapsible-down 240ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @utility animate-collapsible-up {
-  animation: collapsible-up 450ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  animation: collapsible-up 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 @utility animate-in {
@@ -281,17 +303,24 @@
   animation: content-reveal 180ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
-::view-transition-old(root) {
-  animation: 120ms cubic-bezier(0.32, 0.72, 0, 1) both;
-  opacity: 0;
+@utility animate-feedback-in {
+  animation: feedback-in 160ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
-::view-transition-new(root) {
-  animation: 120ms cubic-bezier(0.32, 0.72, 0, 1) both;
+@utility animate-soft-pop {
+  animation: soft-pop 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-reveal {
+    animation: none;
+  }
+
+  .animate-feedback-in {
+    animation: none;
+  }
+
+  .animate-soft-pop {
     animation: none;
   }
 
@@ -315,10 +344,5 @@
 
   .animate-collapsible-up {
     animation-duration: 0.01ms;
-  }
-
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
   }
 }

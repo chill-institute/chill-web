@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { createApi } from "@/lib/api";
-import type { TopMoviesSource, UserSettings, UserIndexer } from "@/lib/types";
+import type { UserSettings, UserIndexer } from "@/lib/types";
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
@@ -76,10 +76,10 @@ export function indexersQueryOptions(token: string) {
   });
 }
 
-export function topMoviesQueryOptions(token: string, source: TopMoviesSource | undefined) {
+export function topMoviesQueryOptions(token: string) {
   const api = createApi(token);
   return queryOptions({
-    queryKey: ["top-movies", source],
+    queryKey: ["top-movies"],
     queryFn: ({ signal }) => api.getTopMovies(signal),
     staleTime: FIVE_MINUTES,
   });

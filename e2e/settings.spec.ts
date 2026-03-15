@@ -194,6 +194,79 @@ test.describe("settings and rss", () => {
     await expect.poll(() => savedDownloadFolderID).toBe("10");
   });
 
+  test("changing download folder does not keep showing the stale saved folder name", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let settingsState = userSettings({ showTopMovies: true, downloadFolderId: 1n });
+    let selectedFolderID = "1";
+
+    const root = userFile({ id: 1n, name: "your files" });
+    const movies = userFile({ id: 10n, name: "Movies" });
+    const folderByID = new Map<string, ReturnType<typeof userFile>>([
+      ["1", root],
+      ["10", movies],
+    ]);
+    const folderResponseByID = new Map<string, unknown>([
+      ["1", folderResponse(root, [movies])],
+      ["10", folderResponse(movies, [])],
+    ]);
+
+    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetDownloadFolder", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(downloadFolderResponse(folderByID.get(selectedFolderID) ?? root)),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
+      const body = route.request().postDataJSON() as { id?: string | number };
+      const folderID = String(body.id ?? "");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(folderResponseByID.get(folderID) ?? folderResponse(root, [])),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: RequestSettingsPayload;
+      };
+      if (body.settings?.downloadFolderId !== undefined) {
+        settingsState = body.settings as typeof settingsState;
+        selectedFolderID = String(body.settings.downloadFolderId);
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+    const visibleFolderName = authenticatedPage.getByText("your files").last();
+    await expect(visibleFolderName).toBeVisible();
+
+    await authenticatedPage.getByRole("button", { name: "change" }).click();
+    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
+    await authenticatedPage.getByRole("button", { name: "download here" }).click();
+
+    await expect(visibleFolderName).toBeHidden({ timeout: 400 });
+    await expect(authenticatedPage.getByText("Movies").last()).toBeVisible({ timeout: 2000 });
+  });
+
   test("shows username from profile", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(baseSettingsMethods());
     await authenticatedPage.goto("/settings");
