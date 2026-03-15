@@ -27,5 +27,5 @@ export function onRequest({ request }) {
   const forwardedPath = url.pathname.replace(/^\/api(?=\/|$)/, "") || "/";
   const target = new URL(`${forwardedPath}${url.search}`, apiOrigin);
 
-  return Response.redirect(target.toString(), 307);
+  return Response.redirect(target.toString(), 308);
 }
