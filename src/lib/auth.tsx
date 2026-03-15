@@ -89,3 +89,9 @@ export function normalizeCallbackPath(raw: null | string): null | string {
     return null;
   }
 }
+
+export function readAuthTokenFromLocation(location: Pick<Location, "hash" | "search">): string {
+  const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(location.search);
+  return (fragment.get("auth_token") ?? query.get("auth_token") ?? "").trim();
+}

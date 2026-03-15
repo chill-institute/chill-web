@@ -1,4 +1,8 @@
-import { createRootRouteWithContext, type ErrorComponentProps } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  Navigate,
+  type ErrorComponentProps,
+} from "@tanstack/react-router";
 
 import type { RouterContext } from "@/router";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
@@ -11,6 +15,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: Root,
   errorComponent: RootError,
+  notFoundComponent: RootNotFound,
 });
 
 function Root() {
@@ -28,4 +33,8 @@ function Root() {
 
 function RootError({ error }: ErrorComponentProps) {
   return <AppErrorFallback error={error} />;
+}
+
+function RootNotFound() {
+  return <Navigate to="/" replace />;
 }

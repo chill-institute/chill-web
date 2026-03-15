@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { normalizeCallbackPath } from "./auth";
+import { normalizeCallbackPath, readAuthTokenFromLocation } from "./auth";
 
 function withWindowLocation(url: string) {
   vi.stubGlobal("window", {
@@ -31,5 +31,34 @@ describe("normalizeCallbackPath", () => {
     expect(normalizeCallbackPath("/sign-in")).toBeNull();
     expect(normalizeCallbackPath("/sign-out")).toBeNull();
     expect(normalizeCallbackPath("/auth/success")).toBeNull();
+  });
+});
+
+describe("readAuthTokenFromLocation", () => {
+  it("prefers the auth token from the fragment", () => {
+    expect(
+      readAuthTokenFromLocation({
+        hash: "#auth_token=fragment-token",
+        search: "?auth_token=query-token",
+      }),
+    ).toBe("fragment-token");
+  });
+
+  it("falls back to the auth token from the query string", () => {
+    expect(
+      readAuthTokenFromLocation({
+        hash: "",
+        search: "?auth_token=query-token",
+      }),
+    ).toBe("query-token");
+  });
+
+  it("returns an empty string when no auth token is present", () => {
+    expect(
+      readAuthTokenFromLocation({
+        hash: "#foo=bar",
+        search: "?baz=qux",
+      }),
+    ).toBe("");
   });
 });

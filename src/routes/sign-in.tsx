@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader } from "lucide-react";
 
+import { AuthPage } from "@/components/auth-page";
 import { getPutioStartURL } from "@/lib/api";
 import { ACCESS_DENIED_ERROR, SESSION_EXPIRED_ERROR, UNKNOWN_AUTH_ERROR } from "@/lib/auth-errors";
 import { normalizeCallbackPath, useAuth } from "@/lib/auth";
@@ -82,9 +83,9 @@ function SignInPage() {
   }
 
   return (
-    <div className="flex justify-center">
+    <AuthPage centered>
       {error ? (
-        <div className="flex flex-col space-y-4 items-center">
+        <div className="flex flex-col items-center space-y-4">
           <div className="flex flex-col items-center text-center">{error.message}</div>
           <div className="flex flex-row space-x-4">
             <AuthButton
@@ -132,7 +133,7 @@ function SignInPage() {
           authenticate at put.io
         </AuthButton>
       )}
-    </div>
+    </AuthPage>
   );
 }
 
