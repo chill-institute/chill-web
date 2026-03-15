@@ -7,10 +7,12 @@ This document describes how `chill-institute/web` is built.
 ```mermaid
 graph LR
   User --> Router["TanStack Router SPA"]
+  User --> Edge["Pages Functions"]
   Router --> Queries["TanStack Query"]
   Queries --> API["Connect-Web client"]
   API --> InstituteAPI["chill.institute API"]
   API --> Contracts["contracts TS package"]
+  Edge --> InstituteAPI
   Browser["browser storage"] --> Auth["auth state"]
 ```
 
@@ -20,6 +22,7 @@ graph LR
 | ------------- | ------------------------------------------------------------------ | ------------------------------------ |
 | Router layer  | Route matching, loaders, navigation, auth-aware redirects          | query client, route components       |
 | API layer     | Connect-Web transport, auth headers, request IDs, response mapping | `chill.institute` API                |
+| Edge layer    | Redirect legacy non-SPA `/api/*` and `/rss/*` paths to the API host | Cloudflare Pages, hosted API       |
 | Query layer   | Cache and request lifecycle for route screens                      | API layer                            |
 | Auth layer    | Persist auth token and callback state in browser storage           | sign-in/sign-out/auth success routes |
 | UI components | Render search, settings, shell, and top-movies flows               | route state, query state             |
@@ -27,8 +30,8 @@ graph LR
 ## Runtime Model
 
 - This is a client-rendered SPA.
-- There are no server functions and no server-side proxy layer.
-- The browser calls the hosted API directly.
+- The browser calls the hosted API directly for normal app traffic.
+- Cloudflare Pages Functions handle legacy non-SPA route forwarding on hosted environments.
 - Shared contract types come from `@chill-institute/contracts`.
 
 ## Route Model
@@ -41,6 +44,8 @@ graph TD
   Root --> SignIn["/sign-in"]
   Root --> SignOut["/sign-out"]
   Root --> AuthSuccess["/auth/success"]
+  Edge["Pages Functions"] --> LegacyAPI["/api/* -> API host"]
+  Edge --> LegacyRSS["/rss/* -> API host"]
 ```
 
 Current route behavior:
@@ -66,6 +71,8 @@ graph TD
   Transport --> API
   API --> Query
   Query --> Route
+  LegacyRoute["hosted /api/* or /rss/* request"] --> Edge["functions/*"]
+  Edge --> Backend
 ```
 
 Key frontend modules:
@@ -75,6 +82,7 @@ Key frontend modules:
 | `router`       | create the app router and router context                                 |
 | `query-client` | shared TanStack Query client configuration                               |
 | `lib/api`      | typed API calls, auth header wiring, request IDs, auth failure redirects |
+| `functions/*`  | Cloudflare Pages Functions for legacy path forwarding                    |
 | `lib/auth`     | browser auth token lifecycle                                             |
 | `queries`      | query options and mutation helpers for screens                           |
 | `routes`       | screen entrypoints and route-specific loaders                            |
@@ -110,6 +118,11 @@ Hosted environments resolve the API from the current hostname:
 - `binge.institute` -> `https://api.binge.institute`
 - `chill.institute` -> `https://api.chill.institute`
 
+Hosted legacy forwarding uses the same host split:
+
+- `/api/*` strips `/api` and redirects to the matching API host
+- `/rss/*` preserves the full `/rss/...` path and redirects to the matching API host
+
 ## Deployment Model
 
 The build output is a static bundle in `dist/`.
@@ -117,5 +130,6 @@ The build output is a static bundle in `dist/`.
 Typical production shape:
 
 - static assets on Cloudflare Pages
+- Pages Functions for legacy non-SPA forwarding
 - API on a separate `chill.institute` origin
 - browser -> API communication over Connect-Web

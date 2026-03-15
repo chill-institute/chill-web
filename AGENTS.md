@@ -1,6 +1,6 @@
 # Web
 
-`web` is the `chill.institute` React SPA.
+`web` is the `chill.institute` React SPA plus a small Cloudflare Pages Functions layer for legacy non-SPA route forwarding.
 
 ## Workflow
 
@@ -13,7 +13,8 @@
 - Hosted `binge.institute` and `*.web-8vr.pages.dev` talk to `https://api.binge.institute`.
 - Hosted `chill.institute` talks to `https://api.chill.institute`.
 - `localhost` defaults to staging unless `VITE_PUBLIC_API_BASE_URL` is explicitly set.
-- Keep this logic centralized in [`src/lib/env.ts`](./src/lib/env.ts).
+- Keep browser-side API resolution centralized in [`src/lib/env.ts`](./src/lib/env.ts).
+- Keep hosted legacy route forwarding resolution centralized in [`functions/_lib/api-origin.js`](./functions/_lib/api-origin.js).
 
 ## Verification
 
@@ -31,3 +32,4 @@
 
 - Keep [README.md](./README.md) concise.
 - Put details in [docs/](./docs/).
+- See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the SPA and Pages Functions split.
