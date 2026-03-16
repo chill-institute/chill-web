@@ -30,10 +30,10 @@ import {
 const LINKS = [
   { title: "About the Institute", url: publicLinks.about },
   { title: "Chilly guides", url: publicLinks.guides },
-  { title: "Status page", url: "https://status.chill.institute" },
-  { title: "X (Twitter)", url: "https://x.com/chill_institute" },
-  { title: "Email", url: "mailto:chill-institute@proton.me" },
-  { title: "Reddit community", url: "https://www.reddit.com/r/chillInstitute/" },
+  { title: "GitHub", url: publicLinks.github },
+  { title: "X (Twitter)", url: publicLinks.x },
+  { title: "Email", url: publicLinks.email },
+  { title: "Reddit", url: publicLinks.reddit },
 ];
 
 function NativeSelect({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
