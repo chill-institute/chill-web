@@ -1,5 +1,4 @@
 const PRODUCTION_APP_HOSTS = new Set(["chill.institute", "www.chill.institute"]);
-const STAGING_API_ORIGIN = "https://api.binge.institute";
 const PRODUCTION_API_ORIGIN = "https://api.chill.institute";
 
 export function resolveHostedAPIBaseURL(hostname) {
@@ -9,5 +8,5 @@ export function resolveHostedAPIBaseURL(hostname) {
     return PRODUCTION_API_ORIGIN;
   }
 
-  return STAGING_API_ORIGIN;
+  return PRODUCTION_API_ORIGIN;
 }

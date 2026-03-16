@@ -32,7 +32,7 @@ vp run e2e
 
 - This is a client-rendered SPA.
 - The browser talks directly to the hosted API.
-- `localhost` and `*.web-8vr.pages.dev` use `https://api.binge.institute`.
+- `localhost` and `*.web-8vr.pages.dev` use `https://api.chill.institute`.
 - `chill.institute` uses `https://api.chill.institute`.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 

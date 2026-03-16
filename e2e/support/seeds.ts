@@ -46,7 +46,7 @@ function topMoviesSourcePath(source: TopMoviesSource): string {
 }
 
 function topMoviesRSSFeedURL(source: TopMoviesSource, authToken = "test-token"): string {
-  return `https://api.binge.institute/rss/top-movies/${topMoviesSourcePath(source)}?auth_token=${encodeURIComponent(authToken)}`;
+  return `https://api.chill.institute/rss/top-movies/${topMoviesSourcePath(source)}?auth_token=${encodeURIComponent(authToken)}`;
 }
 
 export function userSettings(init?: ConfigInit) {

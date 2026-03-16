@@ -14,16 +14,16 @@ afterEach(() => {
 });
 
 describe("getPublicAPIBaseURL", () => {
-  it("uses staging api for localhost", () => {
+  it("uses production api for localhost", () => {
     withWindowLocation("http://localhost:3000/auth/success");
 
-    expect(getPublicAPIBaseURL()).toBe("https://api.binge.institute");
+    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
 
-  it("uses staging api for pages preview deployments", () => {
+  it("uses production api for pages preview deployments", () => {
     withWindowLocation("https://chore-preview-probe.web-8vr.pages.dev/");
 
-    expect(getPublicAPIBaseURL()).toBe("https://api.binge.institute");
+    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
 
   it("uses production api for the production app host", () => {
@@ -40,20 +40,17 @@ describe("getPublicAPIBaseURL", () => {
 });
 
 describe("resolveHostedAPIBaseURL", () => {
-  it("resolves staging app hosts to the staging api", () => {
-    expect(resolveHostedAPIBaseURL("binge.institute")).toBe("https://api.binge.institute");
+  it("resolves localhost, previews, and app hosts to the production api", () => {
+    expect(resolveHostedAPIBaseURL("localhost")).toBe("https://api.chill.institute");
     expect(resolveHostedAPIBaseURL("chore-preview-probe.web-8vr.pages.dev")).toBe(
-      "https://api.binge.institute",
+      "https://api.chill.institute",
     );
-  });
-
-  it("resolves the production app host to the production api", () => {
     expect(resolveHostedAPIBaseURL("chill.institute")).toBe("https://api.chill.institute");
   });
 
   it("returns the current origin when already on the api host", () => {
-    expect(resolveHostedAPIBaseURL("api.binge.institute", "https://api.binge.institute")).toBe(
-      "https://api.binge.institute",
+    expect(resolveHostedAPIBaseURL("api.chill.institute", "https://api.chill.institute")).toBe(
+      "https://api.chill.institute",
     );
   });
 

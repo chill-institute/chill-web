@@ -10,9 +10,8 @@
 
 ## Runtime API Resolution
 
-- Hosted `binge.institute` and `*.web-8vr.pages.dev` talk to `https://api.binge.institute`.
-- Hosted `chill.institute` talks to `https://api.chill.institute`.
-- `localhost` defaults to staging unless `VITE_PUBLIC_API_BASE_URL` is explicitly set.
+- Hosted `chill.institute` and `*.web-8vr.pages.dev` talk to `https://api.chill.institute`.
+- `localhost` defaults to production unless `VITE_PUBLIC_API_BASE_URL` is explicitly set.
 - Keep browser-side API resolution centralized in [`src/lib/env.ts`](./src/lib/env.ts).
 - Keep hosted legacy route forwarding resolution centralized in [`functions/_lib/api-origin.js`](./functions/_lib/api-origin.js).
 

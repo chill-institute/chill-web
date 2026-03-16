@@ -64,7 +64,7 @@ test.describe("settings and rss", () => {
     await authenticatedPage.getByRole("button", { name: "Open RSS feed link" }).click();
 
     await expect(authenticatedPage.getByRole("dialog").getByRole("textbox")).toHaveValue(
-      "https://api.binge.institute/rss/top-movies/trakt?auth_token=test-token",
+      "https://api.chill.institute/rss/top-movies/trakt?auth_token=test-token",
     );
   });
 

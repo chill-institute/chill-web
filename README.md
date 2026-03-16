@@ -1,6 +1,6 @@
 # chill-institute-web
 
-![chill.institute web](https://binge.institute/banner.png)
+![chill.institute web](https://chill.institute/banner.png)
 
 Web client for [chill.institute](https://chill.institute), your favorite [put.io](https://put.io) extension since 2018.
 

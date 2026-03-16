@@ -114,8 +114,8 @@ When authenticated requests fail with auth-related errors, the API layer clears 
 
 Hosted environments resolve the API from the current hostname:
 
-- `localhost` and `*.web-8vr.pages.dev` -> `https://api.binge.institute`
-- `binge.institute` -> `https://api.binge.institute`
+- `localhost` and `*.web-8vr.pages.dev` -> `https://api.chill.institute`
+- `chill.institute` -> `https://api.chill.institute`
 - `chill.institute` -> `https://api.chill.institute`
 
 Hosted legacy forwarding uses the same host split:
