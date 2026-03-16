@@ -16,19 +16,29 @@ export function TopMoviesRSSPopover({
   feedUrl,
 }: {
   source: TopMoviesSource;
-  feedUrl: string;
+  feedUrl?: string;
 }) {
   const sourceName = getTopMoviesSourceLabel(source);
+  const disabled = !feedUrl;
+  const trigger = (
+    <button
+      type="button"
+      className="cursor-pointer text-stone-950 transition-opacity hover:text-stone-500 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-100 dark:hover:text-stone-400"
+      aria-label="Open RSS feed link"
+      aria-busy={disabled || undefined}
+      disabled={disabled}
+    >
+      <Rss className="w-4 h-4" />
+    </button>
+  );
+
+  if (!feedUrl) {
+    return trigger;
+  }
 
   return (
     <Popover>
-      <PopoverTrigger
-        render={
-          <button type="button" className="cursor-pointer" aria-label="Open RSS feed link">
-            <Rss className="w-4 h-4 dark:hover:text-stone-400 hover:text-stone-500" />
-          </button>
-        }
-      />
+      <PopoverTrigger render={trigger} />
 
       <PopoverContent sideOffset={6}>
         <div className="flex flex-col space-y-2">

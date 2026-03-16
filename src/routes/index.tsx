@@ -140,12 +140,10 @@ function HomePage() {
               />
               <div className="w-px h-5 bg-stone-400 dark:bg-stone-700" />
               <div className="flex items-center">
-                {currentTopMoviesResponse ? (
-                  <TopMoviesRSSPopover
-                    source={config.topMoviesSource}
-                    feedUrl={currentTopMoviesResponse.rssFeedUrl}
-                  />
-                ) : null}
+                <TopMoviesRSSPopover
+                  source={config.topMoviesSource}
+                  feedUrl={currentTopMoviesResponse?.rssFeedUrl}
+                />
               </div>
             </div>
           </div>

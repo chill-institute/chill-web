@@ -259,6 +259,87 @@ test.describe("top movies", () => {
     await expect(authenticatedPage.getByText("The Raid")).toBeVisible({ timeout: 2000 });
   });
 
+  test("rss button stays visible but disabled while a new source is loading", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource = TopMoviesSource.IMDB_MOVIEMETER;
+    let releaseYtsResponse: (() => void) | undefined;
+    let resolveYtsRequestSeen: (() => void) | undefined;
+    const ytsRequestSeen = new Promise<void>((resolve) => {
+      resolveYtsRequestSeen = resolve;
+    });
+
+    await mockRpc(
+      homeMethods({
+        GetUserSettings: userSettings({
+          showTopMovies: true,
+          topMoviesSource: TopMoviesSource.IMDB_MOVIEMETER,
+        }),
+      }),
+    );
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTopMovies", async (route) => {
+      if (currentSource === TopMoviesSource.YTS) {
+        resolveYtsRequestSeen?.();
+        await new Promise<void>((resolve) => {
+          releaseYtsResponse = resolve;
+        });
+      }
+
+      const response =
+        currentSource === TopMoviesSource.YTS
+          ? topMoviesResponseForSource(TopMoviesSource.YTS, ytsMovies)
+          : topMoviesResponseForSource(TopMoviesSource.IMDB_MOVIEMETER, movies);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: { topMoviesSource?: string | number };
+      };
+
+      const nextSource = String(body.settings?.topMoviesSource ?? "");
+      if (nextSource.includes("YTS") || nextSource === String(TopMoviesSource.YTS)) {
+        currentSource = TopMoviesSource.YTS;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          userSettings({
+            showTopMovies: true,
+            topMoviesSource: currentSource,
+          }),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/");
+
+    const rssButton = authenticatedPage.getByRole("button", { name: "Open RSS feed link" });
+    await expect(rssButton).toBeVisible();
+    await expect(rssButton).toBeEnabled();
+
+    await authenticatedPage.getByRole("combobox").click();
+    await authenticatedPage.getByRole("option", { name: "Trending movies from YTS" }).click();
+
+    await ytsRequestSeen;
+    await expect(rssButton).toBeVisible();
+    await expect(rssButton).toBeDisabled();
+
+    releaseYtsResponse?.();
+
+    await expect(authenticatedPage.getByText("The Raid")).toBeVisible({ timeout: 2000 });
+    await expect(rssButton).toBeEnabled();
+  });
+
   test("changing source only refetches top movies once after save", async ({
     authenticatedPage,
     mockRpc,
