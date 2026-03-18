@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Folder, X } from "lucide-react";
 
@@ -24,6 +24,18 @@ export function DownloadFolderPicker({ folderId, onSave }: Props) {
   const [open, setOpen] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<bigint>(folderId);
   const [folderStack, setFolderStack] = useState<bigint[]>([]);
+
+  useEffect(() => {
+    setCurrentFolderId(folderId);
+    setFolderStack([]);
+  }, [folderId]);
+
+  useEffect(() => {
+    if (!open) {
+      setCurrentFolderId(folderId);
+      setFolderStack([]);
+    }
+  }, [folderId, open]);
 
   const folderQuery = useQuery({
     queryKey: ["folder", String(currentFolderId)],

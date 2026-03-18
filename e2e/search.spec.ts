@@ -6,7 +6,12 @@ import {
   searchResult,
   userSettings,
 } from "./support/seeds";
-import { SearchResultDisplayBehavior } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  CodecFilter,
+  SearchResultDisplayBehavior,
+  SortBy,
+  SortDirection,
+} from "@chill-institute/contracts/chill/v4/api_pb";
 
 const defaultMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings(),
@@ -428,5 +433,61 @@ test.describe("search page", () => {
     await filterBar.locator("label").filter({ hasText: "x265" }).click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("x265 HEVC");
+  });
+
+  test("applies remembered quick filters and saved sort on first load", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const results = [
+      searchResult({
+        id: "r1",
+        title: "Gamma Movie 2160p x265 HDR",
+        seeders: 100n,
+        size: 2147483648n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+      searchResult({
+        id: "r2",
+        title: "Alpha Movie 1080p x265 HDR",
+        seeders: 300n,
+        size: 1073741824n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+      searchResult({
+        id: "r3",
+        title: "Beta Movie 1080p x264",
+        seeders: 500n,
+        size: 3221225472n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+    ];
+
+    await mockRpc(
+      allModeMethods({
+        GetUserSettings: userSettings({
+          rememberQuickFilters: true,
+          codecFilters: [CodecFilter.X265],
+          sortBy: SortBy.TITLE,
+          sortDirection: SortDirection.ASC,
+        }),
+        Search: searchResponse("movie", results),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    const filterBar = authenticatedPage.locator("#quick-filters");
+    await expect(filterBar.locator("input#codec-2")).toBeChecked();
+    await expect(filterBar.locator("input#res-3")).not.toBeChecked();
+    await expect(filterBar.locator("input#other-1")).not.toBeChecked();
+
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Alpha Movie 1080p x265 HDR");
+    await expect(rows.nth(1)).toContainText("Gamma Movie 2160p x265 HDR");
   });
 });

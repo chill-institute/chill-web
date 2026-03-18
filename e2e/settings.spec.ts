@@ -270,6 +270,45 @@ test.describe("settings and rss", () => {
     await expect(authenticatedPage.getByText("Movies").last()).toBeVisible({ timeout: 2000 });
   });
 
+  test("download folder picker reopens at the saved folder after closing without saving", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const root = userFile({ id: 1n, name: "your files" });
+    const movies = userFile({ id: 10n, name: "Movies" });
+    const anime = userFile({ id: 11n, name: "Anime" });
+    const folderResponseByID = new Map<string, unknown>([
+      ["1", folderResponse(root, [movies])],
+      ["10", folderResponse(movies, [anime])],
+      ["11", folderResponse(anime, [])],
+    ]);
+
+    await mockRpc(baseSettingsMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
+      const body = route.request().postDataJSON() as { id?: string | number };
+      const folderID = String(body.id ?? "");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(folderResponseByID.get(folderID) ?? folderResponse(root, [])),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+
+    await authenticatedPage.getByRole("button", { name: "change" }).click();
+    await expect(authenticatedPage.getByTitle("your files")).toBeVisible();
+    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
+    await expect(authenticatedPage.getByText("Anime")).toBeVisible();
+
+    await authenticatedPage.getByLabel("Close").click();
+    await authenticatedPage.getByRole("button", { name: "change" }).click();
+
+    await expect(authenticatedPage.getByTitle("your files")).toBeVisible();
+    await expect(authenticatedPage.getByRole("button", { name: "Movies" })).toBeVisible();
+  });
+
   test("download folder errors show a real error message", async ({
     authenticatedPage,
     mockRpc,

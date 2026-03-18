@@ -1,4 +1,4 @@
-import { useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 
 import type { UserSettings } from "@/lib/types";
 import { SortBy, SortDirection } from "@/lib/types";
@@ -54,14 +54,32 @@ const initialState: FilterState = {
   sortDirection: SortDirection.DESC,
 };
 
+function toFilterState(settingsData: UserSettings | undefined): FilterState {
+  if (!settingsData) {
+    return initialState;
+  }
+
+  return {
+    resolution: settingsData.resolutionFilters,
+    codec: settingsData.codecFilters,
+    other: settingsData.otherFilters,
+    sortBy: settingsData.sortBy,
+    sortDirection: settingsData.sortDirection,
+  };
+}
+
 export function useSearchFilters(settingsData: UserSettings | undefined) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, settingsData, toFilterState);
   const prevSettingsRef = useRef(settingsData);
 
-  if (settingsData && settingsData !== prevSettingsRef.current) {
+  useEffect(() => {
+    if (!settingsData || settingsData === prevSettingsRef.current) {
+      return;
+    }
+
     prevSettingsRef.current = settingsData;
     dispatch({ type: "SYNC_SETTINGS", settings: settingsData });
-  }
+  }, [settingsData]);
 
   return { filters: state, dispatch };
 }
