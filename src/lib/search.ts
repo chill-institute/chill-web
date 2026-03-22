@@ -1,6 +1,22 @@
 import type { SearchResult } from "./types";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
 
+const IMDB_URL_PATTERN = /imdb\.com\/title\/(tt\d+)/i;
+
+/**
+ * Normalizes a search query by extracting identifiers from known URL patterns.
+ * For example, an IMDb URL like "https://www.imdb.com/title/tt36363971/?ref_=ext_shr_lnk"
+ * is normalized to "tt36363971".
+ */
+export function normalizeQuery(query: string): string {
+  const trimmed = query.trim();
+  const match = trimmed.match(IMDB_URL_PATTERN);
+  if (match) {
+    return match[1];
+  }
+  return trimmed;
+}
+
 function applyResolution(title: string, filter: ResolutionFilter) {
   switch (filter) {
     case ResolutionFilter.RESOLUTION_FILTER_720P:

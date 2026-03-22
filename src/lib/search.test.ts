@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { SearchResultSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
 
-import { formatSearchResults } from "./search";
+import { formatSearchResults, normalizeQuery } from "./search";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
 
 describe("formatSearchResults", () => {
@@ -64,5 +64,38 @@ describe("formatSearchResults", () => {
     );
 
     expect(formatted.map((result) => result.id)).toEqual(["match-high", "match-low"]);
+  });
+});
+
+describe("normalizeQuery", () => {
+  it("extracts IMDb ID from a full IMDb URL", () => {
+    expect(normalizeQuery("https://www.imdb.com/title/tt36363971/?ref_=ext_shr_lnk")).toBe(
+      "tt36363971",
+    );
+  });
+
+  it("extracts IMDb ID from an IMDb URL without query params", () => {
+    expect(normalizeQuery("https://www.imdb.com/title/tt1375666/")).toBe("tt1375666");
+  });
+
+  it("extracts IMDb ID from an IMDb URL with trailing whitespace", () => {
+    expect(normalizeQuery("  https://www.imdb.com/title/tt1375666/  ")).toBe("tt1375666");
+  });
+
+  it("extracts IMDb ID from a mobile IMDb URL", () => {
+    expect(normalizeQuery("https://m.imdb.com/title/tt1375666/")).toBe("tt1375666");
+  });
+
+  it("returns the original query trimmed when not an IMDb URL", () => {
+    expect(normalizeQuery("  The Matrix  ")).toBe("The Matrix");
+  });
+
+  it("returns the original query when it is already an IMDb ID", () => {
+    expect(normalizeQuery("tt1375666")).toBe("tt1375666");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(normalizeQuery("")).toBe("");
+    expect(normalizeQuery("   ")).toBe("");
   });
 });

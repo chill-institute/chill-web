@@ -9,7 +9,7 @@ import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
 import { useAuth, readStoredToken } from "@/lib/auth";
 import { toErrorMessage } from "@/lib/errors";
-import { formatSearchResults } from "@/lib/search";
+import { formatSearchResults, normalizeQuery } from "@/lib/search";
 import { SearchResultDisplayBehavior, SortDirection, type UserSettings } from "@/lib/types";
 import { combineQueries } from "@/queries/combine";
 import { useSettingsQuery, useSaveSettings } from "@/queries/settings";
@@ -35,7 +35,7 @@ function SearchPage() {
   const searchParams = Route.useSearch();
   const auth = useAuth();
   const callbackURL = useRouterState({ select: (state) => state.location.href });
-  const submittedQuery = searchParams.q?.trim() ?? "";
+  const submittedQuery = normalizeQuery(searchParams.q ?? "");
 
   const configQuery = useSettingsQuery();
   const indexersQuery = useIndexersQuery();

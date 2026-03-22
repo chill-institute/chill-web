@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { normalizeQuery } from "@/lib/search";
 
 export function ShellSearchForm({
   initialQuery = "",
@@ -78,7 +79,7 @@ export function ShellSearchForm({
       method="get"
       onSubmit={(event) => {
         event.preventDefault();
-        const query = value.trim();
+        const query = normalizeQuery(value);
         if (query.length === 0) {
           return;
         }
