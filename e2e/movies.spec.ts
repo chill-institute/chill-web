@@ -401,7 +401,10 @@ test.describe("movies", () => {
 
   test("waits for real settings before fetching movies from cached settings", async ({
     authenticatedPage,
+    mockRpc,
   }) => {
+    await mockRpc(homeMethods());
+
     await authenticatedPage.addInitScript(
       (cachedSettings) => {
         window.localStorage.setItem("chill.settings", cachedSettings);
@@ -426,13 +429,16 @@ test.describe("movies", () => {
       }),
     );
 
-    let releaseSettingsResponse: (() => void) | undefined;
+    let allowSettingsResponses = false;
+    const releaseSettingsResponses: Array<() => void> = [];
     let moviesRequests = 0;
 
     await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
-      await new Promise<void>((resolve) => {
-        releaseSettingsResponse = resolve;
-      });
+      if (!allowSettingsResponses) {
+        await new Promise<void>((resolve) => {
+          releaseSettingsResponses.push(resolve);
+        });
+      }
 
       await route.fulfill({
         status: 200,
@@ -459,7 +465,10 @@ test.describe("movies", () => {
 
     await expect.poll(() => moviesRequests, { timeout: 300 }).toBe(0);
 
-    releaseSettingsResponse?.();
+    allowSettingsResponses = true;
+    for (const releaseSettingsResponse of releaseSettingsResponses) {
+      releaseSettingsResponse();
+    }
 
     await expect(authenticatedPage.getByText("Inception")).toBeVisible({ timeout: 2000 });
     await expect.poll(() => moviesRequests).toBe(1);

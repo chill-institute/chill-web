@@ -32,9 +32,12 @@ describe("isBackendUnavailableError", () => {
 });
 
 describe("shouldRetryQueryError", () => {
-  it("retries transient backend failures twice", () => {
+  it("allows a single retry before outage mode is active", () => {
     expect(shouldRetryQueryError(0, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
-    expect(shouldRetryQueryError(1, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
+    expect(shouldRetryQueryError(1, new ConnectError("unavailable", Code.Unavailable))).toBe(false);
+  });
+
+  it("does not retry after the single allowed attempt", () => {
     expect(shouldRetryQueryError(2, new ConnectError("unavailable", Code.Unavailable))).toBe(false);
   });
 

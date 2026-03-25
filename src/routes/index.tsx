@@ -40,7 +40,12 @@ function HomePage() {
   const saveConfigMutation = useSaveSettings();
   const pendingMoviesRefresh = usePendingMoviesRefresh();
 
-  const moviesQuery = useMoviesQuery(configQuery.data?.showMovies === true);
+  const shouldFetchMovies =
+    configQuery.status === "success" &&
+    !configQuery.isFetching &&
+    configQuery.data.showMovies === true;
+
+  const moviesQuery = useMoviesQuery(shouldFetchMovies);
 
   function patchConfig(patch: Partial<UserSettings>) {
     if (!configQuery.data) {

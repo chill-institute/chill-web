@@ -50,7 +50,7 @@ export function isBackendUnavailableError(error: unknown) {
 }
 
 export function shouldRetryQueryError(failureCount: number, error: unknown) {
-  return failureCount < 2 && isBackendUnavailableError(error);
+  return failureCount < 1 && isBackendUnavailableError(error);
 }
 
 export function toErrorMessage(error: unknown) {

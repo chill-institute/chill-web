@@ -128,6 +128,7 @@ export function settingsQueryOptions(token: string) {
       writeCachedSettings(settings);
       return settings;
     },
+    staleTime: FIVE_MINUTES,
     placeholderData: readCachedSettings(),
   });
 }

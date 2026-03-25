@@ -10,7 +10,7 @@ import { AppErrorFallback } from "@/components/app-error-fallback";
 import { AppShell } from "@/components/app-shell";
 import { BackendUnavailableScreen } from "@/components/backend-unavailable-screen";
 import { AuthProvider } from "@/lib/auth";
-import { useBackendUnavailable } from "@/hooks/use-backend-unavailable";
+import { BackendHealthProvider, useBackendUnavailable } from "@/hooks/use-backend-unavailable";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -25,7 +25,9 @@ function Root() {
     <AppErrorBoundary>
       <AuthProvider>
         <TooltipProvider>
-          <RootContent />
+          <BackendHealthProvider>
+            <RootContent />
+          </BackendHealthProvider>
         </TooltipProvider>
       </AuthProvider>
     </AppErrorBoundary>

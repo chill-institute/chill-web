@@ -53,6 +53,13 @@ export const test = base.extend<{
       storageState: AUTH_STORAGE_STATE,
     });
     const page = await context.newPage();
+    await page.route("**/healthz", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ status: "ok" }),
+      });
+    });
     await use(page);
     await context.close();
   },

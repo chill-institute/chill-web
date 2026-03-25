@@ -9,9 +9,7 @@ import {
 
 import { useAuth } from "./auth";
 import { SESSION_EXPIRED_ERROR } from "./auth-errors";
-import { clearBackendUnavailable, reportBackendUnavailable } from "./backend-unavailable-store";
 import { getPublicAPIBaseURL } from "./env";
-import { isBackendUnavailableError } from "./errors";
 import { withTimeoutSignal } from "./request-timeout";
 import {
   SearchResultDisplayBehavior,
@@ -118,16 +116,7 @@ async function runWithTimeout<T>(
 }
 
 async function runAPIRequest<T>(request: () => Promise<T>): Promise<T> {
-  try {
-    const response = await request();
-    clearBackendUnavailable();
-    return response;
-  } catch (error) {
-    if (isBackendUnavailableError(error)) {
-      reportBackendUnavailable(error);
-    }
-    throw error;
-  }
+  return request();
 }
 
 function withSettingsDefaults(settings: UserSettings): UserSettings {
