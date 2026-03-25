@@ -1,7 +1,7 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 import { describe, expect, it } from "vite-plus/test";
 
-import { isIgnorableAbortError } from "./errors";
+import { isBackendUnavailableError, isIgnorableAbortError, shouldRetryQueryError } from "./errors";
 
 describe("isIgnorableAbortError", () => {
   it("treats connect cancellation as ignorable", () => {
@@ -14,5 +14,31 @@ describe("isIgnorableAbortError", () => {
 
   it("does not hide normal errors", () => {
     expect(isIgnorableAbortError(new Error("provider unavailable"))).toBe(false);
+  });
+});
+
+describe("isBackendUnavailableError", () => {
+  it("treats connect unavailable as backend downtime", () => {
+    expect(isBackendUnavailableError(new ConnectError("unavailable", Code.Unavailable))).toBe(true);
+  });
+
+  it("treats network fetch failures as backend downtime", () => {
+    expect(isBackendUnavailableError(new Error("Failed to fetch"))).toBe(true);
+  });
+
+  it("does not classify normal provider payload errors as downtime", () => {
+    expect(isBackendUnavailableError(new Error("provider invalid payload"))).toBe(false);
+  });
+});
+
+describe("shouldRetryQueryError", () => {
+  it("retries transient backend failures twice", () => {
+    expect(shouldRetryQueryError(0, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
+    expect(shouldRetryQueryError(1, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
+    expect(shouldRetryQueryError(2, new ConnectError("unavailable", Code.Unavailable))).toBe(false);
+  });
+
+  it("does not retry non-transient errors", () => {
+    expect(shouldRetryQueryError(0, new Error("provider invalid payload"))).toBe(false);
   });
 });

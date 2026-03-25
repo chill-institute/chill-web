@@ -8,7 +8,9 @@ import type { RouterContext } from "@/router";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { AppErrorFallback } from "@/components/app-error-fallback";
 import { AppShell } from "@/components/app-shell";
+import { BackendUnavailableScreen } from "@/components/backend-unavailable-screen";
 import { AuthProvider } from "@/lib/auth";
+import { useBackendUnavailable } from "@/hooks/use-backend-unavailable";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -23,11 +25,25 @@ function Root() {
     <AppErrorBoundary>
       <AuthProvider>
         <TooltipProvider>
-          <AppShell />
-          <Toaster />
+          <RootContent />
         </TooltipProvider>
       </AuthProvider>
     </AppErrorBoundary>
+  );
+}
+
+function RootContent() {
+  const { isBackendUnavailable, retry } = useBackendUnavailable();
+
+  if (isBackendUnavailable) {
+    return <BackendUnavailableScreen onRetry={retry} />;
+  }
+
+  return (
+    <>
+      <AppShell />
+      <Toaster />
+    </>
   );
 }
 

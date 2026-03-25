@@ -9,7 +9,9 @@ import {
 
 import { useAuth } from "./auth";
 import { SESSION_EXPIRED_ERROR } from "./auth-errors";
+import { clearBackendUnavailable, reportBackendUnavailable } from "./backend-unavailable-store";
 import { getPublicAPIBaseURL } from "./env";
+import { isBackendUnavailableError } from "./errors";
 import { withTimeoutSignal } from "./request-timeout";
 import {
   SearchResultDisplayBehavior,
@@ -44,6 +46,7 @@ const transport = createConnectTransport({
 });
 
 const userClient = createClient(UserService, transport);
+const REQUEST_TIMEOUT_MS = 8000;
 const SEARCH_TIMEOUT_MS = 10000;
 
 function authHeader(authToken?: string): HeadersInit | undefined {
@@ -95,6 +98,38 @@ function redirectToSignInOnAuthFailure(error: unknown) {
   window.location.replace(`/sign-out?error=${encodeURIComponent(SESSION_EXPIRED_ERROR)}`);
 }
 
+async function runWithTimeout<T>(
+  signal: AbortSignal | undefined,
+  timeoutMs: number,
+  timeoutMessage: string,
+  request: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const timed = withTimeoutSignal(signal, timeoutMs);
+  try {
+    return await request(timed.signal);
+  } catch (error) {
+    if (timed.didTimeout()) {
+      throw new ConnectError(timeoutMessage, Code.DeadlineExceeded);
+    }
+    throw error;
+  } finally {
+    timed.cleanup();
+  }
+}
+
+async function runAPIRequest<T>(request: () => Promise<T>): Promise<T> {
+  try {
+    const response = await request();
+    clearBackendUnavailable();
+    return response;
+  } catch (error) {
+    if (isBackendUnavailableError(error)) {
+      reportBackendUnavailable(error);
+    }
+    throw error;
+  }
+}
+
 function withSettingsDefaults(settings: UserSettings): UserSettings {
   return {
     ...settings,
@@ -133,7 +168,11 @@ export function getPutioStartURL(successURL?: string) {
 
 async function getUserProfile(authToken: string, signal?: AbortSignal): Promise<UserProfile> {
   try {
-    return await userClient.getUserProfile({}, { headers: authHeader(authToken), signal });
+    return await runAPIRequest(() =>
+      runWithTimeout(signal, REQUEST_TIMEOUT_MS, "Profile request timed out", (timed) =>
+        userClient.getUserProfile({}, { headers: authHeader(authToken), signal: timed }),
+      ),
+    );
   } catch (error) {
     redirectToSignInOnAuthFailure(error);
     throw error;
@@ -142,7 +181,11 @@ async function getUserProfile(authToken: string, signal?: AbortSignal): Promise<
 
 async function getMovies(authToken: string, signal?: AbortSignal): Promise<GetMoviesResponse> {
   try {
-    return await userClient.getMovies({}, { headers: authHeader(authToken), signal });
+    return await runAPIRequest(() =>
+      runWithTimeout(signal, REQUEST_TIMEOUT_MS, "Movies request timed out", (timed) =>
+        userClient.getMovies({}, { headers: authHeader(authToken), signal: timed }),
+      ),
+    );
   } catch (error) {
     redirectToSignInOnAuthFailure(error);
     throw error;
@@ -155,29 +198,31 @@ async function search(
   indexerId?: string,
   signal?: AbortSignal,
 ): Promise<SearchResponse> {
-  const timed = withTimeoutSignal(signal, SEARCH_TIMEOUT_MS);
   try {
-    return await userClient.search(
-      {
-        query,
-        indexerId: indexerId || undefined,
-      },
-      { headers: authHeader(authToken), signal: timed.signal },
+    return await runAPIRequest(() =>
+      runWithTimeout(signal, SEARCH_TIMEOUT_MS, "Search timed out", (timed) =>
+        userClient.search(
+          {
+            query,
+            indexerId: indexerId || undefined,
+          },
+          { headers: authHeader(authToken), signal: timed },
+        ),
+      ),
     );
   } catch (error) {
-    if (timed.didTimeout()) {
-      throw new ConnectError("Search timed out", Code.DeadlineExceeded);
-    }
     redirectToSignInOnAuthFailure(error);
     throw error;
-  } finally {
-    timed.cleanup();
   }
 }
 
 async function getIndexers(authToken: string, signal?: AbortSignal): Promise<UserIndexer[]> {
   try {
-    const response = await userClient.getIndexers({}, { headers: authHeader(authToken), signal });
+    const response = await runAPIRequest(() =>
+      runWithTimeout(signal, REQUEST_TIMEOUT_MS, "Indexers request timed out", (timed) =>
+        userClient.getIndexers({}, { headers: authHeader(authToken), signal: timed }),
+      ),
+    );
     return response.indexers;
   } catch (error) {
     redirectToSignInOnAuthFailure(error);
@@ -187,9 +232,10 @@ async function getIndexers(authToken: string, signal?: AbortSignal): Promise<Use
 
 async function getUserSettings(authToken: string, signal?: AbortSignal): Promise<UserSettings> {
   try {
-    const response = await userClient.getUserSettings(
-      {},
-      { headers: authHeader(authToken), signal },
+    const response = await runAPIRequest(() =>
+      runWithTimeout(signal, REQUEST_TIMEOUT_MS, "Settings request timed out", (timed) =>
+        userClient.getUserSettings({}, { headers: authHeader(authToken), signal: timed }),
+      ),
     );
     return withSettingsDefaults(response);
   } catch (error) {
@@ -200,9 +246,8 @@ async function getUserSettings(authToken: string, signal?: AbortSignal): Promise
 
 async function saveUserSettings(authToken: string, settings: UserSettings): Promise<UserSettings> {
   try {
-    const response = await userClient.saveUserSettings(
-      { settings },
-      { headers: authHeader(authToken) },
+    const response = await runAPIRequest(() =>
+      userClient.saveUserSettings({ settings }, { headers: authHeader(authToken) }),
     );
     return withSettingsDefaults(response);
   } catch (error) {
@@ -213,7 +258,9 @@ async function saveUserSettings(authToken: string, settings: UserSettings): Prom
 
 async function addTransfer(authToken: string, url: string): Promise<AddTransferResponse> {
   try {
-    return await userClient.addTransfer({ url }, { headers: authHeader(authToken) });
+    return await runAPIRequest(() =>
+      userClient.addTransfer({ url }, { headers: authHeader(authToken) }),
+    );
   } catch (error) {
     redirectToSignInOnAuthFailure(error);
     throw error;
@@ -225,7 +272,11 @@ async function getDownloadFolder(
   signal?: AbortSignal,
 ): Promise<GetDownloadFolderResponse> {
   try {
-    return await userClient.getDownloadFolder({}, { headers: authHeader(authToken), signal });
+    return await runAPIRequest(() =>
+      runWithTimeout(signal, REQUEST_TIMEOUT_MS, "Download folder request timed out", (timed) =>
+        userClient.getDownloadFolder({}, { headers: authHeader(authToken), signal: timed }),
+      ),
+    );
   } catch (error) {
     redirectToSignInOnAuthFailure(error);
     throw error;
@@ -238,7 +289,11 @@ async function getFolder(
   signal?: AbortSignal,
 ): Promise<GetFolderResponse> {
   try {
-    return await userClient.getFolder({ id }, { headers: authHeader(authToken), signal });
+    return await runAPIRequest(() =>
+      runWithTimeout(signal, REQUEST_TIMEOUT_MS, "Folder request timed out", (timed) =>
+        userClient.getFolder({ id }, { headers: authHeader(authToken), signal: timed }),
+      ),
+    );
   } catch (error) {
     redirectToSignInOnAuthFailure(error);
     throw error;
