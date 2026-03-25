@@ -21,11 +21,7 @@ import {
   type Movie,
   type SearchResponse,
   type SearchResult,
-  type TVShowDetail,
-  type TVShowDownload,
-  type TVShowEpisode,
   type TVShow,
-  type TVShowSeason,
   type UserSettings,
   type UserIndexer,
 } from "@chill-institute/contracts/chill/v4/api_pb";
@@ -56,11 +52,7 @@ export type {
   Movie,
   SearchResponse,
   SearchResult,
-  TVShowDetail,
-  TVShowDownload,
-  TVShowEpisode,
   TVShow,
-  TVShowSeason,
   UserSettings,
   UserIndexer,
 };
