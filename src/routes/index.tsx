@@ -108,7 +108,11 @@ function HomePage() {
 
   if (!auth.isAuthenticated) {
     return (
-      <Navigate to="/sign-in" search={{ error: undefined, callbackUrl: callbackURL }} replace />
+      <Navigate
+        to="/sign-in"
+        search={{ error: undefined, callbackUrl: callbackURL ?? undefined }}
+        replace
+      />
     );
   }
 

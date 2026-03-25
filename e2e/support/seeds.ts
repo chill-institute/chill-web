@@ -3,29 +3,50 @@ import {
   type UserIndexer,
   type SearchResult,
   type Movie,
+  type TVShow,
+  type TVShowDetail,
+  type TVShowDownload,
+  type TVShowEpisode,
+  type TVShowSeason,
   type UserFile,
   GetDownloadFolderResponseSchema,
   GetFolderResponseSchema,
-  UserSettingsSchema,
-  UserGetIndexersResponseSchema,
   GetMoviesResponseSchema,
-  UserIndexerSchema,
-  SearchResultSchema,
-  SearchResponseSchema,
+  GetTVShowDetailResponseSchema,
+  GetTVShowSeasonDownloadsResponseSchema,
+  GetTVShowSeasonResponseSchema,
+  GetTVShowsResponseSchema,
   MovieSchema,
-  UserFileSchema,
+  SearchResponseSchema,
+  SearchResultSchema,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
   SortBy,
   SortDirection,
   CardDisplayType,
   MoviesSource,
+  TVShowsSource,
+  TVShowStatus,
+  TVShowDetailSchema,
+  TVShowDownloadSchema,
+  TVShowEpisodeSchema,
+  TVShowSchema,
+  TVShowSeasonSchema,
+  UserFileSchema,
+  UserGetIndexersResponseSchema,
+  UserIndexerSchema,
+  UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 type ConfigInit = MessageInitShape<typeof UserSettingsSchema>;
 type IndexerInit = MessageInitShape<typeof UserIndexerSchema>;
 type ResultInit = MessageInitShape<typeof SearchResultSchema>;
 type MovieInit = MessageInitShape<typeof MovieSchema>;
+type TVShowInit = MessageInitShape<typeof TVShowSchema>;
+type TVShowDetailInit = MessageInitShape<typeof TVShowDetailSchema>;
+type TVShowSeasonInit = MessageInitShape<typeof TVShowSeasonSchema>;
+type TVShowEpisodeInit = MessageInitShape<typeof TVShowEpisodeSchema>;
+type TVShowDownloadInit = MessageInitShape<typeof TVShowDownloadSchema>;
 type UserFileInit = MessageInitShape<typeof UserFileSchema>;
 
 function moviesSourcePath(source: MoviesSource): string {
@@ -123,6 +144,139 @@ export function moviesResponseForSource(source: MoviesSource, movies: Movie[]) {
       source,
       rssFeedUrl: moviesRSSFeedURL(source),
       movies,
+    }),
+  );
+}
+
+export function tvShow(init?: TVShowInit) {
+  return create(TVShowSchema, {
+    imdbId: "tt31938062",
+    title: "The Pitt",
+    year: 2025,
+    posterUrl: "/test/pitt-poster.jpg",
+    rating: 8.7,
+    externalUrl: "https://www.imdb.com/title/tt31938062/",
+    seasonCount: 1,
+    status: TVShowStatus.TV_SHOW_STATUS_RETURNING,
+    source: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+    networks: ["HBO Max"],
+    ...init,
+  });
+}
+
+export function tvShowsResponse(shows: TVShow[]) {
+  return tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, shows);
+}
+
+export function tvShowsResponseForSource(source: TVShowsSource, shows: TVShow[]) {
+  return toJson(
+    GetTVShowsResponseSchema,
+    create(GetTVShowsResponseSchema, {
+      source,
+      shows,
+    }),
+  );
+}
+
+export function tvShowDetail(init?: TVShowDetailInit) {
+  return create(TVShowDetailSchema, {
+    imdbId: "tt31938062",
+    title: "The Pitt",
+    year: 2025,
+    posterUrl: "/test/pitt-poster.jpg",
+    backdropUrl: "/test/pitt-backdrop.jpg",
+    rating: 8.7,
+    overview: "A single-shift medical drama.",
+    externalUrl: "https://www.imdb.com/title/tt31938062/",
+    seasonCount: 1,
+    status: TVShowStatus.TV_SHOW_STATUS_RETURNING,
+    networks: ["HBO Max"],
+    genres: ["Drama"],
+    ...init,
+  });
+}
+
+export function tvShowSeason(init?: TVShowSeasonInit) {
+  return create(TVShowSeasonSchema, {
+    seasonNumber: 1,
+    name: "Season 1",
+    episodeCount: 8,
+    airDate: "2025-01-01",
+    posterUrl: "/test/season-1.jpg",
+    ...init,
+  });
+}
+
+export function tvShowEpisode(init?: TVShowEpisodeInit) {
+  return create(TVShowEpisodeSchema, {
+    seasonNumber: 1,
+    episodeNumber: 1,
+    name: "Pilot",
+    overview: "Episode overview",
+    airDate: "2025-01-01",
+    runtime: 57,
+    stillUrl: "/test/episode-1.jpg",
+    rating: 8.4,
+    ...init,
+  });
+}
+
+export function tvShowDownload(init?: TVShowDownloadInit) {
+  return create(TVShowDownloadSchema, {
+    title: "The.Pitt.S01E01.1080p.WEBRip.x265-GROUP",
+    link: "magnet:?xt=urn:btih:tvshow123",
+    size: 2147483648n,
+    seeders: 120n,
+    resolution: "1080p",
+    codec: "x265",
+    quality: "WEBRip",
+    indexer: "knaben",
+    seasonNumber: 1,
+    ...init,
+  });
+}
+
+export function tvShowDetailResponse(show: TVShowDetail, seasons: TVShowSeason[]) {
+  return toJson(
+    GetTVShowDetailResponseSchema,
+    create(GetTVShowDetailResponseSchema, {
+      show,
+      seasons,
+    }),
+  );
+}
+
+export function tvShowSeasonResponse(
+  imdbId: string,
+  seasonNumber: number,
+  season: TVShowSeason,
+  episodes: TVShowEpisode[],
+) {
+  return toJson(
+    GetTVShowSeasonResponseSchema,
+    create(GetTVShowSeasonResponseSchema, {
+      imdbId,
+      seasonNumber,
+      season,
+      episodes,
+    }),
+  );
+}
+
+export function tvShowSeasonDownloadsResponse(
+  seasonPack: TVShowDownload | undefined,
+  episodes: Array<{
+    episodeNumber: number;
+    download?: TVShowDownload;
+    searchQuery: string;
+  }>,
+) {
+  return toJson(
+    GetTVShowSeasonDownloadsResponseSchema,
+    create(GetTVShowSeasonDownloadsResponseSchema, {
+      seasonPack,
+      episodes,
+      seasonSearchQuery: "The Pitt S01",
     }),
   );
 }

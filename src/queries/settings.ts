@@ -7,6 +7,7 @@ import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
 const SAVE_DEBOUNCE_MS = 500;
 const MOVIES_REFRESH_PENDING_QUERY_KEY = ["movies-refresh-pending"] as const;
+const TV_SHOWS_REFRESH_PENDING_QUERY_KEY = ["tv-shows-refresh-pending"] as const;
 
 export function useSettingsQuery() {
   const api = useApi();
@@ -35,6 +36,18 @@ export function usePendingMoviesRefresh() {
   return query.data === true;
 }
 
+export function usePendingTVShowsRefresh() {
+  const query = useQuery({
+    queryKey: TV_SHOWS_REFRESH_PENDING_QUERY_KEY,
+    queryFn: async () => false,
+    initialData: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  return query.data === true;
+}
+
 export function useSaveSettings() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -53,6 +66,13 @@ export function useSaveSettings() {
       ) {
         void queryClient.resetQueries({ queryKey: ["movies"] });
       }
+      if (
+        prev &&
+        (prev.tvShowsSource !== variables.tvShowsSource ||
+          prev.showTvShows !== variables.showTvShows)
+      ) {
+        void queryClient.resetQueries({ queryKey: ["tv-shows"] });
+      }
       if (prev && prev.downloadFolderId !== variables.downloadFolderId) {
         void queryClient.invalidateQueries({ queryKey: ["download-folder"] });
       }
@@ -63,6 +83,7 @@ export function useSaveSettings() {
     onSettled: () => {
       pendingRef.current = null;
       queryClient.setQueryData(MOVIES_REFRESH_PENDING_QUERY_KEY, false);
+      queryClient.setQueryData(TV_SHOWS_REFRESH_PENDING_QUERY_KEY, false);
     },
   });
 
@@ -88,6 +109,11 @@ export function useSaveSettings() {
           current.moviesSource !== next.moviesSource || current.showMovies !== next.showMovies;
         if (moviesChanged) {
           queryClient.setQueryData(MOVIES_REFRESH_PENDING_QUERY_KEY, true);
+        }
+        const tvShowsChanged =
+          current.tvShowsSource !== next.tvShowsSource || current.showTvShows !== next.showTvShows;
+        if (tvShowsChanged) {
+          queryClient.setQueryData(TV_SHOWS_REFRESH_PENDING_QUERY_KEY, true);
         }
       }
       queryClient.setQueryData(["user-settings"], next);

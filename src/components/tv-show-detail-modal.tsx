@@ -323,10 +323,7 @@ function TvShowDetailContent({
                     <span>loading downloads</span>
                   </button>
                 ) : downloadsQuery.data?.seasonPack?.link ? (
-                  <AddTransferButton
-                    url={downloadsQuery.data.seasonPack.link}
-                    leadingIcon={<CloudUpload className="text-xs" />}
-                  >
+                  <AddTransferButton url={downloadsQuery.data.seasonPack.link}>
                     send season to put.io
                   </AddTransferButton>
                 ) : (
