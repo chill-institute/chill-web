@@ -7,7 +7,7 @@
 - search across enabled trackers
 - compare results quickly
 - send downloads to put.io
-- browse top-movie feeds and RSS shortcuts
+- browse movie feeds and RSS shortcuts
 
 ## Privacy
 

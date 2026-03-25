@@ -23,7 +23,7 @@ Want a little more institutional power? Here you go.
 
 4. Enjoy.
 
-![Top-movies feed subscribed in put.io](./assets/guides/rss-putio-saved.jpg)
+![Movies feed subscribed in put.io](./assets/guides/rss-putio-saved.jpg)
 
 ### Keep the feed private
 
