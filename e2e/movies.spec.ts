@@ -65,6 +65,19 @@ test.describe("movies", () => {
     await expect(articles.nth(1)).toContainText("8.7");
   });
 
+  test("does not show home tabs when only movies are enabled", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(homeMethods());
+
+    await authenticatedPage.goto("/");
+
+    await expect(authenticatedPage.getByRole("button", { name: "movies" })).toHaveCount(0);
+    await expect(authenticatedPage.getByRole("button", { name: "tv shows" })).toHaveCount(0);
+    await expect(authenticatedPage.getByText("Inception")).toBeVisible();
+  });
+
   test("shows movies in expanded view", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({

@@ -147,6 +147,10 @@ function HomePage() {
         return null;
       }
 
+      const showTabs = hasMovies && hasTVShows;
+      const currentTab: HomeTab =
+        hasMovies && !hasTVShows ? "movies" : !hasMovies && hasTVShows ? "tv" : activeTab;
+
       const currentMoviesResponse =
         moviesQuery.status === "success" && moviesQuery.data.source === config.moviesSource
           ? moviesQuery.data
@@ -157,6 +161,36 @@ function HomePage() {
           : undefined;
       const selectedShow = currentTVShowsResponse?.shows.find(
         (show) => show.imdbId === selectedShowId,
+      );
+      const sourceSelector =
+        currentTab === "movies" ? (
+          <MoviesSourceSelect
+            value={config.moviesSource}
+            onChange={(moviesSource) => patchConfig({ moviesSource })}
+          />
+        ) : (
+          <TVShowsSourceSelect
+            value={config.tvShowsSource}
+            onChange={(tvShowsSource) => patchConfig({ tvShowsSource })}
+          />
+        );
+      const headerControls = (
+        <div className="inline-flex items-center">
+          <CardDisplayTypeToggle
+            className="gap-0.5"
+            value={config.cardDisplayType}
+            onChange={(cardDisplayType) => patchConfig({ cardDisplayType })}
+          />
+          <div className="mx-1 h-6 w-px bg-stone-950/12 dark:bg-stone-100/10" />
+          {currentTab === "movies" ? (
+            <MoviesRSSPopover
+              source={config.moviesSource}
+              feedUrl={currentMoviesResponse?.rssFeedUrl}
+            />
+          ) : (
+            <DisabledTVRssButton />
+          )}
+        </div>
       );
 
       const moviesContent = pendingMoviesRefresh ? (
@@ -277,71 +311,49 @@ function HomePage() {
 
       return (
         <div data-page="home" className="mx-auto my-6 w-full max-w-5xl px-4 md:my-12 xl:px-0">
-          <div className="flex flex-col gap-2.5 xs:flex-row xs:items-center xs:justify-between">
-            <div className="flex flex-wrap gap-2">
-              {hasMovies ? (
-                <HomeTabButton
-                  active={activeTab === "movies"}
-                  icon={<Film className="text-sm" />}
-                  label="movies"
-                  onClick={() => {
-                    setActiveTab("movies");
-                    setSelectedShowId(undefined);
-                    setSelectedSeason(undefined);
-                  }}
-                />
-              ) : null}
-              {hasTVShows ? (
-                <HomeTabButton
-                  active={activeTab === "tv"}
-                  icon={<Tv className="text-sm" />}
-                  label="tv shows"
-                  onClick={() => {
-                    setActiveTab("tv");
-                  }}
-                />
-              ) : null}
-            </div>
-
-            <div className="inline-flex items-center">
-              <CardDisplayTypeToggle
-                className="gap-0.5"
-                value={config.cardDisplayType}
-                onChange={(cardDisplayType) => patchConfig({ cardDisplayType })}
-              />
-              <div className="mx-1 h-6 w-px bg-stone-950/12 dark:bg-stone-100/10" />
-              {activeTab === "movies" ? (
-                <MoviesRSSPopover
-                  source={config.moviesSource}
-                  feedUrl={currentMoviesResponse?.rssFeedUrl}
-                />
-              ) : (
-                <DisabledTVRssButton />
-              )}
-            </div>
-          </div>
-
-          <div className="mt-2 flex justify-start">
-            {activeTab === "movies" ? (
-              <MoviesSourceSelect
-                value={config.moviesSource}
-                onChange={(moviesSource) => patchConfig({ moviesSource })}
-              />
+          <div className="flex flex-col gap-2.5">
+            {showTabs ? (
+              <>
+                <div className="flex flex-col gap-2.5 xs:flex-row xs:items-center xs:justify-between">
+                  <div className="flex flex-wrap gap-2">
+                    <HomeTabButton
+                      active={currentTab === "movies"}
+                      icon={<Film className="text-sm" />}
+                      label="movies"
+                      onClick={() => {
+                        setActiveTab("movies");
+                        setSelectedShowId(undefined);
+                        setSelectedSeason(undefined);
+                      }}
+                    />
+                    <HomeTabButton
+                      active={currentTab === "tv"}
+                      icon={<Tv className="text-sm" />}
+                      label="tv shows"
+                      onClick={() => {
+                        setActiveTab("tv");
+                      }}
+                    />
+                  </div>
+                  {headerControls}
+                </div>
+                <div className="flex justify-start">{sourceSelector}</div>
+              </>
             ) : (
-              <TVShowsSourceSelect
-                value={config.tvShowsSource}
-                onChange={(tvShowsSource) => patchConfig({ tvShowsSource })}
-              />
+              <div className="flex flex-col gap-2 xs:flex-row xs:items-center xs:justify-between">
+                <div className="min-w-0 flex-1">{sourceSelector}</div>
+                <div className="self-end xs:self-auto">{headerControls}</div>
+              </div>
             )}
           </div>
 
-          {activeTab === "movies" ? moviesContent : tvShowsContent}
+          {currentTab === "movies" ? moviesContent : tvShowsContent}
 
           {saveConfigMutation.error ? (
             <ErrorAlert className="mt-4">{toErrorMessage(saveConfigMutation.error)}</ErrorAlert>
           ) : null}
 
-          {activeTab === "tv" && selectedShowId ? (
+          {currentTab === "tv" && selectedShowId ? (
             <TvShowDetailModal
               imdbId={selectedShowId}
               fallbackShow={selectedShow}

@@ -71,6 +71,29 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
 });
 
 test.describe("tv shows home", () => {
+  test("does not show home tabs when only tv shows are enabled", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        GetUserSettings: userSettings({
+          showMovies: false,
+          showTvShows: true,
+          cardDisplayType: CardDisplayType.COMPACT,
+          tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+        }),
+        GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows),
+      }),
+    );
+
+    await authenticatedPage.goto("/");
+
+    await expect(authenticatedPage.getByRole("button", { name: "movies" })).toHaveCount(0);
+    await expect(authenticatedPage.getByRole("button", { name: "tv shows" })).toHaveCount(0);
+    await expect(authenticatedPage.getByText("The Pitt")).toBeVisible();
+  });
+
   test("switching tabs swaps content", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({
