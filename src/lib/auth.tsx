@@ -90,6 +90,16 @@ export function normalizeCallbackPath(raw: null | string): null | string {
   }
 }
 
+export function readCurrentCallbackPath(): null | string {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return normalizeCallbackPath(
+    `${window.location.pathname}${window.location.search}${window.location.hash}`,
+  );
+}
+
 export function readAuthTokenFromLocation(location: Pick<Location, "hash" | "search">): string {
   const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
   const query = new URLSearchParams(location.search);
