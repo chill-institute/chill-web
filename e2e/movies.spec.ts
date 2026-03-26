@@ -198,9 +198,7 @@ test.describe("movies", () => {
     const articles = authenticatedPage.locator("article");
     await expect(articles).toHaveCount(2);
 
-    // Click the unpressed toggle to switch to expanded
-    const unpressedToggle = authenticatedPage.locator('button[aria-pressed="false"]');
-    await unpressedToggle.first().click();
+    await authenticatedPage.getByRole("button", { name: "Expanded view" }).click();
 
     // Proto JSON serializes enums as strings
     await expect.poll(() => savedDisplayType).toBe("CARD_DISPLAY_TYPE_EXPANDED");

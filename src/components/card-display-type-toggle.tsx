@@ -36,7 +36,7 @@ export function CardDisplayTypeToggle({
       value={[String(value)]}
     >
       {displayTypeOptions.map(({ icon, label, value: v }) => (
-        <ToggleGroupItem key={v} value={String(v)}>
+        <ToggleGroupItem key={v} value={String(v)} aria-label={`${label} view`}>
           <Tooltip>
             <TooltipTrigger render={<div>{icon}</div>} />
             <TooltipContent>
