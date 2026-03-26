@@ -323,7 +323,10 @@ function TvShowDetailContent({
                     <span>loading downloads</span>
                   </button>
                 ) : downloadsQuery.data?.seasonPack?.link ? (
-                  <AddTransferButton url={downloadsQuery.data.seasonPack.link}>
+                  <AddTransferButton
+                    url={downloadsQuery.data.seasonPack.link}
+                    ariaLabel={`Send ${show?.title ?? "TV show"} season ${resolvedSeasonNumber} to put.io`}
+                  >
                     send season to put.io
                   </AddTransferButton>
                 ) : (
@@ -389,7 +392,10 @@ function TvShowDetailContent({
                       {downloadsQuery.isPending ? (
                         <EpisodeActionSkeleton />
                       ) : episodeDownload?.link ? (
-                        <AddTransferButton url={episodeDownload.link}>
+                        <AddTransferButton
+                          url={episodeDownload.link}
+                          ariaLabel={`Send ${show?.title ?? "TV show"} season ${episode.seasonNumber} episode ${episode.episodeNumber} to put.io`}
+                        >
                           <CloudUpload />
                         </AddTransferButton>
                       ) : (

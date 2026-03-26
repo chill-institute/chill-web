@@ -159,7 +159,9 @@ test.describe("movies", () => {
     const firstArticle = authenticatedPage.locator("article").first();
     await expect(firstArticle).toBeVisible();
 
-    const searchLink = firstArticle.locator('a[href*="/search"]');
+    const searchLink = firstArticle.getByRole("link", {
+      name: "Search Inception 2010 in the institute",
+    });
     await searchLink.click();
 
     await authenticatedPage.waitForURL("**/search**");

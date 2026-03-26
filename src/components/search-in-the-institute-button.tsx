@@ -15,7 +15,12 @@ export function SearchInTheInstituteButton({
     <Tooltip>
       <TooltipTrigger
         render={
-          <Link to="/search" search={{ q }} className="btn btn-secondary">
+          <Link
+            to="/search"
+            search={{ q }}
+            className="btn btn-secondary"
+            aria-label={`Search ${q} in the institute`}
+          >
             <Search />
           </Link>
         }

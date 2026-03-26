@@ -76,7 +76,12 @@ export function DownloadFolderPicker({ folderId, onSave }: Props) {
         <h5 className="font-medium">
           <span className="flex items-center space-y-0.5">
             {folderStack.length > 0 ? (
-              <button className="-mb-1 cursor-pointer" onClick={navigateBack} type="button">
+              <button
+                className="-mb-1 cursor-pointer"
+                onClick={navigateBack}
+                type="button"
+                aria-label="Go back to parent folder"
+              >
                 <ChevronLeft />
               </button>
             ) : null}
@@ -97,6 +102,7 @@ export function DownloadFolderPicker({ folderId, onSave }: Props) {
                 onClick={() => navigateInto(file.id)}
                 title={file.name}
                 type="button"
+                aria-label={`Open folder ${file.name}`}
               >
                 <Folder />
                 <span className="flex-1 line-clamp-1 text-left" title={file.name}>

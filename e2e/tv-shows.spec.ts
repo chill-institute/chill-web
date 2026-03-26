@@ -244,7 +244,7 @@ test.describe("tv shows home", () => {
     const modal = authenticatedPage.getByRole("dialog", { name: "The Pitt" });
 
     await expect(modal.getByText("The Pitt", { exact: true })).toBeVisible();
-    await expect(modal.getByRole("button", { name: "Season 1" })).toBeVisible();
+    await expect(modal.getByRole("button", { name: "Season 1", exact: true })).toBeVisible();
     await expect(modal.getByText("7:00 A.M.")).toBeVisible();
     await expect(modal.getByRole("button", { name: /send season to put.io/i })).toBeVisible();
   });

@@ -6,11 +6,17 @@ import { useApi } from "@/lib/api";
 import { toErrorMessage } from "@/lib/errors";
 
 type Props = PropsWithChildren<{
+  ariaLabel?: string;
   className?: string;
   url: string;
 }>;
 
-export function AddTransferButton({ children = "send to put.io", className = "", url }: Props) {
+export function AddTransferButton({
+  children = "send to put.io",
+  ariaLabel,
+  className = "",
+  url,
+}: Props) {
   const api = useApi();
   const [viewInPutio, setViewInPutio] = useState(false);
 
@@ -36,6 +42,7 @@ export function AddTransferButton({ children = "send to put.io", className = "",
       return { icon: <XCircle className="text-red-600" />, text: toErrorMessage(mutation.error) };
     return { icon: null, text: children };
   })();
+  const accessibleLabel = typeof text === "string" ? text : (ariaLabel ?? "send to put.io");
 
   function handleClick() {
     if (viewInPutio) {
@@ -53,6 +60,7 @@ export function AddTransferButton({ children = "send to put.io", className = "",
       className={`btn ${className}`}
       disabled={mutation.isPending}
       onClick={handleClick}
+      aria-label={accessibleLabel}
     >
       <span
         key={phase}

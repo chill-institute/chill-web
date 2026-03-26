@@ -27,6 +27,9 @@ export function CopyButton({ value, className = "" }: { value: string; className
           setState("error");
         }
       }}
+      aria-label={
+        state === "copied" ? "Copied link" : state === "error" ? "Failed to copy link" : "Copy link"
+      }
       title={state === "copied" ? "copied" : state === "error" ? "failed to copy" : "copy link"}
     >
       <span key={state} className="flex items-center justify-center animate-feedback-in">
