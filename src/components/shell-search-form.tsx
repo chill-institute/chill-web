@@ -44,6 +44,7 @@ export function ShellSearchForm({
         <button
           type="button"
           className="cursor-pointer"
+          aria-label="Clear search query"
           onClick={() => {
             setDraft({ base: initialQuery, value: "" });
             inputRef.current?.focus();

@@ -32,10 +32,10 @@ export function SearchFilterBar({
 }: Props) {
   return (
     <div className="flex flex-col space-y-6 mt-6 mb-2 lg:items-center">
-      <div className="flex flex-col space-y-1 lg:flex-row lg:space-x-2 lg:space-y-0 items-start lg:items-center">
-        <label className="text-sm font-medium leading-none" htmlFor="quick-filters">
+      <fieldset className="flex flex-col space-y-1 lg:flex-row lg:space-x-2 lg:space-y-0 items-start lg:items-center">
+        <legend className="text-sm font-medium leading-none">
           Quick filters<span className="lg:visible invisible">:</span>
-        </label>
+        </legend>
 
         <div className="flex flex-row items-center space-x-3" id="quick-filters">
           <div className="flex flex-row space-x-2">
@@ -107,12 +107,12 @@ export function SearchFilterBar({
             })}
           </div>
         </div>
-      </div>
+      </fieldset>
 
-      <div className="flex flex-col space-y-1 lg:hidden lg:space-x-2 lg:space-y-0 items-start lg:items-center">
-        <label className="text-sm font-medium leading-none" htmlFor="sort-options">
+      <fieldset className="flex flex-col space-y-1 lg:hidden lg:space-x-2 lg:space-y-0 items-start lg:items-center">
+        <legend className="text-sm font-medium leading-none">
           Sort by<span className="lg:visible invisible">:</span>
-        </label>
+        </legend>
 
         <div className="flex flex-row space-x-2 flex-wrap" id="sort-options">
           {sortByValues.map((option) => {
@@ -136,7 +136,7 @@ export function SearchFilterBar({
             );
           })}
         </div>
-      </div>
+      </fieldset>
     </div>
   );
 }

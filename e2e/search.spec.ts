@@ -263,15 +263,14 @@ test.describe("search page", () => {
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(3);
 
-    // Click the 1080p filter checkbox label within the quick-filters container
-    const filterBar = authenticatedPage.locator("#quick-filters");
-    await filterBar.locator("label").filter({ hasText: "1080p" }).click();
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    await quickFilters.getByRole("checkbox", { name: "1080p" }).click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("Movie 1080p x264 BluRay");
 
     // Uncheck 1080p, check 720p
-    await filterBar.locator("label").filter({ hasText: "1080p" }).click();
-    await filterBar.locator("label").filter({ hasText: "720p" }).click();
+    await quickFilters.getByRole("checkbox", { name: "1080p" }).click();
+    await quickFilters.getByRole("checkbox", { name: "720p" }).click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("Movie 720p x264");
   });
@@ -303,8 +302,8 @@ test.describe("search page", () => {
     await expect(rows).toHaveCount(1);
 
     // Apply 1080p filter — no results match
-    const filterBar = authenticatedPage.locator("#quick-filters");
-    await filterBar.locator("label").filter({ hasText: "1080p" }).click();
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    await quickFilters.getByRole("checkbox", { name: "1080p" }).click();
     await expect(authenticatedPage.getByText("Those filters")).toBeVisible({ timeout: 5000 });
   });
 
