@@ -40,12 +40,11 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Activate pnpm for Wrangler
+    - name: Install pnpm for Wrangler
       shell: bash
       run: |
-        corepack enable
         package_manager=$(node -p 'require("./package.json").packageManager')
-        corepack prepare "$package_manager" --activate
+        npm install --global "$package_manager"
         pnpm --version
 
     - name: Deploy to Cloudflare Pages
