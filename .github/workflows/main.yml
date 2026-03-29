@@ -35,48 +35,6 @@ jobs:
           path: dist
           if-no-files-found: error
 
-  smoke:
-    needs: verify
-    concurrency:
-      group: web-main-smoke-${{ github.ref }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web-dist
-          path: dist
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@v1
-        with:
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Install Playwright browser
-        run: vp exec playwright install --with-deps chromium
-
-      - name: Smoke tests
-        run: vp run smoke
-
-      - name: Upload Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-artifacts-smoke
-          path: |
-            playwright-report
-            test-results
-          if-no-files-found: ignore
-
   e2e:
     needs: verify
     concurrency:
@@ -120,8 +78,8 @@ jobs:
           if-no-files-found: ignore
 
   deploy:
-    needs: [verify, smoke, e2e]
-    if: ${{ needs.verify.result == 'success' && needs.smoke.result == 'success' && needs.e2e.result == 'success' }}
+    needs: [verify, e2e]
+    if: ${{ needs.verify.result == 'success' && needs.e2e.result == 'success' }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false

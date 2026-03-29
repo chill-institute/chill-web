@@ -22,14 +22,13 @@ Run the full repo checks before opening or updating a pull request:
 
 ```bash
 vp run verify
-vp run smoke
 vp run e2e
 ```
 
 CI shape:
 
 - pull requests run `Verify`
-- `Verify` runs `verify`, `smoke`, and `e2e`
+- `Verify` runs `verify` and `e2e`
 - same-repo pull requests also publish a Cloudflare Pages preview deploy after checks pass
 - pushes to `main` run `Main`
 - `Main` runs the same checks, then deploys production through Wrangler and runs hosted smoke

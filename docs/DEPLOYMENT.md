@@ -41,16 +41,15 @@ After a hosted web change, verify:
 
 Repo helpers:
 
-- local smoke: `vp run smoke`
 - hosted smoke: `vp run smoke:hosted`
 
 GitHub Actions shape:
 
 - pull requests run `Verify`
-- `Verify` runs `verify`, `smoke`, and `e2e`
+- `Verify` runs `verify` and `e2e`
 - same-repo pull requests also publish a Cloudflare Pages preview deploy after checks pass
 - pushes to `main` run `Main`
-- `Main` runs `verify`, `smoke`, and `e2e`, then deploys production through Wrangler and runs hosted smoke against `https://chill.institute`
+- `Main` runs `verify` and `e2e`, then deploys production through Wrangler and runs hosted smoke against `https://chill.institute`
 - `Deploy Web` remains available as a manual production deploy fallback
 
 GitHub-owned deploy configuration:

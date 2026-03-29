@@ -40,6 +40,13 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Activate pnpm for Wrangler
+      shell: bash
+      run: |
+        corepack enable
+        corepack prepare "$(node -p \"require('./package.json').packageManager\")" --activate
+        pnpm --version
+
     - name: Deploy to Cloudflare Pages
       id: deploy
       uses: cloudflare/wrangler-action@v3
