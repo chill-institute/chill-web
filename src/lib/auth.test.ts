@@ -67,6 +67,15 @@ describe("storePendingCallbackURL", () => {
 
     expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
   });
+
+  it("clears stale callback values when the next callback is rejected", () => {
+    withWindowLocation("https://chill.institute/settings");
+    window.sessionStorage.setItem("chill.auth_callback", "/search?q=matrix");
+
+    storePendingCallbackURL("/sign-in");
+
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+  });
 });
 
 describe("readAuthTokenFromLocation", () => {

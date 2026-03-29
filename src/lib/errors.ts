@@ -1,9 +1,14 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 
-export type LocalizedErrorRecoveryAction = {
-  readonly kind: "retry" | "sign-in-again";
-  readonly label: string;
-};
+export type LocalizedErrorRecoveryAction =
+  | {
+      readonly kind: "retry";
+      readonly label: string;
+    }
+  | {
+      readonly kind: "sign-in-again";
+      readonly label: string;
+    };
 
 type LocalizedErrorRecoverySuggestion = {
   readonly description?: string;

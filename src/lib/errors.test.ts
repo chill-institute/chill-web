@@ -55,17 +55,27 @@ describe("isBackendUnavailableError", () => {
 });
 
 describe("localizeError", () => {
+  const expectedPutioProviderOutage = {
+    message: "Could not connect to put.io. Please try again.",
+    recoverySuggestion: {
+      description: "If this keeps happening, sign in again to refresh your put.io session.",
+      actions: [
+        { kind: "retry", label: "retry" },
+        { kind: "sign-in-again", label: "sign in again" },
+      ],
+    },
+  } as const;
+
   it("returns the same put.io outage copy and actions for all surfaces", () => {
-    expect(localizeError(new Error("putio provider unavailable"))).toEqual({
-      message: "Could not connect to put.io. Please try again.",
-      recoverySuggestion: {
-        description: "If this keeps happening, sign in again to refresh your put.io session.",
-        actions: [
-          { kind: "retry", label: "retry" },
-          { kind: "sign-in-again", label: "sign in again" },
-        ],
-      },
-    });
+    expect(localizeError(new Error("putio provider unavailable"))).toEqual(
+      expectedPutioProviderOutage,
+    );
+  });
+
+  it("handles snake_case error pattern from API", () => {
+    expect(localizeError(new ConnectError("putio_provider_unavailable", Code.Unknown))).toEqual(
+      expectedPutioProviderOutage,
+    );
   });
 });
 

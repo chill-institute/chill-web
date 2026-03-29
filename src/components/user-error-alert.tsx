@@ -30,18 +30,21 @@ function renderAction(action: LocalizedErrorRecoveryAction) {
           className="btn btn-secondary h-8 text-xs"
           onClick={() => window.location.reload()}
         >
-          <RefreshCw className="text-xs" />
+          <RefreshCw className="size-3.5" />
           {action.label}
         </button>
       );
     case "sign-in-again":
       return (
         <button key={action.kind} type="button" className="btn h-8 text-xs" onClick={retrySignIn}>
-          <LogIn className="text-xs" />
+          <LogIn className="size-3.5" />
           {action.label}
         </button>
       );
   }
+
+  const exhaustive: never = action;
+  throw new Error(`Unhandled recovery action: ${JSON.stringify(exhaustive)}`);
 }
 
 export function UserErrorAlert({ error, className }: UserErrorAlertProps) {

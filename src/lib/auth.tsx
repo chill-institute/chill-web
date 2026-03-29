@@ -23,6 +23,7 @@ export function readStoredToken() {
 export function storePendingCallbackURL(url: string) {
   const normalized = normalizeCallbackPath(url);
   if (!normalized) {
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
     return;
   }
   window.sessionStorage.setItem(AUTH_CALLBACK_STORAGE_KEY, normalized);
