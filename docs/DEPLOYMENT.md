@@ -46,13 +46,22 @@ Repo helpers:
 
 GitHub Actions shape:
 
-- pull requests run `verify`, `smoke`, and `e2e`
-- pushes to `main` run the same checks in one visible mainline DAG
+- pull requests run `Verify`
+- `Verify` runs `verify`, `smoke`, and `e2e`
+- same-repo pull requests also publish a Cloudflare Pages preview deploy after checks pass
+- pushes to `main` run `Main`
+- `Main` runs `verify`, `smoke`, and `e2e`, then deploys production through Wrangler and runs hosted smoke against `https://chill.institute`
+- `Deploy Web` remains available as a manual production deploy fallback
 
-Current deployment caveat:
+GitHub-owned deploy configuration:
 
-- this repo does not own the Cloudflare Pages deploy step in GitHub Actions yet
-- CI can fail the GitHub pipeline, but it does not gate Pages deploys until deployment is moved under workflow control
+- Cloudflare Pages project: `web-8vr`
+- required GitHub secret: `CLOUDFLARE_API_TOKEN`
+- required GitHub variable: `CLOUDFLARE_ACCOUNT_ID`
+
+Operator follow-up after enabling these workflows:
+
+- disable direct Cloudflare Pages Git integration for this repo so GitHub Actions is the only production deploy path
 
 Hosted smoke defaults to `https://chill.institute` and `https://api.chill.institute`. Override with `CHILL_WEB_BASE_URL` or `CHILL_API_BASE_URL` when checking a preview deployment.
 

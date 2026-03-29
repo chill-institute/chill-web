@@ -1,0 +1,31 @@
+name: Cloudflare Pages Deploy
+description: Deploy a prepared static bundle to Cloudflare Pages without GitHub comment integration
+
+inputs:
+  api-token:
+    description: Cloudflare API token with Pages deploy access
+    required: true
+  account-id:
+    description: Cloudflare account ID
+    required: true
+  branch:
+    description: Cloudflare Pages branch to deploy
+    required: true
+  dist-dir:
+    description: Static bundle directory
+    required: false
+    default: dist
+  project-name:
+    description: Cloudflare Pages project name
+    required: false
+    default: web-8vr
+
+runs:
+  using: composite
+  steps:
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ inputs.api-token }}
+        accountId: ${{ inputs.account-id }}
+        command: pages deploy ${{ inputs.dist-dir }} --project-name ${{ inputs.project-name }} --branch ${{ inputs.branch }}

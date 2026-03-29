@@ -1,4 +1,4 @@
-name: verify
+name: Verify
 
 on:
   pull_request:
@@ -6,7 +6,6 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -24,11 +23,17 @@ jobs:
       - name: Run core verify checks
         run: vp run verify
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: dist
+          if-no-files-found: error
+
   smoke:
     needs: verify
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -63,7 +68,6 @@ jobs:
     needs: verify
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -93,3 +97,41 @@ jobs:
             playwright-report
             test-results
           if-no-files-found: ignore
+
+  deploy-preview:
+    needs: [verify, smoke, e2e]
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository }}
+    concurrency:
+      group: web-preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist
+
+      - name: Deploy preview to Cloudflare Pages
+        uses: ./.github/actions/cloudflare-pages-deploy
+        with:
+          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          branch: ${{ github.head_ref }}
+
+      - name: Publish summary
+        env:
+          PREVIEW_BRANCH: ${{ github.head_ref }}
+        run: |
+          {
+            echo "## Web preview deploy"
+            echo
+            echo "- Project: \`web-8vr\`"
+            echo "- Branch: \`${PREVIEW_BRANCH}\`"
+            echo "- Preview host pattern: \`*.web-8vr.pages.dev\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
