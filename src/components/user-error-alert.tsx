@@ -3,7 +3,7 @@ import { LogIn, RefreshCw } from "lucide-react";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { getPutioStartURL } from "@/lib/api";
 import { readCurrentCallbackPath, storePendingCallbackURL } from "@/lib/auth";
-import { isPutioProviderUnavailableError, toErrorMessage } from "@/lib/errors";
+import { localizeError, type LocalizedErrorRecoveryAction } from "@/lib/errors";
 
 type UserErrorAlertProps = {
   error: unknown;
@@ -20,35 +20,53 @@ function retrySignIn() {
   window.location.href = getPutioStartURL(successURL);
 }
 
+function renderAction(action: LocalizedErrorRecoveryAction) {
+  switch (action.kind) {
+    case "retry":
+      return (
+        <button
+          key={action.kind}
+          type="button"
+          className="btn btn-secondary h-8 text-xs"
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCw className="text-xs" />
+          {action.label}
+        </button>
+      );
+    case "sign-in-again":
+      return (
+        <button key={action.kind} type="button" className="btn h-8 text-xs" onClick={retrySignIn}>
+          <LogIn className="text-xs" />
+          {action.label}
+        </button>
+      );
+  }
+}
+
 export function UserErrorAlert({ error, className }: UserErrorAlertProps) {
-  if (!isPutioProviderUnavailableError(error)) {
-    return <ErrorAlert className={className}>{toErrorMessage(error)}</ErrorAlert>;
+  const localized = localizeError(error);
+  const suggestion = localized.recoverySuggestion;
+
+  if (!suggestion?.description && !suggestion?.actions?.length) {
+    return <ErrorAlert className={className}>{localized.message}</ErrorAlert>;
   }
 
   return (
     <ErrorAlert className={className}>
       <div className="space-y-3">
         <div className="space-y-1">
-          <div>Could not connect to put.io. Please try again.</div>
-          <div className="text-xs text-red-700/80 dark:text-red-300/80">
-            If this keeps happening, sign in again to refresh your put.io session.
-          </div>
+          <div>{localized.message}</div>
+          {suggestion.description ? (
+            <div className="text-xs text-red-700/80 dark:text-red-300/80">
+              {suggestion.description}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-secondary h-8 text-xs"
-            onClick={() => window.location.reload()}
-          >
-            <RefreshCw className="text-xs" />
-            retry
-          </button>
-          <button type="button" className="btn h-8 text-xs" onClick={retrySignIn}>
-            <LogIn className="text-xs" />
-            sign in again
-          </button>
-        </div>
+        {suggestion.actions?.length ? (
+          <div className="flex flex-wrap gap-2">{suggestion.actions.map(renderAction)}</div>
+        ) : null}
       </div>
     </ErrorAlert>
   );

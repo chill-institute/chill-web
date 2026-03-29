@@ -5,6 +5,7 @@ import {
   isBackendUnavailableError,
   isIgnorableAbortError,
   isPutioProviderUnavailableError,
+  localizeError,
   shouldRetryQueryError,
   toErrorMessage,
 } from "./errors";
@@ -53,10 +54,25 @@ describe("isBackendUnavailableError", () => {
   });
 });
 
+describe("localizeError", () => {
+  it("returns the same put.io outage copy and actions for all surfaces", () => {
+    expect(localizeError(new Error("putio provider unavailable"))).toEqual({
+      message: "Could not connect to put.io. Please try again.",
+      recoverySuggestion: {
+        description: "If this keeps happening, sign in again to refresh your put.io session.",
+        actions: [
+          { kind: "retry", label: "retry" },
+          { kind: "sign-in-again", label: "sign in again" },
+        ],
+      },
+    });
+  });
+});
+
 describe("toErrorMessage", () => {
-  it("prefers the put.io-specific recovery message", () => {
+  it("reuses the localized put.io outage message", () => {
     expect(toErrorMessage(new Error("putio provider unavailable"))).toBe(
-      "Could not connect to put.io. Please try again or sign in again.",
+      "Could not connect to put.io. Please try again.",
     );
   });
 });
