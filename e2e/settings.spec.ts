@@ -378,12 +378,39 @@ test.describe("settings and rss", () => {
     ).toBeVisible({ timeout: 5000 });
   });
 
+  test("put.io provider errors show retry and sign-in actions", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(baseSettingsMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetDownloadFolder", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          code: "unavailable",
+          message: "putio provider unavailable",
+        }),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+
+    const alert = authenticatedPage
+      .getByRole("alert")
+      .filter({ hasText: "Could not connect to put.io. Please try again." })
+      .last();
+
+    await expect(alert).toBeVisible({ timeout: 5000 });
+    await expect(alert.getByRole("button", { name: "retry" })).toBeVisible();
+    await expect(alert.getByRole("button", { name: "sign in again" })).toBeVisible();
+  });
+
   test("shows username from profile", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(baseSettingsMethods());
     await authenticatedPage.goto("/settings");
 
-    // SettingsPanel appears twice (route + collapsed shell menu).
-    // .first() is the hidden collapsed one; .last() is the visible route one.
     await expect(authenticatedPage.getByText("putio-user").last()).toBeVisible({ timeout: 5000 });
   });
 
@@ -437,8 +464,6 @@ test.describe("settings and rss", () => {
 
     await authenticatedPage.goto("/settings");
 
-    // Wait for trackers section to load and click the YTS label.
-    // Use .last() — first instance is hidden in collapsed shell menu.
     const ytsLabel = authenticatedPage.locator("label").filter({ hasText: "YTS" }).last();
     await expect(ytsLabel).toBeVisible({ timeout: 5000 });
     await ytsLabel.click();
@@ -486,8 +511,6 @@ test.describe("settings and rss", () => {
 
     await authenticatedPage.goto("/settings");
 
-    // Find switches by their adjacent label text.
-    // Use .last() — first instance is hidden in collapsed shell menu.
     const nastyRow = authenticatedPage
       .locator(".flex.items-center.justify-between")
       .filter({ hasText: "Try to filter out nasty stuff" })
@@ -495,13 +518,10 @@ test.describe("settings and rss", () => {
     const nastySwitch = nastyRow.getByRole("switch");
     await expect(nastySwitch).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
 
-    // Toggle it off
     await nastySwitch.click();
     await expect.poll(() => saveCalls).toBeGreaterThan(0);
-    // Proto JSON omits false booleans (the proto3 default), so check it's not true
     await expect.poll(() => savedFilterNasty).not.toBe(true);
 
-    // "Hide results with no seeders" should be off
     const noSeedersRow = authenticatedPage
       .locator(".flex.items-center.justify-between")
       .filter({ hasText: "Hide results with no seeders" })
@@ -509,7 +529,6 @@ test.describe("settings and rss", () => {
     const noSeedersSwitch = noSeedersRow.getByRole("switch");
     await expect(noSeedersSwitch).toHaveAttribute("aria-checked", "false");
 
-    // Toggle it on
     const prevCalls = saveCalls;
     await noSeedersSwitch.click();
     await expect.poll(() => saveCalls).toBeGreaterThan(prevCalls);
@@ -520,11 +539,8 @@ test.describe("settings and rss", () => {
     await mockRpc(baseSettingsMethods());
     await authenticatedPage.goto("/settings");
 
-    // Wait for settings to load (.last() — first instance is hidden in collapsed shell menu)
     await expect(authenticatedPage.getByText("putio-user").last()).toBeVisible({ timeout: 5000 });
 
-    // NativeSelect renders a real <select>. Use evaluate to change its value
-    // because headless Chromium + appearance-none can cause visibility issues.
     const firstSelect = authenticatedPage.locator("select").first();
     await firstSelect.evaluate((el: HTMLSelectElement) => {
       el.value = "dark";

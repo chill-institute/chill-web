@@ -1,5 +1,31 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 
+export type LocalizedErrorRecoveryAction =
+  | {
+      readonly kind: "retry";
+      readonly label: string;
+    }
+  | {
+      readonly kind: "sign-in-again";
+      readonly label: string;
+    };
+
+type LocalizedErrorRecoverySuggestion = {
+  readonly description?: string;
+  readonly actions?: ReadonlyArray<LocalizedErrorRecoveryAction>;
+};
+
+type LocalizedError = {
+  readonly message: string;
+  readonly recoverySuggestion?: LocalizedErrorRecoverySuggestion;
+};
+
+function messageIncludesPutioProviderUnavailable(message: string) {
+  return (
+    message.includes("putio_provider_unavailable") || message.includes("putio provider unavailable")
+  );
+}
+
 function messageIncludesBackendFailure(message: string) {
   return (
     message.includes("provider unavailable") ||
@@ -35,7 +61,21 @@ export function isIgnorableAbortError(error: unknown) {
   return false;
 }
 
+export function isPutioProviderUnavailableError(error: unknown) {
+  if (error instanceof ConnectError) {
+    const message = `${error.rawMessage} ${error.message}`.toLowerCase();
+    return messageIncludesPutioProviderUnavailable(message);
+  }
+  if (error instanceof Error) {
+    return messageIncludesPutioProviderUnavailable(error.message.toLowerCase());
+  }
+  return false;
+}
+
 export function isBackendUnavailableError(error: unknown) {
+  if (isPutioProviderUnavailableError(error)) {
+    return true;
+  }
   if (error instanceof ConnectError) {
     if (error.code === Code.Unavailable || error.code === Code.DeadlineExceeded) {
       return true;
@@ -53,20 +93,46 @@ export function shouldRetryQueryError(failureCount: number, error: unknown) {
   return failureCount < 1 && isBackendUnavailableError(error);
 }
 
-export function toErrorMessage(error: unknown) {
+export function localizeError(error: unknown): LocalizedError {
+  if (isPutioProviderUnavailableError(error)) {
+    return {
+      message: "Could not connect to put.io. Please try again.",
+      recoverySuggestion: {
+        description: "If this keeps happening, sign in again to refresh your put.io session.",
+        actions: [
+          { kind: "retry", label: "retry" },
+          { kind: "sign-in-again", label: "sign in again" },
+        ],
+      },
+    };
+  }
   if (isBackendUnavailableError(error)) {
-    return "Service temporarily unavailable. Please try again shortly.";
+    return {
+      message: "Service temporarily unavailable. Please try again shortly.",
+    };
   }
   if (error instanceof ConnectError) {
     if (error.code === Code.Unauthenticated || error.code === Code.PermissionDenied) {
-      return "Session expired. Please sign in again.";
+      return {
+        message: "Session expired. Please sign in again.",
+      };
     }
     if (error.rawMessage) {
-      return error.rawMessage;
+      return {
+        message: error.rawMessage,
+      };
     }
   }
   if (error instanceof Error) {
-    return error.message;
+    return {
+      message: error.message,
+    };
   }
-  return "Unexpected error";
+  return {
+    message: "Unexpected error",
+  };
+}
+
+export function toErrorMessage(error: unknown) {
+  return localizeError(error).message;
 }
