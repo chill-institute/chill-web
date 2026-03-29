@@ -44,6 +44,16 @@ Repo helpers:
 - local smoke: `vp run smoke`
 - hosted smoke: `vp run smoke:hosted`
 
+GitHub Actions shape:
+
+- pull requests run `verify`, `smoke`, and `e2e`
+- pushes to `main` run the same checks in one visible mainline DAG
+
+Current deployment caveat:
+
+- this repo does not own the Cloudflare Pages deploy step in GitHub Actions yet
+- CI can fail the GitHub pipeline, but it does not gate Pages deploys until deployment is moved under workflow control
+
 Hosted smoke defaults to `https://chill.institute` and `https://api.chill.institute`. Override with `CHILL_WEB_BASE_URL` or `CHILL_API_BASE_URL` when checking a preview deployment.
 
 Keep browser-side API resolution centralized in [src/lib/env.ts](../src/lib/env.ts).

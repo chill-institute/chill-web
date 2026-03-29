@@ -1,12 +1,17 @@
-name: verify
+name: mainline
 
 on:
-  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: web-mainline-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -26,9 +31,7 @@ jobs:
 
   smoke:
     needs: verify
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -61,9 +64,7 @@ jobs:
 
   e2e:
     needs: verify
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6

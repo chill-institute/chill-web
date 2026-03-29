@@ -26,6 +26,12 @@ vp run smoke
 vp run e2e
 ```
 
+CI shape:
+
+- pull requests run `verify`, `smoke`, and `e2e`
+- pushes to `main` run the same checks in one visible mainline DAG
+- Cloudflare Pages deployment is still outside GitHub Actions, so these checks do not yet hard-gate deploys
+
 For a real deployed-surface smoke against the hosted site:
 
 ```bash
