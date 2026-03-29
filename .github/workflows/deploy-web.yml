@@ -44,6 +44,9 @@ jobs:
           account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           branch: main
 
+      - name: Install Playwright browser
+        run: vp exec playwright install --with-deps chromium
+
       - name: Run hosted smoke after deploy
         run: vp run smoke:hosted
 

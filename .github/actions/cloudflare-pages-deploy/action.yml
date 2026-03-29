@@ -47,3 +47,5 @@ runs:
         apiToken: ${{ inputs.api-token }}
         accountId: ${{ inputs.account-id }}
         command: pages deploy ${{ inputs.dist-dir }} --project-name ${{ inputs.project-name }} --branch ${{ inputs.branch }}
+        packageManager: npm
+        gitHubToken: ""
