@@ -106,14 +106,6 @@ export function readAuthTokenFromLocation(location: Pick<Location, "hash" | "sea
   return (fragment.get("auth_token") ?? query.get("auth_token") ?? "").trim();
 }
 
-/**
- * Read the auth token from the current URL, persist it, and consume the
- * pending callback URL in one shot.  Returns the redirect path if
- * everything succeeded, or `null` when no token was found.
- *
- * This is a pure imperative helper — no hooks — so it can be called from
- * a TanStack Router `beforeLoad` without triggering React renders.
- */
 export function consumeCallbackToken(): string | null {
   const token = readAuthTokenFromLocation(window.location);
   if (!token) {
@@ -130,10 +122,6 @@ export function consumeCallbackToken(): string | null {
   return callbackPath ?? "/";
 }
 
-/**
- * Clear all client-side auth state.  Intended for use in `beforeLoad` so
- * sign-out can happen without rendering a component.
- */
 export function clearSession(): void {
   window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
