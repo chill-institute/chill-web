@@ -102,36 +102,6 @@ jobs:
           project-name: web
           branch: ${{ github.head_ref }}
 
-      - name: Write preview metadata
-        env:
-          PREVIEW_URL: ${{ steps.deploy_preview.outputs.pages-deployment-alias-url || steps.deploy_preview.outputs.deployment-url }}
-          PREVIEW_BRANCH: ${{ github.head_ref }}
-          PREVIEW_SHA: ${{ github.sha }}
-          PREVIEW_PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          python3 <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          payload = {
-            "pr_number": int(os.environ["PREVIEW_PR_NUMBER"]),
-            "url": os.environ["PREVIEW_URL"],
-            "branch": os.environ["PREVIEW_BRANCH"],
-            "sha": os.environ["PREVIEW_SHA"],
-          }
-
-          output = Path("preview-deployment.json")
-          output.write_text(json.dumps(payload), encoding="utf-8")
-          PY
-
-      - name: Upload preview metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-deployment
-          path: preview-deployment.json
-          if-no-files-found: error
-
       - name: Publish summary
         env:
           PREVIEW_URL: ${{ steps.deploy_preview.outputs.pages-deployment-alias-url || steps.deploy_preview.outputs.deployment-url }}
