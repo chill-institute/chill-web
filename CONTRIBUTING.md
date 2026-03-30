@@ -32,7 +32,7 @@ CI shape:
 - same-repo pull requests also publish a Cloudflare Pages preview deploy after checks pass
 - pushes to `main` run `Main`
 - `Main` runs the same checks, then deploys production through Wrangler and runs hosted smoke
-- `Deploy Web` remains available as a manual production deploy fallback
+- `Deploy` remains available as a manual production deploy fallback
 
 For a real deployed-surface smoke against the hosted site:
 

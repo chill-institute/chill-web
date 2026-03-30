@@ -50,7 +50,7 @@ GitHub Actions shape:
 - same-repo pull requests also publish a Cloudflare Pages preview deploy after checks pass
 - pushes to `main` run `Main`
 - `Main` runs `verify` and `e2e`, then deploys production through Wrangler and runs hosted smoke against `https://chill.institute`
-- `Deploy Web` remains available as a manual production deploy fallback
+- `Deploy` remains available as a manual production deploy fallback
 
 GitHub-owned deploy configuration:
 

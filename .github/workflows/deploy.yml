@@ -1,4 +1,4 @@
-name: Deploy Web
+name: Deploy
 
 on:
   workflow_dispatch:
@@ -54,7 +54,7 @@ jobs:
       - name: Publish summary
         run: |
           {
-            echo "## Manual web deploy"
+            echo "## Manual deploy"
             echo
             echo "- Ref: \`${{ inputs.ref }}\`"
             echo "- Environment: \`production\`"
