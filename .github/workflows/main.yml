@@ -251,7 +251,7 @@ jobs:
           if-no-files-found: ignore
 
   deploy-chill:
-    needs: [changes, verify-chill, e2e-chill]
+    needs: [verify-chill, e2e-chill]
     if: ${{ needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
     concurrency:
       group: web-deploy-production-chill
@@ -279,7 +279,7 @@ jobs:
           branch: main
 
   deploy-binge:
-    needs: [changes, verify-binge, e2e-binge]
+    needs: [verify-binge, e2e-binge]
     if: ${{ needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
     concurrency:
       group: web-deploy-production-binge
