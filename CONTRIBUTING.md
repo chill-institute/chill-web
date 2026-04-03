@@ -32,7 +32,7 @@ vp run verify
 vp run e2e
 ```
 
-App-specific checks are available when you only need one surface:
+If you only changed one app, use the targeted root commands:
 
 ```bash
 vp run verify:chill
@@ -41,15 +41,7 @@ vp run e2e:chill
 vp run e2e:binge
 ```
 
-CI shape:
-
-- pull requests run `Verify`
-- `Verify` detects which app surfaces changed and runs only the affected app jobs
-- shared workspace changes such as `packages/*`, `tools/*`, and root build config fan out to both apps
-- docs-only and workflow-only edits skip app verify, e2e, and preview deploy jobs
-- pushes to `main` run `Main`
-- `Main` runs the same selective checks, then deploys only the affected production app surfaces
-- `Deploy` remains available as a manual production deploy fallback and lets you choose `all`, `chill`, or `binge`
+CI and deploy behavior is documented in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ## Git Hooks
 
@@ -67,7 +59,8 @@ vp config --hooks-dir .vite-hooks
 ## Development Notes
 
 - This repo contains two client-rendered SPAs under `apps/chill/` and `apps/binge/`.
-- The workspace follows the Vite+ monorepo pattern with `apps/*`, `packages/*`, and `tools/*` package globs.
+- The root owns shared workspace config such as `package.json`, `pnpm-workspace.yaml`, `vite.config.ts`, hooks, and CI workflows.
+- Each app owns its own runtime entrypoints and config including `src/`, `public/`, `e2e/`, `vite.config.ts`, `tsconfig.json`, and `components.json`.
 - Shared package versions live in the workspace catalog in `pnpm-workspace.yaml`.
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
 - Both apps talk directly to the hosted API.
@@ -75,6 +68,7 @@ vp config --hooks-dir .vite-hooks
 - `apps/binge/` serves `binge.institute`, `www.binge.institute`, `staging.binge.institute`, and `*.binge-institute.pages.dev`.
 - Localhost in either app resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
+- When generating or updating shadcn components, work from the target app directory so the app-local `components.json` is used.
 - Playwright keeps traces, screenshots, and videos on failure. Check `apps/*/playwright-report/` and `apps/*/test-results/` after a failing run.
 - GitHub-owned Cloudflare deploys require `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to be configured for the repo or inherited from the org.
 - Once the GitHub deploy workflow is in use, disable direct Cloudflare Pages Git integration so production deploys remain fully gated by `Main`.

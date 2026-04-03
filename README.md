@@ -2,26 +2,22 @@
 
 ![chill.institute web](https://chill.institute/banner.png)
 
-Vite+ workspace for the web surfaces of [chill.institute](https://chill.institute) and [binge.institute](https://binge.institute).
+Vite+ workspace repo for the Cloudflare Pages frontends of [chill.institute](https://chill.institute) and [binge.institute](https://binge.institute).
 
 ## Apps
 
 - `apps/chill/` powers `https://chill.institute` with search and catalog flows
 - `apps/binge/` powers `https://binge.institute` with the catalog-focused experience
+- the repo root owns shared workspace config, hooks, CI entrypoints, and package catalog wiring
 
-Both apps live in this repo, ship independently to Cloudflare Pages, and talk to the same hosted API at `https://api.chill.institute`.
+Both apps ship independently to Cloudflare Pages and talk to the same hosted API at `https://api.chill.institute`.
 
 ## Quickstart
 
-Install dependencies:
+Install dependencies and verify the workspace:
 
 ```bash
 vp install
-```
-
-Check the workspace is ready:
-
-```bash
 vp run ready
 ```
 
@@ -32,7 +28,7 @@ vp run dev:chill
 vp run dev:binge
 ```
 
-Validate the full workspace:
+Validate the repo:
 
 ```bash
 vp run verify
@@ -41,12 +37,6 @@ vp run verify:binge
 vp run e2e
 ```
 
-The repo follows the current Vite+ monorepo pattern:
-
-- workspace packages are declared under `apps/*`, `packages/*`, and `tools/*`
-- shared dependency versions live in the workspace catalog in `pnpm-workspace.yaml`
-- prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly
-
 ## Docs
 
 - [About](./docs/ABOUT.md)
@@ -54,6 +44,10 @@ The repo follows the current Vite+ monorepo pattern:
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Deployment](./docs/DEPLOYMENT.md)
 - [Contributing](./CONTRIBUTING.md)
+
+## Contributing
+
+Please read the [contributing guide](./CONTRIBUTING.md).
 
 ## License
 

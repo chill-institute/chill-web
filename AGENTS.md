@@ -1,6 +1,6 @@
 # Web
 
-`web` is a Vite+ workspace repo that hosts both Cloudflare Pages frontends for `chill.institute`.
+`web` is a Vite+ workspace repo that hosts the Cloudflare Pages frontends for `chill.institute` and `binge.institute`.
 
 ## Structure
 
@@ -34,6 +34,7 @@
 - Prefer `vp` over direct `pnpm`, `vite`, `vitest`, or `playwright` invocations.
 - Keep shared dependency versions in the workspace catalog in [pnpm-workspace.yaml](./pnpm-workspace.yaml)
 - Keep browser-side API resolution app-local in `apps/*/src/lib/env.ts`
+- Keep shadcn config app-local in `apps/*/components.json`
 - Prefer intentional duplication between `apps/chill/` and `apps/binge/` until a real shared package boundary is worth the complexity.
 - Keep Vite and hook/config changes minimal and intentional.
 - Keep `.vite-hooks/` as the canonical hook path; `.githooks/` exists only as a compatibility shim for stale local Git config.

@@ -42,7 +42,9 @@ After a hosted web change, verify:
 - one real app load in each SPA
 - one real auth redirect start URL
 
-GitHub Actions shape:
+## GitHub Actions
+
+Workflow shape:
 
 - pull requests run `Verify`
 - `Verify` detects whether `chill`, `binge`, or shared workspace surfaces changed and only runs the affected app jobs
@@ -51,6 +53,11 @@ GitHub Actions shape:
 - pushes to `main` run `Main`
 - `Main` runs the same selective checks, then deploys only the affected production app surfaces
 - `Deploy` remains available as a manual production deploy fallback and accepts `all`, `chill`, or `binge`
+
+Preview and production deploys are still app-specific:
+
+- `apps/chill/dist/` deploys to the Cloudflare Pages project `chill-institute`
+- `apps/binge/dist/` deploys to the Cloudflare Pages project `binge-institute`
 
 GitHub-owned deploy configuration:
 

@@ -24,6 +24,23 @@ graph LR
 | `apps/binge/` | `binge.institute` app with catalog, settings, and auth routes         |
 | repo root     | workspace scripts, Vite+ config, lint/format config, CI entrypoints   |
 
+## Workspace Tooling
+
+The repo root owns the shared workspace contract:
+
+- `package.json` for root commands such as `vp run verify`, `vp run verify:chill`, and `vp run e2e:binge`
+- `pnpm-workspace.yaml` for package globs and shared dependency catalog entries
+- `vite.config.ts` for root formatting, lint, and staged-check behavior
+- `.github/workflows/` for selective verify, preview deploy, and production deploy wiring
+
+Each app owns its app-local config:
+
+- `components.json`
+- `index.html`
+- `playwright.config.ts`
+- `tsconfig.json`
+- `vite.config.ts`
+
 ## Runtime Model
 
 - Each app is its own client-rendered SPA.
@@ -87,14 +104,14 @@ graph TD
 
 Key frontend modules:
 
-| Module                | Responsibility                                                           |
-| --------------------- | ------------------------------------------------------------------------ |
-| `src/router.tsx`      | create the app router and router context                                 |
-| `src/query-client.ts` | shared TanStack Query client configuration for that app                  |
-| `src/lib/api.ts`      | typed API calls, auth header wiring, request IDs, auth failure redirects |
-| `src/lib/auth.tsx`    | browser auth token lifecycle                                             |
-| `src/queries/`        | query options and mutation helpers for screens                           |
-| `src/routes/`         | screen entrypoints and route-specific loaders                            |
+| Module                       | Responsibility                                                   |
+| ---------------------------- | ---------------------------------------------------------------- |
+| `apps/*/src/router.tsx`      | create the app router and router context                         |
+| `apps/*/src/query-client.ts` | shared TanStack Query client configuration for that app          |
+| `apps/*/src/lib/api.ts`      | typed API calls, auth header wiring, request IDs, auth redirects |
+| `apps/*/src/lib/auth.tsx`    | browser auth token lifecycle                                     |
+| `apps/*/src/queries/`        | query options and mutation helpers for screens                   |
+| `apps/*/src/routes/`         | screen entrypoints and route-specific loaders                    |
 
 ## Auth Flow
 
