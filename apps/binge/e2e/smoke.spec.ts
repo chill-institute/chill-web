@@ -46,7 +46,7 @@ test.describe("smoke", () => {
     await expect(settingsPage.getByText("putio-user")).toBeVisible();
   });
 
-  test("authenticated home shell shows the sticky alpha header", async ({
+  test("authenticated home shell shows the sticky header", async ({
     authenticatedPage,
     mockRpc,
   }) => {
@@ -67,9 +67,8 @@ test.describe("smoke", () => {
 
     await authenticatedPage.goto("/");
 
-    await expect(
-      authenticatedPage.getByText("binge.institute is currently on alpha"),
-    ).toBeVisible();
+    await expect(authenticatedPage.getByRole("link", { name: /binge\.institute/i })).toBeVisible();
+    await expect(authenticatedPage.getByText("alpha")).toBeVisible();
     await expect(authenticatedPage.getByRole("button", { name: "Open settings" })).toBeVisible();
   });
 });

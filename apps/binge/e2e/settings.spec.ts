@@ -39,6 +39,10 @@ function settingsPage(page: Page) {
   return page.locator('[data-page="settings"]');
 }
 
+function folderPicker(page: Page) {
+  return page.getByRole("dialog").filter({ has: page.getByText("download here") });
+}
+
 test.describe("settings", () => {
   test("home settings trigger opens the settings modal", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(baseSettingsMethods());
@@ -123,8 +127,9 @@ test.describe("settings", () => {
 
     await authenticatedPage.goto("/settings");
     await authenticatedPage.getByRole("button", { name: "change" }).click();
-    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
-    await authenticatedPage.getByRole("button", { name: "download here" }).click();
+    const picker = folderPicker(authenticatedPage);
+    await picker.getByRole("button", { name: "Open folder Movies" }).click();
+    await picker.getByRole("button", { name: "download here" }).click();
 
     expect(folderRequests).toContain("1");
     expect(folderRequests).toContain("10");
@@ -197,8 +202,9 @@ test.describe("settings", () => {
     await expect(visibleFolderName).toBeVisible();
 
     await authenticatedPage.getByRole("button", { name: "change" }).click();
-    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
-    await authenticatedPage.getByRole("button", { name: "download here" }).click();
+    const picker = folderPicker(authenticatedPage);
+    await picker.getByRole("button", { name: "Open folder Movies" }).click();
+    await picker.getByRole("button", { name: "download here" }).click();
 
     await expect(visibleFolderName).toBeHidden({ timeout: 400 });
     await expect(settingsPage(authenticatedPage).getByText("Movies")).toBeVisible({
@@ -234,15 +240,17 @@ test.describe("settings", () => {
     await authenticatedPage.goto("/settings");
 
     await authenticatedPage.getByRole("button", { name: "change" }).click();
-    await expect(authenticatedPage.getByTitle("your files")).toBeVisible();
-    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
-    await expect(authenticatedPage.getByText("Anime")).toBeVisible();
+    let picker = folderPicker(authenticatedPage);
+    await expect(picker.getByTitle("your files")).toBeVisible();
+    await picker.getByRole("button", { name: "Open folder Movies" }).click();
+    await expect(picker.getByText("Anime")).toBeVisible();
 
-    await authenticatedPage.getByLabel("Close").click();
+    await picker.getByRole("button", { name: "Close", exact: true }).click();
     await authenticatedPage.getByRole("button", { name: "change" }).click();
 
-    await expect(authenticatedPage.getByTitle("your files")).toBeVisible();
-    await expect(authenticatedPage.getByRole("button", { name: "Movies" })).toBeVisible();
+    picker = folderPicker(authenticatedPage);
+    await expect(picker.getByTitle("your files")).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Open folder Movies" })).toBeVisible();
   });
 
   test("download folder errors show a real error message", async ({
