@@ -6,7 +6,76 @@ on:
       - main
 
 jobs:
-  verify:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      chill: ${{ steps.filter.outputs.chill }}
+      binge: ${{ steps.filter.outputs.binge }}
+      any_app: ${{ steps.set_outputs.outputs.any_app }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed surfaces
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            chill:
+              - 'apps/chill/**'
+              - 'packages/**'
+              - 'tools/**'
+              - '.node-version'
+              - '.gitignore'
+              - '.vite-hooks/**'
+              - '.githooks/**'
+              - '.github/actions/**'
+              - 'knip.json'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
+            binge:
+              - 'apps/binge/**'
+              - 'packages/**'
+              - 'tools/**'
+              - '.node-version'
+              - '.gitignore'
+              - '.vite-hooks/**'
+              - '.githooks/**'
+              - '.github/actions/**'
+              - 'knip.json'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
+
+      - name: Publish change summary
+        id: set_outputs
+        env:
+          CHILL_CHANGED: ${{ steps.filter.outputs.chill }}
+          BINGE_CHANGED: ${{ steps.filter.outputs.binge }}
+        run: |
+          if [ "${CHILL_CHANGED}" = "true" ] || [ "${BINGE_CHANGED}" = "true" ]; then
+            echo "any_app=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "any_app=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+          {
+            echo "## Changed app surfaces"
+            echo
+            echo "- Chill: \`${CHILL_CHANGED}\`"
+            echo "- Binge: \`${BINGE_CHANGED}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  workspace-verify:
+    needs: changes
+    if: ${{ needs.changes.outputs.any_app == 'true' }}
     concurrency:
       group: web-main-verify-${{ github.ref }}
       cancel-in-progress: true
@@ -26,8 +95,33 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Run core verify checks
-        run: vp run verify
+      - name: Run workspace lint
+        run: vp lint
+
+  verify-chill:
+    needs: [changes, workspace-verify]
+    if: ${{ needs.changes.outputs.chill == 'true' && needs.workspace-verify.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          version: "0.1.14"
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Verify chill app
+        run: |
+          vp run check:chill
+          vp run test:chill
+          vp run build:chill
 
       - name: Upload chill build artifact
         uses: actions/upload-artifact@v7
@@ -36,6 +130,31 @@ jobs:
           path: apps/chill/dist
           if-no-files-found: error
 
+  verify-binge:
+    needs: [changes, workspace-verify]
+    if: ${{ needs.changes.outputs.binge == 'true' && needs.workspace-verify.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          version: "0.1.14"
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Verify binge app
+        run: |
+          vp run check:binge
+          vp run test:binge
+          vp run build:binge
+
       - name: Upload binge build artifact
         uses: actions/upload-artifact@v7
         with:
@@ -43,21 +162,60 @@ jobs:
           path: apps/binge/dist
           if-no-files-found: error
 
-  e2e:
-    needs: verify
+  e2e-chill:
+    needs: verify-chill
+    if: ${{ needs.verify-chill.result == 'success' }}
     concurrency:
-      group: web-main-e2e-${{ github.ref }}
+      group: web-main-e2e-chill-${{ github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Download build artifact
+      - name: Download chill build artifact
         uses: actions/download-artifact@v8
         with:
           name: chill-dist
           path: apps/chill/dist
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          version: "0.1.14"
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec --filter ./apps/chill playwright install chromium
+
+      - name: Run chill end-to-end tests
+        run: vp run e2e:chill
+
+      - name: Upload chill Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-artifacts-chill
+          path: |
+            apps/chill/playwright-report
+            apps/chill/test-results
+          if-no-files-found: ignore
+
+  e2e-binge:
+    needs: verify-binge
+    if: ${{ needs.verify-binge.result == 'success' }}
+    concurrency:
+      group: web-main-e2e-binge-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
 
       - name: Download binge build artifact
         uses: actions/download-artifact@v8
@@ -77,28 +235,26 @@ jobs:
         run: vp install
 
       - name: Install Playwright browser
-        run: vp exec playwright install --with-deps chromium
+        run: vp exec --filter ./apps/binge playwright install chromium
 
-      - name: End-to-end tests
-        run: vp run e2e
+      - name: Run binge end-to-end tests
+        run: vp run e2e:binge
 
-      - name: Upload Playwright artifacts
+      - name: Upload binge Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-artifacts-e2e
+          name: playwright-artifacts-binge
           path: |
-            apps/chill/playwright-report
-            apps/chill/test-results
             apps/binge/playwright-report
             apps/binge/test-results
           if-no-files-found: ignore
 
-  deploy:
-    needs: [verify, e2e]
-    if: ${{ needs.verify.result == 'success' && needs.e2e.result == 'success' }}
+  deploy-chill:
+    needs: [changes, verify-chill, e2e-chill]
+    if: ${{ needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
     concurrency:
-      group: web-deploy-production
+      group: web-deploy-production-chill
       cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
@@ -113,14 +269,7 @@ jobs:
           name: chill-dist
           path: apps/chill/dist
 
-      - name: Download binge build artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: binge-dist
-          path: apps/binge/dist
-
       - name: Deploy chill production to Cloudflare Pages
-        id: deploy_chill
         uses: ./.github/actions/cloudflare-pages-deploy
         with:
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -129,8 +278,26 @@ jobs:
           dist-dir: apps/chill/dist
           branch: main
 
+  deploy-binge:
+    needs: [changes, verify-binge, e2e-binge]
+    if: ${{ needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
+    concurrency:
+      group: web-deploy-production-binge
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Download binge build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: binge-dist
+          path: apps/binge/dist
+
       - name: Deploy binge production to Cloudflare Pages
-        id: deploy_binge
         uses: ./.github/actions/cloudflare-pages-deploy
         with:
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -139,13 +306,29 @@ jobs:
           dist-dir: apps/binge/dist
           branch: main
 
+  deploy-summary:
+    needs: [changes, deploy-chill, deploy-binge]
+    if: ${{ always() && (needs.deploy-chill.result == 'success' || needs.deploy-binge.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Publish summary
+        env:
+          CHILL_RESULT: ${{ needs.deploy-chill.result }}
+          BINGE_RESULT: ${{ needs.deploy-binge.result }}
         run: |
           {
             echo "## Web deploy"
             echo
             echo "- Environment: \`production\`"
-            echo "- Chill: [https://chill.institute](https://chill.institute)"
-            echo "- Binge: [https://binge.institute](https://binge.institute)"
+            if [ "${CHILL_RESULT}" = "success" ]; then
+              echo "- Chill: [https://chill.institute](https://chill.institute)"
+            else
+              echo "- Chill: skipped"
+            fi
+            if [ "${BINGE_RESULT}" = "success" ]; then
+              echo "- Binge: [https://binge.institute](https://binge.institute)"
+            else
+              echo "- Binge: skipped"
+            fi
             echo "- Flow: \`push Main workflow\`"
           } >> "${GITHUB_STEP_SUMMARY}"

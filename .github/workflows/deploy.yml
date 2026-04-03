@@ -8,13 +8,22 @@ on:
         required: true
         default: main
         type: string
-
-concurrency:
-  group: web-deploy-production
-  cancel-in-progress: false
+      app:
+        description: App surface to deploy
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - chill
+          - binge
 
 jobs:
-  deploy:
+  deploy-chill:
+    if: ${{ inputs.app == 'all' || inputs.app == 'chill' }}
+    concurrency:
+      group: web-deploy-production-chill
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,11 +44,10 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Build production bundle
-        run: vp run build
+      - name: Build chill production bundle
+        run: vp run build:chill
 
       - name: Deploy chill production to Cloudflare Pages
-        id: deploy_chill
         uses: ./.github/actions/cloudflare-pages-deploy
         with:
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -48,8 +56,35 @@ jobs:
           dist-dir: apps/chill/dist
           branch: main
 
+  deploy-binge:
+    if: ${{ inputs.app == 'all' || inputs.app == 'binge' }}
+    concurrency:
+      group: web-deploy-production-binge
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          version: "0.1.14"
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Build binge production bundle
+        run: vp run build:binge
+
       - name: Deploy binge production to Cloudflare Pages
-        id: deploy_binge
         uses: ./.github/actions/cloudflare-pages-deploy
         with:
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -58,13 +93,32 @@ jobs:
           dist-dir: apps/binge/dist
           branch: main
 
+  deploy-summary:
+    needs: [deploy-chill, deploy-binge]
+    if: ${{ always() && (needs.deploy-chill.result == 'success' || needs.deploy-binge.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Publish summary
+        env:
+          REF: ${{ inputs.ref }}
+          APP: ${{ inputs.app }}
+          CHILL_RESULT: ${{ needs.deploy-chill.result }}
+          BINGE_RESULT: ${{ needs.deploy-binge.result }}
         run: |
           {
             echo "## Manual deploy"
             echo
-            echo "- Ref: \`${{ inputs.ref }}\`"
+            echo "- Ref: \`${REF}\`"
+            echo "- Requested app: \`${APP}\`"
             echo "- Environment: \`production\`"
-            echo "- Chill: [https://chill.institute](https://chill.institute)"
-            echo "- Binge: [https://binge.institute](https://binge.institute)"
+            if [ "${CHILL_RESULT}" = "success" ]; then
+              echo "- Chill: [https://chill.institute](https://chill.institute)"
+            elif [ "${APP}" = "binge" ]; then
+              echo "- Chill: skipped"
+            fi
+            if [ "${BINGE_RESULT}" = "success" ]; then
+              echo "- Binge: [https://binge.institute](https://binge.institute)"
+            elif [ "${APP}" = "chill" ]; then
+              echo "- Binge: skipped"
+            fi
           } >> "${GITHUB_STEP_SUMMARY}"

@@ -35,6 +35,8 @@ vp run e2e
 App-specific checks are available when you only need one surface:
 
 ```bash
+vp run verify:chill
+vp run verify:binge
 vp run e2e:chill
 vp run e2e:binge
 ```
@@ -42,10 +44,12 @@ vp run e2e:binge
 CI shape:
 
 - pull requests run `Verify`
-- `Verify` runs workspace verification, both app e2e suites, and same-repo preview deploys for both Pages projects
+- `Verify` detects which app surfaces changed and runs only the affected app jobs
+- shared workspace changes such as `packages/*`, `tools/*`, and root build config fan out to both apps
+- docs-only and workflow-only edits skip app verify, e2e, and preview deploy jobs
 - pushes to `main` run `Main`
-- `Main` runs the same checks, then deploys both production apps through Wrangler
-- `Deploy` remains available as a manual production deploy fallback
+- `Main` runs the same selective checks, then deploys only the affected production app surfaces
+- `Deploy` remains available as a manual production deploy fallback and lets you choose `all`, `chill`, or `binge`
 
 ## Git Hooks
 

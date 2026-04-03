@@ -21,6 +21,8 @@
 - `vp run dev:chill`
 - `vp run dev:binge`
 - `vp run verify`
+- `vp run verify:chill`
+- `vp run verify:binge`
 - `vp run e2e`
 - `vp run e2e:chill`
 - `vp run e2e:binge`
@@ -35,6 +37,7 @@
 - Prefer intentional duplication between `apps/chill/` and `apps/binge/` until a real shared package boundary is worth the complexity.
 - Keep Vite and hook/config changes minimal and intentional.
 - Keep `.vite-hooks/` as the canonical hook path; `.githooks/` exists only as a compatibility shim for stale local Git config.
+- CI fans shared workspace changes such as `packages/*`, `tools/*`, and root build config out to both apps, but it skips app deploy jobs for docs-only or workflow-only edits.
 
 ## Read More
 

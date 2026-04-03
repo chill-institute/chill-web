@@ -36,6 +36,8 @@ Validate the full workspace:
 
 ```bash
 vp run verify
+vp run verify:chill
+vp run verify:binge
 vp run e2e
 ```
 

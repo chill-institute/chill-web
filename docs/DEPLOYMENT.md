@@ -45,10 +45,12 @@ After a hosted web change, verify:
 GitHub Actions shape:
 
 - pull requests run `Verify`
-- `Verify` runs workspace verification, both app e2e suites, and same-repo preview deploys for both Pages projects
+- `Verify` detects whether `chill`, `binge`, or shared workspace surfaces changed and only runs the affected app jobs
+- shared workspace changes such as `packages/*`, `tools/*`, and root build config fan out to both apps
+- docs-only and workflow-only edits skip app verify, e2e, and preview deploy jobs
 - pushes to `main` run `Main`
-- `Main` runs `verify` and `e2e`, then deploys both production apps through Wrangler
-- `Deploy` remains available as a manual production deploy fallback
+- `Main` runs the same selective checks, then deploys only the affected production app surfaces
+- `Deploy` remains available as a manual production deploy fallback and accepts `all`, `chill`, or `binge`
 
 GitHub-owned deploy configuration:
 
