@@ -226,7 +226,10 @@ export function MovieDetailModal({ movie, onClose }: Props) {
   if (isDesktop) {
     return (
       <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="border-0 bg-transparent p-0 shadow-none sm:max-w-[940px]">
+        <DialogContent
+          showCloseButton={false}
+          className="fixed left-1/2 top-1/2 z-50 w-[min(100vw-1rem,940px)] -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
+        >
           <DialogTitle className="sr-only">{movie.title} details</DialogTitle>
           <DialogDescription className="sr-only">
             Torrent results for {movie.title} ({movie.year})
@@ -239,7 +242,7 @@ export function MovieDetailModal({ movie, onClose }: Props) {
 
   return (
     <Drawer open onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="bg-transparent p-0 border-0">
+      <DrawerContent className="border-0 bg-transparent p-0">
         <DrawerTitle className="sr-only">{movie.title} details</DrawerTitle>
         <DrawerDescription className="sr-only">
           Torrent results for {movie.title} ({movie.year})

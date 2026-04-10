@@ -127,10 +127,28 @@ test.describe("movies", () => {
     expect(page.url()).toContain("/sign-in");
   });
 
-  test("add transfer sends magnet to put.io", async ({ authenticatedPage, mockRpc }) => {
+  test("clicking a movie card opens the detail modal and shows torrent results", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
     await mockRpc(
       homeMethods({
-        AddTransfer: { status: "OK" },
+        Search: {
+          query: "Inception 2010",
+          results: [
+            {
+              id: "sr1",
+              title: "Inception.2010.1080p.BluRay.x264",
+              indexer: "YTS",
+              link: "magnet:?xt=urn:btih:inception1080",
+              seeders: 120,
+              peers: 140,
+              size: "2147483648",
+              source: "yts",
+              uploadedAt: "2026-04-01T00:00:00Z",
+            },
+          ],
+        },
       }),
     );
 
@@ -138,13 +156,13 @@ test.describe("movies", () => {
 
     const firstArticle = authenticatedPage.locator("article").first();
     await expect(firstArticle).toBeVisible();
+    await firstArticle.getByRole("button").click();
 
-    const sendButton = firstArticle.getByRole("button", {
-      name: "send to put.io",
-    });
-    await sendButton.click();
-
-    await expect(firstArticle.getByText("sent!")).toBeVisible();
+    await expect(authenticatedPage.getByText("Search results for Inception (2010)")).toBeVisible();
+    await expect(authenticatedPage.getByText("Inception.2010.1080p.BluRay.x264")).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole("button", { name: /send to put\.io/i }).last(),
+    ).toBeVisible();
   });
 
   test("changing source does not re-show stale movies while waiting for the new source", async ({
