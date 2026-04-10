@@ -67,7 +67,7 @@ test.describe("movies", () => {
 
     const articles = authenticatedPage.locator("article");
     await expect(articles).toHaveCount(2);
-    await expect(authenticatedPage.locator("article > img")).toHaveCount(2);
+    await expect(authenticatedPage.locator("article img")).toHaveCount(2);
     await expect(articles.nth(0)).toContainText("Inception");
     await expect(articles.nth(1)).toContainText("Interstellar");
     await expect(authenticatedPage.getByRole("button", { name: "Expanded view" })).toHaveCount(0);
