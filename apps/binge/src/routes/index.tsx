@@ -53,7 +53,7 @@ function HomePage() {
   const tvShowsQuery = useTVShowsQuery(shouldFetchTVShows);
 
   const [activeTab, setActiveTab] = useState<HomeTab>("movies");
-  const [selectedMovieId, setSelectedMovieId] = useState<string>();
+  const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [selectedShowId, setSelectedShowId] = useState<string>();
   const [selectedSeason, setSelectedSeason] = useState<number>();
 
@@ -104,13 +104,6 @@ function HomePage() {
       const showTabs = true;
       const currentTab: HomeTab = activeTab;
 
-      const currentMoviesResponse =
-        moviesQuery.status === "success" && moviesQuery.data.source === config.moviesSource
-          ? moviesQuery.data
-          : undefined;
-      const selectedMovie = currentMoviesResponse?.movies.find(
-        (movie) => movie.id === selectedMovieId,
-      );
       const currentTVShowsResponse =
         tvShowsQuery.status === "success" && tvShowsQuery.data.source === config.tvShowsSource
           ? tvShowsQuery.data
@@ -167,7 +160,7 @@ function HomePage() {
                     key={movie.id}
                     movie={movie}
                     onOpen={(nextMovie) => {
-                      setSelectedMovieId(nextMovie.id);
+                      setSelectedMovie(nextMovie);
                     }}
                   />
                 ))}
@@ -240,7 +233,7 @@ function HomePage() {
                       label="movies"
                       onClick={() => {
                         setActiveTab("movies");
-                        setSelectedMovieId(undefined);
+                        setSelectedMovie(undefined);
                         setSelectedShowId(undefined);
                         setSelectedSeason(undefined);
                       }}
@@ -272,7 +265,7 @@ function HomePage() {
             <MovieDetailModal
               movie={selectedMovie}
               onClose={() => {
-                setSelectedMovieId(undefined);
+                setSelectedMovie(undefined);
               }}
             />
           ) : null}
