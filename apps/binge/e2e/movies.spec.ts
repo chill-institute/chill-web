@@ -1,8 +1,11 @@
 import { test, expect } from "./support/fixtures";
+import type { Page } from "@playwright/test";
 import {
   movie,
   moviesResponse,
   moviesResponseForSource,
+  searchResponse,
+  searchResult,
   tvShowsResponse,
   userSettings,
 } from "./support/seeds";
@@ -42,12 +45,54 @@ const ytsMovies = [
   }),
 ];
 
+const inceptionSearchResults = [
+  searchResult({
+    id: "sr1",
+    title: "Inception.2010.1080p.BluRay.x264",
+    indexer: "YTS",
+    link: "magnet:?xt=urn:btih:inception1080",
+    seeders: 200n,
+    peers: 240n,
+    size: 2147483648n,
+    source: "yts",
+    uploadedAt: "2026-04-01T00:00:00Z",
+  }),
+  searchResult({
+    id: "sr2",
+    title: "Inception.2010.2160p.WEB-DL.x265",
+    indexer: "RARBG",
+    link: "magnet:?xt=urn:btih:inception2160",
+    seeders: 80n,
+    peers: 120n,
+    size: 8589934592n,
+    source: "rarbg",
+    uploadedAt: "2026-03-20T00:00:00Z",
+  }),
+  searchResult({
+    id: "sr3",
+    title: "Inception.2010.720p.BluRay.x265",
+    indexer: "EZTV",
+    link: "magnet:?xt=urn:btih:inception720",
+    seeders: 120n,
+    peers: 170n,
+    size: 1610612736n,
+    source: "eztv",
+    uploadedAt: "2026-04-09T00:00:00Z",
+  }),
+];
+
 const homeMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings({ showMovies: true, showTvShows: true }),
   GetMovies: moviesResponse(movies),
   GetTVShows: tvShowsResponse([]),
   ...overrides,
 });
+
+async function openFirstMovieModal(page: Page) {
+  const firstArticle = page.locator("article").first();
+  await expect(firstArticle).toBeVisible();
+  await firstArticle.getByRole("button").click();
+}
 
 test.describe("movies", () => {
   test("always renders movies in expanded view and hides display controls", async ({
@@ -133,36 +178,61 @@ test.describe("movies", () => {
   }) => {
     await mockRpc(
       homeMethods({
-        Search: {
-          query: "Inception 2010",
-          results: [
-            {
-              id: "sr1",
-              title: "Inception.2010.1080p.BluRay.x264",
-              indexer: "YTS",
-              link: "magnet:?xt=urn:btih:inception1080",
-              seeders: 120,
-              peers: 140,
-              size: "2147483648",
-              source: "yts",
-              uploadedAt: "2026-04-01T00:00:00Z",
-            },
-          ],
-        },
+        Search: searchResponse("Inception 2010", inceptionSearchResults),
       }),
     );
 
     await authenticatedPage.goto("/");
-
-    const firstArticle = authenticatedPage.locator("article").first();
-    await expect(firstArticle).toBeVisible();
-    await firstArticle.getByRole("button").click();
+    await openFirstMovieModal(authenticatedPage);
 
     await expect(authenticatedPage.getByText("Search results for Inception (2010)")).toBeVisible();
     await expect(authenticatedPage.getByText("Inception.2010.1080p.BluRay.x264")).toBeVisible();
+    await expect(authenticatedPage.getByLabel("Resolution")).toBeVisible();
+    await expect(authenticatedPage.getByLabel("Codec")).toBeVisible();
+    await expect(authenticatedPage.getByLabel("Sort")).toBeVisible();
     await expect(
       authenticatedPage.getByRole("button", { name: /send to put\.io/i }).last(),
     ).toBeVisible();
+  });
+
+  test("movie modal filters results and updates result order when sort changes", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        Search: searchResponse("Inception 2010", inceptionSearchResults),
+      }),
+    );
+
+    await authenticatedPage.goto("/");
+    await openFirstMovieModal(authenticatedPage);
+
+    const resolutionSelect = authenticatedPage.getByLabel("Resolution");
+    const codecSelect = authenticatedPage.getByLabel("Codec");
+    const sortSelect = authenticatedPage.getByLabel("Sort");
+    const resultsList = authenticatedPage.getByRole("list", { name: "Torrent results list" });
+    const resultItems = resultsList.getByRole("listitem");
+
+    await expect(resultItems).toHaveCount(3);
+    await expect(resultItems.first()).toContainText("Inception.2010.1080p.BluRay.x264");
+
+    await resolutionSelect.selectOption("2160p");
+    await expect(resultItems).toHaveCount(1);
+    await expect(resultItems.first()).toContainText("Inception.2010.2160p.WEB-DL.x265");
+
+    await resolutionSelect.selectOption("all");
+    await codecSelect.selectOption("x265");
+    await expect(resultItems).toHaveCount(2);
+    await expect(resultsList).not.toContainText("Inception.2010.1080p.BluRay.x264");
+
+    await codecSelect.selectOption("all");
+    await sortSelect.selectOption("age");
+    await expect(resultItems).toHaveCount(3);
+    await expect(resultItems.first()).toContainText("Inception.2010.720p.BluRay.x265");
+
+    await sortSelect.selectOption("size");
+    await expect(resultItems.first()).toContainText("Inception.2010.2160p.WEB-DL.x265");
   });
 
   test("changing source does not re-show stale movies while waiting for the new source", async ({
