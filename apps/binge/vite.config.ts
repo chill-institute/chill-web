@@ -52,6 +52,9 @@ export default defineConfig({
     tailwindcss(),
     viteReact(),
   ],
+  preview: {
+    allowedHosts: ["staging.binge.institute"],
+  },
   define: {
     "import.meta.env.VITE_PUBLIC_RELEASE": JSON.stringify(release),
   },
