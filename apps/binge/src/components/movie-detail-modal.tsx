@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, ChevronDown, Search, Users, X } from "lucide-react";
+import { ArrowUpRight, Search, Users, X } from "lucide-react";
 
 import { AddTransferButton } from "@/components/add-transfer-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -180,29 +180,30 @@ function FilterSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="min-w-0">
-      <span className="mb-1 block text-[10px] font-medium uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
-        {label}
-      </span>
-      <div className="relative min-w-0">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          aria-label={label}
-          className="h-9 min-w-[7.5rem] cursor-pointer appearance-none rounded-full border border-stone-950/12 bg-stone-50/90 px-3 pr-8 text-sm text-stone-950 transition-colors hover:bg-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-950/20 dark:border-stone-700/70 dark:bg-stone-950/50 dark:text-stone-100 dark:hover:bg-stone-800"
-        >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-stone-500 dark:text-stone-400"
-          strokeWidth={1.75}
-        />
-      </div>
-    </label>
+    <div className="inline-grid min-w-0 grid-cols-[1fr_--spacing(7)]">
+      <select
+        value={value}
+        name={label.toLowerCase()}
+        aria-label={label}
+        onChange={(event) => onChange(event.target.value)}
+        className="input col-span-full row-start-1 cursor-pointer appearance-none pr-7 text-sm"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <svg
+        viewBox="0 0 8 5"
+        width="8"
+        height="5"
+        fill="none"
+        className="pointer-events-none col-start-2 row-start-1 place-self-center"
+      >
+        <path d="M.5.5 4 4 7.5.5" stroke="currentcolor" />
+      </svg>
+    </div>
   );
 }
 
@@ -290,12 +291,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   );
   const hasOnlyUnavailableResults = visibleResults.length > 0 && sendableResultsCount === 0;
   const hasActiveFilters = resolutionFilter !== "all" || codecFilter !== "all";
-  const sortDescription =
-    sortBy === "size"
-      ? "Sorted by size, largest first."
-      : sortBy === "age"
-        ? "Sorted by age, newest first."
-        : "Sorted by seeders, highest first.";
   const shellClassName = isDesktop
     ? "max-h-[90vh] w-full max-w-[940px] overflow-y-auto rounded-xl border border-stone-950 bg-stone-100 p-0 text-stone-950 shadow-[0_24px_48px_rgba(0,0,0,0.3)] dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
     : "max-h-[92vh] w-full overflow-y-auto bg-stone-100 p-0 text-stone-950 dark:bg-stone-900 dark:text-stone-100";
@@ -451,37 +446,35 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <div className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-stone-950/10 bg-stone-50/70 px-3 py-3 backdrop-blur-sm dark:border-stone-700/60 dark:bg-stone-950/35">
-                <div className="flex flex-wrap items-end gap-2">
-                  <FilterSelect
-                    label="Resolution"
-                    value={resolutionFilter}
-                    onChange={(value) => setResolutionFilter(value as ResolutionFilterValue)}
-                    options={RESOLUTION_FILTER_OPTIONS.map((value) => ({
-                      value,
-                      label: value === "all" ? "All resolutions" : value,
-                    }))}
-                  />
-                  <FilterSelect
-                    label="Codec"
-                    value={codecFilter}
-                    onChange={(value) => setCodecFilter(value as CodecFilterValue)}
-                    options={CODEC_FILTER_OPTIONS.map((value) => ({
-                      value,
-                      label: value === "all" ? "All codecs" : value,
-                    }))}
-                  />
-                  <FilterSelect
-                    label="Sort"
-                    value={sortBy}
-                    onChange={(value) => setSortBy(value as SortValue)}
-                    options={[
-                      { value: "seeders", label: "Most seeders" },
-                      { value: "size", label: "Largest size" },
-                      { value: "age", label: "Newest first" },
-                    ]}
-                  />
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterSelect
+                  label="Resolution"
+                  value={resolutionFilter}
+                  onChange={(value) => setResolutionFilter(value as ResolutionFilterValue)}
+                  options={RESOLUTION_FILTER_OPTIONS.map((value) => ({
+                    value,
+                    label: value === "all" ? "All resolutions" : value,
+                  }))}
+                />
+                <FilterSelect
+                  label="Codec"
+                  value={codecFilter}
+                  onChange={(value) => setCodecFilter(value as CodecFilterValue)}
+                  options={CODEC_FILTER_OPTIONS.map((value) => ({
+                    value,
+                    label: value === "all" ? "All codecs" : value,
+                  }))}
+                />
+                <FilterSelect
+                  label="Sort"
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value as SortValue)}
+                  options={[
+                    { value: "seeders", label: "Most seeders" },
+                    { value: "size", label: "Largest size" },
+                    { value: "age", label: "Newest first" },
+                  ]}
+                />
                 {hasActiveFilters ? (
                   <button
                     type="button"
@@ -489,13 +482,11 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                       setResolutionFilter("all");
                       setCodecFilter("all");
                     }}
-                    className="cursor-pointer text-xs font-medium text-stone-600 transition-colors hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
+                    className="btn btn-secondary text-xs"
                   >
                     Clear filters
                   </button>
-                ) : (
-                  <p className="text-xs text-stone-500 dark:text-stone-400">{sortDescription}</p>
-                )}
+                ) : null}
               </div>
 
               {visibleResults.length === 0 ? (
