@@ -368,11 +368,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                   </>
                 ) : null}
               </div>
-              {synopsis ? (
-                <p className="mt-4 max-w-[60ch] text-sm leading-relaxed text-white/84">
-                  {synopsis}
-                </p>
-              ) : null}
               {metadataTags.length > 0 ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {metadataTags.map((tag) => (
@@ -400,6 +395,9 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
       </div>
 
       <div className="px-6 pb-6">
+        {synopsis ? (
+          <p className="mt-5 max-w-[60ch] text-sm text-stone-600 dark:text-stone-400">{synopsis}</p>
+        ) : null}
         <div className="mt-5 border-t border-stone-950 pt-5 dark:border-stone-700">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             {searchQuery.status === "success" ? (

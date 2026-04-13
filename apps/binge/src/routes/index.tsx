@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { Navigate, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, ArrowUpRight, Film, Star, Tv } from "lucide-react";
+import { Film, Star, Tv } from "lucide-react";
 import { match } from "ts-pattern";
 
 import { MovieDetailModal } from "@/components/movie-detail-modal";
@@ -363,25 +363,7 @@ function MovieExpandedCard({ movie, onOpen }: { movie: Movie; onOpen: (movie: Mo
                 <span className="text-sm">/</span>
               </div>
               <div className="text-stone-600 dark:text-stone-400">{movie.year}</div>
-              <div className="text-stone-600 dark:text-stone-400">
-                <span className="text-sm">/</span>
-              </div>
-              {movie.externalUrl ? (
-                <span
-                  className="inline-flex items-center gap-0.5 text-stone-600 dark:text-stone-400"
-                  title="Open IMDb page in modal"
-                >
-                  <span className="text-sm">IMDb</span>
-                  <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-                </span>
-              ) : null}
             </div>
-          </div>
-          <div className="mt-auto pt-3">
-            <span className="btn btn-secondary w-full text-sm">
-              <span>details</span>
-              <ArrowRight className="text-xs" strokeWidth={1.5} />
-            </span>
           </div>
         </div>
       </button>
@@ -392,54 +374,34 @@ function MovieExpandedCard({ movie, onOpen }: { movie: Movie; onOpen: (movie: Mo
 function TVShowExpandedCard({ show, onOpen }: { show: TVShow; onOpen: (show: TVShow) => void }) {
   return (
     <article className="relative flex flex-col overflow-hidden rounded border border-solid border-stone-950 bg-stone-100 dark:border-stone-700 dark:bg-stone-900">
-      {show.posterUrl ? (
-        <LazyImage
-          src={show.posterUrl}
-          alt={show.title}
-          className="aspect-2/3 w-full border-b border-stone-950 object-cover dark:border-stone-700"
-        />
-      ) : null}
-      <div className="mx-4 my-3 flex h-full flex-col">
-        <div className="flex flex-col space-y-1">
-          <h5 className="font-serif leading-tight">{show.title}</h5>
-          <div className="flex flex-row items-center space-x-2">
-            <div className="flex flex-row items-center space-x-0.5">
-              <Star className="fill-amber-400 text-sm" strokeWidth={0} />
-              <span>{show.rating ? show.rating.toFixed(1) : "N/A"}</span>
+      <button
+        type="button"
+        onClick={() => onOpen(show)}
+        className="flex cursor-pointer flex-col text-left"
+      >
+        {show.posterUrl ? (
+          <LazyImage
+            src={show.posterUrl}
+            alt={show.title}
+            className="aspect-2/3 w-full border-b border-stone-950 object-cover dark:border-stone-700"
+          />
+        ) : null}
+        <div className="mx-4 my-3 flex h-full flex-col">
+          <div className="flex flex-col space-y-1">
+            <h5 className="font-serif leading-tight">{show.title}</h5>
+            <div className="flex flex-row items-center space-x-2">
+              <div className="flex flex-row items-center space-x-0.5">
+                <Star className="fill-amber-400 text-sm" strokeWidth={0} />
+                <span>{show.rating ? show.rating.toFixed(1) : "N/A"}</span>
+              </div>
+              <div className="text-stone-600 dark:text-stone-400">
+                <span className="text-sm">/</span>
+              </div>
+              <div className="text-stone-600 dark:text-stone-400">{show.year}</div>
             </div>
-            <div className="text-stone-600 dark:text-stone-400">
-              <span className="text-sm">/</span>
-            </div>
-            <div className="text-stone-600 dark:text-stone-400">{show.year}</div>
-            {show.externalUrl ? (
-              <>
-                <div className="text-stone-600 dark:text-stone-400">
-                  <span className="text-sm">/</span>
-                </div>
-                <a
-                  href={show.externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-0.5 text-stone-600 transition-colors hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
-                >
-                  <span className="text-sm">IMDb</span>
-                  <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-                </a>
-              </>
-            ) : null}
           </div>
         </div>
-        <div className="mt-auto pt-3">
-          <button
-            type="button"
-            onClick={() => onOpen(show)}
-            className="btn btn-secondary w-full text-sm"
-          >
-            <span>details</span>
-            <ArrowRight className="text-xs" strokeWidth={1.5} />
-          </button>
-        </div>
-      </div>
+      </button>
     </article>
   );
 }
@@ -456,7 +418,6 @@ function MediaCardsSkeleton() {
           <div className="mx-4 my-3 flex flex-col space-y-2">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/2" />
-            <Skeleton className="mt-2 h-7 w-full" />
           </div>
         </div>
       ))}
