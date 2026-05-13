@@ -253,6 +253,7 @@ jobs:
       group: web-deploy-production-chill
       cancel-in-progress: false
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
     steps:
@@ -281,6 +282,7 @@ jobs:
       group: web-deploy-production-binge
       cancel-in-progress: false
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
     steps:
