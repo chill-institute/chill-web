@@ -128,7 +128,7 @@ function SignInPage() {
                 auth.setPendingCallbackURL(normalized);
               }
             }
-            window.location.href = getPutioStartURL(authSuccessURL);
+            window.location.href = getPutioStartURL(prepareAuthSuccessURL(authSuccessURL));
           }}
         >
           authenticate at put.io

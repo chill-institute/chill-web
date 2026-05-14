@@ -31,13 +31,36 @@ export function storePendingCallbackURL(url: string) {
   window.sessionStorage.setItem(AUTH_CALLBACK_STORAGE_KEY, normalized);
 }
 
+// clearStoredAuthState wipes every storage key the auth flow writes. Kept as
+// a standalone export so the API client's 401 handler can reuse the same
+// cleanup contract that signOut uses without depending on React state.
+export function clearStoredAuthState() {
+  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+  window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+}
+
+// generateAuthNonce returns 128 bits of cryptographic randomness as a 32-char
+// hex string. Uses crypto.getRandomValues — available in every browser since
+// IE 11 and in non-secure contexts — instead of crypto.randomUUID, which is
+// gated behind secure-context + Safari 15.4+ / Firefox 95+ / Chrome 92+.
+function generateAuthNonce(): string {
+  const bytes = new Uint8Array(16);
+  window.crypto.getRandomValues(bytes);
+  let hex = "";
+  for (const byte of bytes) {
+    hex += byte.toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
 // prepareAuthSuccessURL stamps a per-flow nonce onto the success URL and
 // records it in sessionStorage so /auth/success can verify the browser is
 // the one that started this flow. The engine preserves the success_url
 // query string and only appends the auth_token as a URL fragment, so the
 // nonce round-trips through the put.io OAuth dance.
 export function prepareAuthSuccessURL(rawSuccessURL: string): string {
-  const nonce = window.crypto.randomUUID();
+  const nonce = generateAuthNonce();
   window.sessionStorage.setItem(AUTH_NONCE_STORAGE_KEY, nonce);
   const url = new URL(rawSuccessURL);
   url.searchParams.set(AUTH_NONCE_QUERY_PARAM, nonce);
@@ -68,9 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return value.length > 0 ? value : null;
       },
       signOut: () => {
-        window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-        window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
-        window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+        clearStoredAuthState();
         setAuthTokenState(null);
       },
     };

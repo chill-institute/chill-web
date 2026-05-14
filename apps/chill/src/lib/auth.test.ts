@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
+  clearStoredAuthState,
   consumeCallbackToken,
   normalizeCallbackPath,
   prepareAuthSuccessURL,
@@ -24,16 +25,12 @@ function createMapStorage() {
   };
 }
 
-function withWindowLocation(url: string, options: { nonces?: string[] } = {}) {
-  let nonceIndex = 0;
-  const nonces = options.nonces ?? ["nonce-1", "nonce-2"];
+function withWindowLocation(url: string) {
   vi.stubGlobal("window", {
     location: new URL(url),
     sessionStorage: createMapStorage(),
     localStorage: createMapStorage(),
-    crypto: {
-      randomUUID: () => nonces[nonceIndex++] ?? `nonce-fallback-${nonceIndex}`,
-    },
+    crypto: globalThis.crypto,
     history: { replaceState: vi.fn() },
   });
 }
@@ -110,34 +107,36 @@ describe("readAuthTokenFromLocation", () => {
 });
 
 describe("prepareAuthSuccessURL", () => {
-  it("stamps a nonce on the URL and records it in sessionStorage", () => {
-    withWindowLocation("https://chill.institute/sign-in", { nonces: ["abc-123"] });
+  it("stamps a 128-bit hex nonce on the URL and records the same value in sessionStorage", () => {
+    withWindowLocation("https://chill.institute/sign-in");
 
     const url = prepareAuthSuccessURL("https://chill.institute/auth/success");
 
-    expect(new URL(url).searchParams.get("nonce")).toBe("abc-123");
-    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBe("abc-123");
+    const nonceFromURL = new URL(url).searchParams.get("nonce");
+    expect(nonceFromURL).toMatch(/^[0-9a-f]{32}$/);
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBe(nonceFromURL);
   });
 
   it("preserves existing query params on the success URL", () => {
-    withWindowLocation("https://chill.institute/sign-in", { nonces: ["xyz-789"] });
+    withWindowLocation("https://chill.institute/sign-in");
 
     const url = prepareAuthSuccessURL("https://chill.institute/auth/success?foo=bar");
 
     const parsed = new URL(url);
     expect(parsed.searchParams.get("foo")).toBe("bar");
-    expect(parsed.searchParams.get("nonce")).toBe("xyz-789");
+    expect(parsed.searchParams.get("nonce")).toMatch(/^[0-9a-f]{32}$/);
   });
 
-  it("regenerates the nonce on each call and overwrites stored value", () => {
-    withWindowLocation("https://chill.institute/sign-in", { nonces: ["one", "two"] });
+  it("regenerates the nonce on each call and overwrites the stored value", () => {
+    withWindowLocation("https://chill.institute/sign-in");
 
-    const a = new URL(prepareAuthSuccessURL("https://chill.institute/auth/success"));
-    const b = new URL(prepareAuthSuccessURL("https://chill.institute/auth/success"));
+    const first = new URL(prepareAuthSuccessURL("https://chill.institute/auth/success"));
+    const second = new URL(prepareAuthSuccessURL("https://chill.institute/auth/success"));
 
-    expect(a.searchParams.get("nonce")).toBe("one");
-    expect(b.searchParams.get("nonce")).toBe("two");
-    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBe("two");
+    expect(first.searchParams.get("nonce")).not.toBe(second.searchParams.get("nonce"));
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBe(
+      second.searchParams.get("nonce"),
+    );
   });
 });
 
@@ -181,6 +180,16 @@ describe("consumeCallbackToken", () => {
     expect(window.localStorage.getItem("chill.auth_token")).toBeNull();
   });
 
+  it("returns null and clears the pending callback when the nonce matches but no token is in the fragment", () => {
+    withWindowLocation("https://chill.institute/auth/success?nonce=ok");
+    window.sessionStorage.setItem("chill.auth_nonce", "ok");
+    window.sessionStorage.setItem("chill.auth_callback", "/should-be-cleared");
+
+    expect(consumeCallbackToken()).toBeNull();
+    expect(window.localStorage.getItem("chill.auth_token")).toBeNull();
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+  });
+
   it("honors a stored pending callback URL on success", () => {
     withWindowLocation("https://chill.institute/auth/success?nonce=ok#auth_token=valid");
     window.sessionStorage.setItem("chill.auth_nonce", "ok");
@@ -188,5 +197,20 @@ describe("consumeCallbackToken", () => {
 
     expect(consumeCallbackToken()).toBe("/search?q=matrix");
     expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+  });
+});
+
+describe("clearStoredAuthState", () => {
+  it("clears auth_token, auth_callback, and auth_nonce in one call", () => {
+    withWindowLocation("https://chill.institute/");
+    window.localStorage.setItem("chill.auth_token", "stored-token");
+    window.sessionStorage.setItem("chill.auth_callback", "/somewhere");
+    window.sessionStorage.setItem("chill.auth_nonce", "in-flight-nonce");
+
+    clearStoredAuthState();
+
+    expect(window.localStorage.getItem("chill.auth_token")).toBeNull();
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBeNull();
   });
 });
