@@ -29,6 +29,35 @@ test.describe("sign-in page", () => {
     await expect(page.getByRole("button", { name: "authenticate at put.io" })).toBeVisible();
   });
 
+  test("rejects /auth/success token planted via phishing link with no stored nonce", async ({
+    page,
+  }) => {
+    await page.goto("/auth/success?nonce=planted-by-attacker#auth_token=attacker-issued-token");
+
+    await page.waitForURL("**/sign-in**");
+    expect(page.url()).toContain("error=UnknownError");
+    const storedToken = await page.evaluate(() => window.localStorage.getItem("chill.auth_token"));
+    expect(storedToken).toBeNull();
+  });
+
+  test("authenticate-at-put.io click propagates a well-formed nonce into the OAuth start URL", async ({
+    page,
+  }) => {
+    await page.goto("/sign-in");
+
+    // Fulfill rather than abort — aborted top-level navs leave the page in a state where sessionStorage and follow-up evaluates fail.
+    await page.route(/\/auth\/putio\/start/, (route) => route.fulfill({ status: 200, body: "" }));
+
+    const requestPromise = page.waitForRequest(/\/auth\/putio\/start/);
+    await page.getByRole("button", { name: "authenticate at put.io" }).click();
+    const startURL = (await requestPromise).url();
+
+    const successURL = new URL(startURL).searchParams.get("success_url");
+    expect(successURL).not.toBeNull();
+    const successNonce = new URL(successURL!).searchParams.get("nonce");
+    expect(successNonce).toMatch(/^[0-9a-f]{32}$/);
+  });
+
   test("authenticated user is redirected away from sign-in", async ({
     authenticatedPage,
     mockRpc,

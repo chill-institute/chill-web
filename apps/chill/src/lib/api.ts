@@ -7,7 +7,7 @@ import {
   type UserSettings,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { useAuth } from "./auth";
+import { clearStoredAuthState, useAuth } from "./auth";
 import { SESSION_EXPIRED_ERROR } from "./auth-errors";
 import { getPublicAPIBaseURL } from "./env";
 import { withTimeoutSignal } from "./request-timeout";
@@ -95,8 +95,7 @@ function redirectToSignInOnAuthFailure(error: unknown) {
   if (window.location.pathname === "/sign-in" || window.location.pathname === "/sign-out") {
     return;
   }
-  window.localStorage.removeItem("chill.auth_token");
-  window.sessionStorage.removeItem("chill.auth_callback");
+  clearStoredAuthState();
   window.location.replace(`/sign-out?error=${encodeURIComponent(SESSION_EXPIRED_ERROR)}`);
 }
 

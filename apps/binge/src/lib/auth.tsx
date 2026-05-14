@@ -2,6 +2,8 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 
 const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
+const AUTH_NONCE_STORAGE_KEY = "chill.auth_nonce";
+const AUTH_NONCE_QUERY_PARAM = "nonce";
 
 type AuthContextValue = {
   authToken: string | null;
@@ -29,6 +31,31 @@ export function storePendingCallbackURL(url: string) {
   window.sessionStorage.setItem(AUTH_CALLBACK_STORAGE_KEY, normalized);
 }
 
+export function clearStoredAuthState() {
+  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+  window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+}
+
+// crypto.getRandomValues (not crypto.randomUUID) so non-secure contexts and pre-Safari-15.4 / pre-FF-95 / pre-Chrome-92 still work.
+function generateAuthNonce(): string {
+  const bytes = new Uint8Array(16);
+  window.crypto.getRandomValues(bytes);
+  let hex = "";
+  for (const byte of bytes) {
+    hex += byte.toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+export function prepareAuthSuccessURL(rawSuccessURL: string): string {
+  const nonce = generateAuthNonce();
+  window.sessionStorage.setItem(AUTH_NONCE_STORAGE_KEY, nonce);
+  const url = new URL(rawSuccessURL);
+  url.searchParams.set(AUTH_NONCE_QUERY_PARAM, nonce);
+  return url.toString();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authToken, setAuthTokenState] = useState<string | null>(() => readStoredToken());
 
@@ -53,8 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return value.length > 0 ? value : null;
       },
       signOut: () => {
-        window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-        window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+        clearStoredAuthState();
         setAuthTokenState(null);
       },
     };
@@ -105,15 +131,32 @@ export function readCurrentCallbackPath(): null | string {
   );
 }
 
-export function readAuthTokenFromLocation(location: Pick<Location, "hash" | "search">): string {
+// Fragment only — query-string auth_token would let a phishing link plant a token via referer/server-log leaks.
+export function readAuthTokenFromLocation(location: Pick<Location, "hash">): string {
   const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const query = new URLSearchParams(location.search);
-  return (fragment.get("auth_token") ?? query.get("auth_token") ?? "").trim();
+  return (fragment.get("auth_token") ?? "").trim();
+}
+
+// Stored nonce is consumed unconditionally on entry so a phishing retry cannot reuse it.
+function consumeAuthNonce(location: Pick<Location, "search">): boolean {
+  const stored = window.sessionStorage.getItem(AUTH_NONCE_STORAGE_KEY)?.trim() ?? "";
+  window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+  if (!stored) {
+    return false;
+  }
+  const received = new URLSearchParams(location.search).get(AUTH_NONCE_QUERY_PARAM)?.trim() ?? "";
+  return received !== "" && received === stored;
 }
 
 export function consumeCallbackToken(): string | null {
+  if (!consumeAuthNonce(window.location)) {
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    return null;
+  }
+
   const token = readAuthTokenFromLocation(window.location);
   if (!token) {
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
     return null;
   }
 
