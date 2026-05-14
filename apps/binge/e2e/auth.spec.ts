@@ -29,6 +29,17 @@ test.describe("sign-in page", () => {
     await expect(page.getByRole("button", { name: "authenticate at put.io" })).toBeVisible();
   });
 
+  test("rejects /auth/success token planted via phishing link with no stored nonce", async ({
+    page,
+  }) => {
+    await page.goto("/auth/success?nonce=planted-by-attacker#auth_token=attacker-issued-token");
+
+    await page.waitForURL("**/sign-in**");
+    expect(page.url()).toContain("error=UnknownError");
+    const storedToken = await page.evaluate(() => window.localStorage.getItem("chill.auth_token"));
+    expect(storedToken).toBeNull();
+  });
+
   test("authenticated user is redirected away from sign-in", async ({
     authenticatedPage,
     mockRpc,
