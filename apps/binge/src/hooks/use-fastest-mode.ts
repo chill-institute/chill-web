@@ -26,7 +26,6 @@ export function useFastestMode(
   const toastIdRef = useRef<string | number | undefined>(undefined);
   const prevQueryRef = useRef(submittedQuery);
 
-  // Reset phase when query changes
   if (submittedQuery !== prevQueryRef.current) {
     prevQueryRef.current = submittedQuery;
     dispatch({ type: "SET_PHASE", phase: "idle" });
@@ -36,7 +35,6 @@ export function useFastestMode(
     }
   }
 
-  // Fastest mode transitions
   useEffect(() => {
     if (!isFastestMode || submittedQuery.length === 0) {
       return;
@@ -84,7 +82,6 @@ export function useFastestMode(
     }
   }, [isFastestMode, searchState, submittedQuery, fastestPhase]);
 
-  // Dismiss toast on unmount
   useEffect(() => {
     return () => {
       if (toastIdRef.current !== undefined) {
