@@ -241,6 +241,7 @@ jobs:
       group: web-preview-chill-pr-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
+    environment: preview
     permissions:
       contents: read
     outputs:
@@ -272,6 +273,7 @@ jobs:
       group: web-preview-binge-pr-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
+    environment: preview
     permissions:
       contents: read
     outputs:
