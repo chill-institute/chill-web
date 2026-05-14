@@ -2,6 +2,8 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 
 const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
+const AUTH_NONCE_STORAGE_KEY = "chill.auth_nonce";
+const AUTH_NONCE_QUERY_PARAM = "nonce";
 
 type AuthContextValue = {
   authToken: string | null;
@@ -27,6 +29,19 @@ export function storePendingCallbackURL(url: string) {
     return;
   }
   window.sessionStorage.setItem(AUTH_CALLBACK_STORAGE_KEY, normalized);
+}
+
+// prepareAuthSuccessURL stamps a per-flow nonce onto the success URL and
+// records it in sessionStorage so /auth/success can verify the browser is
+// the one that started this flow. The engine preserves the success_url
+// query string and only appends the auth_token as a URL fragment, so the
+// nonce round-trips through the put.io OAuth dance.
+export function prepareAuthSuccessURL(rawSuccessURL: string): string {
+  const nonce = window.crypto.randomUUID();
+  window.sessionStorage.setItem(AUTH_NONCE_STORAGE_KEY, nonce);
+  const url = new URL(rawSuccessURL);
+  url.searchParams.set(AUTH_NONCE_QUERY_PARAM, nonce);
+  return url.toString();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -55,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut: () => {
         window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
         window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+        window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
         setAuthTokenState(null);
       },
     };
@@ -105,15 +121,35 @@ export function readCurrentCallbackPath(): null | string {
   );
 }
 
-export function readAuthTokenFromLocation(location: Pick<Location, "hash" | "search">): string {
+// readAuthTokenFromLocation only reads auth_token from the URL fragment.
+// The engine puts the token in the fragment (which is not sent to servers
+// and doesn't leak in Referer). Accepting it from location.search would
+// let a phishing link plant an attacker-issued token via referer-leaking
+// transports.
+export function readAuthTokenFromLocation(location: Pick<Location, "hash">): string {
   const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const query = new URLSearchParams(location.search);
-  return (fragment.get("auth_token") ?? query.get("auth_token") ?? "").trim();
+  return (fragment.get("auth_token") ?? "").trim();
+}
+
+function consumeAuthNonce(location: Pick<Location, "search">): boolean {
+  const stored = window.sessionStorage.getItem(AUTH_NONCE_STORAGE_KEY)?.trim() ?? "";
+  window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+  if (!stored) {
+    return false;
+  }
+  const received = new URLSearchParams(location.search).get(AUTH_NONCE_QUERY_PARAM)?.trim() ?? "";
+  return received !== "" && received === stored;
 }
 
 export function consumeCallbackToken(): string | null {
+  if (!consumeAuthNonce(window.location)) {
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    return null;
+  }
+
   const token = readAuthTokenFromLocation(window.location);
   if (!token) {
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
     return null;
   }
 

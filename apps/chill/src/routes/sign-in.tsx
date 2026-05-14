@@ -5,7 +5,7 @@ import { Loader } from "lucide-react";
 import { AuthPage } from "@/components/auth-page";
 import { getPutioStartURL } from "@/lib/api";
 import { ACCESS_DENIED_ERROR, SESSION_EXPIRED_ERROR, UNKNOWN_AUTH_ERROR } from "@/lib/auth-errors";
-import { normalizeCallbackPath, useAuth } from "@/lib/auth";
+import { normalizeCallbackPath, prepareAuthSuccessURL, useAuth } from "@/lib/auth";
 import { publicLinks } from "@/lib/public-links";
 
 export const Route = createFileRoute("/sign-in")({
@@ -109,7 +109,7 @@ function SignInPage() {
                     auth.setPendingCallbackURL(normalized);
                   }
                 }
-                window.location.href = getPutioStartURL(authSuccessURL);
+                window.location.href = getPutioStartURL(prepareAuthSuccessURL(authSuccessURL));
               }}
             >
               {visibleError?.type === SESSION_EXPIRED_ERROR ? "sign in again" : "try again"}
