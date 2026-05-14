@@ -45,8 +45,7 @@ test.describe("sign-in page", () => {
   }) => {
     await page.goto("/sign-in");
 
-    // Stub the cross-origin navigation so the browser doesn't actually leave
-    // the test origin; we only need the request URL the click handler builds.
+    // Fulfill rather than abort — aborted top-level navs leave the page in a state where sessionStorage and follow-up evaluates fail.
     await page.route(/\/auth\/putio\/start/, (route) => route.fulfill({ status: 200, body: "" }));
 
     const requestPromise = page.waitForRequest(/\/auth\/putio\/start/);

@@ -31,19 +31,13 @@ export function storePendingCallbackURL(url: string) {
   window.sessionStorage.setItem(AUTH_CALLBACK_STORAGE_KEY, normalized);
 }
 
-// clearStoredAuthState wipes every storage key the auth flow writes. Kept as
-// a standalone export so the API client's 401 handler can reuse the same
-// cleanup contract that signOut uses without depending on React state.
 export function clearStoredAuthState() {
   window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
 }
 
-// generateAuthNonce returns 128 bits of cryptographic randomness as a 32-char
-// hex string. Uses crypto.getRandomValues — available in every browser since
-// IE 11 and in non-secure contexts — instead of crypto.randomUUID, which is
-// gated behind secure-context + Safari 15.4+ / Firefox 95+ / Chrome 92+.
+// crypto.getRandomValues (not crypto.randomUUID) so non-secure contexts and pre-Safari-15.4 / pre-FF-95 / pre-Chrome-92 still work.
 function generateAuthNonce(): string {
   const bytes = new Uint8Array(16);
   window.crypto.getRandomValues(bytes);
@@ -54,11 +48,6 @@ function generateAuthNonce(): string {
   return hex;
 }
 
-// prepareAuthSuccessURL stamps a per-flow nonce onto the success URL and
-// records it in sessionStorage so /auth/success can verify the browser is
-// the one that started this flow. The engine preserves the success_url
-// query string and only appends the auth_token as a URL fragment, so the
-// nonce round-trips through the put.io OAuth dance.
 export function prepareAuthSuccessURL(rawSuccessURL: string): string {
   const nonce = generateAuthNonce();
   window.sessionStorage.setItem(AUTH_NONCE_STORAGE_KEY, nonce);
@@ -142,16 +131,13 @@ export function readCurrentCallbackPath(): null | string {
   );
 }
 
-// readAuthTokenFromLocation only reads auth_token from the URL fragment.
-// The engine puts the token in the fragment (which is not sent to servers
-// and doesn't leak in Referer). Accepting it from location.search would
-// let a phishing link plant an attacker-issued token via referer-leaking
-// transports.
+// Fragment only — query-string auth_token would let a phishing link plant a token via referer/server-log leaks.
 export function readAuthTokenFromLocation(location: Pick<Location, "hash">): string {
   const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
   return (fragment.get("auth_token") ?? "").trim();
 }
 
+// Stored nonce is consumed unconditionally on entry so a phishing retry cannot reuse it.
 function consumeAuthNonce(location: Pick<Location, "search">): boolean {
   const stored = window.sessionStorage.getItem(AUTH_NONCE_STORAGE_KEY)?.trim() ?? "";
   window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
