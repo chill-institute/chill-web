@@ -57,8 +57,6 @@ function EpisodeActionSkeleton() {
 function useImageLoadedState() {
   const [loaded, setLoaded] = useState(false);
   const onLoad = useCallback(() => setLoaded(true), []);
-  // Cached images may not fire onLoad after a key-remount; the ref callback
-  // checks `.complete` on attach so we don't flash a skeleton.
   const ref = useCallback((img: HTMLImageElement | null) => {
     if (img?.complete && img.naturalWidth > 0) setLoaded(true);
   }, []);

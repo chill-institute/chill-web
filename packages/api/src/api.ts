@@ -56,7 +56,6 @@ export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOp
   const userClient = createClient(UserService, transport);
   const headers = authHeader(authToken);
 
-  // Wraps every RPC: enforces a timeout and bounces to /sign-out on auth failure.
   async function call<T>(
     label: string,
     fn: (signal: AbortSignal) => Promise<T>,

@@ -52,9 +52,6 @@ function InputGroupAddon({
       data-slot="input-group-addon"
       data-align={align}
       className={cn(inputGroupAddonVariants({ align }), className)}
-      // Mouse UX: clicking the addon focuses the input. We use onMouseDown
-      // (not onClick) so this never registers as a "clickable element" for
-      // keyboard a11y rules — keyboard users tab to the input itself.
       onMouseDown={(e) => {
         if (e.target instanceof HTMLElement && e.target.closest("button")) {
           return;

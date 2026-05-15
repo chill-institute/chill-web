@@ -10,19 +10,13 @@ export function isThemePreference(value: string | null): value is ThemePreferenc
   return value === "light" || value === "dark" || value === "system";
 }
 
-/*
- * Theme is shared across many surfaces (header dropdown, settings panel,
- * Sonner toaster) so it has to be a single store that every consumer
- * subscribes to via `useSyncExternalStore`. Otherwise picking a theme in
- * one component leaves a stale snapshot in the others until they remount.
- */
 function readStoredTheme(): ThemePreference {
   if (typeof window === "undefined") return "system";
   try {
     const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (isThemePreference(raw)) return raw;
   } catch {
-    // localStorage unavailable
+    /* empty */
   }
   return "system";
 }
@@ -106,8 +100,6 @@ export function useTheme() {
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
   const systemDark = useSystemTheme();
 
-  // Apply on every theme/systemDark change. Cheap (toggles a class + sets a
-  // few CSS vars) and idempotent.
   useEffect(() => {
     applyTheme(theme, systemDark);
   }, [theme, systemDark]);

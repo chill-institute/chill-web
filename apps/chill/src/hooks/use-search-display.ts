@@ -17,7 +17,7 @@ export function isSearchDisplayMode(value: string | null): value is SearchDispla
   return value === "raw" || value === "detailed";
 }
 
-function migrateLegacyValue(raw: string | null): SearchDisplayMode | null {
+export function migrateLegacyValue(raw: string | null): SearchDisplayMode | null {
   if (raw === "legacy") return "raw";
   if (raw === "clean" || raw === "full") return "detailed";
   return null;
@@ -34,7 +34,7 @@ function readFromStorage(): SearchDisplayMode {
       return migrated;
     }
   } catch {
-    // localStorage unavailable
+    /* empty */
   }
   return MODE_DEFAULT;
 }
@@ -94,7 +94,7 @@ if (typeof window !== "undefined") {
     try {
       window.localStorage.removeItem(key);
     } catch {
-      // localStorage unavailable; nothing to clean up
+      /* empty */
     }
   }
 }

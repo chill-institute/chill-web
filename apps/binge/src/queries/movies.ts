@@ -2,17 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
 import { type Movie } from "@/lib/types";
-import { useSettingsQuery } from "@/queries/settings";
 
 export function useMoviesQuery({ enabled }: { enabled: boolean }) {
   const api = useApi();
-  const settingsQuery = useSettingsQuery();
-  const source = settingsQuery.data?.moviesSource;
   return useQuery({
-    queryKey: ["movies", source],
+    queryKey: ["movies"],
     queryFn: ({ signal }) => api.getMovies(signal),
     staleTime: 5 * 60 * 1000,
-    enabled: enabled && source !== undefined,
+    enabled,
   });
 }
 

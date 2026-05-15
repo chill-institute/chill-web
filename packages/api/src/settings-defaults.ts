@@ -6,8 +6,6 @@ import {
   type UserSettings,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-// Catalog enums (cardDisplayType / moviesSource / tvShowsSource) are passed
-// through; binge fills them via createApi's normalizeSettings hook.
 export const SEARCH_SETTINGS_FALLBACKS = {
   searchResultDisplayBehavior: SearchResultDisplayBehavior.FASTEST,
   searchResultTitleBehavior: SearchResultTitleBehavior.TEXT,

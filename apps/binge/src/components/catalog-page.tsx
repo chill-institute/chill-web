@@ -28,7 +28,12 @@ import { publicLinks } from "@chill-institute/ui/lib/public-links";
 
 import { writeLastTab } from "@/hooks/use-last-tab";
 import { useMoviesQuery } from "@/queries/movies";
-import { useSaveSettings, useSettingsQuery } from "@/queries/settings";
+import {
+  usePendingMoviesRefresh,
+  usePendingTVShowsRefresh,
+  useSaveSettings,
+  useSettingsQuery,
+} from "@/queries/settings";
 import { useTVShowsQuery } from "@/queries/tv-shows";
 import {
   moviesSources,
@@ -91,6 +96,8 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
 
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
+  const pendingMoviesRefresh = usePendingMoviesRefresh();
+  const pendingTVShowsRefresh = usePendingTVShowsRefresh();
 
   const shouldFetchCatalog = configQuery.status === "success" && !configQuery.isFetching;
   const moviesQuery = useMoviesQuery({ enabled: shouldFetchCatalog });
@@ -209,6 +216,7 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
         tab === "movies" ? (
           <MoviesContent
             query={moviesQuery}
+            pendingRefresh={pendingMoviesRefresh}
             source={effectiveMoviesSource}
             sort={sort}
             onPickAnotherSource={() => {
@@ -225,6 +233,7 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
         ) : (
           <TVShowsContent
             query={tvShowsQuery}
+            pendingRefresh={pendingTVShowsRefresh}
             source={effectiveTVShowsSource}
             sort={sort}
             onPickAnotherSource={() => {
@@ -371,12 +380,20 @@ function PageHeading({ tab }: { tab: CatalogTab }) {
 
 type MoviesContentProps = {
   query: ReturnType<typeof useMoviesQuery>;
+  pendingRefresh: boolean;
   source: UserSettings["moviesSource"];
   sort: SortKey;
   onPickAnotherSource: () => void;
 };
 
-function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesContentProps) {
+function MoviesContent({
+  query,
+  pendingRefresh,
+  source,
+  sort,
+  onPickAnotherSource,
+}: MoviesContentProps) {
+  if (pendingRefresh) return <PosterGridSkeleton />;
   return match(query)
     .with({ status: "pending" }, () => <PosterGridSkeleton />)
     .with({ status: "error" }, (movies) =>
@@ -419,12 +436,20 @@ function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesConte
 
 type TVShowsContentProps = {
   query: ReturnType<typeof useTVShowsQuery>;
+  pendingRefresh: boolean;
   source: UserSettings["tvShowsSource"];
   sort: SortKey;
   onPickAnotherSource: () => void;
 };
 
-function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsContentProps) {
+function TVShowsContent({
+  query,
+  pendingRefresh,
+  source,
+  sort,
+  onPickAnotherSource,
+}: TVShowsContentProps) {
+  if (pendingRefresh) return <PosterGridSkeleton />;
   return match(query)
     .with({ status: "pending" }, () => <PosterGridSkeleton />)
     .with({ status: "error" }, (shows) =>

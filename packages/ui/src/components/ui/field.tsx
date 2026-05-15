@@ -177,9 +177,7 @@ function FieldError({
     return [...new Map(errors.map((error) => [error?.message, error])).values()];
   }, [children, errors]);
 
-  if (children) {
-    // fall through to the wrapper below
-  } else if (uniqueErrors.length === 0) {
+  if (!children && uniqueErrors.length === 0) {
     return null;
   }
 

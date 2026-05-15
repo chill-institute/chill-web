@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
@@ -7,6 +7,32 @@ import { normalizeBingeUserSettings, type UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
 const SAVE_DEBOUNCE_MS = 500;
+
+type RefreshFlag = "movies" | "tv-shows";
+
+const refreshState: Record<RefreshFlag, boolean> = { movies: false, "tv-shows": false };
+const refreshListeners = new Set<() => void>();
+
+function setRefresh(flag: RefreshFlag, value: boolean): void {
+  if (refreshState[flag] === value) return;
+  refreshState[flag] = value;
+  for (const listener of refreshListeners) listener();
+}
+
+function subscribeRefresh(listener: () => void): () => void {
+  refreshListeners.add(listener);
+  return () => {
+    refreshListeners.delete(listener);
+  };
+}
+
+function getMoviesRefreshSnapshot(): boolean {
+  return refreshState.movies;
+}
+
+function getTVShowsRefreshSnapshot(): boolean {
+  return refreshState["tv-shows"];
+}
 
 export function useSettingsQuery() {
   const api = useApi();
@@ -23,6 +49,18 @@ export function useSettingsQuery() {
   });
 }
 
+export function usePendingMoviesRefresh(): boolean {
+  return useSyncExternalStore(subscribeRefresh, getMoviesRefreshSnapshot, getMoviesRefreshSnapshot);
+}
+
+export function usePendingTVShowsRefresh(): boolean {
+  return useSyncExternalStore(
+    subscribeRefresh,
+    getTVShowsRefreshSnapshot,
+    getTVShowsRefreshSnapshot,
+  );
+}
+
 export function useSaveSettings() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -35,6 +73,12 @@ export function useSaveSettings() {
     mutationFn: (next: UserSettings) => api.saveUserSettings(next),
     onSuccess: (_data, variables) => {
       const prev = previousRef.current;
+      if (prev && prev.moviesSource !== variables.moviesSource) {
+        void queryClient.resetQueries({ queryKey: ["movies"] });
+      }
+      if (prev && prev.tvShowsSource !== variables.tvShowsSource) {
+        void queryClient.resetQueries({ queryKey: ["tv-shows"] });
+      }
       if (prev && prev.downloadFolderId !== variables.downloadFolderId) {
         void invalidateDownloadFolder(queryClient);
       }
@@ -45,6 +89,8 @@ export function useSaveSettings() {
     onSettled: () => {
       previousRef.current = null;
       pendingRef.current = null;
+      setRefresh("movies", false);
+      setRefresh("tv-shows", false);
     },
   });
 
@@ -67,6 +113,10 @@ export function useSaveSettings() {
       const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
       if (pendingRef.current === null && current) {
         previousRef.current = current;
+      }
+      if (previousRef.current) {
+        setRefresh("movies", previousRef.current.moviesSource !== normalizedNext.moviesSource);
+        setRefresh("tv-shows", previousRef.current.tvShowsSource !== normalizedNext.tvShowsSource);
       }
       queryClient.setQueryData(["user-settings"], normalizedNext);
       writeCachedSettings(normalizedNext);

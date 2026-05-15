@@ -54,9 +54,6 @@ test.describe("chill · @chill-institute/api smoke", () => {
       await input.press("Enter");
 
       await page.waitForURL(/\/search/, { timeout: 10_000 });
-      // Round-trip is proven once skeletons have cleared AND either a row
-      // or an empty-state cell has rendered. "Not loading" alone could pass
-      // before any results UI mounts.
       await expect
         .poll(
           async () => {

@@ -6,8 +6,6 @@ const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
 const AUTH_NONCE_STORAGE_KEY = "chill.auth_nonce";
 
-// Don't broaden the matchers without a test — false positives bounce real
-// users to /sign-out. Legacy string matchers cover older backends still in rotation.
 export function isAuthFailure(error: unknown): boolean {
   if (error instanceof ConnectError) {
     if (error.code === Code.Unauthenticated || error.code === Code.PermissionDenied) {
@@ -47,7 +45,7 @@ export function redirectToSignInOnAuthFailure(error: unknown): void {
     window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
     window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
   } catch {
-    // Best-effort; the redirect is what matters.
+    /* empty */
   }
   window.location.replace(`/sign-out?error=${encodeURIComponent(SESSION_EXPIRED_ERROR)}`);
 }

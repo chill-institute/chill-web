@@ -4,8 +4,6 @@ type TimeoutSignal = {
   signal: AbortSignal;
 };
 
-// Aborts when either parent aborts or timeout elapses; `didTimeout()` lets
-// callers distinguish user-cancellation from a deadline hit.
 export function withTimeoutSignal(
   parent: AbortSignal | undefined,
   timeoutMs: number,

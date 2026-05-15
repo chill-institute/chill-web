@@ -8,7 +8,7 @@ export function readLastTab(): CatalogTab {
     const raw = window.localStorage.getItem(LAST_TAB_STORAGE_KEY);
     if (raw === "movies" || raw === "tv-shows") return raw;
   } catch {
-    // localStorage unavailable
+    /* empty */
   }
   return "movies";
 }
@@ -18,6 +18,6 @@ export function writeLastTab(tab: CatalogTab): void {
   try {
     window.localStorage.setItem(LAST_TAB_STORAGE_KEY, tab);
   } catch {
-    // localStorage unavailable
+    /* empty */
   }
 }

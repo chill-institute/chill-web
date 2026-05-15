@@ -210,7 +210,6 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/");
     await openFirstMovieModal(authenticatedPage);
 
-    // shadcn Select is a custom dropdown — open via trigger, click option.
     const pickFromSelect = async (label: string, optionName: string | RegExp) => {
       await authenticatedPage.getByRole("combobox", { name: label }).click();
       await authenticatedPage.getByRole("option", { name: optionName, exact: true }).click();

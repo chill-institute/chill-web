@@ -57,7 +57,6 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     return () => window.clearTimeout(id);
   }, [open]);
 
-  // Reset highlight when the user types a new query (not on every refetch tick).
   if (prevQueryRef.current !== trimmed) {
     prevQueryRef.current = trimmed;
     setHighlight(0);

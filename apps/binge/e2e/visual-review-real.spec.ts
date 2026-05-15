@@ -74,8 +74,6 @@ test.describe("real-backend · binge", () => {
       await expect(page.locator('[data-slot="poster-card"]').first()).toBeVisible({
         timeout: 20_000,
       });
-      // Wait for the catalog to settle — count keeps growing while React hydrates
-      // and the API streams shows in. Once it's stable for a frame we're done.
       /* eslint-disable react-doctor/async-await-in-loop */
       for (let i = 0, lastCount = 0; i < 20; i++) {
         const count = await page.locator('[data-slot="poster-card"]').count();
