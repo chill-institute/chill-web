@@ -9,23 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TvShowsRouteImport } from './routes/tv-shows'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as MoviesRouteImport } from './routes/movies'
+import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
+import { Route as MoviesRouteRouteImport } from './routes/movies/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TvShowsIdRouteImport } from './routes/tv-shows.$id'
-import { Route as MoviesIdRouteImport } from './routes/movies.$id'
+import { Route as TvShowsIndexRouteImport } from './routes/tv-shows/index'
+import { Route as MoviesIndexRouteImport } from './routes/movies/index'
+import { Route as TvShowsIdRouteImport } from './routes/tv-shows/$id'
+import { Route as MoviesIdRouteImport } from './routes/movies/$id'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
 
-const TvShowsRoute = TvShowsRouteImport.update({
-  id: '/tv-shows',
-  path: '/tv-shows',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignOutRoute = SignOutRouteImport.update({
   id: '/sign-out',
   path: '/sign-out',
@@ -41,7 +38,12 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MoviesRoute = MoviesRouteImport.update({
+const TvShowsRouteRoute = TvShowsRouteRouteImport.update({
+  id: '/tv-shows',
+  path: '/tv-shows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoviesRouteRoute = MoviesRouteRouteImport.update({
   id: '/movies',
   path: '/movies',
   getParentRoute: () => rootRouteImport,
@@ -51,15 +53,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TvShowsIndexRoute = TvShowsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TvShowsRouteRoute,
+} as any)
+const MoviesIndexRoute = MoviesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MoviesRouteRoute,
+} as any)
 const TvShowsIdRoute = TvShowsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => TvShowsRoute,
+  getParentRoute: () => TvShowsRouteRoute,
 } as any)
 const MoviesIdRoute = MoviesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => MoviesRoute,
+  getParentRoute: () => MoviesRouteRoute,
 } as any)
 const DebugCrashRoute = DebugCrashRouteImport.update({
   id: '/debug/crash',
@@ -79,93 +91,101 @@ const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/movies': typeof MoviesRouteWithChildren
+  '/movies': typeof MoviesRouteRouteWithChildren
+  '/tv-shows': typeof TvShowsRouteRouteWithChildren
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
-  '/tv-shows': typeof TvShowsRouteWithChildren
   '/auth/cli-token': typeof AuthCliTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
+  '/movies/': typeof MoviesIndexRoute
+  '/tv-shows/': typeof TvShowsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/movies': typeof MoviesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
-  '/tv-shows': typeof TvShowsRouteWithChildren
   '/auth/cli-token': typeof AuthCliTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
+  '/movies': typeof MoviesIndexRoute
+  '/tv-shows': typeof TvShowsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/movies': typeof MoviesRouteWithChildren
+  '/movies': typeof MoviesRouteRouteWithChildren
+  '/tv-shows': typeof TvShowsRouteRouteWithChildren
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
-  '/tv-shows': typeof TvShowsRouteWithChildren
   '/auth/cli-token': typeof AuthCliTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
+  '/movies/': typeof MoviesIndexRoute
+  '/tv-shows/': typeof TvShowsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/movies'
+    | '/tv-shows'
     | '/settings'
     | '/sign-in'
     | '/sign-out'
-    | '/tv-shows'
     | '/auth/cli-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
     | '/tv-shows/$id'
+    | '/movies/'
+    | '/tv-shows/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/movies'
     | '/settings'
     | '/sign-in'
     | '/sign-out'
-    | '/tv-shows'
     | '/auth/cli-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
     | '/tv-shows/$id'
+    | '/movies'
+    | '/tv-shows'
   id:
     | '__root__'
     | '/'
     | '/movies'
+    | '/tv-shows'
     | '/settings'
     | '/sign-in'
     | '/sign-out'
-    | '/tv-shows'
     | '/auth/cli-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
     | '/tv-shows/$id'
+    | '/movies/'
+    | '/tv-shows/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  MoviesRoute: typeof MoviesRouteWithChildren
+  MoviesRouteRoute: typeof MoviesRouteRouteWithChildren
+  TvShowsRouteRoute: typeof TvShowsRouteRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
-  TvShowsRoute: typeof TvShowsRouteWithChildren
   AuthCliTokenRoute: typeof AuthCliTokenRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
@@ -173,13 +193,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tv-shows': {
-      id: '/tv-shows'
-      path: '/tv-shows'
-      fullPath: '/tv-shows'
-      preLoaderRoute: typeof TvShowsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sign-out': {
       id: '/sign-out'
       path: '/sign-out'
@@ -201,11 +214,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tv-shows': {
+      id: '/tv-shows'
+      path: '/tv-shows'
+      fullPath: '/tv-shows'
+      preLoaderRoute: typeof TvShowsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/movies': {
       id: '/movies'
       path: '/movies'
       fullPath: '/movies'
-      preLoaderRoute: typeof MoviesRouteImport
+      preLoaderRoute: typeof MoviesRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -215,19 +235,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tv-shows/': {
+      id: '/tv-shows/'
+      path: '/'
+      fullPath: '/tv-shows/'
+      preLoaderRoute: typeof TvShowsIndexRouteImport
+      parentRoute: typeof TvShowsRouteRoute
+    }
+    '/movies/': {
+      id: '/movies/'
+      path: '/'
+      fullPath: '/movies/'
+      preLoaderRoute: typeof MoviesIndexRouteImport
+      parentRoute: typeof MoviesRouteRoute
+    }
     '/tv-shows/$id': {
       id: '/tv-shows/$id'
       path: '/$id'
       fullPath: '/tv-shows/$id'
       preLoaderRoute: typeof TvShowsIdRouteImport
-      parentRoute: typeof TvShowsRoute
+      parentRoute: typeof TvShowsRouteRoute
     }
     '/movies/$id': {
       id: '/movies/$id'
       path: '/$id'
       fullPath: '/movies/$id'
       preLoaderRoute: typeof MoviesIdRouteImport
-      parentRoute: typeof MoviesRoute
+      parentRoute: typeof MoviesRouteRoute
     }
     '/debug/crash': {
       id: '/debug/crash'
@@ -253,35 +287,41 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface MoviesRouteChildren {
+interface MoviesRouteRouteChildren {
   MoviesIdRoute: typeof MoviesIdRoute
+  MoviesIndexRoute: typeof MoviesIndexRoute
 }
 
-const MoviesRouteChildren: MoviesRouteChildren = {
+const MoviesRouteRouteChildren: MoviesRouteRouteChildren = {
   MoviesIdRoute: MoviesIdRoute,
+  MoviesIndexRoute: MoviesIndexRoute,
 }
 
-const MoviesRouteWithChildren =
-  MoviesRoute._addFileChildren(MoviesRouteChildren)
+const MoviesRouteRouteWithChildren = MoviesRouteRoute._addFileChildren(
+  MoviesRouteRouteChildren,
+)
 
-interface TvShowsRouteChildren {
+interface TvShowsRouteRouteChildren {
   TvShowsIdRoute: typeof TvShowsIdRoute
+  TvShowsIndexRoute: typeof TvShowsIndexRoute
 }
 
-const TvShowsRouteChildren: TvShowsRouteChildren = {
+const TvShowsRouteRouteChildren: TvShowsRouteRouteChildren = {
   TvShowsIdRoute: TvShowsIdRoute,
+  TvShowsIndexRoute: TvShowsIndexRoute,
 }
 
-const TvShowsRouteWithChildren =
-  TvShowsRoute._addFileChildren(TvShowsRouteChildren)
+const TvShowsRouteRouteWithChildren = TvShowsRouteRoute._addFileChildren(
+  TvShowsRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  MoviesRoute: MoviesRouteWithChildren,
+  MoviesRouteRoute: MoviesRouteRouteWithChildren,
+  TvShowsRouteRoute: TvShowsRouteRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
-  TvShowsRoute: TvShowsRouteWithChildren,
   AuthCliTokenRoute: AuthCliTokenRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useMatch } from "@tanstack/react-router";
 
 import { readStoredToken } from "@chill-institute/auth/auth";
 
@@ -10,7 +10,7 @@ type Search = {
   source?: number;
 };
 
-export const Route = createFileRoute("/movies/$id")({
+export const Route = createFileRoute("/movies")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     sort: parseSortKey(search.sort),
     source:
@@ -26,11 +26,17 @@ export const Route = createFileRoute("/movies/$id")({
       void queryClient.ensureQueryData(moviesQueryOptions(token));
     });
   },
-  component: MovieDetailRoute,
+  component: MoviesLayout,
 });
 
-function MovieDetailRoute() {
-  const { id } = Route.useParams();
+function MoviesLayout() {
   const { sort = "popular", source } = Route.useSearch();
-  return <CatalogPage tab="movies" sort={sort} source={source} selectedMovieId={id} />;
+  const childMatch = useMatch({ from: "/movies/$id", shouldThrow: false });
+  const selectedMovieId = childMatch?.params.id;
+  return (
+    <>
+      <CatalogPage tab="movies" sort={sort} source={source} selectedMovieId={selectedMovieId} />
+      <Outlet />
+    </>
+  );
 }
