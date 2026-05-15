@@ -14,7 +14,7 @@ function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
         <div className="border-error-border bg-error-bg text-error-text rounded-full border p-2">
           <ServerCrash />
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <h1 className="text-2xl leading-7">The Institute is having a moment…</h1>
           <p className="text-fg-2 text-sm">
             We could not reach the API cleanly. This is usually a brief deploy blip or a temporary

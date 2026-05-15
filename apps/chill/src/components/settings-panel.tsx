@@ -174,7 +174,7 @@ export function SettingsPanel() {
               <div className="flex shrink-0 items-center gap-3">
                 <button
                   type="button"
-                  className="text-fg-3 hover-hover:hover:text-fg-1 cursor-pointer text-[13px] hover:underline"
+                  className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-app cursor-pointer rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   onClick={resetSettings}
                 >
                   reset settings
@@ -182,7 +182,7 @@ export function SettingsPanel() {
                 <Link
                   to="/sign-out"
                   search={{ error: undefined }}
-                  className="text-error-text hover-hover:hover:text-error-text/80 text-[13px] hover:underline"
+                  className="text-error-text hover-hover:hover:text-error-text/80 focus-visible:ring-ring-focus focus-visible:ring-offset-app rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
                   sign out
                 </Link>
@@ -358,7 +358,7 @@ export function SettingsPanel() {
 
           {saveMutation.error ? <UserErrorAlert error={saveMutation.error} /> : null}
 
-          <div className="text-fg-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-[11px]">
+          <div className="text-fg-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-2xs">
             <span>release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}</span>
             <nav aria-label="contact" className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {LINKS.map(({ title, url }, index) => (

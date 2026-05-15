@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowUpRight, Search, Star, Users, X } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
@@ -19,11 +19,13 @@ import { Separator } from "@chill-institute/ui/components/ui/separator";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { cn } from "@chill-institute/ui/cn";
 import { useIsDesktop } from "@chill-institute/ui/hooks/use-is-desktop";
+import { useImageLoadedState } from "@chill-institute/ui/hooks/use-image-loaded-state";
 import { formatAge, formatBytes } from "@chill-institute/ui/lib/format";
 import { type Movie, type SearchResult } from "@/lib/types";
 import { useMovieSearchQuery } from "@/queries/movies";
 
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
+const EMPTY_RESULTS: SearchResult[] = [];
 
 const UPLOADED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -175,15 +177,6 @@ function FilterSelect<T extends string>({
   );
 }
 
-function useImageLoadedState() {
-  const [loaded, setLoaded] = useState(false);
-  const onLoad = useCallback(() => setLoaded(true), []);
-  const ref = useCallback((img: HTMLImageElement | null) => {
-    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
-  }, []);
-  return { loaded, onLoad, ref };
-}
-
 function BackdropImage({ url }: { url?: string }) {
   const img = useImageLoadedState();
   if (!url) return <div className="absolute inset-0 bg-app" />;
@@ -237,10 +230,7 @@ function PosterImage({ url, alt }: { url: string; alt: string }) {
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   return (
     <div className="text-fg-1 max-w-[560px]">
-      <h2
-        id="movie-detail-title"
-        className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0 font-normal"
-      >
+      <h2 id="movie-detail-title" className="m-0">
         {movie.title}
       </h2>
       <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
@@ -288,7 +278,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const [sortBy, setSortBy] = useState<SortValue>("seeders");
   const searchQuery = useMovieSearchQuery({ movie, enabled: true });
 
-  const results = useMemo(() => searchQuery.data?.results ?? [], [searchQuery.data]);
+  const results = searchQuery.data?.results ?? EMPTY_RESULTS;
   const synopsis = movie.overview?.trim() || undefined;
   const metadataTags = useMemo(() => buildMetadataTags(movie), [movie]);
   const parsedResults = useMemo<ParsedResult[]>(
@@ -340,8 +330,8 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
     <div className={shellClassName}>
       <div className="relative flex h-[280px] shrink-0 items-end overflow-hidden">
         <BackdropImage key={movie.backdropUrl ?? "no-backdrop"} url={movie.backdropUrl} />
-        <div className="from-surface via-surface/78 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
-        <div className="from-surface/48 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
+        <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
+        <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
         <div className="relative z-10 flex w-full items-end gap-5 px-6 pb-6 sm:px-7">
           {movie.posterUrl ? (
@@ -364,7 +354,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         </IconButton>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-6 pt-5 pb-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-6 pt-5 pb-6">
         {synopsis ? (
           <p className="m-0 text-sm leading-relaxed text-pretty text-fg-2">{synopsis}</p>
         ) : null}
@@ -385,7 +375,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             ))}
           </div>
         ) : searchQuery.status === "error" ? (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <p className="text-sm text-fg-2">
               couldn&apos;t load torrent matches for this movie yet.
             </p>
@@ -422,7 +412,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             ) : (
               <>
                 {hasOnlyUnavailableResults ? (
-                  <p className="m-0 text-[0.8125rem] text-fg-3">
+                  <p className="m-0 text-sm text-fg-3">
                     results came back, but none include a usable transfer link yet.
                   </p>
                 ) : null}
@@ -449,10 +439,10 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                         )}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="break-words text-[0.8125rem] font-medium text-fg-1">
+                          <div className="break-words text-sm font-medium text-fg-1">
                             {result.title}
                           </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[0.6875rem] text-fg-3">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs text-fg-3">
                             <span className="text-fg-2">
                               {result.indexer || result.source || "unknown"}
                             </span>
@@ -581,7 +571,7 @@ function ResultsToolbar({
           </Button>
         ) : null}
       </div>
-      <p className="m-0 self-end pb-0.5 font-mono text-[0.6875rem] leading-none tabular-nums text-fg-3">
+      <p className="m-0 self-end pb-0.5 font-mono text-2xs leading-none tabular-nums text-fg-3">
         {visibleCount}
         {visibleCount !== totalCount ? ` of ${totalCount}` : ""} result
         {visibleCount === 1 ? "" : "s"}

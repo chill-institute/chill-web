@@ -1,5 +1,5 @@
 import { Clipboard, ClipboardCheck, ClipboardX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "../lib/cn";
 import { Button } from "./ui/button";
@@ -12,12 +12,19 @@ type CopyButtonProps = {
 
 function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (state === "idle") return;
-    const timeout = window.setTimeout(() => setState("idle"), 2000);
-    return () => window.clearTimeout(timeout);
-  }, [state]);
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+    },
+    [],
+  );
+
+  const scheduleReset = () => {
+    if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = setTimeout(() => setState("idle"), 2000);
+  };
 
   const icon =
     state === "copied" ? <ClipboardCheck /> : state === "error" ? <ClipboardX /> : <Clipboard />;
@@ -40,6 +47,7 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
         } catch {
           setState("error");
         }
+        scheduleReset();
       }}
       aria-label={
         state === "copied" ? "Copied link" : state === "error" ? "Failed to copy link" : "Copy link"

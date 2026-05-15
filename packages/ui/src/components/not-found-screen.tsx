@@ -16,7 +16,7 @@ function NotFoundScreen({ homeHref = "/", homeLabel = "go home", children }: Not
         <div className="border-border-soft bg-surface text-fg-2 rounded-full border p-2">
           <Compass />
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <h1 className="text-2xl leading-7">page not found</h1>
           <p className="text-fg-2 text-sm">
             we couldn&rsquo;t find anything at this URL. it might have moved, or the link might be

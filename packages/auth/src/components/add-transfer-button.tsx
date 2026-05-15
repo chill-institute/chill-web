@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
-import { type PropsWithChildren, useState } from "react";
+import { type PropsWithChildren, useEffect, useRef, useState } from "react";
 
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { Spinner } from "@chill-institute/ui/components/ui/spinner";
@@ -22,15 +22,25 @@ export function AddTransferButton({
 }: Props) {
   const api = useApi();
   const [viewInPutio, setViewInPutio] = useState(false);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    },
+    [],
+  );
 
   // eslint-disable-next-line react-doctor/query-mutation-missing-invalidation -- fire-and-forget into put.io, no local cache to refresh
   const mutation = useMutation({
     mutationFn: () => api.addTransfer(url),
     onSuccess: () => {
-      setTimeout(() => setViewInPutio(true), 1000);
+      successTimerRef.current = setTimeout(() => setViewInPutio(true), 1000);
     },
     onError: () => {
-      setTimeout(() => mutation.reset(), 3000);
+      errorTimerRef.current = setTimeout(() => mutation.reset(), 3000);
     },
   });
 

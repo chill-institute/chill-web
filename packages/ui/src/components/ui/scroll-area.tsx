@@ -9,6 +9,7 @@ function ScrollBar({
 }: ComponentProps<typeof ScrollAreaPrimitive.Scrollbar>) {
   return (
     <ScrollAreaPrimitive.Scrollbar
+      data-slot="scroll-area-scrollbar"
       className={cn(
         "flex touch-none select-none transition-colors",
         orientation === "vertical" && "h-full w-2.5 border-l border-l-transparent p-px",
@@ -18,7 +19,10 @@ function ScrollBar({
       orientation={orientation}
       {...props}
     >
-      <ScrollAreaPrimitive.Thumb className="bg-hover relative flex-1 rounded-full" />
+      <ScrollAreaPrimitive.Thumb
+        data-slot="scroll-area-thumb"
+        className="bg-hover relative flex-1 rounded-full"
+      />
     </ScrollAreaPrimitive.Scrollbar>
   );
 }
@@ -29,8 +33,15 @@ export function ScrollArea({
   ...props
 }: ComponentProps<typeof ScrollAreaPrimitive.Root>) {
   return (
-    <ScrollAreaPrimitive.Root className={cn("relative overflow-hidden", className)} {...props}>
-      <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+    <ScrollAreaPrimitive.Root
+      data-slot="scroll-area"
+      className={cn("relative overflow-hidden", className)}
+      {...props}
+    >
+      <ScrollAreaPrimitive.Viewport
+        data-slot="scroll-area-viewport"
+        className="h-full w-full rounded-[inherit]"
+      >
         <ScrollAreaPrimitive.Content>{children}</ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />

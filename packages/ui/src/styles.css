@@ -9,6 +9,9 @@
   --font-serif: "Family", ui-serif, "Iowan Old Style", "Apple Garamond", Georgia, serif;
   --font-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
 
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
   --color-app: var(--color-stone-300);
   --color-surface: var(--color-stone-100);
   --color-surface-2: var(--color-stone-50);
@@ -196,7 +199,7 @@
   /* h4 is intentionally unstyled — consumers opt in to their own typography. */
 
   .kbd {
-    @apply inline-flex items-center rounded-sm border border-transparent bg-hover px-[5px] font-mono text-[11px] leading-none text-fg-1;
+    @apply inline-flex items-center rounded-sm border border-transparent bg-hover px-[5px] font-mono text-2xs leading-none text-fg-1;
     min-height: var(--control-h-xs);
   }
 

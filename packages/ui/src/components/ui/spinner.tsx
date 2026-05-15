@@ -6,6 +6,7 @@ import { cn } from "../../lib/cn";
 function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
   return (
     <Loader2Icon
+      data-slot="spinner"
       role="status"
       aria-label="Loading"
       className={cn("size-4 motion-safe:animate-spin", className)}

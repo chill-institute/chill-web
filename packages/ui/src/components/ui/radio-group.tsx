@@ -20,7 +20,7 @@ function RadioGroupItem({ className, ...props }: ComponentProps<typeof Radio.Roo
     <Radio.Root
       data-slot="radio-group-item"
       className={cn(
-        "aspect-square h-4 w-4 shrink-0 cursor-pointer rounded-full border border-border-strong bg-surface outline-none",
+        "size-4 shrink-0 cursor-pointer rounded-full border border-border-strong bg-surface outline-none",
         "hover-hover:hover:bg-hover hover:transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app",
         "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",

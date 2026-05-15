@@ -15,11 +15,11 @@ function StickyHeader({ brand, tabs, right, children, className }: StickyHeaderP
     <header
       data-slot="sticky-header"
       className={cn(
-        "border-border-strong bg-surface/88 sticky top-0 z-40 border-b py-2.5 backdrop-blur-md",
+        "border-border-strong bg-surface/90 sticky top-0 z-40 border-b py-2.5 backdrop-blur-md",
         className,
       )}
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-[18px]">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-5">
         {brand}
         {tabs}
         {children}

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type FastestPhase = "idle" | "fastest" | "all" | "empty";
@@ -11,10 +11,26 @@ type SearchInfo = {
   hasPending: boolean;
 };
 
-type Action = { type: "SET_PHASE"; phase: FastestPhase };
+function computeNextPhase(
+  current: FastestPhase,
+  search: SearchInfo,
+  resultsCount: number,
+): FastestPhase {
+  const allDone = search.totalCount > 0 && !search.hasPending;
+  const threshold = Math.min(Math.ceil(search.totalCount / 2), 3);
 
-function reducer(_state: FastestPhase, action: Action): FastestPhase {
-  return action.phase;
+  if (current === "idle") {
+    if (allDone && resultsCount === 0) return "empty";
+    if (search.nonEmptyResolvedCount >= threshold && resultsCount > 0) return "fastest";
+    if (allDone && resultsCount > 0) return "all";
+    return "idle";
+  }
+
+  if (current === "fastest" && allDone) {
+    return "all";
+  }
+
+  return current;
 }
 
 export function useFastestMode(
@@ -22,77 +38,61 @@ export function useFastestMode(
   submittedQuery: string,
   searchState: SearchInfo,
 ) {
-  const initialPhase: FastestPhase = "idle";
-  const [fastestPhase, dispatch] = useReducer(reducer, initialPhase);
+  const [phase, setPhase] = useState<FastestPhase>("idle");
+  const [lastQuery, setLastQuery] = useState(submittedQuery);
   const toastIdRef = useRef<string | number | undefined>(undefined);
-  const prevQueryRef = useRef(submittedQuery);
+  const lastToastPendingRef = useRef<number | undefined>(undefined);
 
-  if (submittedQuery !== prevQueryRef.current) {
-    prevQueryRef.current = submittedQuery;
-    dispatch({ type: "SET_PHASE", phase: "idle" });
-    if (toastIdRef.current !== undefined) {
-      toast.dismiss(toastIdRef.current);
-      toastIdRef.current = undefined;
-    }
+  if (submittedQuery !== lastQuery) {
+    setLastQuery(submittedQuery);
+    setPhase("idle");
   }
 
-  const { totalCount, nonEmptyResolvedCount, pendingCount, hasPending } = searchState;
   const resultsCount = searchState.results.length;
+  const nextPhase =
+    isFastestMode && submittedQuery.length > 0
+      ? computeNextPhase(phase, searchState, resultsCount)
+      : phase;
+  if (nextPhase !== phase) {
+    setPhase(nextPhase);
+  }
 
   useEffect(() => {
-    if (!isFastestMode || submittedQuery.length === 0) {
+    if (nextPhase !== "fastest") {
+      if (toastIdRef.current !== undefined) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = undefined;
+        lastToastPendingRef.current = undefined;
+      }
       return;
     }
 
-    const allDone = totalCount > 0 && !hasPending;
-    const threshold = Math.min(Math.ceil(totalCount / 2), 3);
-
-    if (fastestPhase === "idle") {
-      if (allDone && resultsCount === 0) {
-        dispatch({ type: "SET_PHASE", phase: "empty" });
-      } else if (nonEmptyResolvedCount >= threshold && resultsCount > 0) {
-        dispatch({ type: "SET_PHASE", phase: "fastest" });
-      } else if (allDone && resultsCount > 0) {
-        dispatch({ type: "SET_PHASE", phase: "all" });
-      }
+    if (lastToastPendingRef.current === searchState.pendingCount && toastIdRef.current) {
+      return;
     }
-
-    if (fastestPhase === "fastest") {
-      if (allDone) {
-        dispatch({ type: "SET_PHASE", phase: "all" });
-        if (toastIdRef.current !== undefined) {
-          toast.dismiss(toastIdRef.current);
-          toastIdRef.current = undefined;
-        }
-      } else {
-        toastIdRef.current = toast.loading(
-          `Fetching more from ${pendingCount} indexer${pendingCount > 1 ? "s" : ""}`,
-          {
-            id: toastIdRef.current,
-            duration: Number.POSITIVE_INFINITY,
-            position: "bottom-center",
-            action: {
-              label: "Update",
-              onClick: () => {
-                dispatch({ type: "SET_PHASE", phase: "all" });
-                toast.dismiss(toastIdRef.current);
-                toastIdRef.current = undefined;
-              },
-            },
+    lastToastPendingRef.current = searchState.pendingCount;
+    toastIdRef.current = toast.loading(
+      `Fetching more from ${searchState.pendingCount} indexer${
+        searchState.pendingCount > 1 ? "s" : ""
+      }`,
+      {
+        id: toastIdRef.current,
+        duration: Number.POSITIVE_INFINITY,
+        position: "bottom-center",
+        action: {
+          label: "Update",
+          onClick: () => {
+            setPhase("all");
+            if (toastIdRef.current !== undefined) {
+              toast.dismiss(toastIdRef.current);
+              toastIdRef.current = undefined;
+              lastToastPendingRef.current = undefined;
+            }
           },
-        );
-      }
-    }
-  }, [
-    isFastestMode,
-    submittedQuery,
-    fastestPhase,
-    totalCount,
-    nonEmptyResolvedCount,
-    pendingCount,
-    hasPending,
-    resultsCount,
-  ]);
+        },
+      },
+    );
+  }, [nextPhase, searchState.pendingCount]);
 
   useEffect(() => {
     return () => {
@@ -102,5 +102,5 @@ export function useFastestMode(
     };
   }, []);
 
-  return fastestPhase;
+  return phase;
 }

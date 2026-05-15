@@ -18,7 +18,7 @@ function InstituteFooter({ appName, links, className }: InstituteFooterProps) {
     <footer
       data-slot="institute-footer"
       className={cn(
-        "border-border-strong text-fg-3 mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t py-6 font-mono text-[11px]",
+        "border-border-strong text-fg-3 mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t py-6 font-mono text-2xs",
         className,
       )}
     >

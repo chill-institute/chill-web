@@ -36,7 +36,7 @@ function AuthPage({
                 src={logoSrc}
                 width={44}
                 height={44}
-                alt="logo"
+                alt=""
                 className="border-border-strong rounded border"
               />
             )}
@@ -48,7 +48,7 @@ function AuthPage({
             </div>
           </div>
         ) : null}
-        <div className="flex flex-col gap-4 px-7 pt-[22px] pb-[26px]">{children}</div>
+        <div className="flex flex-col gap-4 px-7 py-6">{children}</div>
       </div>
     </div>
   );

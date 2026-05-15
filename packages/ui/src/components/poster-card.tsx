@@ -59,7 +59,7 @@ function PosterCard({
                 </div>
               )}
             </div>
-            <div className="text-fg-3 flex flex-col gap-1 px-3 pt-2.5 pb-3 text-[0.8125rem]">
+            <div className="text-fg-3 flex flex-col gap-1 px-3 pt-2.5 pb-3 text-sm">
               <h3 className="text-fg-1 m-0 text-lg break-words">{title}</h3>
               {(rating != null || year != null) && (
                 <div className="flex items-center gap-1.5 tabular-nums">

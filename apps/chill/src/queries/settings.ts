@@ -29,7 +29,6 @@ export function useSaveSettings() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pendingRef = useRef<UserSettings | null>(null);
   const previousRef = useRef<UserSettings | null>(null);
-  const mutateRef = useRef<((next: UserSettings) => void) | null>(null);
 
   const mutation = useMutation({
     mutationFn: (next: UserSettings) => api.saveUserSettings(next),
@@ -47,12 +46,15 @@ export function useSaveSettings() {
     },
   });
 
-  mutateRef.current = mutation.mutate;
+  const flushRef = useRef(mutation.mutate);
+  useEffect(() => {
+    flushRef.current = mutation.mutate;
+  });
 
   useEffect(
     () => () => {
       if (pendingRef.current) {
-        mutateRef.current?.(pendingRef.current);
+        flushRef.current(pendingRef.current);
       }
       clearTimeout(debounceRef.current);
     },

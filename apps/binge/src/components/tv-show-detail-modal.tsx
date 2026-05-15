@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ArrowUpRight, CloudUpload, Loader2, Star, X } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
@@ -12,6 +12,7 @@ import { UserErrorAlert } from "@chill-institute/auth/components/user-error-aler
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { cn } from "@chill-institute/ui/cn";
 import { useIsDesktop } from "@chill-institute/ui/hooks/use-is-desktop";
+import { useImageLoadedState } from "@chill-institute/ui/hooks/use-image-loaded-state";
 import { formatBytes } from "@chill-institute/ui/lib/format";
 import { type TVShow } from "@/lib/types";
 import {
@@ -22,6 +23,8 @@ import {
 
 const SEASON_TAB_SKELETON_SLOTS = Array.from({ length: 3 }, (_, i) => `season-tab-skel-${i}`);
 const EPISODE_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `episode-skel-${i}`);
+const EMPTY_SEASONS: NonNullable<ReturnType<typeof useTVShowDetailQuery>["data"]>["seasons"] = [];
+const EMPTY_GENRES: string[] = [];
 
 const AIR_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -52,15 +55,6 @@ function formatAirDate(value?: string) {
 
 function EpisodeActionSkeleton() {
   return <Skeleton className="size-8 shrink-0 rounded" />;
-}
-
-function useImageLoadedState() {
-  const [loaded, setLoaded] = useState(false);
-  const onLoad = useCallback(() => setLoaded(true), []);
-  const ref = useCallback((img: HTMLImageElement | null) => {
-    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
-  }, []);
-  return { loaded, onLoad, ref };
 }
 
 function BackdropImage({ url }: { url?: string }) {
@@ -172,8 +166,8 @@ function TvShowDetailContent({
     <div className={shellClassName}>
       <div className="relative flex h-[280px] shrink-0 items-end overflow-hidden">
         <BackdropImage key={backdropUrl ?? "no-backdrop"} url={backdropUrl} />
-        <div className="from-surface via-surface/78 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
-        <div className="from-surface/48 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
+        <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
+        <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
         <div className="relative z-10 flex w-full items-end gap-5 px-6 pb-6 sm:px-7">
           {posterUrl ? (
@@ -185,10 +179,7 @@ function TvShowDetailContent({
           <div className="min-w-0 flex-1">
             {show ? (
               <div className="text-fg-1 max-w-[520px]">
-                <h2
-                  id="tv-show-detail-title"
-                  className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0 font-normal"
-                >
+                <h2 id="tv-show-detail-title" className="m-0">
                   {show.title}
                 </h2>
                 <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
@@ -245,7 +236,7 @@ function TvShowDetailContent({
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Skeleton className="h-8 w-56" />
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-6 w-52" />
@@ -362,7 +353,7 @@ function TvShowDetailContent({
                   className="border-border-faint flex items-center gap-3 border-t px-3 py-2.5 first:border-t-0"
                 >
                   <Skeleton className="h-3 w-6 rounded" />
-                  <div className="flex-1 space-y-1">
+                  <div className="flex flex-1 flex-col gap-1">
                     <Skeleton className="h-4 w-44" />
                     <Skeleton className="h-3 w-28" />
                   </div>
@@ -381,15 +372,15 @@ function TvShowDetailContent({
                     key={`${episode.seasonNumber}-${episode.episodeNumber}`}
                     className="border-border-faint flex items-center gap-3 border-t px-3 py-2.5 first:border-t-0"
                   >
-                    <span className="shrink-0 font-mono text-[0.6875rem] tabular-nums text-fg-3">
+                    <span className="shrink-0 font-mono text-2xs tabular-nums text-fg-3">
                       e{paddedEpisode}
                     </span>
 
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[0.8125rem] text-fg-1">
+                      <div className="truncate text-sm text-fg-1">
                         {episode.name || `episode ${episode.episodeNumber}`}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2 font-mono text-[0.6875rem] text-fg-3">
+                      <div className="mt-0.5 flex flex-wrap gap-x-2 font-mono text-2xs text-fg-3">
                         <span>{formatAirDate(episode.airDate)}</span>
                         {episode.runtime ? <span>· {episode.runtime}m</span> : null}
                         {episode.rating ? <span>· ★ {episode.rating.toFixed(1)}</span> : null}
@@ -433,7 +424,7 @@ export function TvShowDetailModal({
   const isDesktop = useIsDesktop();
   const detailQuery = useTVShowDetailQuery({ imdbId, enabled: true });
   const show = detailQuery.data?.show ?? fallbackShow;
-  const seasons = detailQuery.data?.seasons ?? [];
+  const seasons = detailQuery.data?.seasons ?? EMPTY_SEASONS;
   const resolvedSeasonNumber = activeSeason ?? seasons[0]?.seasonNumber ?? 1;
 
   const seasonQuery = useTVShowSeasonQuery({
@@ -463,7 +454,7 @@ export function TvShowDetailModal({
     seasons.find((season) => season.seasonNumber === resolvedSeasonNumber);
   const backdropUrl = detailQuery.data?.show?.backdropUrl;
   const posterUrl = show?.posterUrl;
-  const genres = detailQuery.data?.show?.genres ?? [];
+  const genres = detailQuery.data?.show?.genres ?? EMPTY_GENRES;
 
   const content = (
     <TvShowDetailContent

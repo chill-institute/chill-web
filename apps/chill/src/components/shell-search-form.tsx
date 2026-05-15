@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
 
 import { Button } from "@chill-institute/ui/components/ui/button";
+import { IconButton } from "@chill-institute/ui/components/icon-button";
 import { Field, FieldLabel } from "@chill-institute/ui/components/ui/field";
 import {
   InputGroup,
@@ -54,9 +55,8 @@ export function ShellSearchForm({
     if (value) {
       return (
         <InputGroupAddon align="inline-end">
-          <button
+          <IconButton
             type="button"
-            className="cursor-pointer"
             aria-label="Clear search query"
             onClick={() => {
               setDraft({ base: initialQuery, value: "" });
@@ -64,7 +64,7 @@ export function ShellSearchForm({
             }}
           >
             <X />
-          </button>
+          </IconButton>
         </InputGroupAddon>
       );
     }

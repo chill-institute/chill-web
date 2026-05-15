@@ -21,7 +21,7 @@ function SortRow({ className, children, count }: SortRowProps) {
     >
       {children}
       {count != null ? (
-        <span className="text-fg-3 ml-auto font-mono text-[0.6875rem] tabular-nums">{count}</span>
+        <span className="text-fg-3 ml-auto font-mono text-2xs tabular-nums">{count}</span>
       ) : null}
     </div>
   );

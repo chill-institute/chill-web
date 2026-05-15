@@ -60,16 +60,10 @@ function SignInPage() {
   const visibleError = loading === "sign-in" ? null : error;
 
   useEffect(() => {
-    if (!auth.isAuthenticated) {
-      return;
-    }
+    if (!auth.isAuthenticated) return;
     const callback = search.callbackUrl?.trim();
     const normalized = callback ? normalizeCallbackPath(callback) : null;
-    if (normalized) {
-      void navigate({ href: normalized, replace: true });
-      return;
-    }
-    void navigate({ to: "/", replace: true });
+    void navigate({ href: normalized ?? "/", replace: true });
   }, [auth.isAuthenticated, navigate, search.callbackUrl]);
 
   if (auth.isAuthenticated) {
@@ -135,7 +129,7 @@ function SignInPage() {
         </Button>
       </div>
 
-      <div className="text-fg-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 font-mono text-[11px] leading-relaxed">
+      <div className="text-fg-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 font-mono text-2xs leading-relaxed">
         <span>not affiliated with put.io</span>
         <nav aria-label="external links" className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           {[

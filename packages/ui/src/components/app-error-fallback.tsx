@@ -6,7 +6,7 @@ import {
   RefreshCw,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
 import { Button } from "./ui/button";
@@ -35,15 +35,19 @@ function getClientReportContext(release?: string) {
 function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallbackProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [notes, setNotes] = useState("");
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (copyState === "idle") {
-      return;
-    }
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+    },
+    [],
+  );
 
-    const timeout = window.setTimeout(() => setCopyState("idle"), 2000);
-    return () => window.clearTimeout(timeout);
-  }, [copyState]);
+  const scheduleCopyReset = () => {
+    if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = setTimeout(() => setCopyState("idle"), 2000);
+  };
 
   const report = useMemo(
     () =>
@@ -71,7 +75,7 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
         <div className="border-error-border bg-error-bg text-error-text rounded-full border p-2">
           <TriangleAlert />
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <h1 className="text-2xl leading-7">Something went wrong.</h1>
           <p className="text-fg-2 text-sm">
             The app hit a crash. Nothing is sent anywhere unless you choose to copy the report.
@@ -114,6 +118,7 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
             } catch {
               setCopyState("error");
             }
+            scheduleCopyReset();
           }}
         >
           {copyIcon}

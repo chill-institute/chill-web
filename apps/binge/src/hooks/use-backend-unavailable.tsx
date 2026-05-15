@@ -1,4 +1,12 @@
-import { createContext, use, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { getPublicAPIBaseURL } from "@/lib/env";
 
@@ -34,14 +42,14 @@ async function checkBackendHealth(): Promise<boolean> {
 export function BackendHealthProvider({ children }: { children: ReactNode }) {
   const [isBackendUnavailable, setIsBackendUnavailable] = useState(false);
 
-  async function retry() {
+  const retry = useCallback(async () => {
     const isHealthy = await checkBackendHealth();
     setIsBackendUnavailable(!isHealthy);
-  }
+  }, []);
 
   useEffect(() => {
     void retry();
-  }, []);
+  }, [retry]);
 
   useEffect(() => {
     if (!isBackendUnavailable) {
@@ -53,14 +61,14 @@ export function BackendHealthProvider({ children }: { children: ReactNode }) {
     }, OUTAGE_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [isBackendUnavailable]);
+  }, [isBackendUnavailable, retry]);
 
   const value = useMemo(
     () => ({
       isBackendUnavailable,
       retry,
     }),
-    [isBackendUnavailable],
+    [isBackendUnavailable, retry],
   );
 
   return <BackendHealthContext.Provider value={value}>{children}</BackendHealthContext.Provider>;

@@ -35,7 +35,7 @@ function MetaLine({ info }: { info: ReleaseInfo }) {
   if (info.group) parts.push(info.group);
   if (parts.length === 0) return null;
   return (
-    <div className="text-fg-4 mt-1 block font-mono text-[11px] leading-[1.4]">
+    <div className="text-fg-4 mt-1 block font-mono text-2xs leading-[1.4]">
       {parts.map((text, i) => (
         <span key={text}>
           {i > 0 ? <span className="mx-1 opacity-60">·</span> : null}
@@ -182,10 +182,10 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
         </table>
       </div>
 
-      <div className="lg:hidden">
+      <ul className="m-0 list-none p-0 lg:hidden" aria-label="Search results">
         {results.map((result) => {
           return (
-            <div
+            <li
               key={result.id}
               className="border-border-strong bg-surface my-4 overflow-hidden rounded border"
             >
@@ -207,10 +207,10 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
                   <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
                 </div>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </>
   );
 }

@@ -32,12 +32,12 @@ function PopoverContent({
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        className="z-[70]"
+        className="z-50"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "ui-popup border-border-strong bg-surface text-fg-1 shadow-press z-[70] w-72 rounded border p-4 outline-none",
+            "ui-popup border-border-strong bg-surface text-fg-1 shadow-press w-72 rounded border p-4 outline-none",
             className,
           )}
           {...props}
