@@ -3,8 +3,7 @@ import { Settings, X } from "lucide-react";
 
 import { Button } from "./ui/button";
 import { IconButton } from "./icon-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
-import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "./ui/drawer";
+import { ResponsiveModal } from "./responsive-modal";
 import { useIsDesktop } from "../hooks/use-is-desktop";
 
 type SettingsModalProps = {
@@ -51,42 +50,19 @@ function SettingsModalBody({
 
 export function SettingsModal({ open, onOpenChange, description, children }: SettingsModalProps) {
   const isDesktop = useIsDesktop();
-
-  if (isDesktop) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          showCloseButton={false}
-          className="top-1/2 left-1/2 w-[min(92vw,720px)] -translate-x-1/2 -translate-y-1/2 p-0"
-        >
-          <DialogTitle className="sr-only">Settings</DialogTitle>
-          <DialogDescription className="sr-only">{description}</DialogDescription>
-          <SettingsModalBody isDesktop onClose={() => onOpenChange(false)}>
-            {children}
-          </SettingsModalBody>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
-    <Drawer
+    <ResponsiveModal
       open={open}
-      direction="bottom"
       onOpenChange={onOpenChange}
-      modal
-      shouldScaleBackground={false}
+      title="Settings"
+      description={description}
+      desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,720px)] -translate-x-1/2 -translate-y-1/2 p-0"
+      drawerContentClassName="bg-surface shadow-drawer overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0"
     >
-      <DrawerContent className="bg-surface shadow-drawer overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0">
-        <DrawerTitle className="sr-only">Settings</DrawerTitle>
-        <DrawerDescription className="sr-only">{description}</DrawerDescription>
-        <div className="px-0 pb-0">
-          <SettingsModalBody isDesktop={false} onClose={() => onOpenChange(false)}>
-            {children}
-          </SettingsModalBody>
-        </div>
-      </DrawerContent>
-    </Drawer>
+      <SettingsModalBody isDesktop={isDesktop} onClose={() => onOpenChange(false)}>
+        {children}
+      </SettingsModalBody>
+    </ResponsiveModal>
   );
 }
 

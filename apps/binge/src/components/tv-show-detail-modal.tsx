@@ -7,18 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@chill-institute/ui/components/ui/t
 import { Badge } from "@chill-institute/ui/components/ui/badge";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { IconButton } from "@chill-institute/ui/components/icon-button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@chill-institute/ui/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-} from "@chill-institute/ui/components/ui/drawer";
+import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { cn } from "@chill-institute/ui/cn";
@@ -488,38 +477,16 @@ export function TvShowDetailModal({
     />
   );
 
-  if (isDesktop) {
-    return (
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent
-          showCloseButton={false}
-          className="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
-        >
-          <DialogTitle className="sr-only">{show?.title ?? "TV show details"}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Browse TV show metadata, seasons, and episode download actions.
-          </DialogDescription>
-          {content}
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
-    <Drawer
+    <ResponsiveModal
       open
-      direction="bottom"
       onOpenChange={(open) => !open && onClose()}
-      modal
-      shouldScaleBackground={false}
+      title={show?.title ?? "TV show details"}
+      description="Browse TV show metadata, seasons, and episode download actions."
+      desktopContentClassName="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
+      drawerContentClassName="!max-h-[92dvh] bg-surface shadow-drawer overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0"
     >
-      <DrawerContent className="!max-h-[92dvh] bg-surface shadow-drawer overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0">
-        <DrawerTitle className="sr-only">{show?.title ?? "TV show details"}</DrawerTitle>
-        <DrawerDescription className="sr-only">
-          Browse TV show metadata, seasons, and episode download actions.
-        </DrawerDescription>
-        {content}
-      </DrawerContent>
-    </Drawer>
+      {content}
+    </ResponsiveModal>
   );
 }

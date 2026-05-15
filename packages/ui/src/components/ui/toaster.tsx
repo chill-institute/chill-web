@@ -1,34 +1,11 @@
-import { useEffect, useState } from "react";
 import { Toaster as Sonner } from "sonner";
+
+import { useResolvedTheme } from "../../hooks/use-resolved-theme";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-// Subscribe to the resolved theme via the `dark` class on <html> — the same
-// hook the rest of the app uses to flip surface tokens. Reading localStorage
-// at mount only (the previous implementation) leaves Sonner stuck on the
-// initial palette when the user toggles theme later.
-function useResolvedToasterTheme(): "light" | "dark" {
-  const [isDark, setIsDark] = useState(() => readIsDark());
-  useEffect(() => {
-    const update = () => setIsDark(readIsDark());
-    const observer = new MutationObserver(update);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    update();
-    return () => observer.disconnect();
-  }, []);
-  return isDark ? "dark" : "light";
-}
-
-function readIsDark(): boolean {
-  if (typeof document === "undefined") return false;
-  return document.documentElement.classList.contains("dark");
-}
-
 export function Toaster(props: ToasterProps) {
-  const theme = useResolvedToasterTheme();
+  const theme = useResolvedTheme();
   return (
     <Sonner
       className="toaster group"

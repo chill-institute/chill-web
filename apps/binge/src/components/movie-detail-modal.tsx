@@ -4,18 +4,7 @@ import { ArrowUpRight, Search, Star, Users, X } from "lucide-react";
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { IconButton } from "@chill-institute/ui/components/icon-button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@chill-institute/ui/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-} from "@chill-institute/ui/components/ui/drawer";
+import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Badge } from "@chill-institute/ui/components/ui/badge";
 import {
@@ -613,33 +602,16 @@ function EmptyResults({ title, body }: { title: string; body: string }) {
 
 export function MovieDetailModal({ movie, onClose }: Props) {
   const isDesktop = useIsDesktop();
-
-  if (isDesktop) {
-    return (
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent
-          showCloseButton={false}
-          className="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
-        >
-          <DialogTitle className="sr-only">{movie.title} details</DialogTitle>
-          <DialogDescription className="sr-only">
-            Torrent results for {movie.title} ({movie.year})
-          </DialogDescription>
-          <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="!max-h-[92dvh] border-0 bg-transparent p-0">
-        <DrawerTitle className="sr-only">{movie.title} details</DrawerTitle>
-        <DrawerDescription className="sr-only">
-          Torrent results for {movie.title} ({movie.year})
-        </DrawerDescription>
-        <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop={false} />
-      </DrawerContent>
-    </Drawer>
+    <ResponsiveModal
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title={`${movie.title} details`}
+      description={`Torrent results for ${movie.title} (${movie.year})`}
+      desktopContentClassName="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
+      drawerContentClassName="!max-h-[92dvh] border-0 bg-transparent p-0"
+    >
+      <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop={isDesktop} />
+    </ResponsiveModal>
   );
 }
