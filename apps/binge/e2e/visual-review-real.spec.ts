@@ -57,7 +57,9 @@ test.describe("real-backend · binge", () => {
     try {
       await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
       await expect(page.getByRole("link", { name: /binge\.institute/i })).toBeVisible();
-      await expect(page.locator("article").first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator('[data-slot="poster-card"]').first()).toBeVisible({
+        timeout: 20_000,
+      });
       await tallShot(page, join(SHOTS, "10-home-movies.png"));
     } finally {
       await context.close();
@@ -69,12 +71,14 @@ test.describe("real-backend · binge", () => {
     try {
       await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
       await page.getByRole("tab", { name: "tv shows" }).click();
-      await expect(page.locator("article").first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator('[data-slot="poster-card"]').first()).toBeVisible({
+        timeout: 20_000,
+      });
       // Wait for the catalog to settle — count keeps growing while React hydrates
       // and the API streams shows in. Once it's stable for a frame we're done.
       /* eslint-disable react-doctor/async-await-in-loop */
       for (let i = 0, lastCount = 0; i < 20; i++) {
-        const count = await page.locator("article").count();
+        const count = await page.locator('[data-slot="poster-card"]').count();
         if (count === lastCount && count > 0) break;
         lastCount = count;
         await page.waitForTimeout(200);
@@ -90,7 +94,7 @@ test.describe("real-backend · binge", () => {
     const { context, page } = await authedContext(browser);
     try {
       await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
-      const firstCard = page.locator("article").first();
+      const firstCard = page.locator('[data-slot="poster-card"]').first();
       await expect(firstCard).toBeVisible({ timeout: 20_000 });
       await firstCard.click();
       await expect(page.getByRole("dialog")).toBeVisible({ timeout: 15_000 });
@@ -106,7 +110,7 @@ test.describe("real-backend · binge", () => {
     try {
       await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
       await page.getByRole("tab", { name: "tv shows" }).click();
-      const firstCard = page.locator("article").first();
+      const firstCard = page.locator('[data-slot="poster-card"]').first();
       await expect(firstCard).toBeVisible({ timeout: 20_000 });
       await firstCard.click();
       await expect(page.getByRole("dialog")).toBeVisible({ timeout: 15_000 });

@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "../lib/cn";
+import { slotAttr } from "../lib/slot-attr";
 
 type PosterCardProps = useRender.ComponentProps<"article"> & {
   title: string;
@@ -31,6 +32,7 @@ function PosterCard({
     defaultTagName: "article",
     props: mergeProps<"article">(
       {
+        ...slotAttr("poster-card"),
         className: cn(
           "group bg-surface border-border-strong motion-safe:ease-out motion-safe:duration-base flex flex-col overflow-hidden rounded border no-underline motion-safe:transition-[transform]",
           interactive &&

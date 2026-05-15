@@ -31,9 +31,11 @@ test.describe("binge · @chill-institute/api smoke", () => {
         "aria-selected",
         "true",
       );
-      await expect(page.locator("article").first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('[data-slot="poster-card"]').first()).toBeVisible({
+        timeout: 30_000,
+      });
       await expect
-        .poll(async () => page.locator("article").count(), { timeout: 30_000 })
+        .poll(async () => page.locator('[data-slot="poster-card"]').count(), { timeout: 30_000 })
         .toBeGreaterThan(0);
     } finally {
       await context.close();
@@ -53,9 +55,11 @@ test.describe("binge · @chill-institute/api smoke", () => {
         "aria-selected",
         "true",
       );
-      await expect(page.locator("article").first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('[data-slot="poster-card"]').first()).toBeVisible({
+        timeout: 30_000,
+      });
       await expect
-        .poll(async () => page.locator("article").count(), { timeout: 30_000 })
+        .poll(async () => page.locator('[data-slot="poster-card"]').count(), { timeout: 30_000 })
         .toBeGreaterThan(0);
     } finally {
       await context.close();
@@ -70,8 +74,10 @@ test.describe("binge · @chill-institute/api smoke", () => {
       await page.setViewportSize({ width: 1280, height: 1100 });
       await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 
-      await expect(page.locator("article").first()).toBeVisible({ timeout: 30_000 });
-      await page.locator("article").first().click();
+      await expect(page.locator('[data-slot="poster-card"]').first()).toBeVisible({
+        timeout: 30_000,
+      });
+      await page.locator('[data-slot="poster-card"]').first().click();
 
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible({ timeout: 15_000 });

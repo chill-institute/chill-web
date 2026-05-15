@@ -232,7 +232,11 @@ test.describe("tv shows home", () => {
     await authenticatedPage.goto("/");
     await authenticatedPage.getByRole("tab", { name: "tv shows" }).click();
 
-    await authenticatedPage.locator("article").filter({ hasText: "The Pitt" }).first().click();
+    await authenticatedPage
+      .locator('[data-slot="poster-card"]')
+      .filter({ hasText: "The Pitt" })
+      .first()
+      .click();
 
     const modal = authenticatedPage.getByRole("dialog", { name: "The Pitt" });
 

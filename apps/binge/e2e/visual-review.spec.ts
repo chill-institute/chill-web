@@ -186,7 +186,7 @@ test.describe("visual review · binge", () => {
     await authenticatedPage.goto("/");
 
     await authenticatedPage.emulateMedia({ reducedMotion: "reduce" });
-    await authenticatedPage.locator("article").first().click();
+    await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
     await expect(authenticatedPage.getByText("send to put.io").first()).toBeVisible();
     await authenticatedPage.screenshot({
       path: join(SHOTS, "20-movie-modal.png"),
@@ -257,7 +257,11 @@ test.describe("visual review · binge", () => {
 
     await authenticatedPage.emulateMedia({ reducedMotion: "reduce" });
     await authenticatedPage.getByRole("tab", { name: "tv shows" }).click();
-    await authenticatedPage.locator("article").filter({ hasText: "The Bear" }).first().click();
+    await authenticatedPage
+      .locator('[data-slot="poster-card"]')
+      .filter({ hasText: "The Bear" })
+      .first()
+      .click();
     await expect(authenticatedPage.getByText("send season to put.io")).toBeVisible();
     await authenticatedPage.screenshot({ path: join(SHOTS, "21-tv-modal.png"), fullPage: true });
   });

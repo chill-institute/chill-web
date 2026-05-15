@@ -90,11 +90,9 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
 });
 
 async function openFirstMovieModal(page: Page) {
-  // PosterCard exposes the article itself as role="button" — there's no
-  // longer a nested <button>. Click the article directly.
-  const firstArticle = page.locator("article").first();
-  await expect(firstArticle).toBeVisible();
-  await firstArticle.click();
+  const firstCard = page.locator('[data-slot="poster-card"]').first();
+  await expect(firstCard).toBeVisible();
+  await firstCard.click();
 }
 
 test.describe("movies", () => {
@@ -113,9 +111,9 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/");
 
-    const articles = authenticatedPage.locator("article");
+    const articles = authenticatedPage.locator('[data-slot="poster-card"]');
     await expect(articles).toHaveCount(2);
-    await expect(authenticatedPage.locator("article img")).toHaveCount(2);
+    await expect(authenticatedPage.locator('[data-slot="poster-card"] img')).toHaveCount(2);
     await expect(articles.nth(0)).toContainText("Inception");
     await expect(articles.nth(1)).toContainText("Interstellar");
     await expect(authenticatedPage.getByRole("button", { name: "Expanded view" })).toHaveCount(0);
@@ -152,7 +150,7 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/");
 
     await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
-    await expect(authenticatedPage.locator("article")).toHaveCount(2);
+    await expect(authenticatedPage.locator('[data-slot="poster-card"]')).toHaveCount(2);
   });
 
   test("empty state", async ({ authenticatedPage, mockRpc }) => {
@@ -193,7 +191,7 @@ test.describe("movies", () => {
     await expect(authenticatedPage.getByText("Action")).toBeVisible();
     await expect(authenticatedPage.getByLabel("Resolution")).toBeVisible();
     await expect(authenticatedPage.getByLabel("Codec")).toBeVisible();
-    await expect(authenticatedPage.getByLabel("Sort")).toBeVisible();
+    await expect(authenticatedPage.getByLabel("Sort", { exact: true })).toBeVisible();
     await expect(
       authenticatedPage.getByRole("button", { name: /send to put\.io/i }).last(),
     ).toBeVisible();
