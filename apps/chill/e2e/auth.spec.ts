@@ -49,7 +49,7 @@ test.describe("sign-in page", () => {
     await page.route(/\/auth\/putio\/start/, (route) => route.fulfill({ status: 200, body: "" }));
 
     const requestPromise = page.waitForRequest(/\/auth\/putio\/start/);
-    await page.getByRole("button", { name: "authenticate at put.io" }).click();
+    await page.getByRole("button", { name: "sign in with put.io" }).click();
     const startURL = (await requestPromise).url();
 
     const successURL = new URL(startURL).searchParams.get("success_url");
