@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, useMatch } from "@tanstack/react-router";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 import { readStoredToken } from "@chill-institute/auth/auth";
 
@@ -31,18 +31,9 @@ export const Route = createFileRoute("/tv-shows")({
 
 function TVShowsLayout() {
   const { sort = "popular", source } = Route.useSearch();
-  const childMatch = useMatch({ from: "/tv-shows/$id", shouldThrow: false });
-  const selectedShowId = childMatch?.params.id;
-  const selectedSeason = childMatch?.search.season;
   return (
     <>
-      <CatalogPage
-        tab="tv-shows"
-        sort={sort}
-        source={source}
-        selectedShowId={selectedShowId}
-        selectedSeason={selectedSeason}
-      />
+      <CatalogPage tab="tv-shows" sort={sort} source={source} />
       <Outlet />
     </>
   );

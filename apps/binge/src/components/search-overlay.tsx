@@ -38,7 +38,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const sendRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const prevResultsRef = useRef<readonly SearchResult[] | null>(null);
+  const prevQueryRef = useRef("");
 
   const trimmed = deferredQuery.trim();
   const searchQuery = useFreeSearchQuery({ query: trimmed, enabled: open });
@@ -57,10 +57,9 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     return () => window.clearTimeout(id);
   }, [open]);
 
-  // Render-phase reset so a refetch reordering results can't fire Enter on a stale index.
-  // Compares the memoized `visible` reference, which is stable when `results` doesn't change.
-  if (prevResultsRef.current !== visible) {
-    prevResultsRef.current = visible;
+  // Reset highlight when the user types a new query (not on every refetch tick).
+  if (prevQueryRef.current !== trimmed) {
+    prevQueryRef.current = trimmed;
     setHighlight(0);
   }
 

@@ -36,21 +36,23 @@ export function useFastestMode(
     }
   }
 
+  const { totalCount, nonEmptyResolvedCount, pendingCount, hasPending } = searchState;
+  const resultsCount = searchState.results.length;
+
   useEffect(() => {
     if (!isFastestMode || submittedQuery.length === 0) {
       return;
     }
 
-    const { totalCount, nonEmptyResolvedCount, pendingCount } = searchState;
-    const allDone = totalCount > 0 && !searchState.hasPending;
+    const allDone = totalCount > 0 && !hasPending;
     const threshold = Math.min(Math.ceil(totalCount / 2), 3);
 
     if (fastestPhase === "idle") {
-      if (allDone && searchState.results.length === 0) {
+      if (allDone && resultsCount === 0) {
         dispatch({ type: "SET_PHASE", phase: "empty" });
-      } else if (nonEmptyResolvedCount >= threshold && searchState.results.length > 0) {
+      } else if (nonEmptyResolvedCount >= threshold && resultsCount > 0) {
         dispatch({ type: "SET_PHASE", phase: "fastest" });
-      } else if (allDone && searchState.results.length > 0) {
+      } else if (allDone && resultsCount > 0) {
         dispatch({ type: "SET_PHASE", phase: "all" });
       }
     }
@@ -81,7 +83,16 @@ export function useFastestMode(
         );
       }
     }
-  }, [isFastestMode, searchState, submittedQuery, fastestPhase]);
+  }, [
+    isFastestMode,
+    submittedQuery,
+    fastestPhase,
+    totalCount,
+    nonEmptyResolvedCount,
+    pendingCount,
+    hasPending,
+    resultsCount,
+  ]);
 
   useEffect(() => {
     return () => {

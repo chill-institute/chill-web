@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ArrowUpRight, CloudUpload, Loader2, Star, X } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
@@ -56,12 +56,13 @@ function EpisodeActionSkeleton() {
 
 function useImageLoadedState() {
   const [loaded, setLoaded] = useState(false);
-  // Cached images may not fire onLoad after key-remount; check `.complete`
-  // when the <img> mounts and pre-set loaded so we don't flash a skeleton.
-  const ref = (img: HTMLImageElement | null) => {
+  const onLoad = useCallback(() => setLoaded(true), []);
+  // Cached images may not fire onLoad after a key-remount; the ref callback
+  // checks `.complete` on attach so we don't flash a skeleton.
+  const ref = useCallback((img: HTMLImageElement | null) => {
     if (img?.complete && img.naturalWidth > 0) setLoaded(true);
-  };
-  return { loaded, onLoad: () => setLoaded(true), ref };
+  }, []);
+  return { loaded, onLoad, ref };
 }
 
 function BackdropImage({ url }: { url?: string }) {
@@ -186,9 +187,12 @@ function TvShowDetailContent({
           <div className="min-w-0 flex-1">
             {show ? (
               <div className="text-fg-1 max-w-[520px]">
-                <p className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0">
+                <h2
+                  id="tv-show-detail-title"
+                  className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0 font-normal"
+                >
                   {show.title}
-                </p>
+                </h2>
                 <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
                   <span className="flex items-center gap-1">
                     <Star

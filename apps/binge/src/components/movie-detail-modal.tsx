@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ArrowUpRight, Search, Star, Users, X } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
@@ -177,12 +177,13 @@ function FilterSelect<T extends string>({
 
 function useImageLoadedState() {
   const [loaded, setLoaded] = useState(false);
-  // Cached images may not fire onLoad after key-remount; check `.complete`
-  // when the <img> mounts and pre-set loaded so we don't flash a skeleton.
-  const ref = (img: HTMLImageElement | null) => {
+  const onLoad = useCallback(() => setLoaded(true), []);
+  // Cached images may not fire onLoad after a key-remount; the ref callback
+  // checks `.complete` on attach so we don't flash a skeleton.
+  const ref = useCallback((img: HTMLImageElement | null) => {
     if (img?.complete && img.naturalWidth > 0) setLoaded(true);
-  };
-  return { loaded, onLoad: () => setLoaded(true), ref };
+  }, []);
+  return { loaded, onLoad, ref };
 }
 
 function BackdropImage({ url }: { url?: string }) {
@@ -238,7 +239,12 @@ function PosterImage({ url, alt }: { url: string; alt: string }) {
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   return (
     <div className="text-fg-1 max-w-[560px]">
-      <p className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0">{movie.title}</p>
+      <h2
+        id="movie-detail-title"
+        className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0 font-normal"
+      >
+        {movie.title}
+      </h2>
       <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
         <span className="flex items-center gap-1">
           <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
@@ -423,10 +429,9 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                   </p>
                 ) : null}
 
-                <div
-                  role="list"
+                <ul
                   aria-label="Torrent results list"
-                  className="border-border-soft bg-surface-2 overflow-hidden rounded border"
+                  className="border-border-soft bg-surface-2 m-0 list-none overflow-hidden rounded border p-0"
                 >
                   {visibleResults.map(({ result, resolution, codec }) => {
                     const isSendable = canSendResult(result);
@@ -438,9 +443,8 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                     const seederLabel = formatSeederCount(result.seeders);
 
                     return (
-                      <div
+                      <li
                         key={result.id || `${result.title}-${result.link}`}
-                        role="listitem"
                         className={cn(
                           "border-border-faint flex flex-col gap-3 border-t px-3 py-3 first:border-t-0 sm:flex-row sm:items-center sm:justify-between",
                           !isSendable && "opacity-70",
@@ -506,10 +510,10 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                             </Button>
                           )}
                         </div>
-                      </div>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               </>
             )}
           </>

@@ -1,14 +1,11 @@
-import {
-  createRootRouteWithContext,
-  Navigate,
-  type ErrorComponentProps,
-} from "@tanstack/react-router";
+import { createRootRouteWithContext, type ErrorComponentProps } from "@tanstack/react-router";
 
 import type { RouterContext } from "@/router";
 import { AppErrorBoundary } from "@chill-institute/ui/components/app-error-boundary";
 import { AppErrorFallback } from "@chill-institute/ui/components/app-error-fallback";
 import { AppShell } from "@/components/app-shell";
 import { BackendUnavailableScreen } from "@chill-institute/ui/components/backend-unavailable-screen";
+import { NotFoundScreen } from "@chill-institute/ui/components/not-found-screen";
 import { AuthProvider } from "@chill-institute/auth/auth";
 import { ChillApiProvider } from "@/lib/api";
 import { BackendHealthProvider, useBackendUnavailable } from "@/hooks/use-backend-unavailable";
@@ -63,5 +60,5 @@ function RootError({ error }: ErrorComponentProps) {
 }
 
 function RootNotFound() {
-  return <Navigate to="/" replace />;
+  return <NotFoundScreen />;
 }

@@ -66,11 +66,8 @@ function SignInPage() {
     const callback = search.callbackUrl?.trim();
     const normalized = callback ? normalizeCallbackPath(callback) : null;
     if (normalized) {
-      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      if (current !== normalized) {
-        window.location.replace(normalized);
-        return;
-      }
+      void navigate({ href: normalized, replace: true });
+      return;
     }
     void navigate({ to: "/", replace: true });
   }, [auth.isAuthenticated, navigate, search.callbackUrl]);

@@ -1,5 +1,6 @@
 import { Navigate, createFileRoute, useRouterState } from "@tanstack/react-router";
 
+import { SearchShell } from "@/components/search-shell";
 import { SettingsPanel } from "@/components/settings-panel";
 import { useAuth } from "@chill-institute/auth/auth";
 
@@ -18,8 +19,10 @@ function SettingsPage() {
   }
 
   return (
-    <section data-page="settings">
-      <SettingsPanel />
-    </section>
+    <SearchShell>
+      <section data-page="settings">
+        <SettingsPanel />
+      </section>
+    </SearchShell>
   );
 }

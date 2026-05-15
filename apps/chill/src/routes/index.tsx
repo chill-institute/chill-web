@@ -2,6 +2,8 @@ import { Navigate, createFileRoute } from "@tanstack/react-router";
 
 import { readCurrentCallbackPath, useAuth } from "@chill-institute/auth/auth";
 
+import { HomeShell } from "@/components/home-shell";
+
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
@@ -20,5 +22,5 @@ function HomePage() {
     );
   }
 
-  return null;
+  return <HomeShell />;
 }

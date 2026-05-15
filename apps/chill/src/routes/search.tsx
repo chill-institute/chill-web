@@ -4,6 +4,7 @@ import { match } from "ts-pattern";
 
 import { EmptyState } from "@chill-institute/ui/components/empty-state";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
+import { SearchShell } from "@/components/search-shell";
 import { SearchFilterBar } from "@/components/search-filter-bar";
 import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
@@ -119,7 +120,7 @@ function SearchPage() {
 
   const combined = combineQueries(configQuery, indexersQuery);
 
-  return match(combined)
+  const content = match(combined)
     .with({ status: "pending" }, () =>
       submittedQuery.length > 0 ? (
         <>
@@ -206,4 +207,6 @@ function SearchPage() {
       );
     })
     .exhaustive();
+
+  return <SearchShell>{content}</SearchShell>;
 }

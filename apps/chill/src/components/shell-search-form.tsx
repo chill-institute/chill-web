@@ -27,7 +27,12 @@ export function ShellSearchForm({
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "/" && !focused) {
+      if (event.key === "/" && !focused && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const tag = target?.tagName?.toLowerCase();
+        const editable =
+          tag === "input" || tag === "textarea" || target?.isContentEditable === true;
+        if (editable) return;
         event.preventDefault();
         inputRef.current?.focus();
       }

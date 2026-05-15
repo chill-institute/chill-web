@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
@@ -6,8 +6,32 @@ import { normalizeBingeUserSettings, type UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
 const SAVE_DEBOUNCE_MS = 500;
-const MOVIES_REFRESH_PENDING_QUERY_KEY = ["movies-refresh-pending"] as const;
-const TV_SHOWS_REFRESH_PENDING_QUERY_KEY = ["tv-shows-refresh-pending"] as const;
+
+type RefreshFlag = "movies" | "tv-shows";
+
+const refreshState: Record<RefreshFlag, boolean> = { movies: false, "tv-shows": false };
+const refreshListeners = new Set<() => void>();
+
+function setRefresh(flag: RefreshFlag, value: boolean): void {
+  if (refreshState[flag] === value) return;
+  refreshState[flag] = value;
+  for (const listener of refreshListeners) listener();
+}
+
+function subscribeRefresh(listener: () => void): () => void {
+  refreshListeners.add(listener);
+  return () => {
+    refreshListeners.delete(listener);
+  };
+}
+
+function getMoviesRefreshSnapshot(): boolean {
+  return refreshState.movies;
+}
+
+function getTVShowsRefreshSnapshot(): boolean {
+  return refreshState["tv-shows"];
+}
 
 export function useSettingsQuery() {
   const api = useApi();
@@ -24,28 +48,16 @@ export function useSettingsQuery() {
   });
 }
 
-export function usePendingMoviesRefresh() {
-  const query = useQuery({
-    queryKey: MOVIES_REFRESH_PENDING_QUERY_KEY,
-    queryFn: async () => false,
-    initialData: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-
-  return query.data === true;
+export function usePendingMoviesRefresh(): boolean {
+  return useSyncExternalStore(subscribeRefresh, getMoviesRefreshSnapshot, getMoviesRefreshSnapshot);
 }
 
-export function usePendingTVShowsRefresh() {
-  const query = useQuery({
-    queryKey: TV_SHOWS_REFRESH_PENDING_QUERY_KEY,
-    queryFn: async () => false,
-    initialData: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-
-  return query.data === true;
+export function usePendingTVShowsRefresh(): boolean {
+  return useSyncExternalStore(
+    subscribeRefresh,
+    getTVShowsRefreshSnapshot,
+    getTVShowsRefreshSnapshot,
+  );
 }
 
 export function useSaveSettings() {
@@ -74,9 +86,10 @@ export function useSaveSettings() {
       void queryClient.invalidateQueries({ queryKey: ["user-settings"] });
     },
     onSettled: () => {
+      previousRef.current = null;
       pendingRef.current = null;
-      queryClient.setQueryData(MOVIES_REFRESH_PENDING_QUERY_KEY, false);
-      queryClient.setQueryData(TV_SHOWS_REFRESH_PENDING_QUERY_KEY, false);
+      setRefresh("movies", false);
+      setRefresh("tv-shows", false);
     },
   });
 
@@ -97,14 +110,15 @@ export function useSaveSettings() {
     mutate: (next: UserSettings) => {
       const normalizedNext = normalizeBingeUserSettings(next);
       const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
-      if (current) {
+      // Capture the pre-debounce baseline once per window. Subsequent clicks
+      // within the same debounce window mustn't overwrite it — onSuccess
+      // compares the eventual settled value against this baseline.
+      if (pendingRef.current === null && current) {
         previousRef.current = current;
-        if (current.moviesSource !== normalizedNext.moviesSource) {
-          queryClient.setQueryData(MOVIES_REFRESH_PENDING_QUERY_KEY, true);
-        }
-        if (current.tvShowsSource !== normalizedNext.tvShowsSource) {
-          queryClient.setQueryData(TV_SHOWS_REFRESH_PENDING_QUERY_KEY, true);
-        }
+      }
+      if (previousRef.current) {
+        setRefresh("movies", previousRef.current.moviesSource !== normalizedNext.moviesSource);
+        setRefresh("tv-shows", previousRef.current.tvShowsSource !== normalizedNext.tvShowsSource);
       }
       queryClient.setQueryData(["user-settings"], normalizedNext);
       writeCachedSettings(normalizedNext);

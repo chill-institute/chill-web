@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Calendar, Film, Flame, Search, Star, Tv } from "lucide-react";
 import { match } from "ts-pattern";
@@ -45,12 +45,6 @@ import {
   type UserSettings,
 } from "@/lib/types";
 
-const MovieDetailModal = lazy(() =>
-  import("@/components/movie-detail-modal").then((m) => ({ default: m.MovieDetailModal })),
-);
-const TvShowDetailModal = lazy(() =>
-  import("@/components/tv-show-detail-modal").then((m) => ({ default: m.TvShowDetailModal })),
-);
 const SearchOverlay = lazy(() =>
   import("@/components/search-overlay").then((m) => ({ default: m.SearchOverlay })),
 );
@@ -65,11 +59,9 @@ export function parseSortKey(value: unknown): SortKey | undefined {
 const SORT_DEFAULT: SortKey = "popular";
 
 function useCatalogSearchHotkey(isOpen: boolean, open: () => void) {
-  const isOpenRef = useRef(isOpen);
-  isOpenRef.current = isOpen;
   useEffect(() => {
     function handler(event: KeyboardEvent) {
-      if (isOpenRef.current) return;
+      if (isOpen) return;
       const isMeta = event.metaKey || event.ctrlKey;
       if (isMeta && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -88,26 +80,16 @@ function useCatalogSearchHotkey(isOpen: boolean, open: () => void) {
     }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open]);
+  }, [isOpen, open]);
 }
 
 type CatalogPageProps = {
   tab: CatalogTab;
   sort: SortKey;
   source?: number;
-  selectedMovieId?: string;
-  selectedShowId?: string;
-  selectedSeason?: number;
 };
 
-export function CatalogPage({
-  tab,
-  sort,
-  source,
-  selectedMovieId,
-  selectedShowId,
-  selectedSeason,
-}: CatalogPageProps) {
+export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
   const auth = useAuth();
   const callbackURL = readCurrentCallbackPath();
   const navigate = useNavigate();
@@ -175,17 +157,11 @@ export function CatalogPage({
         tvShowsQuery.status === "success" && tvShowsQuery.data.source === effectiveTVShowsSource
           ? tvShowsQuery.data
           : undefined;
-      const selectedShow = currentTVShowsResponse?.shows.find(
-        (show) => show.imdbId === selectedShowId,
-      );
 
       const currentMoviesResponse =
         moviesQuery.status === "success" && moviesQuery.data.source === effectiveMoviesSource
           ? moviesQuery.data
           : undefined;
-      const selectedMovie = currentMoviesResponse?.movies.find(
-        (movie) => movie.id === selectedMovieId,
-      );
 
       const sourceSelector =
         tab === "movies" ? (
@@ -196,6 +172,7 @@ export function CatalogPage({
               void navigate({
                 to: "/movies",
                 search: (prev) => ({ ...prev, source: moviesSource }),
+                replace: true,
               });
             }}
           />
@@ -207,6 +184,7 @@ export function CatalogPage({
               void navigate({
                 to: "/tv-shows",
                 search: (prev) => ({ ...prev, source: tvShowsSource }),
+                replace: true,
               });
             }}
           />
@@ -230,17 +208,7 @@ export function CatalogPage({
         void navigate({
           to: tab === "movies" ? "/movies" : "/tv-shows",
           search: (prev) => ({ ...prev, sort: next === SORT_DEFAULT ? undefined : next }),
-        });
-      };
-
-      const closeMovie = () => void navigate({ to: "/movies", search: (prev) => prev });
-      const closeShow = () => void navigate({ to: "/tv-shows", search: (prev) => prev });
-      const setSeason = (season: number) => {
-        if (!selectedShowId) return;
-        void navigate({
-          to: "/tv-shows/$id",
-          params: { id: selectedShowId },
-          search: (prev) => ({ ...prev, season }),
+          replace: true,
         });
       };
 
@@ -251,13 +219,6 @@ export function CatalogPage({
             pendingRefresh={pendingMoviesRefresh}
             source={effectiveMoviesSource}
             sort={sort}
-            onSelect={(movie) =>
-              void navigate({
-                to: "/movies/$id",
-                params: { id: movie.id },
-                search: (prev) => prev,
-              })
-            }
             onPickAnotherSource={() => {
               const next = cycleSource(moviesSources, effectiveMoviesSource);
               if (next === undefined) return;
@@ -265,6 +226,7 @@ export function CatalogPage({
               void navigate({
                 to: "/movies",
                 search: (prev) => ({ ...prev, source: next }),
+                replace: true,
               });
             }}
           />
@@ -274,13 +236,6 @@ export function CatalogPage({
             pendingRefresh={pendingTVShowsRefresh}
             source={effectiveTVShowsSource}
             sort={sort}
-            onSelect={(show) =>
-              void navigate({
-                to: "/tv-shows/$id",
-                params: { id: show.imdbId },
-                search: (prev) => ({ ...prev, season: 1 }),
-              })
-            }
             onPickAnotherSource={() => {
               const next = cycleSource(tvShowsSources, effectiveTVShowsSource);
               if (next === undefined) return;
@@ -288,6 +243,7 @@ export function CatalogPage({
               void navigate({
                 to: "/tv-shows",
                 search: (prev) => ({ ...prev, source: next }),
+                replace: true,
               });
             }}
           />
@@ -297,7 +253,7 @@ export function CatalogPage({
         <HomeShell tab={tab} onOpenSearch={openSearch}>
           <PageHeading tab={tab} />
           <SortRow count={countLabel}>
-            <div className={tabsContainerClass}>
+            <div className={tabsContainerClass} role="radiogroup" aria-label="sort movies by">
               <SortPill active={sort === "popular"} onClick={() => setSort("popular")}>
                 <Flame aria-hidden="true" />
                 popular
@@ -321,25 +277,11 @@ export function CatalogPage({
             <UserErrorAlert className="mt-4" error={saveConfigMutation.error} />
           ) : null}
 
-          <Suspense fallback={null}>
-            {tab === "movies" && selectedMovieId && selectedMovie ? (
-              <MovieDetailModal movie={selectedMovie} onClose={closeMovie} />
-            ) : null}
-
-            {tab === "tv-shows" && selectedShowId ? (
-              <TvShowDetailModal
-                imdbId={selectedShowId}
-                fallbackShow={selectedShow}
-                activeSeason={selectedSeason}
-                onSeasonChange={setSeason}
-                onClose={closeShow}
-              />
-            ) : null}
-
-            {searchState !== "unmounted" ? (
+          {searchState !== "unmounted" ? (
+            <Suspense fallback={null}>
               <SearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
-            ) : null}
-          </Suspense>
+            </Suspense>
+          ) : null}
         </HomeShell>
       );
     })
@@ -355,12 +297,12 @@ function BingeBrand() {
         src="/logo.png"
         width={22}
         height={22}
-        alt="binge.institute"
+        alt=""
         className="border-border-strong rounded border"
       />
-      <span className="text-fg-1 truncate font-serif text-lg leading-7 tracking-[-0.01em]">
+      <h1 className="text-fg-1 m-0 truncate font-serif text-lg leading-7 font-normal tracking-[-0.01em]">
         binge.institute
-      </span>
+      </h1>
     </Link>
   );
 }
@@ -374,26 +316,24 @@ function HomeShell({
   onOpenSearch?: () => void;
   children: React.ReactNode;
 }) {
-  const navigate = useNavigate();
   return (
     <div className="flex min-h-dvh flex-col">
       <StickyHeader
         brand={<BingeBrand />}
         tabs={
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              if (value === "movies" || value === "tv-shows") {
-                void navigate({ to: value === "movies" ? "/movies" : "/tv-shows", search: {} });
-              }
-            }}
-          >
+          <Tabs value={tab}>
             <TabsList>
-              <TabsTrigger value="movies">
+              <TabsTrigger
+                value="movies"
+                render={<Link to="/movies" search={{ sort: undefined, source: undefined }} />}
+              >
                 <Film aria-hidden="true" />
                 movies
               </TabsTrigger>
-              <TabsTrigger value="tv-shows">
+              <TabsTrigger
+                value="tv-shows"
+                render={<Link to="/tv-shows" search={{ sort: undefined, source: undefined }} />}
+              >
                 <Tv aria-hidden="true" />
                 tv shows
               </TabsTrigger>
@@ -443,7 +383,6 @@ type MoviesContentProps = {
   pendingRefresh: boolean;
   source: UserSettings["moviesSource"];
   sort: SortKey;
-  onSelect: (movie: Movie) => void;
   onPickAnotherSource: () => void;
 };
 
@@ -452,7 +391,6 @@ function MoviesContent({
   pendingRefresh,
   source,
   sort,
-  onSelect,
   onPickAnotherSource,
 }: MoviesContentProps) {
   if (pendingRefresh) return <PosterGridSkeleton />;
@@ -487,7 +425,7 @@ function MoviesContent({
               image={movie.posterUrl ?? null}
               rating={movie.rating != null ? movie.rating.toFixed(1) : null}
               year={movie.year != null ? String(movie.year) : null}
-              onClick={() => onSelect(movie)}
+              render={<Link to="/movies/$id" params={{ id: movie.id }} search={(prev) => prev} />}
             />
           ))}
         </PosterGrid>
@@ -501,7 +439,6 @@ type TVShowsContentProps = {
   pendingRefresh: boolean;
   source: UserSettings["tvShowsSource"];
   sort: SortKey;
-  onSelect: (show: TVShow) => void;
   onPickAnotherSource: () => void;
 };
 
@@ -510,7 +447,6 @@ function TVShowsContent({
   pendingRefresh,
   source,
   sort,
-  onSelect,
   onPickAnotherSource,
 }: TVShowsContentProps) {
   if (pendingRefresh) return <PosterGridSkeleton />;
@@ -545,7 +481,9 @@ function TVShowsContent({
               image={show.posterUrl ?? null}
               rating={show.rating != null ? show.rating.toFixed(1) : null}
               year={show.year != null ? String(show.year) : null}
-              onClick={() => onSelect(show)}
+              render={
+                <Link to="/tv-shows/$id" params={{ id: show.imdbId }} search={{ season: 1 }} />
+              }
             />
           ))}
         </PosterGrid>
@@ -608,7 +546,7 @@ function EmptyState({ message, onTryAnother }: { message: string; onTryAnother?:
             src="/logo.png"
             width={48}
             height={48}
-            alt="binge.institute"
+            alt=""
             className="border-border-strong rounded border"
           />
         </EmptyMedia>

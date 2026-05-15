@@ -93,10 +93,16 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
               {columns.map((column) => {
                 const active = sortBy === column.key;
                 const isTitle = column.key === SortBy.TITLE;
+                const ariaSort = active
+                  ? sortDirection === SortDirection.ASC
+                    ? "ascending"
+                    : "descending"
+                  : "none";
                 return (
                   <th
                     key={column.key}
                     scope="col"
+                    aria-sort={ariaSort}
                     className={
                       isTitle
                         ? "pr-2 pb-1.5 text-left font-serif text-base leading-5 font-normal tracking-[-0.01em] whitespace-nowrap"
@@ -116,7 +122,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
                       >
                         <span>{column.label}</span>
                         {active ? (
-                          <span className="inline-flex size-3">
+                          <span className="inline-flex size-3" aria-hidden="true">
                             {sortDirection === SortDirection.ASC ? <ArrowUp /> : <ArrowDown />}
                           </span>
                         ) : null}
@@ -132,8 +138,12 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
               >
                 url
               </th>
-              <th scope="col" className="pb-1 text-center text-sm font-normal whitespace-nowrap">
-                <span aria-label="send to put.io">🤠</span>
+              <th
+                scope="col"
+                aria-label="send to put.io"
+                className="pb-1 text-center text-sm font-normal whitespace-nowrap"
+              >
+                <span aria-hidden="true">🤠</span>
               </th>
             </tr>
           </thead>

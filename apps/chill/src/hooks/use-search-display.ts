@@ -99,6 +99,15 @@ if (typeof window !== "undefined") {
   }
 }
 
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    listeners.clear();
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorageEvent);
+    }
+  });
+}
+
 export function useSearchDisplay(): {
   mode: SearchDisplayMode;
   setMode: (next: SearchDisplayMode) => void;
