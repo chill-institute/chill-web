@@ -1,13 +1,21 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { moviesSourceLabels, moviesSources, MoviesSource, type UserSettings } from "@/lib/types";
+import { ToggleGroup, ToggleGroupItem } from "@chill-institute/ui/components/ui/toggle-group";
+import { tabItemBaseClass, tabsContainerClass } from "@chill-institute/ui/components/tabs";
+import { cn } from "@chill-institute/ui/lib/cn";
+import {
+  moviesSourceLabels,
+  moviesSources,
+  MoviesSource,
+  parseMoviesSource,
+  type UserSettings,
+} from "@/lib/types";
 
 const moviesSourceTabLabels: Record<UserSettings["moviesSource"], string> = {
-  [MoviesSource.UNSPECIFIED]: "IMDb Moviemeter",
-  [MoviesSource.IMDB_MOVIEMETER]: "IMDb Moviemeter",
-  [MoviesSource.IMDB_TOP_250]: "IMDb Top 250",
-  [MoviesSource.YTS]: "YTS",
-  [MoviesSource.ROTTEN_TOMATOES]: "Rotten Tomatoes",
-  [MoviesSource.TRAKT]: "Trakt",
+  [MoviesSource.UNSPECIFIED]: "imdb moviemeter",
+  [MoviesSource.IMDB_MOVIEMETER]: "imdb moviemeter",
+  [MoviesSource.IMDB_TOP_250]: "imdb top 250",
+  [MoviesSource.YTS]: "yts",
+  [MoviesSource.ROTTEN_TOMATOES]: "rotten tomatoes",
+  [MoviesSource.TRAKT]: "trakt",
 };
 
 export function MoviesSourceSelect({
@@ -19,12 +27,16 @@ export function MoviesSourceSelect({
 }) {
   return (
     <ToggleGroup
-      className="w-full justify-start gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      className={tabsContainerClass}
       onValueChange={(next) => {
         if (next.length === 0) {
           return;
         }
-        onChange(Number(next[0]) as UserSettings["moviesSource"]);
+        const parsed = parseMoviesSource(next[0]);
+        if (parsed === undefined) {
+          return;
+        }
+        onChange(parsed);
       }}
       value={[String(value)]}
     >
@@ -33,7 +45,10 @@ export function MoviesSourceSelect({
           key={source}
           value={String(source)}
           aria-label={moviesSourceLabels[source]}
-          className="h-7.5 shrink-0 rounded-md px-2 text-[13px] whitespace-nowrap border border-transparent data-[pressed]:border-stone-950 data-[pressed]:shadow-[1px_1px_rgba(12,10,9,1)] dark:data-[pressed]:border-stone-700 dark:data-[pressed]:shadow-[1px_1px_rgba(68,64,60,1)]"
+          className={cn(
+            tabItemBaseClass,
+            "whitespace-nowrap data-[pressed]:bg-hover data-[pressed]:text-fg-1",
+          )}
         >
           {moviesSourceTabLabels[source]}
         </ToggleGroupItem>

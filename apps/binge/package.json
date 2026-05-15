@@ -15,25 +15,20 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@base-ui/react": "catalog:",
     "@bufbuild/protobuf": "catalog:",
+    "@chill-institute/api": "workspace:*",
+    "@chill-institute/auth": "workspace:*",
     "@chill-institute/contracts": "catalog:",
-    "@connectrpc/connect": "catalog:",
-    "@connectrpc/connect-web": "catalog:",
+    "@chill-institute/ui": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-query-devtools": "catalog:",
     "@tanstack/react-router": "catalog:",
-    "class-variance-authority": "catalog:",
-    "clsx": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "sonner": "catalog:",
-    "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",
-    "ts-pattern": "catalog:",
-    "vaul": "catalog:"
+    "ts-pattern": "catalog:"
   },
   "devDependencies": {
     "@playwright/test": "catalog:",

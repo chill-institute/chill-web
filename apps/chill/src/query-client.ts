@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 
-import { shouldRetryQueryError } from "./lib/errors";
+import { shouldRetryQueryError } from "@chill-institute/auth/errors";
 
 export const queryClient = new QueryClient({
   defaultOptions: {

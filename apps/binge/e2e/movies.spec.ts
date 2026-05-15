@@ -90,9 +90,11 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
 });
 
 async function openFirstMovieModal(page: Page) {
+  // PosterCard exposes the article itself as role="button" — there's no
+  // longer a nested <button>. Click the article directly.
   const firstArticle = page.locator("article").first();
   await expect(firstArticle).toBeVisible();
-  await firstArticle.getByRole("button").click();
+  await firstArticle.click();
 }
 
 test.describe("movies", () => {
@@ -135,8 +137,8 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/");
 
-    await expect(authenticatedPage.getByRole("button", { name: "movies" })).toBeVisible();
-    await expect(authenticatedPage.getByRole("button", { name: "tv shows" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("tab", { name: "tv shows" })).toBeVisible();
     await expect(authenticatedPage.getByText("Inception")).toBeVisible();
   });
 
@@ -149,7 +151,7 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/");
 
-    await expect(authenticatedPage.getByRole("button", { name: "movies" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
     await expect(authenticatedPage.locator("article")).toHaveCount(2);
   });
 
@@ -210,30 +212,33 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/");
     await openFirstMovieModal(authenticatedPage);
 
-    const resolutionSelect = authenticatedPage.getByLabel("Resolution");
-    const codecSelect = authenticatedPage.getByLabel("Codec");
-    const sortSelect = authenticatedPage.getByLabel("Sort");
+    // shadcn Select is a custom dropdown — open via trigger, click option.
+    const pickFromSelect = async (label: string, optionName: string | RegExp) => {
+      await authenticatedPage.getByRole("combobox", { name: label }).click();
+      await authenticatedPage.getByRole("option", { name: optionName, exact: true }).click();
+    };
+
     const resultsList = authenticatedPage.getByRole("list", { name: "Torrent results list" });
     const resultItems = resultsList.getByRole("listitem");
 
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Inception.2010.1080p.BluRay.x264");
 
-    await resolutionSelect.selectOption("2160p");
+    await pickFromSelect("Resolution", "2160p");
     await expect(resultItems).toHaveCount(1);
     await expect(resultItems.first()).toContainText("Inception.2010.2160p.WEB-DL.x265");
 
-    await resolutionSelect.selectOption("all");
-    await codecSelect.selectOption("x265");
+    await pickFromSelect("Resolution", "all resolutions");
+    await pickFromSelect("Codec", "x265");
     await expect(resultItems).toHaveCount(2);
     await expect(resultsList).not.toContainText("Inception.2010.1080p.BluRay.x264");
 
-    await codecSelect.selectOption("all");
-    await sortSelect.selectOption("age");
+    await pickFromSelect("Codec", "all codecs");
+    await pickFromSelect("Sort", "newest first");
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Inception.2010.720p.BluRay.x265");
 
-    await sortSelect.selectOption("size");
+    await pickFromSelect("Sort", "largest size");
     await expect(resultItems.first()).toContainText("Inception.2010.2160p.WEB-DL.x265");
   });
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useApi } from "@/lib/api";
+import { useApi } from "@chill-institute/auth/api-context";
 import { normalizeBingeUserSettings, type UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 

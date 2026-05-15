@@ -22,7 +22,8 @@ export function useFastestMode(
   submittedQuery: string,
   searchState: SearchInfo,
 ) {
-  const [fastestPhase, dispatch] = useReducer(reducer, "idle" as FastestPhase);
+  const initialPhase: FastestPhase = "idle";
+  const [fastestPhase, dispatch] = useReducer(reducer, initialPhase);
   const toastIdRef = useRef<string | number | undefined>(undefined);
   const prevQueryRef = useRef(submittedQuery);
 

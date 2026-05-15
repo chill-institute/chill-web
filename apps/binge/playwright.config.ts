@@ -25,5 +25,7 @@ export default defineConfig({
       : "vp build && vp preview --host 0.0.0.0 --port 58400",
     url: "http://localhost:58400",
     reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });

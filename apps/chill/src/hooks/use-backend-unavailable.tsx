@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, use, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { getPublicAPIBaseURL } from "@/lib/env";
 
@@ -67,7 +67,7 @@ export function BackendHealthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useBackendUnavailable() {
-  const context = useContext(BackendHealthContext);
+  const context = use(BackendHealthContext);
   if (!context) {
     throw new Error("useBackendUnavailable must be used within BackendHealthProvider");
   }

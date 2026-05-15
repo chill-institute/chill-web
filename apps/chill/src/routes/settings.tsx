@@ -1,7 +1,7 @@
 import { Navigate, createFileRoute, useRouterState } from "@tanstack/react-router";
 
 import { SettingsPanel } from "@/components/settings-panel";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@chill-institute/auth/auth";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,

@@ -12,34 +12,38 @@ export function normalizeQuery(query: string): string {
   return trimmed;
 }
 
-function applyResolution(title: string, filter: ResolutionFilter) {
+function applyResolution(result: SearchResult, filter: ResolutionFilter) {
+  const resolution = result.releaseInfo?.resolution.toLowerCase();
+  if (!resolution) return false;
   switch (filter) {
     case ResolutionFilter.RESOLUTION_FILTER_720P:
-      return /\b720p\b/.test(title);
+      return resolution === "720p";
     case ResolutionFilter.RESOLUTION_FILTER_1080P:
-      return /\b1080p\b/.test(title);
+      return resolution === "1080p";
     case ResolutionFilter.RESOLUTION_FILTER_2160P:
-      return /\b(2160p|4k)\b/.test(title);
+      return resolution === "2160p" || resolution === "4k";
     default:
       return false;
   }
 }
 
-function applyCodec(title: string, filter: CodecFilter) {
+function applyCodec(result: SearchResult, filter: CodecFilter) {
+  const codec = result.releaseInfo?.codec.toLowerCase();
+  if (!codec) return false;
   switch (filter) {
     case CodecFilter.X264:
-      return /(x264|h264|x\.264|h\.264|avc)/.test(title);
+      return codec === "x264";
     case CodecFilter.X265:
-      return /(x265|h265|x\.265|h\.265|hevc)/.test(title);
+      return codec === "x265";
     default:
       return false;
   }
 }
 
-function applyOther(title: string, filter: OtherFilter) {
+function applyOther(result: SearchResult, filter: OtherFilter) {
   switch (filter) {
     case OtherFilter.HDR:
-      return /\bhdr\b/.test(title);
+      return Boolean(result.releaseInfo?.hdr);
     default:
       return false;
   }
@@ -78,24 +82,17 @@ export function formatSearchResults(
 ) {
   const filtered = results
     .filter((result) => {
-      const title = result.title.toLowerCase();
-      if (resolutionFilters.length > 0) {
-        const valid = resolutionFilters.some((filter) => applyResolution(title, filter));
-        if (!valid) {
-          return false;
-        }
+      if (
+        resolutionFilters.length > 0 &&
+        !resolutionFilters.some((filter) => applyResolution(result, filter))
+      ) {
+        return false;
       }
-      if (codecFilters.length > 0) {
-        const valid = codecFilters.some((filter) => applyCodec(title, filter));
-        if (!valid) {
-          return false;
-        }
+      if (codecFilters.length > 0 && !codecFilters.some((filter) => applyCodec(result, filter))) {
+        return false;
       }
-      if (otherFilters.length > 0) {
-        const valid = otherFilters.some((filter) => applyOther(title, filter));
-        if (!valid) {
-          return false;
-        }
+      if (otherFilters.length > 0 && !otherFilters.some((filter) => applyOther(result, filter))) {
+        return false;
       }
       return true;
     })

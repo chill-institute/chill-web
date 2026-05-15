@@ -1,12 +1,16 @@
 import { create } from "@bufbuild/protobuf";
-import { SearchResultSchema } from "@chill-institute/contracts/chill/v4/api_pb";
+import { ReleaseInfoSchema, SearchResultSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
 
 import { formatSearchResults, normalizeQuery } from "./search";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
 
+function release(overrides: Partial<{ resolution: string; codec: string; hdr: string }>) {
+  return create(ReleaseInfoSchema, overrides);
+}
+
 describe("formatSearchResults", () => {
-  it("applies quick filters on the client before sorting", () => {
+  it("applies quick filters via releaseInfo before sorting", () => {
     const results = [
       create(SearchResultSchema, {
         id: "x264",
@@ -18,6 +22,7 @@ describe("formatSearchResults", () => {
         size: BigInt(100),
         uploadedAt: "2025-01-01T00:00:00Z",
         link: "https://example.com/x264",
+        releaseInfo: release({ resolution: "1080p", codec: "x264", hdr: "HDR" }),
       }),
       create(SearchResultSchema, {
         id: "match-high",
@@ -29,6 +34,7 @@ describe("formatSearchResults", () => {
         size: BigInt(200),
         uploadedAt: "2025-01-02T00:00:00Z",
         link: "https://example.com/match-high",
+        releaseInfo: release({ resolution: "1080p", codec: "x265", hdr: "HDR" }),
       }),
       create(SearchResultSchema, {
         id: "match-low",
@@ -40,6 +46,7 @@ describe("formatSearchResults", () => {
         size: BigInt(150),
         uploadedAt: "2025-01-03T00:00:00Z",
         link: "https://example.com/match-low",
+        releaseInfo: release({ resolution: "1080p", codec: "x265", hdr: "HDR" }),
       }),
       create(SearchResultSchema, {
         id: "wrong-resolution",
@@ -51,6 +58,7 @@ describe("formatSearchResults", () => {
         size: BigInt(300),
         uploadedAt: "2025-01-04T00:00:00Z",
         link: "https://example.com/wrong-resolution",
+        releaseInfo: release({ resolution: "720p", codec: "x265", hdr: "HDR" }),
       }),
     ];
 

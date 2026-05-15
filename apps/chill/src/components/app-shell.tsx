@@ -1,15 +1,26 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 
-import { MobileBox, ResponsiveBox } from "@/components/layout";
+import { ResponsiveBox } from "@/components/layout";
 import { ShellSearchForm } from "@/components/shell-search-form";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
+import { InstituteFooter } from "@chill-institute/ui/components/institute-footer";
+import { publicLinks } from "@chill-institute/ui/lib/public-links";
+
+const FOOTER_LINKS = [
+  { label: "about", href: publicLinks.about },
+  { label: "guides", href: publicLinks.guides },
+  { label: "github", href: publicLinks.github },
+];
 
 export function AppShell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const searchParamQ = useRouterState({
     select: (state) => {
-      const search = state.location.search as Record<string, unknown>;
-      return typeof search.q === "string" ? search.q : "";
+      const search = state.location.search;
+      if (search && typeof search === "object" && "q" in search && typeof search.q === "string") {
+        return search.q;
+      }
+      return "";
     },
   });
   const isHome = pathname === "/";
@@ -17,69 +28,58 @@ export function AppShell() {
     pathname.startsWith("/auth/") || pathname === "/sign-in" || pathname === "/sign-out";
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-dvh flex-col">
       {showAuthShell ? (
-        <>
-          <header className="flex flex-col items-center py-4 md:py-8 space-y-4">
-            <div className="rounded-md overflow-hidden">
-              <img src="/logo-xmas.png" width={96} height={96} alt="Logo" />
-            </div>
-            <Link to="/">
-              <h3 className="text-center text-4xl tracking-tight">Welcome to the Institute</h3>
-            </Link>
-          </header>
-          <div className="relative overflow-hidden border border-solid border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 py-6 px-5 border-x-0 rounded-none">
-            <div className="flex justify-center">
-              <Outlet />
-            </div>
-          </div>
-        </>
+        <Outlet />
       ) : (
         <>
           {isHome ? (
             <>
-              <header className="flex flex-col items-center py-4 md:py-8 space-y-4">
-                <Link to="/">
-                  <h3 className="text-center text-4xl tracking-tight">Welcome to the Institute</h3>
-                </Link>
+              <header className="mx-auto max-w-md px-4 pt-8 pb-6">
+                <h1 className="m-0 text-center">welcome to chill.institute</h1>
               </header>
-              <div className="relative overflow-hidden border border-solid border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 py-6 border-x-0 rounded-none">
-                <MobileBox>
+              <div className="border-border-strong bg-surface border-y px-4 py-6">
+                <div className="mx-auto w-full max-w-md">
                   <ShellSearchForm
                     initialQuery={searchParamQ}
                     label="What can we hook you up with?"
                   />
                   <ShellSettingsMenu />
-                </MobileBox>
+                </div>
               </div>
-              <main>
+              <main className="flex-1">
                 <Outlet />
               </main>
+              <ResponsiveBox>
+                <InstituteFooter appName="chill.institute" links={FOOTER_LINKS} />
+              </ResponsiveBox>
             </>
           ) : (
             <>
-              <div className="w-full top-0 left-0">
-                <div className="relative overflow-hidden border border-solid border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 pt-4 pb-2 border-0 border-b rounded-none">
-                  <ResponsiveBox>
-                    <div className="flex flex-row justify-center items-start lg:space-x-4">
-                      <Link className="hidden lg:block" to="/">
-                        <h3 className="font-serif text-3xl leading-8 tracking-tight">
-                          chill.institute
-                        </h3>
-                      </Link>
-                      <div className="flex-1 lg:max-w-lg">
-                        <ShellSearchForm initialQuery={searchParamQ} />
-                        <ShellSettingsMenu />
-                      </div>
+              <div className="border-border-strong bg-surface border-b py-4">
+                <ResponsiveBox>
+                  <div className="flex flex-row items-start justify-center gap-4 lg:gap-6">
+                    <Link
+                      to="/"
+                      className="text-fg-1 hidden shrink-0 font-serif text-[1.375rem] leading-9 tracking-[-0.01em] lg:block"
+                    >
+                      chill.institute
+                    </Link>
+                    <div className="w-full flex-1 lg:max-w-lg">
+                      <ShellSearchForm initialQuery={searchParamQ} />
+                      <ShellSettingsMenu />
                     </div>
-                  </ResponsiveBox>
-                </div>
+                  </div>
+                </ResponsiveBox>
               </div>
-              <div className="my-6">
+              <div className="my-6 flex-1">
                 <ResponsiveBox>
                   <Outlet />
                 </ResponsiveBox>
               </div>
+              <ResponsiveBox>
+                <InstituteFooter appName="chill.institute" links={FOOTER_LINKS} />
+              </ResponsiveBox>
             </>
           )}
         </>

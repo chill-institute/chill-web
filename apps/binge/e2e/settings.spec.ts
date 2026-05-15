@@ -31,7 +31,7 @@ const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
     indexer({ id: "rarbg", name: "RARBG" }),
   ]),
   GetUserProfile: profileResponse,
-  GetDownloadFolder: downloadFolderResponse(userFile({ id: 1n, name: "your files" })),
+  GetDownloadFolder: downloadFolderResponse(userFile({ id: 0n, name: "your files" })),
   ...overrides,
 });
 
@@ -52,28 +52,28 @@ test.describe("settings", () => {
 
     const panel = settingsPage(authenticatedPage);
     await expect(panel).toBeVisible();
-    await expect(panel.getByText("Tune your binge setup")).toBeVisible();
+    await expect(panel.getByRole("heading", { name: "settings" })).toBeVisible();
   });
 
   test("folder picker loads via GetFolder and saves selected folder id", async ({
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ showMovies: true, downloadFolderId: 1n });
-    let selectedFolderID = "1";
+    let settingsState = userSettings({ showMovies: true, downloadFolderId: 0n });
+    let selectedFolderID = "0";
     let savedDownloadFolderID = "";
     const folderRequests: string[] = [];
 
-    const root = userFile({ id: 1n, name: "your files" });
+    const root = userFile({ id: 0n, name: "your files" });
     const movies = userFile({ id: 10n, name: "Movies" });
     const anime = userFile({ id: 11n, name: "Anime" });
     const folderByID = new Map<string, ReturnType<typeof userFile>>([
-      ["1", root],
+      ["0", root],
       ["10", movies],
       ["11", anime],
     ]);
     const folderResponseByID = new Map<string, unknown>([
-      ["1", folderResponse(root, [movies])],
+      ["0", folderResponse(root, [movies])],
       ["10", folderResponse(movies, [anime])],
       ["11", folderResponse(anime, [])],
     ]);
@@ -98,7 +98,7 @@ test.describe("settings", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
       const body = route.request().postDataJSON() as { id?: string | number };
-      const folderID = String(body.id ?? "");
+      const folderID = body.id !== undefined ? String(body.id) : "0";
       folderRequests.push(folderID);
       await route.fulfill({
         status: 200,
@@ -131,7 +131,7 @@ test.describe("settings", () => {
     await picker.getByRole("button", { name: "Open folder Movies" }).click();
     await picker.getByRole("button", { name: "download here" }).click();
 
-    expect(folderRequests).toContain("1");
+    expect(folderRequests).toContain("0");
     expect(folderRequests).toContain("10");
     await expect.poll(() => savedDownloadFolderID).toBe("10");
   });
@@ -140,17 +140,17 @@ test.describe("settings", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ showMovies: true, downloadFolderId: 1n });
-    let selectedFolderID = "1";
+    let settingsState = userSettings({ showMovies: true, downloadFolderId: 0n });
+    let selectedFolderID = "0";
 
-    const root = userFile({ id: 1n, name: "your files" });
+    const root = userFile({ id: 0n, name: "your files" });
     const movies = userFile({ id: 10n, name: "Movies" });
     const folderByID = new Map<string, ReturnType<typeof userFile>>([
-      ["1", root],
+      ["0", root],
       ["10", movies],
     ]);
     const folderResponseByID = new Map<string, unknown>([
-      ["1", folderResponse(root, [movies])],
+      ["0", folderResponse(root, [movies])],
       ["10", folderResponse(movies, [])],
     ]);
 
@@ -174,7 +174,7 @@ test.describe("settings", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
       const body = route.request().postDataJSON() as { id?: string | number };
-      const folderID = String(body.id ?? "");
+      const folderID = body.id !== undefined ? String(body.id) : "0";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -216,11 +216,11 @@ test.describe("settings", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    const root = userFile({ id: 1n, name: "your files" });
+    const root = userFile({ id: 0n, name: "your files" });
     const movies = userFile({ id: 10n, name: "Movies" });
     const anime = userFile({ id: 11n, name: "Anime" });
     const folderResponseByID = new Map<string, unknown>([
-      ["1", folderResponse(root, [movies])],
+      ["0", folderResponse(root, [movies])],
       ["10", folderResponse(movies, [anime])],
       ["11", folderResponse(anime, [])],
     ]);
@@ -229,7 +229,7 @@ test.describe("settings", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
       const body = route.request().postDataJSON() as { id?: string | number };
-      const folderID = String(body.id ?? "");
+      const folderID = body.id !== undefined ? String(body.id) : "0";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -317,9 +317,7 @@ test.describe("settings", () => {
     await mockRpc(baseSettingsMethods());
     await authenticatedPage.goto("/settings");
 
-    await expect(
-      settingsPage(authenticatedPage).getByRole("heading", { name: "Signed in as" }),
-    ).toBeVisible();
+    await expect(settingsPage(authenticatedPage).getByText("signed in as")).toBeVisible();
 
     const signOutLink = settingsPage(authenticatedPage).getByRole("link", { name: "sign out" });
     await expect(signOutLink).toBeVisible();
@@ -337,17 +335,13 @@ test.describe("settings", () => {
       timeout: 5000,
     });
 
-    const firstSelect = settingsPage(authenticatedPage).locator("select").first();
-    await firstSelect.evaluate((el: HTMLSelectElement) => {
-      el.value = "dark";
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    const themeTrigger = settingsPage(authenticatedPage).getByRole("combobox").first();
+    await themeTrigger.click();
+    await authenticatedPage.getByRole("option", { name: "Dark", exact: true }).click();
     await expect(authenticatedPage.locator("html")).toHaveClass(/dark/);
 
-    await firstSelect.evaluate((el: HTMLSelectElement) => {
-      el.value = "light";
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    await themeTrigger.click();
+    await authenticatedPage.getByRole("option", { name: "Light", exact: true }).click();
     await expect(authenticatedPage.locator("html")).not.toHaveClass(/dark/);
   });
 

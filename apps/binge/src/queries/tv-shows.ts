@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useApi } from "@/lib/api";
+import { useApi } from "@chill-institute/auth/api-context";
 
-export function useTVShowsQuery(enabled: boolean) {
+export function useTVShowsQuery({ enabled }: { enabled: boolean }) {
   const api = useApi();
   return useQuery({
     queryKey: ["tv-shows"],
@@ -12,7 +12,7 @@ export function useTVShowsQuery(enabled: boolean) {
   });
 }
 
-export function useTVShowDetailQuery(imdbId: string, enabled: boolean) {
+export function useTVShowDetailQuery({ imdbId, enabled }: { imdbId: string; enabled: boolean }) {
   const api = useApi();
   return useQuery({
     queryKey: ["tv-show-detail", imdbId],
@@ -22,7 +22,15 @@ export function useTVShowDetailQuery(imdbId: string, enabled: boolean) {
   });
 }
 
-export function useTVShowSeasonQuery(imdbId: string, seasonNumber: number, enabled: boolean) {
+export function useTVShowSeasonQuery({
+  imdbId,
+  seasonNumber,
+  enabled,
+}: {
+  imdbId: string;
+  seasonNumber: number;
+  enabled: boolean;
+}) {
   const api = useApi();
   return useQuery({
     queryKey: ["tv-show-season", imdbId, seasonNumber],
@@ -32,11 +40,15 @@ export function useTVShowSeasonQuery(imdbId: string, seasonNumber: number, enabl
   });
 }
 
-export function useTVShowSeasonDownloadsQuery(
-  imdbId: string,
-  seasonNumber: number,
-  enabled: boolean,
-) {
+export function useTVShowSeasonDownloadsQuery({
+  imdbId,
+  seasonNumber,
+  enabled,
+}: {
+  imdbId: string;
+  seasonNumber: number;
+  enabled: boolean;
+}) {
   const api = useApi();
   return useQuery({
     queryKey: ["tv-show-season-downloads", imdbId, seasonNumber],

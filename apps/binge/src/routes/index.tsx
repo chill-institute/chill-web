@@ -1,16 +1,46 @@
-import { type ReactNode, useState } from "react";
-import { Navigate, createFileRoute } from "@tanstack/react-router";
-import { Film, Star, Tv } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Link, Navigate, createFileRoute } from "@tanstack/react-router";
+import { Calendar, Film, Flame, Search, Star, Tv } from "lucide-react";
 import { match } from "ts-pattern";
 
-import { MovieDetailModal } from "@/components/movie-detail-modal";
-import { TvShowDetailModal } from "@/components/tv-show-detail-modal";
+const MovieDetailModal = lazy(() =>
+  import("@/components/movie-detail-modal").then((m) => ({ default: m.MovieDetailModal })),
+);
+const TvShowDetailModal = lazy(() =>
+  import("@/components/tv-show-detail-modal").then((m) => ({ default: m.TvShowDetailModal })),
+);
+const SearchOverlay = lazy(() =>
+  import("@/components/search-overlay").then((m) => ({ default: m.SearchOverlay })),
+);
+
 import { MoviesSourceSelect } from "@/components/movies-source-select";
 import { TVShowsSourceSelect } from "@/components/tv-shows-source-select";
-import { UserErrorAlert } from "@/components/user-error-alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { readCurrentCallbackPath, useAuth, readStoredToken } from "@/lib/auth";
-import { type Movie, type TVShow, type UserSettings } from "@/lib/types";
+import { ShellSettingsMenu } from "@/components/shell-settings-menu";
+import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
+import { IconButton } from "@chill-institute/ui/components/icon-button";
+import { Button } from "@chill-institute/ui/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@chill-institute/ui/components/ui/empty";
+import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
+import { StickyHeader } from "@chill-institute/ui/components/sticky-header";
+import { Tab, Tabs, tabsContainerClass } from "@chill-institute/ui/components/tabs";
+import { PosterCard } from "@chill-institute/ui/components/poster-card";
+import { InstituteFooter } from "@chill-institute/ui/components/institute-footer";
+import { SortPill, SortRow, SortRowDivider } from "@chill-institute/ui/components/sort-row";
+import { readCurrentCallbackPath, useAuth, readStoredToken } from "@chill-institute/auth/auth";
+import { publicLinks } from "@chill-institute/ui/lib/public-links";
+import {
+  moviesSources,
+  tvShowsSources,
+  type Movie,
+  type TVShow,
+  type UserSettings,
+} from "@/lib/types";
 import { moviesQueryOptions, settingsQueryOptions, tvShowsQueryOptions } from "@/queries/options";
 import { useMoviesQuery } from "@/queries/movies";
 import {
@@ -22,6 +52,154 @@ import {
 import { useTVShowsQuery } from "@/queries/tv-shows";
 
 type HomeTab = "movies" | "tv";
+type SortKey = "popular" | "rating" | "recent";
+type HomeSelection =
+  | null
+  | { kind: "movie"; movie: Movie }
+  | { kind: "show"; imdbId: string; season?: number };
+
+function useCatalogSearchHotkey(isOpen: boolean, open: () => void) {
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
+  useEffect(() => {
+    function handler(event: KeyboardEvent) {
+      if (isOpenRef.current) return;
+      const isMeta = event.metaKey || event.ctrlKey;
+      if (isMeta && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        open();
+        return;
+      }
+      if (event.key === "/" && !isMeta && !event.altKey) {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const tag = target?.tagName?.toLowerCase();
+        const editable =
+          tag === "input" || tag === "textarea" || target?.isContentEditable === true;
+        if (editable) return;
+        event.preventDefault();
+        open();
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open]);
+}
+
+type MoviesContentProps = {
+  query: ReturnType<typeof useMoviesQuery>;
+  pendingRefresh: boolean;
+  source: UserSettings["moviesSource"];
+  sort: SortKey;
+  onSelect: (movie: Movie) => void;
+  onPickAnotherSource: () => void;
+};
+
+function MoviesContent({
+  query,
+  pendingRefresh,
+  source,
+  sort,
+  onSelect,
+  onPickAnotherSource,
+}: MoviesContentProps) {
+  if (pendingRefresh) return <PosterGridSkeleton />;
+  return match(query)
+    .with({ status: "pending" }, () => <PosterGridSkeleton />)
+    .with({ status: "error" }, (movies) =>
+      movies.isFetching ? (
+        <PosterGridSkeleton />
+      ) : (
+        <UserErrorAlert className="mt-2" error={movies.error} />
+      ),
+    )
+    .with({ status: "success" }, (movies) => {
+      if (movies.data.source !== source) return <PosterGridSkeleton />;
+      if (movies.data.movies.length === 0) {
+        if (movies.isFetching) return <PosterGridSkeleton />;
+        return (
+          <EmptyState
+            message="couldn't fetch any movies from the selected source, please try another one."
+            onTryAnother={onPickAnotherSource}
+          />
+        );
+      }
+      return (
+        <PosterGrid>
+          {sortMovies(movies.data.movies, sort).map((movie, index) => (
+            <PosterCard
+              key={movie.id}
+              className="animate-reveal"
+              style={staggerDelay(index)}
+              title={movie.title}
+              image={movie.posterUrl ?? null}
+              rating={movie.rating != null ? movie.rating.toFixed(1) : null}
+              year={movie.year != null ? String(movie.year) : null}
+              onClick={() => onSelect(movie)}
+            />
+          ))}
+        </PosterGrid>
+      );
+    })
+    .exhaustive();
+}
+
+type TVShowsContentProps = {
+  query: ReturnType<typeof useTVShowsQuery>;
+  pendingRefresh: boolean;
+  source: UserSettings["tvShowsSource"];
+  sort: SortKey;
+  onSelect: (show: TVShow) => void;
+  onPickAnotherSource: () => void;
+};
+
+function TVShowsContent({
+  query,
+  pendingRefresh,
+  source,
+  sort,
+  onSelect,
+  onPickAnotherSource,
+}: TVShowsContentProps) {
+  if (pendingRefresh) return <PosterGridSkeleton />;
+  return match(query)
+    .with({ status: "pending" }, () => <PosterGridSkeleton />)
+    .with({ status: "error" }, (shows) =>
+      shows.isFetching ? (
+        <PosterGridSkeleton />
+      ) : (
+        <UserErrorAlert className="mt-2" error={shows.error} />
+      ),
+    )
+    .with({ status: "success" }, (shows) => {
+      if (shows.data.source !== source) return <PosterGridSkeleton />;
+      if (shows.data.shows.length === 0) {
+        if (shows.isFetching) return <PosterGridSkeleton />;
+        return (
+          <EmptyState
+            message="couldn't fetch any tv shows from the selected source, please try another one."
+            onTryAnother={onPickAnotherSource}
+          />
+        );
+      }
+      return (
+        <PosterGrid>
+          {sortShows(shows.data.shows, sort).map((show, index) => (
+            <PosterCard
+              key={show.imdbId}
+              className="animate-reveal"
+              style={staggerDelay(index)}
+              title={show.title}
+              image={show.posterUrl ?? null}
+              rating={show.rating != null ? show.rating.toFixed(1) : null}
+              year={show.year != null ? String(show.year) : null}
+              onClick={() => onSelect(show)}
+            />
+          ))}
+        </PosterGrid>
+      );
+    })
+    .exhaustive();
+}
 
 export const Route = createFileRoute("/")({
   loader: ({ context: { queryClient } }) => {
@@ -37,6 +215,78 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+function BingeBrand() {
+  return (
+    <Link to="/" className="flex min-w-0 items-center gap-2">
+      <img
+        src="/logo.png"
+        width={22}
+        height={22}
+        alt="binge.institute"
+        className="border-border-strong rounded border"
+      />
+      <h3 className="text-fg-1 truncate text-lg leading-7">binge.institute</h3>
+    </Link>
+  );
+}
+
+function HomeShell({
+  tab,
+  onTabChange,
+  onOpenSearch,
+  children,
+}: {
+  tab: HomeTab;
+  onTabChange: (next: HomeTab) => void;
+  onOpenSearch?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <StickyHeader
+        brand={<BingeBrand />}
+        tabs={
+          <Tabs>
+            <Tab active={tab === "movies"} onClick={() => onTabChange("movies")}>
+              <Film aria-hidden="true" />
+              movies
+            </Tab>
+            <Tab active={tab === "tv"} onClick={() => onTabChange("tv")}>
+              <Tv aria-hidden="true" />
+              tv shows
+            </Tab>
+          </Tabs>
+        }
+        right={
+          <>
+            {onOpenSearch ? (
+              <IconButton
+                onClick={onOpenSearch}
+                aria-label="search the institute"
+                title="search (⌘K)"
+              >
+                <Search />
+              </IconButton>
+            ) : null}
+            <ShellSettingsMenu />
+          </>
+        }
+      />
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-[18px]">
+        {children}
+        <InstituteFooter
+          appName="binge.institute"
+          links={[
+            { label: "about", href: publicLinks.about },
+            { label: "guides", href: publicLinks.guides },
+            { label: "github", href: publicLinks.github },
+          ]}
+        />
+      </main>
+    </div>
+  );
+}
+
 function HomePage() {
   const auth = useAuth();
   const callbackURL = readCurrentCallbackPath();
@@ -46,24 +296,36 @@ function HomePage() {
   const pendingMoviesRefresh = usePendingMoviesRefresh();
   const pendingTVShowsRefresh = usePendingTVShowsRefresh();
 
-  const shouldFetchMovies = configQuery.status === "success" && !configQuery.isFetching;
-  const shouldFetchTVShows = configQuery.status === "success" && !configQuery.isFetching;
-
-  const moviesQuery = useMoviesQuery(shouldFetchMovies);
-  const tvShowsQuery = useTVShowsQuery(shouldFetchTVShows);
+  const shouldFetchCatalog = configQuery.status === "success" && !configQuery.isFetching;
+  const moviesQuery = useMoviesQuery({ enabled: shouldFetchCatalog });
+  const tvShowsQuery = useTVShowsQuery({ enabled: shouldFetchCatalog });
 
   const [activeTab, setActiveTab] = useState<HomeTab>("movies");
-  const [selectedMovie, setSelectedMovie] = useState<Movie>();
-  const [selectedShowId, setSelectedShowId] = useState<string>();
-  const [selectedSeason, setSelectedSeason] = useState<number>();
+  const [sort, setSort] = useState<SortKey>("popular");
+  const [selection, setSelection] = useState<HomeSelection>(null);
+  const [searchState, setSearchState] = useState<"unmounted" | "open" | "closed">("unmounted");
+  const searchOpen = searchState === "open";
+
+  const openSearch = useCallback(() => setSearchState("open"), []);
+  const setSearchOpen = useCallback(
+    (open: boolean) => setSearchState(open ? "open" : "closed"),
+    [],
+  );
+  useCatalogSearchHotkey(searchOpen, openSearch);
 
   function patchConfig(patch: Partial<UserSettings>) {
-    if (!configQuery.data) {
-      return;
-    }
-
+    if (!configQuery.data) return;
     saveConfigMutation.mutate({ ...configQuery.data, ...patch });
   }
+
+  function handleTabChange(next: HomeTab) {
+    setActiveTab(next);
+    setSelection(null);
+  }
+
+  const selectedMovie = selection?.kind === "movie" ? selection.movie : undefined;
+  const selectedShowId = selection?.kind === "show" ? selection.imdbId : undefined;
+  const selectedSeason = selection?.kind === "show" ? selection.season : undefined;
 
   if (!auth.isAuthenticated) {
     return (
@@ -77,33 +339,21 @@ function HomePage() {
 
   return match(configQuery)
     .with({ status: "pending" }, () => (
-      <div className="mx-auto my-6 w-full max-w-5xl px-4 md:my-12 xl:px-0">
-        <div className="flex flex-col gap-3 xs:flex-row xs:items-end xs:justify-between">
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-28 rounded-md" />
-            <Skeleton className="h-10 w-32 rounded-md" />
-          </div>
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-32 rounded-md" />
-            <Skeleton className="h-10 w-10 rounded-md" />
-          </div>
-        </div>
-        <div className="mt-4">
-          <Skeleton className="h-10 w-56 rounded-md" />
-        </div>
-        <MediaCardsSkeleton />
-      </div>
+      <HomeShell tab={activeTab} onTabChange={handleTabChange}>
+        <PageHeading tab={activeTab} />
+        <SortRowSkeleton />
+        <PosterGridSkeleton />
+      </HomeShell>
     ))
     .with({ status: "error" }, (query) => (
-      <div className="mx-auto my-6 w-full max-w-5xl px-4 xl:px-0">
-        <UserErrorAlert error={query.error} />
-      </div>
+      <HomeShell tab={activeTab} onTabChange={handleTabChange}>
+        <div className="my-6">
+          <UserErrorAlert error={query.error} />
+        </div>
+      </HomeShell>
     ))
     .with({ status: "success" }, (query) => {
       const config = query.data;
-      const showTabs = true;
-      const currentTab: HomeTab = activeTab;
-
       const currentTVShowsResponse =
         tvShowsQuery.status === "success" && tvShowsQuery.data.source === config.tvShowsSource
           ? tvShowsQuery.data
@@ -111,8 +361,9 @@ function HomePage() {
       const selectedShow = currentTVShowsResponse?.shows.find(
         (show) => show.imdbId === selectedShowId,
       );
+
       const sourceSelector =
-        currentTab === "movies" ? (
+        activeTab === "movies" ? (
           <MoviesSourceSelect
             value={config.moviesSource}
             onChange={(moviesSource) => patchConfig({ moviesSource })}
@@ -124,303 +375,198 @@ function HomePage() {
           />
         );
 
-      const moviesContent = pendingMoviesRefresh ? (
-        <MediaCardsSkeleton />
-      ) : (
-        match(moviesQuery)
-          .with({ status: "pending" }, () => <MediaCardsSkeleton />)
-          .with({ status: "error" }, (movies) =>
-            movies.isFetching ? (
-              <MediaCardsSkeleton />
-            ) : (
-              <UserErrorAlert className="mt-2" error={movies.error} />
-            ),
-          )
-          .with({ status: "success" }, (movies) => {
-            if (movies.data.source !== config.moviesSource) {
-              return <MediaCardsSkeleton />;
-            }
+      const visibleCount =
+        activeTab === "movies"
+          ? moviesQuery.status === "success" && moviesQuery.data.source === config.moviesSource
+            ? moviesQuery.data.movies.length
+            : null
+          : tvShowsQuery.status === "success" && tvShowsQuery.data.source === config.tvShowsSource
+            ? tvShowsQuery.data.shows.length
+            : null;
+      const noun =
+        activeTab === "movies"
+          ? visibleCount === 1
+            ? "title"
+            : "titles"
+          : visibleCount === 1
+            ? "show"
+            : "shows";
+      const countLabel = visibleCount != null ? `${visibleCount} ${noun}` : null;
 
-            if (movies.data.movies.length === 0) {
-              if (movies.isFetching) {
-                return <MediaCardsSkeleton />;
-              }
-
-              return (
-                <div className="mt-2">
-                  {`Couldn't fetch any movies from the selected source, please try another one.`}
-                </div>
-              );
-            }
-
-            return (
-              <div className="mt-2 grid grid-cols-2 gap-4 animate-reveal sm:grid-cols-3 md:grid-cols-4">
-                {movies.data.movies.map((movie) => (
-                  <MovieExpandedCard
-                    key={movie.id}
-                    movie={movie}
-                    onOpen={(nextMovie) => {
-                      setSelectedMovie(nextMovie);
-                    }}
-                  />
-                ))}
-              </div>
-            );
-          })
-          .exhaustive()
-      );
-
-      const tvShowsContent = pendingTVShowsRefresh ? (
-        <MediaCardsSkeleton />
-      ) : (
-        match(tvShowsQuery)
-          .with({ status: "pending" }, () => <MediaCardsSkeleton />)
-          .with({ status: "error" }, (shows) =>
-            shows.isFetching ? (
-              <MediaCardsSkeleton />
-            ) : (
-              <UserErrorAlert className="mt-2" error={shows.error} />
-            ),
-          )
-          .with({ status: "success" }, (shows) => {
-            if (shows.data.source !== config.tvShowsSource) {
-              return <MediaCardsSkeleton />;
-            }
-
-            if (shows.data.shows.length === 0) {
-              if (shows.isFetching) {
-                return <MediaCardsSkeleton />;
-              }
-
-              return (
-                <div className="mt-2">
-                  {`Couldn't fetch any TV shows from the selected source, please try another one.`}
-                </div>
-              );
-            }
-
-            return (
-              <div className="mt-2 grid grid-cols-2 gap-4 animate-reveal sm:grid-cols-3 md:grid-cols-4">
-                {shows.data.shows.map((show) => (
-                  <TVShowExpandedCard
-                    key={show.imdbId}
-                    show={show}
-                    onOpen={(nextShow) => {
-                      setSelectedShowId(nextShow.imdbId);
-                      setSelectedSeason(1);
-                    }}
-                  />
-                ))}
-              </div>
-            );
-          })
-          .exhaustive()
-      );
+      const activeContent =
+        activeTab === "movies" ? (
+          <MoviesContent
+            query={moviesQuery}
+            pendingRefresh={pendingMoviesRefresh}
+            source={config.moviesSource}
+            sort={sort}
+            onSelect={(movie) => setSelection({ kind: "movie", movie })}
+            onPickAnotherSource={() => {
+              const next = cycleSource(moviesSources, config.moviesSource);
+              if (next !== undefined) patchConfig({ moviesSource: next });
+            }}
+          />
+        ) : (
+          <TVShowsContent
+            query={tvShowsQuery}
+            pendingRefresh={pendingTVShowsRefresh}
+            source={config.tvShowsSource}
+            sort={sort}
+            onSelect={(show) => setSelection({ kind: "show", imdbId: show.imdbId, season: 1 })}
+            onPickAnotherSource={() => {
+              const next = cycleSource(tvShowsSources, config.tvShowsSource);
+              if (next !== undefined) patchConfig({ tvShowsSource: next });
+            }}
+          />
+        );
 
       return (
-        <div
-          data-page="home"
-          className="mx-auto mb-6 w-full max-w-5xl px-4 pt-4 md:mb-12 md:pt-6 xl:px-0"
-        >
-          <div className="flex flex-col gap-2.5">
-            {showTabs ? (
-              <>
-                <div className="flex flex-col gap-2.5 xs:flex-row xs:items-center xs:justify-between">
-                  <div className="flex flex-wrap gap-2">
-                    <HomeTabButton
-                      active={currentTab === "movies"}
-                      icon={<Film className="text-sm" />}
-                      label="movies"
-                      onClick={() => {
-                        setActiveTab("movies");
-                        setSelectedMovie(undefined);
-                        setSelectedShowId(undefined);
-                        setSelectedSeason(undefined);
-                      }}
-                    />
-                    <HomeTabButton
-                      active={currentTab === "tv"}
-                      icon={<Tv className="text-sm" />}
-                      label="tv shows"
-                      onClick={() => {
-                        setActiveTab("tv");
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-start">{sourceSelector}</div>
-              </>
-            ) : (
-              <div className="flex justify-start">{sourceSelector}</div>
-            )}
-          </div>
+        <HomeShell tab={activeTab} onTabChange={handleTabChange} onOpenSearch={openSearch}>
+          <PageHeading tab={activeTab} />
+          <SortRow count={countLabel}>
+            <div className={tabsContainerClass}>
+              <SortPill active={sort === "popular"} onClick={() => setSort("popular")}>
+                <Flame aria-hidden="true" />
+                popular
+              </SortPill>
+              <SortPill active={sort === "rating"} onClick={() => setSort("rating")}>
+                <Star aria-hidden="true" />
+                rating
+              </SortPill>
+              <SortPill active={sort === "recent"} onClick={() => setSort("recent")}>
+                <Calendar aria-hidden="true" />
+                recent
+              </SortPill>
+            </div>
+            <SortRowDivider />
+            {sourceSelector}
+          </SortRow>
 
-          {currentTab === "movies" ? moviesContent : tvShowsContent}
+          {activeContent}
 
           {saveConfigMutation.error ? (
             <UserErrorAlert className="mt-4" error={saveConfigMutation.error} />
           ) : null}
 
-          {currentTab === "movies" && selectedMovie ? (
-            <MovieDetailModal
-              movie={selectedMovie}
-              onClose={() => {
-                setSelectedMovie(undefined);
-              }}
-            />
-          ) : null}
+          <Suspense fallback={null}>
+            {activeTab === "movies" && selectedMovie ? (
+              <MovieDetailModal movie={selectedMovie} onClose={() => setSelection(null)} />
+            ) : null}
 
-          {currentTab === "tv" && selectedShowId ? (
-            <TvShowDetailModal
-              imdbId={selectedShowId}
-              fallbackShow={selectedShow}
-              activeSeason={selectedSeason}
-              onSeasonChange={(season) => {
-                setSelectedSeason(season);
-              }}
-              onClose={() => {
-                setSelectedShowId(undefined);
-                setSelectedSeason(undefined);
-              }}
-            />
-          ) : null}
-        </div>
+            {activeTab === "tv" && selectedShowId ? (
+              <TvShowDetailModal
+                imdbId={selectedShowId}
+                fallbackShow={selectedShow}
+                activeSeason={selectedSeason}
+                onSeasonChange={(season) =>
+                  setSelection({ kind: "show", imdbId: selectedShowId, season })
+                }
+                onClose={() => setSelection(null)}
+              />
+            ) : null}
+
+            {searchState !== "unmounted" ? (
+              <SearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
+            ) : null}
+          </Suspense>
+        </HomeShell>
       );
     })
     .exhaustive();
 }
 
-function HomeTabButton({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
+function PageHeading({ tab }: { tab: HomeTab }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-sm leading-none transition-colors ${
-        active
-          ? "border-stone-950 bg-stone-100 text-stone-950 shadow-[1px_1px_rgba(12,10,9,1)] dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:shadow-[1px_1px_rgba(68,64,60,1)]"
-          : "border-transparent text-stone-600 hover:bg-stone-200 hover:text-stone-950 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
+    <div className="flex items-end justify-between gap-4 pt-7 pb-3.5">
+      <h2 className="m-0 leading-none">{tab === "movies" ? "movies" : "tv shows"}</h2>
+    </div>
   );
 }
 
-function LazyImage({ src, alt, className }: { src: string; alt: string; className: string }) {
-  const [loaded, setLoaded] = useState(false);
-
+function PosterGrid({ children }: { children: React.ReactNode }) {
   return (
-    <img
-      src={src}
-      alt={alt}
-      loading="lazy"
-      decoding="async"
-      className={`${className} transition-[opacity,transform,filter] duration-200 ease-[var(--ease-out)] motion-reduce:transition-none ${
-        loaded
-          ? "translate-y-0 scale-100 opacity-100 blur-0"
-          : "translate-y-1 scale-[0.985] opacity-0 blur-[6px] motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:opacity-100 motion-reduce:blur-0"
-      }`}
-      onLoad={() => setLoaded(true)}
-    />
+    <div className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      {children}
+    </div>
   );
 }
 
-function MovieExpandedCard({ movie, onOpen }: { movie: Movie; onOpen: (movie: Movie) => void }) {
-  return (
-    <article className="relative flex flex-col overflow-hidden rounded border border-solid border-stone-950 bg-stone-100 dark:border-stone-700 dark:bg-stone-900">
-      <button
-        type="button"
-        onClick={() => onOpen(movie)}
-        className="flex cursor-pointer flex-col text-left"
-      >
-        {movie.posterUrl ? (
-          <LazyImage
-            src={movie.posterUrl}
-            alt={movie.title}
-            className="aspect-2/3 w-full border-b border-stone-950 object-cover dark:border-stone-700"
-          />
-        ) : null}
-        <div className="mx-4 my-3 flex h-full flex-col">
-          <div className="flex flex-col space-y-1">
-            <h5 className="font-serif leading-tight">{movie.title}</h5>
-            <div className="flex flex-row items-center space-x-2">
-              <div className="flex flex-row items-center space-x-0.5">
-                <Star className="fill-amber-400 text-sm" strokeWidth={0} />
-                <span>{movie.rating ? movie.rating.toFixed(1) : "N/A"}</span>
-              </div>
-              <div className="text-stone-600 dark:text-stone-400">
-                <span className="text-sm">/</span>
-              </div>
-              <div className="text-stone-600 dark:text-stone-400">{movie.year}</div>
-            </div>
-          </div>
-        </div>
-      </button>
-    </article>
-  );
+function staggerDelay(index: number): React.CSSProperties {
+  const ms = Math.min(index * 25, 350);
+  return { animationDelay: `${ms}ms` };
 }
 
-function TVShowExpandedCard({ show, onOpen }: { show: TVShow; onOpen: (show: TVShow) => void }) {
-  return (
-    <article className="relative flex flex-col overflow-hidden rounded border border-solid border-stone-950 bg-stone-100 dark:border-stone-700 dark:bg-stone-900">
-      <button
-        type="button"
-        onClick={() => onOpen(show)}
-        className="flex cursor-pointer flex-col text-left"
-      >
-        {show.posterUrl ? (
-          <LazyImage
-            src={show.posterUrl}
-            alt={show.title}
-            className="aspect-2/3 w-full border-b border-stone-950 object-cover dark:border-stone-700"
-          />
-        ) : null}
-        <div className="mx-4 my-3 flex h-full flex-col">
-          <div className="flex flex-col space-y-1">
-            <h5 className="font-serif leading-tight">{show.title}</h5>
-            <div className="flex flex-row items-center space-x-2">
-              <div className="flex flex-row items-center space-x-0.5">
-                <Star className="fill-amber-400 text-sm" strokeWidth={0} />
-                <span>{show.rating ? show.rating.toFixed(1) : "N/A"}</span>
-              </div>
-              <div className="text-stone-600 dark:text-stone-400">
-                <span className="text-sm">/</span>
-              </div>
-              <div className="text-stone-600 dark:text-stone-400">{show.year}</div>
-            </div>
-          </div>
-        </div>
-      </button>
-    </article>
-  );
-}
+const POSTER_SKELETON_SLOTS = Array.from({ length: 18 }, (_, i) => `poster-skel-${i}`);
 
-function MediaCardsSkeleton() {
+function PosterGridSkeleton() {
   return (
-    <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-      {Array.from({ length: 24 }, (_, index) => (
-        <div
-          key={`expanded-${index}`}
-          className="relative flex flex-col overflow-hidden rounded border border-solid border-stone-950 bg-stone-100 dark:border-stone-700 dark:bg-stone-900"
+    <div className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      {POSTER_SKELETON_SLOTS.map((slot) => (
+        <article
+          key={slot}
+          className="border-border-strong bg-surface flex flex-col overflow-hidden rounded border"
         >
-          <Skeleton className="aspect-2/3 w-full rounded-none" />
-          <div className="mx-4 my-3 flex flex-col space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
+          <Skeleton className="border-border-strong aspect-[2/3] w-full rounded-none border-b" />
+          <div className="flex flex-col gap-2 px-3 py-2.5">
+            <Skeleton className="h-3.5 w-3/4" />
+            <Skeleton className="h-3 w-1/3" />
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );
+}
+
+function SortRowSkeleton() {
+  return (
+    <div className="border-border-strong mb-4.5 flex items-center gap-2 border-y py-2">
+      <Skeleton className="h-5 w-12" />
+      <Skeleton className="h-6 w-16 rounded" />
+      <Skeleton className="h-6 w-16 rounded" />
+      <Skeleton className="h-6 w-16 rounded" />
+    </div>
+  );
+}
+
+function EmptyState({ message, onTryAnother }: { message: string; onTryAnother?: () => void }) {
+  return (
+    <Empty className="animate-reveal border-0 py-16">
+      <EmptyHeader>
+        <EmptyMedia className="mb-1">
+          <img
+            src="/logo.png"
+            width={48}
+            height={48}
+            alt="binge.institute"
+            className="border-border-strong rounded border"
+          />
+        </EmptyMedia>
+        <EmptyTitle className="text-fg-2 font-serif text-xl italic font-normal">
+          {message}
+        </EmptyTitle>
+      </EmptyHeader>
+      {onTryAnother ? (
+        <EmptyContent>
+          <Button onClick={onTryAnother}>try another source</Button>
+        </EmptyContent>
+      ) : null}
+    </Empty>
+  );
+}
+
+function sortMovies(movies: ReadonlyArray<Movie>, sort: SortKey): readonly Movie[] {
+  if (sort === "rating") return movies.toSorted((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  if (sort === "recent") return movies.toSorted((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  return movies;
+}
+
+function sortShows(shows: ReadonlyArray<TVShow>, sort: SortKey): readonly TVShow[] {
+  if (sort === "rating") return shows.toSorted((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  if (sort === "recent") return shows.toSorted((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  return shows;
+}
+
+function cycleSource(list: ReadonlyArray<number>, current: number): number | undefined {
+  const idx = list.indexOf(current);
+  return list[idx < 0 ? 0 : (idx + 1) % list.length];
 }

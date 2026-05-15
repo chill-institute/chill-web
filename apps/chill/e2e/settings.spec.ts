@@ -1,13 +1,10 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./support/fixtures";
-import { MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
 import {
   downloadFolderResponse,
   folderResponse,
   indexer,
   indexersResponse,
-  movie,
-  moviesResponseForSource,
   userSettings,
   userFile,
 } from "./support/seeds";
@@ -20,8 +17,6 @@ const profileResponse = {
 };
 
 type RequestSettingsPayload = Record<string, unknown> & {
-  showMovies?: boolean;
-  showTvShows?: boolean;
   downloadFolderId?: string | number;
   disabledIndexerIds?: string[];
   searchResultDisplayBehavior?: number;
@@ -31,13 +26,13 @@ type RequestSettingsPayload = Record<string, unknown> & {
 };
 
 const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
-  GetUserSettings: userSettings({ showMovies: true }),
+  GetUserSettings: userSettings(),
   GetIndexers: indexersResponse([
     indexer({ id: "yts", name: "YTS" }),
     indexer({ id: "rarbg", name: "RARBG" }),
   ]),
   GetUserProfile: profileResponse,
-  GetDownloadFolder: downloadFolderResponse(userFile({ id: 1n, name: "your files" })),
+  GetDownloadFolder: downloadFolderResponse(userFile({ id: 0n, name: "your files" })),
   ...overrides,
 });
 
@@ -45,147 +40,26 @@ function settingsPage(page: Page) {
   return page.locator('[data-page="settings"]');
 }
 
-test.describe("settings and rss", () => {
-  test("rss popover includes auth_token in generated feed url", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
-    await mockRpc({
-      GetUserSettings: userSettings({
-        showMovies: true,
-        moviesSource: MoviesSource.TRAKT,
-      }),
-      GetMovies: moviesResponseForSource(MoviesSource.TRAKT, [
-        movie({
-          id: "m1",
-          title: "Inception",
-          titlePretty: "Inception",
-          link: "magnet:?xt=urn:btih:inception",
-          source: MoviesSource.TRAKT,
-        }),
-      ]),
-    });
-
-    await authenticatedPage.goto("/");
-    await authenticatedPage.getByRole("button", { name: "Open RSS feed link" }).click();
-
-    await expect(authenticatedPage.getByRole("dialog").getByRole("textbox")).toHaveValue(
-      "https://api.chill.institute/rss/movies/trakt?auth_token=test-token",
-    );
-  });
-
-  test("settings edits persist via SaveUserSettings", async ({ authenticatedPage, mockRpc }) => {
-    let settingsState = userSettings({ showMovies: true });
-    let savedShowMovies: boolean | undefined;
-    let saveCalls = 0;
-
-    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
-
-    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(settingsState),
-      });
-    });
-
-    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
-      saveCalls += 1;
-      const body = route.request().postDataJSON() as {
-        settings?: RequestSettingsPayload;
-      };
-      if (body.settings) {
-        settingsState = body.settings as typeof settingsState;
-        savedShowMovies = body.settings.showMovies ?? false;
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(settingsState),
-      });
-    });
-
-    await authenticatedPage.goto("/settings");
-
-    const showMoviesSwitch = authenticatedPage.getByRole("switch", {
-      name: "Show movies in the home page",
-    });
-    await expect(showMoviesSwitch).toHaveAttribute("aria-checked", "true");
-
-    await showMoviesSwitch.click();
-
-    await expect.poll(() => saveCalls).toBeGreaterThan(0);
-    await expect.poll(() => savedShowMovies).toBe(false);
-    await expect(showMoviesSwitch).toHaveAttribute("aria-checked", "false");
-  });
-
-  test("tv shows visibility persists via SaveUserSettings", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
-    let settingsState = userSettings({ showMovies: true, showTvShows: true });
-    let savedShowTvShows: boolean | undefined;
-    let saveCalls = 0;
-
-    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
-
-    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(settingsState),
-      });
-    });
-
-    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
-      saveCalls += 1;
-      const body = route.request().postDataJSON() as {
-        settings?: RequestSettingsPayload;
-      };
-      if (body.settings) {
-        settingsState = body.settings as typeof settingsState;
-        savedShowTvShows = body.settings.showTvShows ?? false;
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(settingsState),
-      });
-    });
-
-    await authenticatedPage.goto("/settings");
-
-    const showTVShowsSwitch = authenticatedPage.getByRole("switch", {
-      name: "Show TV shows in the home page",
-    });
-    await expect(showTVShowsSwitch).toHaveAttribute("aria-checked", "true");
-
-    await showTVShowsSwitch.click();
-
-    await expect.poll(() => saveCalls).toBeGreaterThan(0);
-    await expect.poll(() => savedShowTvShows).toBe(false);
-    await expect(showTVShowsSwitch).toHaveAttribute("aria-checked", "false");
-  });
-
+test.describe("settings", () => {
   test("folder picker loads via GetFolder and saves selected folder id", async ({
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ showMovies: true, downloadFolderId: 1n });
-    let selectedFolderID = "1";
+    let settingsState = userSettings({ downloadFolderId: 0n });
+    let selectedFolderID = "0";
     let savedDownloadFolderID = "";
     const folderRequests: string[] = [];
 
-    const root = userFile({ id: 1n, name: "your files" });
+    const root = userFile({ id: 0n, name: "your files" });
     const movies = userFile({ id: 10n, name: "Movies" });
     const anime = userFile({ id: 11n, name: "Anime" });
     const folderByID = new Map<string, ReturnType<typeof userFile>>([
-      ["1", root],
+      ["0", root],
       ["10", movies],
       ["11", anime],
     ]);
     const folderResponseByID = new Map<string, unknown>([
-      ["1", folderResponse(root, [movies])],
+      ["0", folderResponse(root, [movies])],
       ["10", folderResponse(movies, [anime])],
       ["11", folderResponse(anime, [])],
     ]);
@@ -210,7 +84,7 @@ test.describe("settings and rss", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
       const body = route.request().postDataJSON() as { id?: string | number };
-      const folderID = String(body.id ?? "");
+      const folderID = body.id !== undefined ? String(body.id) : "0";
       folderRequests.push(folderID);
       await route.fulfill({
         status: 200,
@@ -242,7 +116,7 @@ test.describe("settings and rss", () => {
     await authenticatedPage.getByRole("button", { name: "Movies" }).click();
     await authenticatedPage.getByRole("button", { name: "download here" }).click();
 
-    expect(folderRequests).toContain("1");
+    expect(folderRequests).toContain("0");
     expect(folderRequests).toContain("10");
     await expect.poll(() => savedDownloadFolderID).toBe("10");
   });
@@ -251,17 +125,17 @@ test.describe("settings and rss", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ showMovies: true, downloadFolderId: 1n });
-    let selectedFolderID = "1";
+    let settingsState = userSettings({ downloadFolderId: 0n });
+    let selectedFolderID = "0";
 
-    const root = userFile({ id: 1n, name: "your files" });
+    const root = userFile({ id: 0n, name: "your files" });
     const movies = userFile({ id: 10n, name: "Movies" });
     const folderByID = new Map<string, ReturnType<typeof userFile>>([
-      ["1", root],
+      ["0", root],
       ["10", movies],
     ]);
     const folderResponseByID = new Map<string, unknown>([
-      ["1", folderResponse(root, [movies])],
+      ["0", folderResponse(root, [movies])],
       ["10", folderResponse(movies, [])],
     ]);
 
@@ -285,7 +159,7 @@ test.describe("settings and rss", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
       const body = route.request().postDataJSON() as { id?: string | number };
-      const folderID = String(body.id ?? "");
+      const folderID = body.id !== undefined ? String(body.id) : "0";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -326,11 +200,11 @@ test.describe("settings and rss", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    const root = userFile({ id: 1n, name: "your files" });
+    const root = userFile({ id: 0n, name: "your files" });
     const movies = userFile({ id: 10n, name: "Movies" });
     const anime = userFile({ id: 11n, name: "Anime" });
     const folderResponseByID = new Map<string, unknown>([
-      ["1", folderResponse(root, [movies])],
+      ["0", folderResponse(root, [movies])],
       ["10", folderResponse(movies, [anime])],
       ["11", folderResponse(anime, [])],
     ]);
@@ -339,7 +213,7 @@ test.describe("settings and rss", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
       const body = route.request().postDataJSON() as { id?: string | number };
-      const folderID = String(body.id ?? "");
+      const folderID = body.id !== undefined ? String(body.id) : "0";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -425,9 +299,7 @@ test.describe("settings and rss", () => {
     await mockRpc(baseSettingsMethods());
     await authenticatedPage.goto("/settings");
 
-    await expect(
-      settingsPage(authenticatedPage).getByRole("heading", { name: "Signed in as" }),
-    ).toBeVisible();
+    await expect(settingsPage(authenticatedPage).getByText("Signed in as")).toBeVisible();
 
     const signOutLink = settingsPage(authenticatedPage).getByRole("link", { name: "sign out" });
     await expect(signOutLink).toBeVisible();
@@ -441,7 +313,7 @@ test.describe("settings and rss", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ showMovies: true });
+    let settingsState = userSettings();
     let savedDisabledIds: string[] = [];
     let saveCalls = 0;
 
@@ -483,7 +355,6 @@ test.describe("settings and rss", () => {
 
   test("search settings toggles persist", async ({ authenticatedPage, mockRpc }) => {
     let settingsState = userSettings({
-      showMovies: true,
       filterNastyResults: true,
       filterResultsWithNoSeeders: false,
     });
@@ -520,24 +391,22 @@ test.describe("settings and rss", () => {
 
     await authenticatedPage.goto("/settings");
 
-    const nastyRow = settingsPage(authenticatedPage)
-      .locator(".flex.items-center.justify-between")
-      .filter({ hasText: "Try to filter out nasty stuff" });
-    const nastySwitch = nastyRow.getByRole("switch");
-    await expect(nastySwitch).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
+    const nastyCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
+      name: "Try to filter out nasty stuff",
+    });
+    await expect(nastyCheckbox).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
 
-    await nastySwitch.click();
+    await nastyCheckbox.click();
     await expect.poll(() => saveCalls).toBeGreaterThan(0);
     await expect.poll(() => savedFilterNasty).not.toBe(true);
 
-    const noSeedersRow = settingsPage(authenticatedPage)
-      .locator(".flex.items-center.justify-between")
-      .filter({ hasText: "Hide results with no seeders" });
-    const noSeedersSwitch = noSeedersRow.getByRole("switch");
-    await expect(noSeedersSwitch).toHaveAttribute("aria-checked", "false");
+    const noSeedersCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
+      name: "Hide results with no seeders",
+    });
+    await expect(noSeedersCheckbox).toHaveAttribute("aria-checked", "false");
 
     const prevCalls = saveCalls;
-    await noSeedersSwitch.click();
+    await noSeedersCheckbox.click();
     await expect.poll(() => saveCalls).toBeGreaterThan(prevCalls);
     await expect.poll(() => savedFilterNoSeeders).toBe(true);
   });
@@ -550,17 +419,13 @@ test.describe("settings and rss", () => {
       timeout: 5000,
     });
 
-    const firstSelect = settingsPage(authenticatedPage).locator("select").first();
-    await firstSelect.evaluate((el: HTMLSelectElement) => {
-      el.value = "dark";
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    const themeTrigger = settingsPage(authenticatedPage).getByRole("combobox").first();
+    await themeTrigger.click();
+    await authenticatedPage.getByRole("option", { name: "Dark", exact: true }).click();
     await expect(authenticatedPage.locator("html")).toHaveClass(/dark/);
 
-    await firstSelect.evaluate((el: HTMLSelectElement) => {
-      el.value = "light";
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    await themeTrigger.click();
+    await authenticatedPage.getByRole("option", { name: "Light", exact: true }).click();
     await expect(authenticatedPage.locator("html")).not.toHaveClass(/dark/);
   });
 
