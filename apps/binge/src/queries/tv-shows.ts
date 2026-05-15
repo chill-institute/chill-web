@@ -1,14 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
+import { useSettingsQuery } from "@/queries/settings";
 
 export function useTVShowsQuery({ enabled }: { enabled: boolean }) {
   const api = useApi();
+  const settingsQuery = useSettingsQuery();
+  const source = settingsQuery.data?.tvShowsSource;
   return useQuery({
-    queryKey: ["tv-shows"],
+    queryKey: ["tv-shows", source],
     queryFn: ({ signal }) => api.getTVShows(signal),
     staleTime: 5 * 60 * 1000,
-    enabled,
+    enabled: enabled && source !== undefined,
   });
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
+import { invalidateDownloadFolder } from "@chill-institute/auth/queries/download-folder";
 import type { UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
@@ -35,7 +36,7 @@ export function useSaveSettings() {
     onSuccess: (_data, variables) => {
       const prev = previousRef.current;
       if (prev && prev.downloadFolderId !== variables.downloadFolderId) {
-        void queryClient.invalidateQueries({ queryKey: ["download-folder"] });
+        void invalidateDownloadFolder(queryClient);
       }
     },
     onError: () => {

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 
 import { useMoviesQuery } from "@/queries/movies";
 import { useSettingsQuery } from "@/queries/settings";
@@ -23,14 +23,11 @@ function MovieDetailRoute() {
 
   const close = () => void navigate({ to: "/movies", search: (prev) => prev });
 
-  const movie =
-    configQuery.status === "success" &&
-    moviesQuery.status === "success" &&
-    moviesQuery.data.source === configQuery.data.moviesSource
-      ? moviesQuery.data.movies.find((m) => m.id === id)
-      : undefined;
+  if (configQuery.status !== "success" || moviesQuery.status !== "success") return null;
+  if (moviesQuery.data.source !== configQuery.data.moviesSource) return null;
 
-  if (!movie) return null;
+  const movie = moviesQuery.data.movies.find((m) => m.id === id);
+  if (!movie) throw notFound();
 
   return (
     <Suspense fallback={null}>

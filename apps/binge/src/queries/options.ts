@@ -95,21 +95,3 @@ export function settingsQueryOptions(token: string) {
     placeholderData: readCachedSettings(),
   });
 }
-
-export function moviesQueryOptions(token: string) {
-  const api = createApi(token);
-  return queryOptions({
-    queryKey: ["movies"],
-    queryFn: ({ signal }) => api.getMovies(signal),
-    staleTime: FIVE_MINUTES,
-  });
-}
-
-export function tvShowsQueryOptions(token: string) {
-  const api = createApi(token);
-  return queryOptions({
-    queryKey: ["tv-shows"],
-    queryFn: ({ signal }) => api.getTVShows(signal),
-    staleTime: FIVE_MINUTES,
-  });
-}

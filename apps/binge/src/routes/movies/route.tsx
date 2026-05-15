@@ -3,7 +3,7 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { readStoredToken } from "@chill-institute/auth/auth";
 
 import { CatalogPage, parseMoviesSource, parseSortKey } from "@/components/catalog-page";
-import { moviesQueryOptions, settingsQueryOptions } from "@/queries/options";
+import { settingsQueryOptions } from "@/queries/options";
 
 type Search = {
   sort?: "popular" | "rating" | "recent";
@@ -21,10 +21,7 @@ export const Route = createFileRoute("/movies")({
   loader: ({ context: { queryClient } }) => {
     const token = readStoredToken();
     if (!token) return;
-    const settingsPromise = queryClient.ensureQueryData(settingsQueryOptions(token));
-    void settingsPromise.then(() => {
-      void queryClient.ensureQueryData(moviesQueryOptions(token));
-    });
+    void queryClient.ensureQueryData(settingsQueryOptions(token));
   },
   component: MoviesLayout,
 });

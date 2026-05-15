@@ -332,7 +332,8 @@ function TvShowDetailContent({
                     <Loader2 className="motion-safe:animate-spin" />
                     <span>loading downloads</span>
                   </Button>
-                ) : downloadsQuery.data?.seasonPack?.link ? (
+                ) : downloadsQuery.status === "error" ? null : downloadsQuery.data?.seasonPack
+                    ?.link ? (
                   <AddTransferButton
                     url={downloadsQuery.data.seasonPack.link}
                     ariaLabel={`Send ${show?.title ?? "TV show"} season ${resolvedSeasonNumber} to put.io`}
@@ -347,6 +348,10 @@ function TvShowDetailContent({
                 )}
               </div>
             </div>
+          ) : null}
+
+          {downloadsQuery.status === "error" ? (
+            <UserErrorAlert className="mb-3" error={downloadsQuery.error} />
           ) : null}
 
           {seasonQuery.status === "error" ? (
@@ -396,7 +401,7 @@ function TvShowDetailContent({
                     <div className="flex shrink-0 gap-1">
                       {downloadsQuery.isPending ? (
                         <EpisodeActionSkeleton />
-                      ) : episodeDownload?.link ? (
+                      ) : downloadsQuery.status === "error" ? null : episodeDownload?.link ? (
                         <AddTransferButton
                           url={episodeDownload.link}
                           ariaLabel={`Send ${show?.title ?? "TV show"} season ${episode.seasonNumber} episode ${episode.episodeNumber} to put.io`}

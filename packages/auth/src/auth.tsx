@@ -1,4 +1,5 @@
 import { createContext, use, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
@@ -58,6 +59,7 @@ export function prepareAuthSuccessURL(rawSuccessURL: string): string {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authToken, setAuthTokenState] = useState<string | null>(() => readStoredToken());
+  const queryClient = useQueryClient();
 
   const value = useMemo<AuthContextValue>(() => {
     return {
@@ -82,9 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut: () => {
         clearStoredAuthState();
         setAuthTokenState(null);
+        queryClient.clear();
       },
     };
-  }, [authToken]);
+  }, [authToken, queryClient]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
