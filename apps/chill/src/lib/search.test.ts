@@ -73,6 +73,45 @@ describe("formatSearchResults", () => {
 
     expect(formatted.map((result) => result.id)).toEqual(["match-high", "match-low"]);
   });
+
+  it("falls back to parsing the raw release name when releaseInfo is empty", () => {
+    const results = [
+      create(SearchResultSchema, {
+        id: "raw-1080p",
+        title: "Some.Movie.2024.1080p.WEB.x265-XYZ",
+        indexer: "yts",
+        source: "yts",
+        peers: BigInt(0),
+        seeders: BigInt(10),
+        size: BigInt(100),
+        uploadedAt: "2025-01-01T00:00:00Z",
+        link: "https://example.com/raw-1080p",
+        releaseInfo: release({}),
+      }),
+      create(SearchResultSchema, {
+        id: "raw-720p",
+        title: "Some.Movie.2024.720p.WEB.x265-XYZ",
+        indexer: "yts",
+        source: "yts",
+        peers: BigInt(0),
+        seeders: BigInt(20),
+        size: BigInt(100),
+        uploadedAt: "2025-01-02T00:00:00Z",
+        link: "https://example.com/raw-720p",
+      }),
+    ];
+
+    const formatted = formatSearchResults(
+      results,
+      [ResolutionFilter.RESOLUTION_FILTER_1080P],
+      [],
+      [],
+      SortBy.SEEDERS,
+      SortDirection.DESC,
+    );
+
+    expect(formatted.map((result) => result.id)).toEqual(["raw-1080p"]);
+  });
 });
 
 describe("normalizeQuery", () => {

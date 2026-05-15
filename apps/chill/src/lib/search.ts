@@ -1,3 +1,4 @@
+import { effectiveInfo } from "./release-info";
 import type { SearchResult } from "./types";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
 
@@ -13,7 +14,7 @@ export function normalizeQuery(query: string): string {
 }
 
 function applyResolution(result: SearchResult, filter: ResolutionFilter) {
-  const resolution = result.releaseInfo?.resolution.toLowerCase();
+  const resolution = effectiveInfo(result).resolution.toLowerCase();
   if (!resolution) return false;
   switch (filter) {
     case ResolutionFilter.RESOLUTION_FILTER_720P:
@@ -28,7 +29,7 @@ function applyResolution(result: SearchResult, filter: ResolutionFilter) {
 }
 
 function applyCodec(result: SearchResult, filter: CodecFilter) {
-  const codec = result.releaseInfo?.codec.toLowerCase();
+  const codec = effectiveInfo(result).codec.toLowerCase();
   if (!codec) return false;
   switch (filter) {
     case CodecFilter.X264:
@@ -43,7 +44,7 @@ function applyCodec(result: SearchResult, filter: CodecFilter) {
 function applyOther(result: SearchResult, filter: OtherFilter) {
   switch (filter) {
     case OtherFilter.HDR:
-      return Boolean(result.releaseInfo?.hdr);
+      return Boolean(effectiveInfo(result).hdr);
     default:
       return false;
   }
