@@ -249,7 +249,7 @@ function PosterImage({ url, alt }: { url: string; alt: string }) {
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   return (
     <div className="text-fg-1 max-w-[560px]">
-      <h2 className="text-3xl leading-[1.05]">{movie.title}</h2>
+      <p className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0">{movie.title}</p>
       <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
         <span className="flex items-center gap-1">
           <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
@@ -365,7 +365,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         <IconButton
           onClick={onClose}
           aria-label="Close movie details"
-          className="absolute right-3 top-3 z-20 rounded-full border-border-strong bg-surface shadow-press"
+          className="absolute right-3 top-3 z-20 rounded-full bg-surface/80 backdrop-blur-sm text-fg-1 hover-hover:hover:bg-surface"
         >
           <X />
         </IconButton>
@@ -453,7 +453,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                         key={result.id || `${result.title}-${result.link}`}
                         role="listitem"
                         className={cn(
-                          "border-border-soft flex flex-col gap-3 border-t px-3 py-3 first:border-t-0 sm:flex-row sm:items-center sm:justify-between",
+                          "border-border-faint flex flex-col gap-3 border-t px-3 py-3 first:border-t-0 sm:flex-row sm:items-center sm:justify-between",
                           !isSendable && "opacity-70",
                         )}
                       >

@@ -7,7 +7,9 @@ import { StickyHeader } from "@chill-institute/ui/components/sticky-header";
 function BingeBrand() {
   return (
     <Link to="/" className="flex min-w-0 items-center gap-2">
-      <h3 className="text-fg-1 truncate text-lg leading-7">binge.institute</h3>
+      <span className="text-fg-1 truncate font-serif text-lg leading-7 tracking-[-0.01em]">
+        binge.institute
+      </span>
     </Link>
   );
 }

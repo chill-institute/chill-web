@@ -1,15 +1,12 @@
 import { ExternalLink, RefreshCw, ServerCrash } from "lucide-react";
 
 import { StatusPanel } from "./status-panel";
+import { Button } from "./ui/button";
 
 type BackendUnavailableScreenProps = {
   onRetry?: () => Promise<unknown> | void;
 };
 
-/*
- * Shown when the chill API is unreachable. The status page link is
- * the same for both apps because the API is shared.
- */
 function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
   return (
     <StatusPanel>
@@ -34,9 +31,8 @@ function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="btn btn-secondary"
+        <Button
+          variant="outline"
           onClick={() => {
             void onRetry?.();
             window.location.reload();
@@ -44,11 +40,13 @@ function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
         >
           <RefreshCw />
           reload page
-        </button>
-        <a href="https://status.chill.institute/" target="_blank" rel="noreferrer" className="btn">
+        </Button>
+        <Button
+          render={<a href="https://status.chill.institute/" target="_blank" rel="noreferrer" />}
+        >
           <ExternalLink />
           view status page
-        </a>
+        </Button>
       </div>
     </StatusPanel>
   );

@@ -2,6 +2,7 @@ import { Clipboard, ClipboardCheck, ClipboardX } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "../lib/cn";
+import { Button } from "./ui/button";
 
 type CopyButtonProps = {
   value: string;
@@ -22,13 +23,14 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
     state === "copied" ? <ClipboardCheck /> : state === "error" ? <ClipboardX /> : <Clipboard />;
 
   return (
-    <button
+    <Button
       type="button"
       data-slot="copy-button"
+      variant={variant === "stamp" ? "default" : "ghost"}
+      size={variant === "stamp" ? "default" : "icon-sm"}
       className={cn(
-        variant === "stamp"
-          ? "btn min-w-8 cursor-copy px-2"
-          : "text-fg-3 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 inline-flex size-7 cursor-copy items-center justify-center rounded border border-transparent bg-transparent transition-colors [&_svg]:pointer-events-none [&_svg]:size-3.5",
+        "cursor-copy",
+        variant === "stamp" ? "min-w-8 px-2" : "[&_svg]:size-3.5",
         className,
       )}
       onClick={async () => {
@@ -47,7 +49,7 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
       <span key={state} className="animate-feedback-in flex items-center justify-center">
         {icon}
       </span>
-    </button>
+    </Button>
   );
 }
 

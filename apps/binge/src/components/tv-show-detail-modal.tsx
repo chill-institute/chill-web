@@ -3,7 +3,7 @@ import { ArrowUpRight, CloudUpload, Loader2, Star, X } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { TVShowStatusBadge } from "@/components/tv-show-status-badge";
-import { Tab, Tabs } from "@chill-institute/ui/components/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@chill-institute/ui/components/ui/tabs";
 import { Badge } from "@chill-institute/ui/components/ui/badge";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { IconButton } from "@chill-institute/ui/components/icon-button";
@@ -170,7 +170,7 @@ function TvShowDetailContent({
     <IconButton
       onClick={onClose}
       aria-label="Close TV show details"
-      className="absolute right-3 top-3 z-20 rounded-full border-border-strong bg-surface shadow-press"
+      className="absolute right-3 top-3 z-20 rounded-full bg-surface/80 backdrop-blur-sm text-fg-1 hover-hover:hover:bg-surface"
     >
       <X />
     </IconButton>
@@ -197,7 +197,9 @@ function TvShowDetailContent({
           <div className="min-w-0 flex-1">
             {show ? (
               <div className="text-fg-1 max-w-[520px]">
-                <h2 className="text-3xl leading-[1.05]">{show.title}</h2>
+                <p className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] m-0">
+                  {show.title}
+                </p>
                 <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
                   <span className="flex items-center gap-1">
                     <Star
@@ -285,17 +287,24 @@ function TvShowDetailContent({
           )}
         >
           {seasons.length > 1 ? (
-            <Tabs className="mb-4 ml-0 flex-wrap gap-1">
-              {seasons.map((season) => (
-                <Tab
-                  key={season.seasonNumber}
-                  active={season.seasonNumber === resolvedSeasonNumber}
-                  onClick={() => onSeasonChange(season.seasonNumber)}
-                  className="h-6 px-2 font-mono text-xs"
-                >
-                  {season.name || `season ${season.seasonNumber}`}
-                </Tab>
-              ))}
+            <Tabs
+              value={String(resolvedSeasonNumber)}
+              onValueChange={(value) => {
+                const next = Number.parseInt(value, 10);
+                if (Number.isFinite(next)) onSeasonChange(next);
+              }}
+            >
+              <TabsList className="mb-4 flex-wrap gap-1">
+                {seasons.map((season) => (
+                  <TabsTrigger
+                    key={season.seasonNumber}
+                    value={String(season.seasonNumber)}
+                    className="h-6 px-2 font-mono text-xs"
+                  >
+                    {season.name || `season ${season.seasonNumber}`}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
             </Tabs>
           ) : detailQuery.isPending ? (
             <div className="mb-4 flex gap-1">

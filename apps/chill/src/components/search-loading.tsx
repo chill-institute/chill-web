@@ -1,5 +1,7 @@
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 
+import { useSearchDisplay } from "@/hooks/use-search-display";
+
 const TABLE_ROW_SKELETON_SLOTS = Array.from({ length: 8 }, (_, i) => `row-${i}`);
 const CARD_SKELETON_SLOTS = Array.from({ length: 4 }, (_, i) => `card-${i}`);
 
@@ -24,20 +26,32 @@ function SearchResultCardLoading() {
   );
 }
 
-function SearchResultRowLoading() {
+function SearchResultRowLoading({ detailed }: { detailed: boolean }) {
   return (
-    <div className="border-border-faint flex items-center gap-4 border-b py-3.5 last:border-b-0">
-      <div className="min-w-0 flex-1 space-y-1.5">
+    <tr className="border-border-faint border-b last:border-b-0">
+      <td className="py-3.5 pr-2 pl-0 align-middle">
         <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-2/5" />
-      </div>
-      <Skeleton className="h-4 w-12 shrink-0" />
-      <Skeleton className="h-4 w-14 shrink-0" />
-      <Skeleton className="h-4 w-10 shrink-0" />
-      <Skeleton className="h-4 w-14 shrink-0" />
-      <Skeleton className="size-7 shrink-0 rounded" />
-      <Skeleton className="h-7 w-[130px] shrink-0 rounded" />
-    </div>
+        {detailed ? <Skeleton className="mt-1.5 h-3 w-2/5" /> : null}
+      </td>
+      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+        <Skeleton className="mx-auto h-4 w-12" />
+      </td>
+      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+        <Skeleton className="mx-auto h-4 w-14" />
+      </td>
+      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+        <Skeleton className="mx-auto h-4 w-10" />
+      </td>
+      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+        <Skeleton className="mx-auto h-4 w-14" />
+      </td>
+      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+        <Skeleton className="mx-auto size-7 rounded" />
+      </td>
+      <td className="w-[130px] py-3.5 pr-0 pl-1 align-middle whitespace-nowrap">
+        <Skeleton className="h-7 w-[130px] rounded" />
+      </td>
+    </tr>
   );
 }
 
@@ -77,12 +91,18 @@ export function FilterBarLoading() {
 }
 
 export function SearchLoading() {
+  const { mode } = useSearchDisplay();
+  const detailed = mode === "detailed";
   return (
     <>
       <div className="mx-auto hidden w-full max-w-5xl lg:block">
-        {TABLE_ROW_SKELETON_SLOTS.map((slot) => (
-          <SearchResultRowLoading key={slot} />
-        ))}
+        <table className="w-full min-w-full border-collapse">
+          <tbody>
+            {TABLE_ROW_SKELETON_SLOTS.map((slot) => (
+              <SearchResultRowLoading key={slot} detailed={detailed} />
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="flex flex-col gap-y-4 lg:hidden">

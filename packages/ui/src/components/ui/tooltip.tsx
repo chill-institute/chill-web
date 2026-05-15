@@ -16,14 +16,27 @@ const TooltipTrigger = TooltipPrimitive.Trigger;
 
 function TooltipContent({
   className,
+  side = "top",
   sideOffset = 6,
+  align = "center",
+  alignOffset = 0,
   children,
   ...props
-}: { sideOffset?: number } & ComponentProps<typeof TooltipPrimitive.Popup>) {
+}: ComponentProps<typeof TooltipPrimitive.Popup> &
+  Pick<
+    ComponentProps<typeof TooltipPrimitive.Positioner>,
+    "side" | "sideOffset" | "align" | "alignOffset"
+  >) {
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner sideOffset={sideOffset}>
+      <TooltipPrimitive.Positioner
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
+      >
         <TooltipPrimitive.Popup
+          data-slot="tooltip-content"
           className={cn(
             "ui-tooltip border-border-strong bg-surface text-fg-1 shadow-press z-50 overflow-hidden rounded border px-2 py-1 text-sm",
             className,

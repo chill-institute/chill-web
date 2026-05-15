@@ -9,6 +9,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 import { buildErrorReport, buildGitHubIssueURL, formatErrorReport } from "../lib/error-report";
 
 type AppErrorFallbackProps = {
@@ -91,8 +93,8 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
 
       <label className="flex flex-col gap-2 text-sm">
         <span className="font-medium">What were you doing?</span>
-        <textarea
-          className="input min-h-24 px-3 py-2"
+        <Textarea
+          className="min-h-24"
           placeholder="Optional notes to include in the copied report."
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
@@ -100,17 +102,11 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
       </label>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => window.location.reload()}
-        >
+        <Button variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw />
           reload page
-        </button>
-        <button
-          type="button"
-          className="btn"
+        </Button>
+        <Button
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(reportText);
@@ -122,11 +118,11 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
         >
           {copyIcon}
           {copyLabel}
-        </button>
-        <a href={issueURL} target="_blank" rel="noreferrer" className="btn">
+        </Button>
+        <Button render={<a href={issueURL} target="_blank" rel="noreferrer" />}>
           <ExternalLink />
           create GitHub issue
-        </a>
+        </Button>
       </div>
 
       <details className="border-border-soft bg-surface-2 rounded border p-3 text-sm">

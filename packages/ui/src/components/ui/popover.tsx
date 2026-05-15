@@ -14,22 +14,28 @@ function PopoverArrow(props: ComponentProps<typeof PopoverPrimitive.Arrow>) {
 
 function PopoverContent({
   align = "center",
-  className,
+  alignOffset = 0,
+  side = "bottom",
   sideOffset = 0,
+  className,
   children,
   ...props
-}: { align?: "start" | "center" | "end"; sideOffset?: number } & ComponentProps<
-  typeof PopoverPrimitive.Popup
->) {
+}: ComponentProps<typeof PopoverPrimitive.Popup> &
+  Pick<
+    ComponentProps<typeof PopoverPrimitive.Positioner>,
+    "side" | "sideOffset" | "align" | "alignOffset"
+  >) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
-        side="bottom"
-        align={align}
+        side={side}
         sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
         className="z-[70]"
       >
         <PopoverPrimitive.Popup
+          data-slot="popover-content"
           className={cn(
             "ui-popup border-border-strong bg-surface text-fg-1 shadow-press z-[70] w-72 rounded border p-4 outline-none",
             className,

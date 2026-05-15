@@ -7,7 +7,7 @@ import { useAuth } from "@chill-institute/auth/auth";
 import { DownloadFolderPicker } from "@chill-institute/auth/components/download-folder-picker";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@chill-institute/ui/components/ui/avatar";
-import { Checkbox } from "@chill-institute/ui/components/ui/checkbox";
+import { CheckboxField } from "@chill-institute/ui/components/checkbox-field";
 import { CheckboxGroup } from "@chill-institute/ui/components/ui/checkbox-group";
 import {
   Select,
@@ -223,25 +223,26 @@ export function SettingsPanel() {
 
           <SettingsSection title="Search settings">
             <div className="flex flex-col gap-y-2">
-              <Checkbox
+              <CheckboxField
                 id="filter-nasty"
-                label="Try to filter out nasty stuff"
                 checked={effective.filterNastyResults}
                 onCheckedChange={(checked) =>
                   persistPatch({ filterNastyResults: checked === true })
                 }
-              />
-              <Checkbox
+              >
+                Try to filter out nasty stuff
+              </CheckboxField>
+              <CheckboxField
                 id="filter-no-seeders"
-                label="Hide results with no seeders"
                 checked={effective.filterResultsWithNoSeeders}
                 onCheckedChange={(checked) =>
                   persistPatch({ filterResultsWithNoSeeders: checked === true })
                 }
-              />
-              <Checkbox
+              >
+                Hide results with no seeders
+              </CheckboxField>
+              <CheckboxField
                 id="remember-filters"
-                label="Remember quick filters"
                 checked={effective.rememberQuickFilters}
                 onCheckedChange={(checked) => {
                   if (!checked) {
@@ -255,7 +256,9 @@ export function SettingsPanel() {
                   }
                   persistPatch({ rememberQuickFilters: true });
                 }}
-              />
+              >
+                Remember quick filters
+              </CheckboxField>
             </div>
           </SettingsSection>
 

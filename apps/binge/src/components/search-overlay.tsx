@@ -8,6 +8,11 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@chill-institute/ui/components/ui/dialog";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@chill-institute/ui/components/ui/input-group";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { cn } from "@chill-institute/ui/cn";
 import { formatAge, formatBytes } from "@chill-institute/ui/lib/format";
@@ -85,25 +90,30 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
         <DialogDescription className="sr-only">
           Type any title, hit enter to send the top torrent to put.io.
         </DialogDescription>
-        <div className="border-border-faint flex items-center gap-2 border-b px-3 py-2">
-          <Search className="text-fg-3 size-4" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="search any title…"
-            autoComplete="off"
-            className="text-fg-1 placeholder:text-fg-3 flex-1 bg-transparent text-base outline-none"
-            aria-label="search"
-          />
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="kbd cursor-pointer"
-            aria-label="close"
-          >
-            esc
-          </button>
+        <div className="border-border-faint border-b">
+          <InputGroup className="rounded-none border-0 focus-within:ring-0 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
+            <InputGroupAddon>
+              <Search className="text-fg-3 size-4" />
+            </InputGroupAddon>
+            <InputGroupInput
+              ref={inputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="search any title…"
+              autoComplete="off"
+              aria-label="search"
+            />
+            <InputGroupAddon align="inline-end">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="kbd cursor-pointer"
+                aria-label="close"
+              >
+                esc
+              </button>
+            </InputGroupAddon>
+          </InputGroup>
         </div>
         <div className="max-h-[60vh] overflow-y-auto py-1">
           <ResultsBody

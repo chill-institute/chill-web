@@ -1,6 +1,8 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 
-import { Checkbox } from "@chill-institute/ui/components/ui/checkbox";
+import { CheckboxField } from "@chill-institute/ui/components/checkbox-field";
+import { SortPill } from "@chill-institute/ui/components/sort-row";
+import { tabsContainerClass } from "@chill-institute/ui/components/tabs";
 import type { FilterState } from "@/hooks/use-search-filters";
 import {
   SortDirection,
@@ -39,11 +41,10 @@ export function SearchFilterBar({
             {resolutionFilters.map((filter) => {
               const checked = filters.resolution.includes(filter);
               return (
-                <Checkbox
+                <CheckboxField
                   key={filter}
                   id={`res-${String(filter)}`}
-                  label={resolutionFilterLabels[filter]}
-                  variant="small"
+                  size="sm"
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked
@@ -51,7 +52,9 @@ export function SearchFilterBar({
                       : filters.resolution.filter((v) => v !== filter);
                     onResolutionChange(next);
                   }}
-                />
+                >
+                  {resolutionFilterLabels[filter]}
+                </CheckboxField>
               );
             })}
           </div>
@@ -62,11 +65,10 @@ export function SearchFilterBar({
             {codecFilters.map((filter) => {
               const checked = filters.codec.includes(filter);
               return (
-                <Checkbox
+                <CheckboxField
                   key={filter}
                   id={`codec-${String(filter)}`}
-                  label={codecFilterLabels[filter]}
-                  variant="small"
+                  size="sm"
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked
@@ -74,7 +76,9 @@ export function SearchFilterBar({
                       : filters.codec.filter((v) => v !== filter);
                     onCodecChange(next);
                   }}
-                />
+                >
+                  {codecFilterLabels[filter]}
+                </CheckboxField>
               );
             })}
           </div>
@@ -85,17 +89,18 @@ export function SearchFilterBar({
             {otherFilters.map((filter) => {
               const checked = filters.other.includes(filter);
               return (
-                <Checkbox
+                <CheckboxField
                   key={filter}
                   id={`other-${String(filter)}`}
-                  label={otherFilterLabels[filter]}
-                  variant="small"
+                  size="sm"
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked ? [filter] : [];
                     onOtherChange(next);
                   }}
-                />
+                >
+                  {otherFilterLabels[filter]}
+                </CheckboxField>
               );
             })}
           </div>
@@ -104,23 +109,20 @@ export function SearchFilterBar({
 
       <fieldset className="m-0 border-0 p-0 lg:hidden">
         <legend className="sr-only">Sort by</legend>
-        <div id="sort-options" className="flex flex-wrap gap-1.5">
+        <div id="sort-options" className={tabsContainerClass}>
           {sortByValues.map((option) => {
             const active = filters.sortBy === option;
             return (
-              <button
-                key={option}
-                type="button"
-                className={`btn ${active ? "bg-active" : ""}`}
-                onClick={() => onSort(option)}
-              >
+              <SortPill key={option} active={active} onClick={() => onSort(option)}>
                 <span>{sortByLabels[option].toLowerCase()}</span>
                 {active ? (
-                  <span className="text-xs">
-                    {filters.sortDirection === SortDirection.ASC ? <ArrowUp /> : <ArrowDown />}
-                  </span>
+                  filters.sortDirection === SortDirection.ASC ? (
+                    <ArrowUp />
+                  ) : (
+                    <ArrowDown />
+                  )
                 ) : null}
-              </button>
+              </SortPill>
             );
           })}
         </div>

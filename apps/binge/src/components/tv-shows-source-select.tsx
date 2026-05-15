@@ -1,6 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@chill-institute/ui/components/ui/toggle-group";
-import { tabItemBaseClass, tabsContainerClass } from "@chill-institute/ui/components/tabs";
-import { cn } from "@chill-institute/ui/lib/cn";
+import { tabsContainerClass } from "@chill-institute/ui/components/tabs";
 import {
   getTVShowsSourceLabel,
   parseTVShowsSource,
@@ -27,6 +26,7 @@ export function TVShowsSourceSelect({
 }) {
   return (
     <ToggleGroup
+      variant="tab"
       className={tabsContainerClass}
       onValueChange={(next) => {
         if (next.length === 0) {
@@ -45,10 +45,7 @@ export function TVShowsSourceSelect({
           key={source}
           value={String(source)}
           aria-label={getTVShowsSourceLabel(source)}
-          className={cn(
-            tabItemBaseClass,
-            "whitespace-nowrap data-[pressed]:bg-hover data-[pressed]:text-fg-1",
-          )}
+          className="h-7 gap-1.5 whitespace-nowrap px-2.5"
         >
           {tvShowsSourceTabLabels[source]}
         </ToggleGroupItem>

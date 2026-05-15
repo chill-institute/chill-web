@@ -3,6 +3,7 @@ import type { ReleaseInfo } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { CopyButton } from "@chill-institute/ui/components/copy-button";
+import { cn } from "@chill-institute/ui/lib/cn";
 import { useSearchDisplay, type SearchDisplayMode } from "@/hooks/use-search-display";
 import { formatAge, formatBytes } from "@chill-institute/ui/lib/format";
 import { effectiveInfo } from "@/lib/release-info";
@@ -49,12 +50,10 @@ function TitleCell({
   result,
   titleBehavior,
   mode,
-  variant,
 }: {
   result: SearchResult;
   titleBehavior: Props["titleBehavior"];
   mode: SearchDisplayMode;
-  variant: "table" | "card";
 }) {
   const linkable = titleBehavior === SearchResultTitleBehavior.LINK;
   const wrap = (children: React.ReactNode) =>
@@ -66,9 +65,8 @@ function TitleCell({
       <>{children}</>
     );
 
-  const breakClass = variant === "table" ? "break-all" : "break-words";
   const titleSpan = (
-    <span className={`text-fg-1 block text-sm leading-[1.4] ${breakClass}`}>
+    <span className="text-fg-1 block text-sm leading-[1.4] break-words [overflow-wrap:anywhere]">
       {wrap(result.title)}
     </span>
   );
@@ -107,11 +105,14 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
                   >
                     <button
                       type="button"
-                      className={`w-full cursor-pointer ${isTitle ? "text-left" : "text-center"}`}
+                      className={cn("w-full cursor-pointer", isTitle ? "text-left" : "text-center")}
                       onClick={() => onSort(column.key)}
                     >
                       <span
-                        className={`inline-flex items-center gap-0.5 ${isTitle ? "" : "justify-center"}`}
+                        className={cn(
+                          "inline-flex items-center gap-0.5",
+                          !isTitle && "justify-center",
+                        )}
                       >
                         <span>{column.label}</span>
                         {active ? (
@@ -142,12 +143,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
               return (
                 <tr key={result.id} className="border-border-faint border-b last:border-b-0">
                   <td className="py-3.5 pr-2 pl-0 align-middle">
-                    <TitleCell
-                      result={result}
-                      titleBehavior={titleBehavior}
-                      mode={mode}
-                      variant="table"
-                    />
+                    <TitleCell result={result} titleBehavior={titleBehavior} mode={mode} />
                   </td>
                   <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
                     {result.source}
@@ -184,12 +180,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
               className="border-border-strong bg-surface my-4 overflow-hidden rounded border"
             >
               <div className="px-6 py-5">
-                <TitleCell
-                  result={result}
-                  titleBehavior={titleBehavior}
-                  mode={mode}
-                  variant="card"
-                />
+                <TitleCell result={result} titleBehavior={titleBehavior} mode={mode} />
 
                 <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 font-mono text-xs">
                   <span className="text-fg-1">{result.source}</span>

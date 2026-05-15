@@ -28,7 +28,8 @@ import {
 } from "@chill-institute/ui/components/ui/empty";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { StickyHeader } from "@chill-institute/ui/components/sticky-header";
-import { Tab, Tabs, tabsContainerClass } from "@chill-institute/ui/components/tabs";
+import { tabsContainerClass } from "@chill-institute/ui/components/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@chill-institute/ui/components/ui/tabs";
 import { PosterCard } from "@chill-institute/ui/components/poster-card";
 import { InstituteFooter } from "@chill-institute/ui/components/institute-footer";
 import { SortPill, SortRow, SortRowDivider } from "@chill-institute/ui/components/sort-row";
@@ -225,7 +226,9 @@ function BingeBrand() {
         alt="binge.institute"
         className="border-border-strong rounded border"
       />
-      <h3 className="text-fg-1 truncate text-lg leading-7">binge.institute</h3>
+      <span className="text-fg-1 truncate font-serif text-lg leading-7 tracking-[-0.01em]">
+        binge.institute
+      </span>
     </Link>
   );
 }
@@ -246,15 +249,22 @@ function HomeShell({
       <StickyHeader
         brand={<BingeBrand />}
         tabs={
-          <Tabs>
-            <Tab active={tab === "movies"} onClick={() => onTabChange("movies")}>
-              <Film aria-hidden="true" />
-              movies
-            </Tab>
-            <Tab active={tab === "tv"} onClick={() => onTabChange("tv")}>
-              <Tv aria-hidden="true" />
-              tv shows
-            </Tab>
+          <Tabs
+            value={tab}
+            onValueChange={(value) => {
+              if (value === "movies" || value === "tv") onTabChange(value);
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="movies">
+                <Film aria-hidden="true" />
+                movies
+              </TabsTrigger>
+              <TabsTrigger value="tv">
+                <Tv aria-hidden="true" />
+                tv shows
+              </TabsTrigger>
+            </TabsList>
           </Tabs>
         }
         right={
