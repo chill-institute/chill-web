@@ -11,7 +11,7 @@ type SettingsSectionProps = {
 function SettingsSection({ title, children, className }: SettingsSectionProps) {
   return (
     <section className={cn("flex flex-col gap-1.5", className)}>
-      <p className="text-fg-1 m-0 mb-1 font-sans text-sm font-medium">{title}</p>
+      <p className="text-fg-1 m-0 font-sans text-sm font-medium">{title}</p>
       <div className="flex flex-col gap-1.5">{children}</div>
     </section>
   );

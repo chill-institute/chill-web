@@ -135,7 +135,7 @@ export function SettingsPanel() {
           }
 
           return (
-            <div className="border-border-strong flex h-8 items-center justify-between gap-2 rounded border px-2.5 py-1 dark:bg-surface-2/30">
+            <div className="border-border-strong flex h-9 items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Folder className="text-fg-2 size-4 shrink-0" />
                 <span className="text-fg-1 truncate text-sm">
