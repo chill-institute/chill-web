@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -41,10 +42,18 @@ async function checkBackendHealth(): Promise<boolean> {
 
 export function BackendHealthProvider({ children }: { children: ReactNode }) {
   const [isBackendUnavailable, setIsBackendUnavailable] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const retry = useCallback(async () => {
     const isHealthy = await checkBackendHealth();
-    setIsBackendUnavailable(!isHealthy);
+    if (mountedRef.current) setIsBackendUnavailable(!isHealthy);
   }, []);
 
   useEffect(() => {

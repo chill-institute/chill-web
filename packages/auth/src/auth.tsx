@@ -1,4 +1,4 @@
-import { createContext, use, useMemo, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
@@ -61,33 +61,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authToken, setAuthTokenState] = useState<string | null>(() => readStoredToken());
   const queryClient = useQueryClient();
 
-  const value = useMemo<AuthContextValue>(() => {
-    return {
+  const setAuthToken = useCallback((token: string) => {
+    const trimmed = token.trim();
+    if (trimmed.length === 0) return;
+    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, trimmed);
+    setAuthTokenState(trimmed);
+  }, []);
+
+  const setPendingCallbackURL = useCallback((url: string) => {
+    storePendingCallbackURL(url);
+  }, []);
+
+  const consumePendingCallbackURL = useCallback(() => {
+    const stored = window.sessionStorage.getItem(AUTH_CALLBACK_STORAGE_KEY)?.trim() ?? "";
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    return stored.length > 0 ? stored : null;
+  }, []);
+
+  const signOut = useCallback(() => {
+    clearStoredAuthState();
+    setAuthTokenState(null);
+    queryClient.clear();
+  }, [queryClient]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
       authToken,
       isAuthenticated: authToken !== null,
-      setAuthToken: (token: string) => {
-        const trimmed = token.trim();
-        if (trimmed.length === 0) {
-          return;
-        }
-        window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, trimmed);
-        setAuthTokenState(trimmed);
-      },
-      setPendingCallbackURL: (url: string) => {
-        storePendingCallbackURL(url);
-      },
-      consumePendingCallbackURL: () => {
-        const value = window.sessionStorage.getItem(AUTH_CALLBACK_STORAGE_KEY)?.trim() ?? "";
-        window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
-        return value.length > 0 ? value : null;
-      },
-      signOut: () => {
-        clearStoredAuthState();
-        setAuthTokenState(null);
-        queryClient.clear();
-      },
-    };
-  }, [authToken, queryClient]);
+      setAuthToken,
+      setPendingCallbackURL,
+      consumePendingCallbackURL,
+      signOut,
+    }),
+    [authToken, setAuthToken, setPendingCallbackURL, consumePendingCallbackURL, signOut],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

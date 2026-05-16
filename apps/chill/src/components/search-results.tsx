@@ -37,7 +37,7 @@ function MetaLine({ info }: { info: ReleaseInfo }) {
   return (
     <div className="text-fg-4 mt-1 block font-mono text-2xs leading-[1.4]">
       {parts.map((text, i) => (
-        <span key={text}>
+        <span key={`${i}-${text}`}>
           {i > 0 ? <span className="mx-1 opacity-60">·</span> : null}
           <span>{text}</span>
         </span>

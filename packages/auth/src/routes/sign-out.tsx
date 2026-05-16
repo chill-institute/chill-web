@@ -27,14 +27,14 @@ export const signOutRouteOptions = {
 };
 
 function SignOutPage() {
-  const auth = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { error } = useRouterState({
     select: (state) => validateSignOutSearch(state.location.search),
   });
 
   useEffect(() => {
-    auth.signOut();
+    signOut();
     void navigate({
       to: "/sign-in",
       search: {
@@ -43,7 +43,7 @@ function SignOutPage() {
       },
       replace: true,
     });
-  }, [auth, navigate, error]);
+  }, [signOut, navigate, error]);
 
   return (
     <AuthPage title="signing you out">

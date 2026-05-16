@@ -354,7 +354,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         </IconButton>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-6 pt-5 pb-6">
+      <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-6 pt-5 pb-6">
         {synopsis ? (
           <p className="m-0 text-sm leading-relaxed text-pretty text-fg-2">{synopsis}</p>
         ) : null}

@@ -42,8 +42,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
   const deferredQuery = useDeferredValue(query);
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const sendRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const prevQueryRef = useRef("");
+  const [lastSeenQuery, setLastSeenQuery] = useState("");
 
   const trimmed = deferredQuery.trim();
   const searchQuery = useFreeSearchQuery({ query: trimmed, enabled: open });
@@ -62,8 +61,8 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     return () => window.clearTimeout(id);
   }, [open]);
 
-  if (prevQueryRef.current !== trimmed) {
-    prevQueryRef.current = trimmed;
+  if (trimmed !== lastSeenQuery) {
+    setLastSeenQuery(trimmed);
     setHighlight(0);
   }
 
@@ -78,7 +77,9 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
       if (visible.length === 0) return;
       event.preventDefault();
       const target = visible[Math.min(highlight, visible.length - 1)];
-      if (target) sendRefs.current.get(rowKey(target))?.click();
+      if (!target) return;
+      const option = document.getElementById(optionId(rowKey(target)));
+      option?.querySelector<HTMLButtonElement>("button")?.click();
     }
   }
 
@@ -133,10 +134,6 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
             isPending={searchQuery.isPending && trimmed.length > 0}
             isError={searchQuery.isError}
             onHighlight={setHighlight}
-            registerSendRef={(key, button) => {
-              if (button) sendRefs.current.set(key, button);
-              else sendRefs.current.delete(key);
-            }}
           />
         </div>
         <div className="text-fg-3 border-border-faint flex items-center justify-between gap-3 border-t px-3 py-2 text-2xs">
@@ -169,7 +166,6 @@ function ResultsBody({
   isPending,
   isError,
   onHighlight,
-  registerSendRef,
 }: {
   trimmed: string;
   visible: readonly SearchResult[];
@@ -177,7 +173,6 @@ function ResultsBody({
   isPending: boolean;
   isError: boolean;
   onHighlight: (index: number) => void;
-  registerSendRef: (key: string, button: HTMLButtonElement | null) => void;
 }) {
   if (trimmed.length === 0) {
     return (
@@ -254,28 +249,13 @@ function ResultsBody({
                 ) : null}
               </div>
             </div>
-            <div ref={(node) => registerRowSend(node, key, registerSendRef)}>
-              <AddTransferButton url={result.link} className="shrink-0">
-                send to put.io
-              </AddTransferButton>
-            </div>
+            <AddTransferButton url={result.link} className="shrink-0">
+              send to put.io
+            </AddTransferButton>
             {index === highlight ? <CornerDownLeft className="text-fg-3 size-3.5" /> : null}
           </li>
         );
       })}
     </ul>
   );
-}
-
-function registerRowSend(
-  node: HTMLDivElement | null,
-  key: string,
-  registerSendRef: (key: string, button: HTMLButtonElement | null) => void,
-) {
-  if (!node) {
-    registerSendRef(key, null);
-    return;
-  }
-  const button = node.querySelector<HTMLButtonElement>("button");
-  registerSendRef(key, button);
 }
