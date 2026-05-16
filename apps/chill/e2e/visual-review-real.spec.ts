@@ -8,6 +8,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(here, "../../../tmp/visual-review/chill-real");
 const BASE_URL = process.env.BASE_URL ?? "https://staging.chill.institute";
 const TOKEN = process.env.CHILL_TOKEN ?? "";
+const DISMISSED_USER_MESSAGES = JSON.stringify({
+  "binge-online-alberto-2026-05": "2026-05-16T00:00:00.000Z",
+});
 
 test.skip(
   !TOKEN || process.env.REAL_DATA !== "1",
@@ -27,7 +30,10 @@ async function authedPage(browser: Browser) {
       origins: [
         {
           origin: BASE_URL,
-          localStorage: [{ name: "chill.auth_token", value: TOKEN }],
+          localStorage: [
+            { name: "chill.auth_token", value: TOKEN },
+            { name: "chill.user_messages.dismissed.v1", value: DISMISSED_USER_MESSAGES },
+          ],
         },
       ],
     },

@@ -161,7 +161,7 @@ function FilterSelect<T extends string>({
         if (next != null) onChange(next);
       }}
     >
-      <SelectTrigger size="sm" aria-label={label}>
+      <SelectTrigger size="sm" aria-label={label} className="w-full sm:w-fit">
         <SelectValue>{(v) => options.find((o) => o.value === v)?.label ?? null}</SelectValue>
       </SelectTrigger>
       <SelectContent>
@@ -206,7 +206,7 @@ function BackdropImage({ url }: { url?: string }) {
 function PosterImage({ url, alt }: { url: string; alt: string }) {
   const img = useImageLoadedState();
   return (
-    <div className="relative aspect-[2/3] w-[110px] shrink-0">
+    <div className="relative aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]">
       <Skeleton
         className={cn(
           "absolute inset-0 h-full w-full rounded transition-opacity duration-base ease-out",
@@ -328,12 +328,12 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
   return (
     <div className={shellClassName}>
-      <div className="relative flex h-[280px] shrink-0 items-end overflow-hidden">
+      <div className="relative flex h-[240px] shrink-0 items-end overflow-hidden sm:h-[280px]">
         <BackdropImage key={movie.backdropUrl ?? "no-backdrop"} url={movie.backdropUrl} />
         <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
         <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
-        <div className="relative z-10 flex w-full items-end gap-5 px-6 pb-6 sm:px-7">
+        <div className="relative z-10 flex w-full items-end gap-4 px-4 pb-5 sm:gap-5 sm:px-7 sm:pb-6">
           {movie.posterUrl ? (
             <PosterImage key={movie.posterUrl} url={movie.posterUrl} alt={movie.title} />
           ) : (
@@ -348,13 +348,13 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         <IconButton
           onClick={onClose}
           aria-label="Close movie details"
-          className="absolute right-3 top-3 z-20 rounded-full bg-surface/80 backdrop-blur-sm text-fg-1 hover-hover:hover:bg-surface"
+          className="absolute top-2.5 right-2.5 z-20 rounded-full bg-surface/80 text-fg-1 backdrop-blur-sm hover-hover:hover:bg-surface sm:top-3 sm:right-3"
         >
           <X />
         </IconButton>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-6 pt-5 pb-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6">
         {synopsis ? (
           <p className="m-0 text-sm leading-relaxed text-pretty text-fg-2">{synopsis}</p>
         ) : null}
@@ -366,7 +366,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             {RESULT_SKELETON_SLOTS.map((slot) => (
               <div
                 key={slot}
-                className="flex items-center gap-3 border-t border-border-strong/10 dark:border-border-strong/30 p-3 first:border-t-0"
+                className="border-border-faint flex items-center gap-3 border-t p-3 first:border-t-0"
               >
                 <Skeleton className="h-3 w-14 rounded" />
                 <Skeleton className="h-4 flex-1" />
@@ -535,8 +535,8 @@ function ResultsToolbar({
   onClearFilters: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-2">
-      <div className="flex flex-wrap items-end gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
         <FilterSelect
           label="Resolution"
           value={resolutionFilter}

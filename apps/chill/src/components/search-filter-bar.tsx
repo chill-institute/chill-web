@@ -2,7 +2,6 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 
 import { CheckboxField } from "@chill-institute/ui/components/checkbox-field";
 import { SortPill } from "@chill-institute/ui/components/sort-row";
-import { tabsContainerClass } from "@chill-institute/ui/components/tabs";
 import type { FilterState } from "@/hooks/use-search-filters";
 import {
   SortDirection,
@@ -33,7 +32,7 @@ export function SearchFilterBar({
   onSort,
 }: Props) {
   return (
-    <div className="flex flex-col gap-6 lg:items-center">
+    <div className="flex flex-col gap-4 lg:items-center lg:gap-6">
       <fieldset className="m-0 flex flex-col items-start border-0 p-0 lg:items-center">
         <legend className="sr-only">Quick filters</legend>
         <div id="quick-filters" className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -109,11 +108,16 @@ export function SearchFilterBar({
 
       <fieldset className="m-0 border-0 p-0 lg:hidden">
         <legend className="sr-only">Sort by</legend>
-        <div id="sort-options" className={tabsContainerClass}>
+        <div id="sort-options" className="flex flex-wrap items-center gap-1.5">
           {sortByValues.map((option) => {
             const active = filters.sortBy === option;
             return (
-              <SortPill key={option} active={active} onClick={() => onSort(option)}>
+              <SortPill
+                key={option}
+                active={active}
+                className="border-border-soft bg-surface shadow-press data-[active]:border-border-strong data-[active]:shadow-none"
+                onClick={() => onSort(option)}
+              >
                 <span>{sortByLabels[option].toLowerCase()}</span>
                 {active ? (
                   filters.sortDirection === SortDirection.ASC ? (

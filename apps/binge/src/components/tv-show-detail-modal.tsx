@@ -86,7 +86,7 @@ function BackdropImage({ url }: { url?: string }) {
 function PosterImage({ url, alt }: { url: string; alt: string }) {
   const img = useImageLoadedState();
   return (
-    <div className="relative aspect-[2/3] w-[110px] shrink-0">
+    <div className="relative aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]">
       <Skeleton
         className={cn(
           "absolute inset-0 h-full w-full rounded transition-opacity duration-base ease-out",
@@ -164,12 +164,12 @@ function TvShowDetailContent({
 
   return (
     <div className={shellClassName}>
-      <div className="relative flex h-[280px] shrink-0 items-end overflow-hidden">
+      <div className="relative flex h-[240px] shrink-0 items-end overflow-hidden sm:h-[280px]">
         <BackdropImage key={backdropUrl ?? "no-backdrop"} url={backdropUrl} />
         <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
         <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
-        <div className="relative z-10 flex w-full items-end gap-5 px-6 pb-6 sm:px-7">
+        <div className="relative z-10 flex w-full items-end gap-4 px-4 pb-5 sm:gap-5 sm:px-7 sm:pb-6">
           {posterUrl ? (
             <PosterImage key={posterUrl} url={posterUrl} alt={show?.title ?? "TV show poster"} />
           ) : (
@@ -247,7 +247,7 @@ function TvShowDetailContent({
         {closeButton}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
         {detailQuery.status === "error" ? (
           <UserErrorAlert className="mt-5" error={detailQuery.error} />
         ) : null}
@@ -315,23 +315,24 @@ function TvShowDetailContent({
                 </div>
               </div>
 
-              <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:flex-nowrap">
+              <div className="flex w-full shrink-0 flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap">
                 {downloadsQuery.isPending ? (
-                  <Button disabled>
-                    <Loader2 className="motion-safe:animate-spin" />
+                  <Button disabled className="w-full sm:w-auto">
+                    <Loader2 data-icon="inline-start" className="motion-safe:animate-spin" />
                     <span>loading downloads</span>
                   </Button>
                 ) : downloadsQuery.status === "error" ? null : downloadsQuery.data?.seasonPack
                     ?.link ? (
                   <AddTransferButton
+                    className="w-full sm:w-auto"
                     url={downloadsQuery.data.seasonPack.link}
                     ariaLabel={`Send ${show?.title ?? "TV show"} season ${resolvedSeasonNumber} to put.io`}
                   >
                     send season to put.io
                   </AddTransferButton>
                 ) : (
-                  <Button variant="off" disabled>
-                    <CloudUpload />
+                  <Button variant="off" disabled className="w-full sm:w-auto">
+                    <CloudUpload data-icon="inline-start" />
                     <span>season pack unavailable</span>
                   </Button>
                 )}

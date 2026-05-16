@@ -15,13 +15,15 @@ function SortRow({ className, children, count }: SortRowProps) {
     <div
       data-slot="sort-row"
       className={cn(
-        "border-border-strong text-fg-3 bg-surface/60 mb-4.5 flex flex-wrap items-center gap-3 border-y px-4 py-2 text-sm",
+        "border-border-strong text-fg-3 bg-surface/60 -mx-4 mb-3.5 flex flex-wrap items-center gap-2 border-y px-4 py-2.5 text-sm sm:mx-0 sm:gap-3 sm:px-4 sm:py-2 lg:mb-4.5",
         className,
       )}
     >
       {children}
       {count != null ? (
-        <span className="text-fg-3 ml-auto font-mono text-2xs tabular-nums">{count}</span>
+        <span className="text-fg-3 order-2 ml-auto font-mono text-2xs tabular-nums sm:order-none">
+          {count}
+        </span>
       ) : null}
     </div>
   );

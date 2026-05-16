@@ -408,8 +408,8 @@
   --tw-exit-rotate: initial;
   @variant motion-safe {
     animation-name: exit;
-    animation-duration: 150ms;
-    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    animation-duration: var(--duration-press);
+    animation-timing-function: var(--ease-out);
   }
 }
 

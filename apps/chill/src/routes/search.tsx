@@ -177,7 +177,7 @@ function SearchPage() {
         .exhaustive();
 
       return (
-        <section data-page="search" className="flex flex-col gap-6">
+        <section data-page="search" className="flex flex-col gap-3 lg:gap-6">
           <SearchFilterBar
             filters={filters}
             onResolutionChange={(next) => {

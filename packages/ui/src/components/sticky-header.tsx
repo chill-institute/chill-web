@@ -19,11 +19,11 @@ function StickyHeader({ brand, tabs, right, children, className }: StickyHeaderP
         className,
       )}
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-5">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5">
         {brand}
         {tabs}
         {children}
-        {right ? <div className="ml-auto flex items-center gap-1">{right}</div> : null}
+        {right ? <div className="ml-auto flex items-center gap-0.5 sm:gap-1">{right}</div> : null}
       </div>
     </header>
   );

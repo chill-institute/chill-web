@@ -226,7 +226,7 @@ function SearchSettingsSection({
 }) {
   return (
     <SettingsSection title="Search settings">
-      <div className="flex flex-col gap-y-2">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
         <CheckboxField
           id="filter-nasty"
           checked={effective.filterNastyResults}

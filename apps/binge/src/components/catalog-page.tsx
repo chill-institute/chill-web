@@ -245,15 +245,27 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
           <PageHeading tab={tab} />
           <SortRow count={countLabel}>
             <div className={tabsContainerClass} role="radiogroup" aria-label="sort movies by">
-              <SortPill active={sort === "popular"} onClick={() => setSort("popular")}>
+              <SortPill
+                active={sort === "popular"}
+                className="h-8 text-base sm:h-7 sm:text-sm"
+                onClick={() => setSort("popular")}
+              >
                 <Flame aria-hidden="true" />
                 popular
               </SortPill>
-              <SortPill active={sort === "rating"} onClick={() => setSort("rating")}>
+              <SortPill
+                active={sort === "rating"}
+                className="h-8 text-base sm:h-7 sm:text-sm"
+                onClick={() => setSort("rating")}
+              >
                 <Star aria-hidden="true" />
                 rating
               </SortPill>
-              <SortPill active={sort === "recent"} onClick={() => setSort("recent")}>
+              <SortPill
+                active={sort === "recent"}
+                className="h-8 text-base sm:h-7 sm:text-sm"
+                onClick={() => setSort("recent")}
+              >
                 <Calendar aria-hidden="true" />
                 recent
               </SortPill>
@@ -346,7 +358,7 @@ function HomeShell({
           </>
         }
       />
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-5">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-5">
         {children}
         <InstituteFooter
           appName="binge.institute"
@@ -363,7 +375,7 @@ function HomeShell({
 
 function PageHeading({ tab }: { tab: CatalogTab }) {
   return (
-    <div className="flex items-end justify-between gap-4 pt-7 pb-3.5">
+    <div className="flex items-end justify-between gap-4 pt-5 pb-2.5 sm:pt-7 sm:pb-3.5">
       <h2 className="m-0 leading-none">{tab === "movies" ? "movies" : "tv shows"}</h2>
     </div>
   );
@@ -469,7 +481,7 @@ function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsCon
 
 function PosterGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 pb-8 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
       {children}
     </div>
   );
@@ -484,7 +496,7 @@ const POSTER_SKELETON_SLOTS = Array.from({ length: 18 }, (_, i) => `poster-skel-
 
 function PosterGridSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 pb-8 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
       {POSTER_SKELETON_SLOTS.map((slot) => (
         <article
           key={slot}
@@ -503,7 +515,7 @@ function PosterGridSkeleton() {
 
 function SortRowSkeleton() {
   return (
-    <div className="border-border-strong mb-4.5 flex items-center gap-2 border-y py-2">
+    <div className="border-border-strong -mx-4 mb-3.5 flex items-center gap-2 border-y px-4 py-2.5 sm:mx-0 sm:mb-4.5 sm:px-0 sm:py-2">
       <Skeleton className="h-5 w-12" />
       <Skeleton className="h-6 w-16 rounded" />
       <Skeleton className="h-6 w-16 rounded" />

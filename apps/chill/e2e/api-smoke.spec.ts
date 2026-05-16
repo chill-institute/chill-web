@@ -3,6 +3,9 @@ import { expect, test, type Browser } from "@playwright/test";
 const TOKEN = process.env.CHILL_TOKEN ?? "";
 const BASE = process.env.AUTHED_BASE ?? "http://localhost:58311";
 const BASE_ORIGIN = new URL(BASE).origin;
+const DISMISSED_USER_MESSAGES = JSON.stringify({
+  "binge-online-alberto-2026-05": "2026-05-16T00:00:00.000Z",
+});
 
 test.skip(!TOKEN, "set CHILL_TOKEN to run the real-backend smoke");
 
@@ -11,7 +14,13 @@ async function authedContext(browser: Browser) {
     storageState: {
       cookies: [],
       origins: [
-        { origin: BASE_ORIGIN, localStorage: [{ name: "chill.auth_token", value: TOKEN }] },
+        {
+          origin: BASE_ORIGIN,
+          localStorage: [
+            { name: "chill.auth_token", value: TOKEN },
+            { name: "chill.user_messages.dismissed.v1", value: DISMISSED_USER_MESSAGES },
+          ],
+        },
       ],
     },
   });

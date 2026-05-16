@@ -82,7 +82,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="border-border-strong bg-surface shadow-modal top-[12vh] left-1/2 w-[min(92vw,640px)] -translate-x-1/2 overflow-hidden rounded-xl border"
+        className="border-border-strong bg-surface shadow-modal top-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] -translate-x-1/2 overflow-hidden rounded-xl border sm:top-[12vh] sm:w-[min(92vw,640px)]"
         onKeyDown={handleKey}
       >
         <DialogTitle className="sr-only">search the institute</DialogTitle>
@@ -118,7 +118,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
             </InputGroupAddon>
           </InputGroup>
         </div>
-        <div className="max-h-[60vh] overflow-y-auto py-1">
+        <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto py-1 sm:max-h-[60vh]">
           <ResultsBody
             trimmed={trimmed}
             visible={visible}
@@ -130,7 +130,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
         </div>
         <div
           id="search-overlay-shortcuts"
-          className="text-fg-3 border-border-faint flex items-center justify-between gap-3 border-t px-3 py-2 text-2xs"
+          className="text-fg-3 border-border-faint hidden items-center justify-between gap-3 border-t px-3 py-2 text-2xs sm:flex"
         >
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
@@ -192,7 +192,7 @@ function ResultsBody({
               <Skeleton className="h-3 w-3/4" />
               <Skeleton className="h-2.5 w-1/2" />
             </div>
-            <Skeleton className="h-7 w-24 rounded" />
+            <Skeleton className="hidden h-7 w-24 rounded sm:block" />
           </div>
         ))}
       </div>
@@ -216,7 +216,7 @@ function ResultsBody({
             data-highlighted={index === highlight ? "" : undefined}
             onMouseEnter={() => onHighlight(index)}
             className={cn(
-              "flex items-center gap-3 px-3 py-2",
+              "flex flex-col items-stretch gap-2 px-3 py-2 sm:flex-row sm:items-center sm:gap-3",
               index === highlight ? "bg-hover" : "bg-transparent",
             )}
           >
@@ -245,12 +245,14 @@ function ResultsBody({
             </div>
             <AddTransferButton
               url={result.link}
-              className="shrink-0"
+              className="w-full shrink-0 sm:w-auto"
               ariaLabel={`send ${result.title} to put.io`}
             >
               send to put.io
             </AddTransferButton>
-            {index === highlight ? <CornerDownLeft className="text-fg-3 size-3.5" /> : null}
+            {index === highlight ? (
+              <CornerDownLeft className="text-fg-3 hidden size-3.5 sm:block" />
+            ) : null}
           </li>
         );
       })}
