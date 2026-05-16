@@ -1,18 +1,18 @@
-import {
-  createRootRouteWithContext,
-  Navigate,
-  type ErrorComponentProps,
-} from "@tanstack/react-router";
+import { createRootRouteWithContext, type ErrorComponentProps } from "@tanstack/react-router";
 
 import type { RouterContext } from "@/router";
-import { AppErrorBoundary } from "@/components/app-error-boundary";
-import { AppErrorFallback } from "@/components/app-error-fallback";
+import { AppErrorBoundary } from "@chill-institute/ui/components/app-error-boundary";
+import { AppErrorFallback } from "@chill-institute/ui/components/app-error-fallback";
 import { AppShell } from "@/components/app-shell";
-import { BackendUnavailableScreen } from "@/components/backend-unavailable-screen";
-import { AuthProvider } from "@/lib/auth";
+import { BackendUnavailableScreen } from "@chill-institute/ui/components/backend-unavailable-screen";
+import { NotFoundScreen } from "@chill-institute/ui/components/not-found-screen";
+import { AuthProvider } from "@chill-institute/auth/auth";
+import { ChillApiProvider } from "@/lib/api";
 import { BackendHealthProvider, useBackendUnavailable } from "@/hooks/use-backend-unavailable";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@chill-institute/ui/components/ui/toaster";
+import { TooltipProvider } from "@chill-institute/ui/components/ui/tooltip";
+import { UserMessageModal } from "@/components/user-message-modal";
+import { UserMessagesProvider } from "@/components/user-messages-provider";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: Root,
@@ -22,13 +22,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function Root() {
   return (
-    <AppErrorBoundary>
+    <AppErrorBoundary app="chill.institute/web" release={import.meta.env.VITE_PUBLIC_RELEASE}>
       <AuthProvider>
-        <TooltipProvider>
-          <BackendHealthProvider>
-            <RootContent />
-          </BackendHealthProvider>
-        </TooltipProvider>
+        <ChillApiProvider>
+          <TooltipProvider>
+            <BackendHealthProvider>
+              <RootContent />
+            </BackendHealthProvider>
+          </TooltipProvider>
+        </ChillApiProvider>
       </AuthProvider>
     </AppErrorBoundary>
   );
@@ -42,17 +44,24 @@ function RootContent() {
   }
 
   return (
-    <>
+    <UserMessagesProvider>
       <AppShell />
+      <UserMessageModal />
       <Toaster />
-    </>
+    </UserMessagesProvider>
   );
 }
 
 function RootError({ error }: ErrorComponentProps) {
-  return <AppErrorFallback error={error} />;
+  return (
+    <AppErrorFallback
+      app="chill.institute/web"
+      release={import.meta.env.VITE_PUBLIC_RELEASE}
+      error={error}
+    />
+  );
 }
 
 function RootNotFound() {
-  return <Navigate to="/" replace />;
+  return <NotFoundScreen />;
 }

@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 
-import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxField } from "@chill-institute/ui/components/checkbox-field";
+import { SortPill } from "@chill-institute/ui/components/sort-row";
 import type { FilterState } from "@/hooks/use-search-filters";
 import {
   SortDirection,
@@ -31,20 +32,18 @@ export function SearchFilterBar({
   onSort,
 }: Props) {
   return (
-    <div className="flex flex-col space-y-6 mt-6 mb-2 lg:items-center">
-      <fieldset className="flex flex-col items-start lg:items-center">
+    <div className="flex flex-col gap-4 lg:items-center lg:gap-6">
+      <fieldset className="m-0 flex flex-col items-start border-0 p-0 lg:items-center">
         <legend className="sr-only">Quick filters</legend>
-
-        <div className="flex flex-row items-center space-x-3" id="quick-filters">
-          <div className="flex flex-row space-x-2">
+        <div id="quick-filters" className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex flex-row gap-2">
             {resolutionFilters.map((filter) => {
               const checked = filters.resolution.includes(filter);
               return (
-                <Checkbox
+                <CheckboxField
                   key={filter}
                   id={`res-${String(filter)}`}
-                  label={resolutionFilterLabels[filter]}
-                  variant="small"
+                  size="sm"
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked
@@ -52,24 +51,23 @@ export function SearchFilterBar({
                       : filters.resolution.filter((v) => v !== filter);
                     onResolutionChange(next);
                   }}
-                />
+                >
+                  {resolutionFilterLabels[filter]}
+                </CheckboxField>
               );
             })}
           </div>
 
-          <div>
-            <div className="h-4 w-px bg-stone-400 dark:bg-stone-700" />
-          </div>
+          <span aria-hidden="true" className="bg-border-hairline h-4 w-px" />
 
-          <div className="flex flex-row space-x-2">
+          <div className="flex flex-row gap-2">
             {codecFilters.map((filter) => {
               const checked = filters.codec.includes(filter);
               return (
-                <Checkbox
+                <CheckboxField
                   key={filter}
                   id={`codec-${String(filter)}`}
-                  label={codecFilterLabels[filter]}
-                  variant="small"
+                  size="sm"
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked
@@ -77,58 +75,58 @@ export function SearchFilterBar({
                       : filters.codec.filter((v) => v !== filter);
                     onCodecChange(next);
                   }}
-                />
+                >
+                  {codecFilterLabels[filter]}
+                </CheckboxField>
               );
             })}
           </div>
 
-          <div>
-            <div className="h-4 w-px bg-stone-400 dark:bg-stone-700" />
-          </div>
+          <span aria-hidden="true" className="bg-border-hairline h-4 w-px" />
 
-          <div className="flex flex-row space-x-2">
+          <div className="flex flex-row gap-2">
             {otherFilters.map((filter) => {
               const checked = filters.other.includes(filter);
               return (
-                <Checkbox
+                <CheckboxField
                   key={filter}
                   id={`other-${String(filter)}`}
-                  label={otherFilterLabels[filter]}
-                  variant="small"
+                  size="sm"
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked ? [filter] : [];
                     onOtherChange(next);
                   }}
-                />
+                >
+                  {otherFilterLabels[filter]}
+                </CheckboxField>
               );
             })}
           </div>
         </div>
       </fieldset>
 
-      <fieldset className="flex flex-col items-start lg:hidden lg:items-center">
+      <fieldset className="m-0 border-0 p-0 lg:hidden">
         <legend className="sr-only">Sort by</legend>
-
-        <div className="flex flex-row space-x-2 flex-wrap" id="sort-options">
+        <div id="sort-options" className="flex flex-wrap items-center gap-1.5">
           {sortByValues.map((option) => {
             const active = filters.sortBy === option;
             return (
-              <button
+              <SortPill
                 key={option}
-                type="button"
-                className={`btn ${active ? "bg-stone-300 dark:bg-stone-700" : ""}`}
+                active={active}
+                className="border-border-soft bg-surface shadow-press data-[active]:border-border-strong data-[active]:shadow-none"
                 onClick={() => onSort(option)}
               >
-                <div className="flex flex-row items-center space-x-0.5">
-                  <span>{sortByLabels[option].toLowerCase()}</span>
-                  {active ? (
-                    <span className="text-xs -mb-0.5">
-                      {filters.sortDirection === SortDirection.ASC ? <ArrowUp /> : <ArrowDown />}
-                    </span>
-                  ) : null}
-                </div>
-              </button>
+                <span>{sortByLabels[option].toLowerCase()}</span>
+                {active ? (
+                  filters.sortDirection === SortDirection.ASC ? (
+                    <ArrowUp />
+                  ) : (
+                    <ArrowDown />
+                  )
+                ) : null}
+              </SortPill>
             );
           })}
         </div>

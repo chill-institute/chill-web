@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useApi } from "@/lib/api";
+import { useApi } from "@chill-institute/auth/api-context";
 import { type Movie } from "@/lib/types";
 
-export function useMoviesQuery(enabled: boolean) {
+export function useMoviesQuery({ enabled }: { enabled: boolean }) {
   const api = useApi();
   return useQuery({
     queryKey: ["movies"],
@@ -13,7 +13,7 @@ export function useMoviesQuery(enabled: boolean) {
   });
 }
 
-export function useMovieSearchQuery(movie: Movie, enabled: boolean) {
+export function useMovieSearchQuery({ movie, enabled }: { movie: Movie; enabled: boolean }) {
   const api = useApi();
   const query = [movie.title, movie.year].filter(Boolean).join(" ").trim();
 

@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 // Playwright/webServer child processes force color in this environment.
 // Drop NO_COLOR here so Node does not warn about the conflicting pair.
@@ -14,16 +14,28 @@ export default defineConfig({
     : "list",
   use: {
     baseURL: "http://localhost:58400",
-    browserName: "chromium",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
+  projects: [
+    {
+      name: "desktop",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "mobile",
+      testMatch: /mobile-.*\.spec\.ts/,
+      use: { ...devices["Pixel 7"] },
+    },
+  ],
   webServer: {
     command: process.env.CI
       ? "vp preview --host 0.0.0.0 --port 58400"
       : "vp build && vp preview --host 0.0.0.0 --port 58400",
     url: "http://localhost:58400",
     reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });

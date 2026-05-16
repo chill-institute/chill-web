@@ -1,32 +1,29 @@
 import { useState } from "react";
-import { Minus, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { SettingsPanel } from "@/components/settings-panel";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SettingsModal } from "@chill-institute/ui/components/settings-modal";
 
 export function ShellSettingsMenu() {
   const [open, setOpen] = useState(false);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="mt-1">
-      <CollapsibleTrigger
-        render={
-          <button
-            type="button"
-            className="block cursor-pointer text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
-          >
-            <div className="flex flex-row items-center space-x-1">
-              {open ? <Minus className="text-xs" /> : <Settings className="text-xs" />}
-              <span className="text-sm">{open ? "Hide settings" : "Show settings"}</span>
-            </div>
-          </button>
-        }
-      />
-      <CollapsibleContent className="overflow-visible">
-        <div className="py-4">
-          <SettingsPanel />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-surface mt-1 inline-flex cursor-pointer items-center gap-0.5 rounded-sm py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      >
+        <Settings className="size-2.5 shrink-0" aria-hidden="true" />
+        <span>settings</span>
+      </button>
+      <SettingsModal
+        open={open}
+        onOpenChange={setOpen}
+        description="Adjust your chill preferences, download folder, search filters, and result layout."
+      >
+        <SettingsPanel />
+      </SettingsModal>
+    </>
   );
 }

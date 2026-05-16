@@ -1,22 +1,37 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, ChevronDown, Folder } from "lucide-react";
+import { ArrowUpRight, Folder } from "lucide-react";
 import { match } from "ts-pattern";
 
-import { useAuth } from "@/lib/auth";
-import { DownloadFolderPicker } from "@/components/download-folder-picker";
-import { UserErrorAlert } from "@/components/user-error-alert";
-import { CheckboxGroup } from "@/components/ui/checkbox-group";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@chill-institute/auth/auth";
+import { DownloadFolderPicker } from "@chill-institute/auth/components/download-folder-picker";
+import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@chill-institute/ui/components/ui/avatar";
+import { CheckboxField } from "@chill-institute/ui/components/checkbox-field";
+import { CheckboxGroup } from "@chill-institute/ui/components/ui/checkbox-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@chill-institute/ui/components/ui/select";
+import { SettingsSection } from "@chill-institute/ui/components/settings-section";
+import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { combineQueries } from "@/queries/combine";
 import { useSettingsQuery, useSaveSettings } from "@/queries/settings";
-import { useDownloadFolderQuery } from "@/queries/download-folder";
+import { useDownloadFolderQuery } from "@chill-institute/auth/queries/download-folder";
 import { useIndexersQuery } from "@/queries/indexers";
-import { useProfileQuery } from "@/queries/profile";
-import { useTheme } from "@/hooks/use-theme";
-import { publicLinks } from "@/lib/public-links";
+import { useProfileQuery } from "@chill-institute/auth/queries/profile";
+import {
+  isSearchDisplayMode,
+  SEARCH_DISPLAY_MODE_LABELS,
+  SEARCH_DISPLAY_MODES,
+  useSearchDisplay,
+} from "@/hooks/use-search-display";
+import { isThemePreference, useTheme } from "@chill-institute/ui/hooks/use-theme";
+import { publicLinks } from "@chill-institute/ui/lib/public-links";
 import {
   defaultUserSettings,
   searchResultDisplayBehaviorLabels,
@@ -27,128 +42,401 @@ import {
 } from "@/lib/types";
 
 const LINKS = [
-  { title: "About the Institute", url: publicLinks.about },
-  { title: "Chilly guides", url: publicLinks.guides },
-  { title: "GitHub", url: publicLinks.github },
+  { title: "about", url: publicLinks.about },
+  { title: "guides", url: publicLinks.guides },
+  { title: "github", url: publicLinks.github },
   { title: "X (Twitter)", url: publicLinks.x },
   { title: "Email", url: publicLinks.email },
   { title: "Reddit", url: publicLinks.reddit },
 ];
 
-function NativeSelect({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+type PersistPatch = (patch: Partial<UserSettings>) => void;
+type ProfileQuery = ReturnType<typeof useProfileQuery>;
+type DownloadFolderQuery = ReturnType<typeof useDownloadFolderQuery>;
+type IndexerOption = { id: string; label: string };
+
+function SettingsSkeleton() {
   return (
-    <div className="relative">
-      <select
-        className="w-full cursor-pointer appearance-none rounded border border-solid border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 hover:bg-stone-200 dark:hover:bg-stone-800 hover:transition-colors px-2 py-1.5"
-        {...props}
-      >
-        {children}
-      </select>
-      <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+    <div className="flex flex-col gap-6">
+      <SettingsSection title="Signed in as">
+        <Skeleton className="h-[50px] w-full rounded" />
+      </SettingsSection>
+      <SettingsSection title="User-interface theme">
+        <Skeleton className="h-9 w-full rounded" />
+      </SettingsSection>
+      <SettingsSection title="Download folder">
+        <Skeleton className="h-9 w-full rounded" />
+      </SettingsSection>
+      <SettingsSection title="Search settings">
+        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-5 w-full" />
+      </SettingsSection>
+      <SettingsSection title="Search using the following trackers">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-1/2" />
+      </SettingsSection>
+      <SettingsSection title="Search result layout">
+        <Skeleton className="h-9 w-full rounded" />
+      </SettingsSection>
+      <SettingsSection title="Search result display behavior">
+        <Skeleton className="h-9 w-full rounded" />
+      </SettingsSection>
+      <SettingsSection title="Search result name behavior">
+        <Skeleton className="h-9 w-full rounded" />
+      </SettingsSection>
     </div>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h5 className="font-medium">{children}</h5>;
-}
-
-function SectionBody({ children }: { children: React.ReactNode }) {
-  return <div className="my-0.5">{children}</div>;
-}
-
-function SettingsSkeleton() {
+function AccountSection({
+  profileQuery,
+  onReset,
+}: {
+  profileQuery: ProfileQuery;
+  onReset: () => void;
+}) {
   return (
-    <div className="flex flex-col space-y-6">
-      <div>
-        <SectionTitle>Signed in as</SectionTitle>
-        <SectionBody>
-          <div className="flex flex-row p-2 items-center space-x-2 rounded border border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900">
-            <Skeleton className="h-6 w-6 rounded-full" />
-            <Skeleton className="h-4 w-32" />
+    <SettingsSection title="Signed in as">
+      <div className="border-border-strong flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar size="sm" className="size-7 shrink-0">
+            {profileQuery.data?.avatarUrl ? (
+              <AvatarImage src={profileQuery.data.avatarUrl} alt={profileQuery.data.username} />
+            ) : null}
+            <AvatarFallback>
+              {profileQuery.data?.username?.slice(0, 1).toUpperCase() ?? "?"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-fg-1 truncate text-sm">
+            {profileQuery.data?.username ?? "put.io user"}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-app cursor-pointer rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            onClick={onReset}
+          >
+            reset settings
+          </button>
+          <Link
+            to="/sign-out"
+            search={{ error: undefined }}
+            className="text-error-text hover-hover:hover:text-error-text/80 focus-visible:ring-ring-focus focus-visible:ring-offset-app rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          >
+            sign out
+          </Link>
+        </div>
+      </div>
+    </SettingsSection>
+  );
+}
+
+function ThemeSection({
+  theme,
+  setTheme,
+  systemDark,
+}: {
+  theme: string;
+  setTheme: (theme: "light" | "dark" | "system") => void;
+  systemDark: boolean;
+}) {
+  return (
+    <SettingsSection title="User-interface theme">
+      <Select<string>
+        value={theme}
+        onValueChange={(value) => {
+          if (value != null && isThemePreference(value)) {
+            setTheme(value);
+          }
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue>
+            {(value) => {
+              if (value === "system") return `System (${systemDark ? "dark" : "light"})`;
+              if (value === "light") return "Light";
+              if (value === "dark") return "Dark";
+              return null;
+            }}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem value="system">{`System (${systemDark ? "dark" : "light"})`}</SelectItem>
+            <SelectItem value="light">Light</SelectItem>
+            <SelectItem value="dark">Dark</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </SettingsSection>
+  );
+}
+
+function DownloadFolderSection({
+  effective,
+  downloadFolderQuery,
+  persistPatch,
+}: {
+  effective: UserSettings;
+  downloadFolderQuery: DownloadFolderQuery;
+  persistPatch: PersistPatch;
+}) {
+  const content = match(downloadFolderQuery)
+    .with({ status: "pending" }, () => <Skeleton className="h-9 w-full rounded" />)
+    .with({ status: "error" }, (dq) => <UserErrorAlert error={dq.error} />)
+    .with({ status: "success" }, (dq) => {
+      const hasMatchingFolder =
+        effective.downloadFolderId === undefined ||
+        dq.data.folder?.id === effective.downloadFolderId;
+
+      if (!hasMatchingFolder) {
+        return <Skeleton className="h-9 w-full rounded" />;
+      }
+
+      return (
+        <div className="border-border-strong flex h-9 items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Folder className="text-fg-2 size-4 shrink-0" />
+            <span className="text-fg-1 truncate text-sm">
+              {dq.data.folder?.name ?? "no folder selected"}
+            </span>
           </div>
-        </SectionBody>
-      </div>
+          <DownloadFolderPicker
+            triggerLabel={dq.data.folder ? "change" : "choose"}
+            onSave={(id) => persistPatch({ downloadFolderId: id })}
+          />
+        </div>
+      );
+    })
+    .exhaustive();
 
-      <div>
-        <SectionTitle>User-interface theme</SectionTitle>
-        <SectionBody>
-          <Skeleton className="h-8 w-full" />
-        </SectionBody>
-      </div>
+  return <SettingsSection title="Download folder">{content}</SettingsSection>;
+}
 
-      <div>
-        <SectionTitle>Download folder</SectionTitle>
-        <SectionBody>
-          <Skeleton className="h-10 w-full" />
-        </SectionBody>
+function SearchSettingsSection({
+  effective,
+  persistPatch,
+}: {
+  effective: UserSettings;
+  persistPatch: PersistPatch;
+}) {
+  return (
+    <SettingsSection title="Search settings">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
+        <CheckboxField
+          id="filter-nasty"
+          checked={effective.filterNastyResults}
+          onCheckedChange={(checked) => persistPatch({ filterNastyResults: checked === true })}
+        >
+          Try to filter out nasty stuff
+        </CheckboxField>
+        <CheckboxField
+          id="filter-no-seeders"
+          checked={effective.filterResultsWithNoSeeders}
+          onCheckedChange={(checked) =>
+            persistPatch({ filterResultsWithNoSeeders: checked === true })
+          }
+        >
+          Hide results with no seeders
+        </CheckboxField>
+        <CheckboxField
+          id="remember-filters"
+          checked={effective.rememberQuickFilters}
+          onCheckedChange={(checked) => {
+            if (!checked) {
+              persistPatch({
+                rememberQuickFilters: false,
+                codecFilters: [],
+                resolutionFilters: [],
+                otherFilters: [],
+              });
+              return;
+            }
+            persistPatch({ rememberQuickFilters: true });
+          }}
+        >
+          Remember quick filters
+        </CheckboxField>
       </div>
+    </SettingsSection>
+  );
+}
 
-      <div>
-        <SectionTitle>Movies</SectionTitle>
-        <SectionBody>
-          <Skeleton className="h-5 w-full" />
-        </SectionBody>
-      </div>
+function IndexersSection({
+  effective,
+  indexerOptions,
+  persistPatch,
+}: {
+  effective: UserSettings;
+  indexerOptions: IndexerOption[];
+  persistPatch: PersistPatch;
+}) {
+  return (
+    <SettingsSection title="Search using the following trackers">
+      <CheckboxGroup
+        options={indexerOptions}
+        uncheckedItems={effective.disabledIndexerIds}
+        onChange={(disabledIndexerIds) => persistPatch({ disabledIndexerIds })}
+      />
+    </SettingsSection>
+  );
+}
 
-      <div>
-        <SectionTitle>Search settings</SectionTitle>
-        <SectionBody>
-          <Skeleton className="h-5 w-full" />
-        </SectionBody>
-        <SectionBody>
-          <Skeleton className="h-5 w-full" />
-        </SectionBody>
-        <SectionBody>
-          <Skeleton className="h-5 w-full" />
-        </SectionBody>
-      </div>
+function SearchResultLayoutSection({
+  searchDisplayMode,
+  setSearchDisplayMode,
+}: {
+  searchDisplayMode: string;
+  setSearchDisplayMode: (mode: "raw" | "detailed") => void;
+}) {
+  return (
+    <SettingsSection title="Search result layout">
+      <Select<string>
+        value={searchDisplayMode}
+        onValueChange={(value) => {
+          if (value != null && isSearchDisplayMode(value)) {
+            setSearchDisplayMode(value);
+          }
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue>
+            {(value) => (isSearchDisplayMode(value) ? SEARCH_DISPLAY_MODE_LABELS[value] : null)}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {SEARCH_DISPLAY_MODES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {SEARCH_DISPLAY_MODE_LABELS[value]}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </SettingsSection>
+  );
+}
 
-      <div>
-        <SectionTitle>Search using the following trackers</SectionTitle>
-        <div className="h-0.5" />
-        <SectionBody>
-          <div className="flex flex-col space-y-2">
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        </SectionBody>
-      </div>
+function SearchResultDisplayBehaviorSection({
+  effective,
+  persistPatch,
+}: {
+  effective: UserSettings;
+  persistPatch: PersistPatch;
+}) {
+  return (
+    <SettingsSection title="Search result display behavior">
+      <Select<string>
+        value={String(effective.searchResultDisplayBehavior)}
+        onValueChange={(value) => {
+          if (value == null) return;
+          const next = searchResultDisplayBehaviors.find((b) => String(b) === value);
+          if (next !== undefined) persistPatch({ searchResultDisplayBehavior: next });
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue>
+            {(value) => {
+              const match = searchResultDisplayBehaviors.find((b) => String(b) === value);
+              return match !== undefined ? searchResultDisplayBehaviorLabels[match] : null;
+            }}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {searchResultDisplayBehaviors.map((behavior) => (
+              <SelectItem key={behavior} value={String(behavior)}>
+                {searchResultDisplayBehaviorLabels[behavior]}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </SettingsSection>
+  );
+}
 
-      <div>
-        <SectionTitle>Search result display behavior</SectionTitle>
-        <SectionBody>
-          <Skeleton className="h-8 w-full" />
-        </SectionBody>
-      </div>
+function SearchResultTitleBehaviorSection({
+  effective,
+  persistPatch,
+}: {
+  effective: UserSettings;
+  persistPatch: PersistPatch;
+}) {
+  return (
+    <SettingsSection title="Search result name behavior">
+      <Select<string>
+        value={String(effective.searchResultTitleBehavior)}
+        onValueChange={(value) => {
+          if (value == null) return;
+          const next = searchResultTitleBehaviors.find((b) => String(b) === value);
+          if (next !== undefined) persistPatch({ searchResultTitleBehavior: next });
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue>
+            {(value) => {
+              const match = searchResultTitleBehaviors.find((b) => String(b) === value);
+              return match !== undefined ? searchResultTitleBehaviorLabels[match] : null;
+            }}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {searchResultTitleBehaviors.map((behavior) => (
+              <SelectItem key={behavior} value={String(behavior)}>
+                {searchResultTitleBehaviorLabels[behavior]}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </SettingsSection>
+  );
+}
 
-      <div>
-        <SectionTitle>Search result name behavior</SectionTitle>
-        <SectionBody>
-          <Skeleton className="h-8 w-full" />
-        </SectionBody>
-      </div>
+function SettingsFooter() {
+  return (
+    <div className="text-fg-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-2xs">
+      <span>release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}</span>
+      <nav aria-label="contact" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {LINKS.map(({ title, url }, index) => (
+          <span key={url} className="inline-flex items-center gap-1">
+            {index > 0 ? (
+              <span aria-hidden="true" className="text-fg-4">
+                ·
+              </span>
+            ) : null}
+            <a
+              className="hover-hover:hover:text-fg-1 inline-flex items-center gap-0.5"
+              href={url}
+              rel="noreferrer noopener"
+              target="_blank"
+            >
+              <span>{title}</span>
+              <ArrowUpRight className="size-3" strokeWidth={1.25} />
+            </a>
+          </span>
+        ))}
+      </nav>
     </div>
   );
 }
 
 export function SettingsPanel() {
   const auth = useAuth();
-  const [draft, setDraft] = useState<null | UserSettings>(null);
   const { theme, setTheme, systemDark } = useTheme();
+  const { mode: searchDisplayMode, setMode: setSearchDisplayMode } = useSearchDisplay();
 
   const configQuery = useSettingsQuery();
   const indexersQuery = useIndexersQuery();
   const profileQuery = useProfileQuery();
   const downloadFolderQuery = useDownloadFolderQuery();
-
-  useEffect(() => {
-    if (configQuery.data) {
-      setDraft(configQuery.data);
-    }
-  }, [configQuery.data]);
 
   const saveMutation = useSaveSettings();
 
@@ -158,19 +446,13 @@ export function SettingsPanel() {
   );
 
   const persistPatch = (patch: Partial<UserSettings>) => {
-    const base = draft ?? configQuery.data;
-    if (!base) return;
-    const next = { ...base, ...patch };
-    setDraft(next);
-    saveMutation.mutate(next);
+    if (!configQuery.data) return;
+    saveMutation.mutate({ ...configQuery.data, ...patch });
   };
 
   const resetSettings = () => {
-    const base = draft ?? configQuery.data;
-    if (!base) return;
-    const next = { ...base, ...defaultUserSettings } as UserSettings;
-    setDraft(next);
-    saveMutation.mutate(next);
+    if (!configQuery.data) return;
+    saveMutation.mutate({ ...configQuery.data, ...defaultUserSettings });
   };
 
   if (!auth.isAuthenticated) {
@@ -183,260 +465,31 @@ export function SettingsPanel() {
     .with({ status: "pending" }, () => <SettingsSkeleton />)
     .with({ status: "error" }, (q) => <UserErrorAlert error={q.error} />)
     .with({ status: "success" }, ({ data: [config] }) => {
-      const effective = draft ?? config;
-
-      const downloadFolderContent = match(downloadFolderQuery)
-        .with({ status: "pending" }, () => <Skeleton className="h-10 w-full" />)
-        .with({ status: "error" }, (dq) => <UserErrorAlert error={dq.error} />)
-        .with({ status: "success" }, (dq) => {
-          const hasMatchingFolder =
-            effective.downloadFolderId === undefined ||
-            dq.data.folder?.id === effective.downloadFolderId;
-
-          if (!hasMatchingFolder) {
-            return <Skeleton className="h-10 w-full" />;
-          }
-
-          return (
-            <div className="flex flex-row space-x-2 p-2 items-center rounded border border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900">
-              <div className="w-full flex items-center space-x-2">
-                <Folder />
-                <span>{dq.data.folder?.name ?? "Unknown"}</span>
-              </div>
-              <div className="ml-auto">
-                {dq.data.folder?.id ? (
-                  <DownloadFolderPicker
-                    folderId={dq.data.folder.id}
-                    onSave={(id) => persistPatch({ downloadFolderId: id })}
-                  />
-                ) : null}
-              </div>
-            </div>
-          );
-        })
-        .exhaustive();
+      const effective = config;
 
       return (
-        <div className="flex flex-col space-y-6">
-          <div>
-            <SectionTitle>Signed in as</SectionTitle>
-            <SectionBody>
-              <div className="flex flex-row p-2 justify-between items-center rounded border border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900">
-                <div className="flex flex-row space-x-2 items-center">
-                  {profileQuery.data?.avatarUrl ? (
-                    <img
-                      alt={profileQuery.data.username}
-                      className="rounded-full"
-                      height={24}
-                      src={profileQuery.data.avatarUrl}
-                      width={24}
-                    />
-                  ) : null}
-                  <span>{profileQuery.data?.username ?? "put.io user"}</span>
-                </div>
-                <div className="flex flex-row space-x-2 items-center">
-                  <button
-                    type="button"
-                    className="ml-auto cursor-pointer text-sm dark:text-stone-400 dark:hover:text-stone-100 text-stone-600 hover:text-stone-950 hover:underline"
-                    onClick={resetSettings}
-                  >
-                    reset settings
-                  </button>
-                  <Link
-                    to="/sign-out"
-                    search={{ error: undefined }}
-                    className="ml-auto text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:underline"
-                  >
-                    sign out
-                  </Link>
-                </div>
-              </div>
-            </SectionBody>
-          </div>
-
-          <div>
-            <SectionTitle>User-interface theme</SectionTitle>
-            <SectionBody>
-              <NativeSelect
-                onChange={(event) => {
-                  setTheme(event.target.value as "dark" | "light" | "system");
-                }}
-                value={theme}
-              >
-                <option value="system">{`System (${systemDark ? "dark" : "light"})`}</option>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </NativeSelect>
-            </SectionBody>
-          </div>
-
-          <div>
-            <SectionTitle>Download folder</SectionTitle>
-            <SectionBody>{downloadFolderContent}</SectionBody>
-          </div>
-
-          <div>
-            <SectionTitle>Home page</SectionTitle>
-            <SectionBody>
-              <div className="flex items-center justify-between space-x-1">
-                <Label htmlFor="show-movies">Show movies in the home page</Label>
-                <Switch
-                  id="show-movies"
-                  aria-label="Show movies in the home page"
-                  checked={effective.showMovies}
-                  onCheckedChange={(checked) => persistPatch({ showMovies: checked === true })}
-                />
-              </div>
-            </SectionBody>
-            <SectionBody>
-              <div className="flex items-center justify-between space-x-1">
-                <Label htmlFor="show-tv-shows">Show TV shows in the home page</Label>
-                <Switch
-                  id="show-tv-shows"
-                  aria-label="Show TV shows in the home page"
-                  checked={effective.showTvShows}
-                  onCheckedChange={(checked) => persistPatch({ showTvShows: checked === true })}
-                />
-              </div>
-            </SectionBody>
-            <div className="h-0.5" />
-          </div>
-
-          <div>
-            <SectionTitle>Search settings</SectionTitle>
-            <SectionBody>
-              <div className="flex items-center justify-between space-x-1">
-                <Label htmlFor="filter-nasty">Try to filter out nasty stuff</Label>
-                <Switch
-                  id="filter-nasty"
-                  aria-label="Try to filter out nasty stuff"
-                  checked={effective.filterNastyResults}
-                  onCheckedChange={(checked) =>
-                    persistPatch({ filterNastyResults: checked === true })
-                  }
-                />
-              </div>
-            </SectionBody>
-            <SectionBody>
-              <div className="flex items-center justify-between space-x-1">
-                <Label htmlFor="filter-no-seeders">Hide results with no seeders</Label>
-                <Switch
-                  id="filter-no-seeders"
-                  aria-label="Hide results with no seeders"
-                  checked={effective.filterResultsWithNoSeeders}
-                  onCheckedChange={(checked) =>
-                    persistPatch({ filterResultsWithNoSeeders: checked === true })
-                  }
-                />
-              </div>
-            </SectionBody>
-            <SectionBody>
-              <div className="flex items-center justify-between space-x-1">
-                <Label htmlFor="remember-filters">Remember quick filters</Label>
-                <Switch
-                  id="remember-filters"
-                  aria-label="Remember quick filters"
-                  checked={effective.rememberQuickFilters}
-                  onCheckedChange={(checked) => {
-                    if (!checked) {
-                      persistPatch({
-                        rememberQuickFilters: false,
-                        codecFilters: [],
-                        resolutionFilters: [],
-                        otherFilters: [],
-                      });
-                      return;
-                    }
-                    persistPatch({ rememberQuickFilters: true });
-                  }}
-                />
-              </div>
-            </SectionBody>
-          </div>
-
-          <div>
-            <SectionTitle>Search using the following trackers</SectionTitle>
-            <div className="h-0.5" />
-            <SectionBody>
-              <CheckboxGroup
-                options={indexerOptions}
-                uncheckedItems={effective.disabledIndexerIds}
-                onChange={(disabledIndexerIds) => persistPatch({ disabledIndexerIds })}
-              />
-            </SectionBody>
-          </div>
-
-          <div>
-            <SectionTitle>Search result display behavior</SectionTitle>
-            <SectionBody>
-              <NativeSelect
-                onChange={(event) =>
-                  persistPatch({
-                    searchResultDisplayBehavior: Number(
-                      event.target.value,
-                    ) as UserSettings["searchResultDisplayBehavior"],
-                  })
-                }
-                value={effective.searchResultDisplayBehavior}
-              >
-                {searchResultDisplayBehaviors.map((behavior) => (
-                  <option key={behavior} value={behavior}>
-                    {searchResultDisplayBehaviorLabels[behavior]}
-                  </option>
-                ))}
-              </NativeSelect>
-            </SectionBody>
-          </div>
-
-          <div>
-            <SectionTitle>Search result name behavior</SectionTitle>
-            <SectionBody>
-              <NativeSelect
-                onChange={(event) =>
-                  persistPatch({
-                    searchResultTitleBehavior: Number(
-                      event.target.value,
-                    ) as UserSettings["searchResultTitleBehavior"],
-                  })
-                }
-                value={effective.searchResultTitleBehavior}
-              >
-                {searchResultTitleBehaviors.map((behavior) => (
-                  <option key={behavior} value={behavior}>
-                    {searchResultTitleBehaviorLabels[behavior]}
-                  </option>
-                ))}
-              </NativeSelect>
-            </SectionBody>
-          </div>
-
-          <div>
-            <SectionBody>
-              <ul className="list-disc ml-3">
-                {LINKS.map(({ title, url }) => (
-                  <li className="dark:text-stone-400 text-stone-600" key={url}>
-                    <a
-                      className="dark:text-stone-400 dark:hover:text-stone-100 text-stone-600 hover:text-stone-950 inline-block"
-                      href={url}
-                      rel="noreferrer noopener"
-                      target="_blank"
-                    >
-                      <div className="flex flex-row items-center space-x-1">
-                        <span>{title}</span>
-                        <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-                      </div>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </SectionBody>
-          </div>
-
+        <div className="flex flex-col gap-6">
+          <AccountSection profileQuery={profileQuery} onReset={resetSettings} />
+          <ThemeSection theme={theme} setTheme={setTheme} systemDark={systemDark} />
+          <DownloadFolderSection
+            effective={effective}
+            downloadFolderQuery={downloadFolderQuery}
+            persistPatch={persistPatch}
+          />
+          <SearchSettingsSection effective={effective} persistPatch={persistPatch} />
+          <IndexersSection
+            effective={effective}
+            indexerOptions={indexerOptions}
+            persistPatch={persistPatch}
+          />
+          <SearchResultLayoutSection
+            searchDisplayMode={searchDisplayMode}
+            setSearchDisplayMode={setSearchDisplayMode}
+          />
+          <SearchResultDisplayBehaviorSection effective={effective} persistPatch={persistPatch} />
+          <SearchResultTitleBehaviorSection effective={effective} persistPatch={persistPatch} />
           {saveMutation.error ? <UserErrorAlert error={saveMutation.error} /> : null}
-
-          <div className="dark:text-stone-400 text-stone-600 text-xs font-mono">
-            release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}
-          </div>
+          <SettingsFooter />
         </div>
       );
     })

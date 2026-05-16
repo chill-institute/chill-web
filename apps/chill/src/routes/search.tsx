@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { Navigate, Link, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { match } from "ts-pattern";
 
-import { EmptyState } from "@/components/empty-state";
-import { UserErrorAlert } from "@/components/user-error-alert";
+import { EmptyState } from "@chill-institute/ui/components/empty-state";
+import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
+import { SearchShell } from "@/components/search-shell";
 import { SearchFilterBar } from "@/components/search-filter-bar";
 import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
-import { useAuth, readStoredToken } from "@/lib/auth";
+import { useAuth, readStoredToken } from "@chill-institute/auth/auth";
 import { formatSearchResults, normalizeQuery } from "@/lib/search";
 import { SearchResultDisplayBehavior, SortDirection, type UserSettings } from "@/lib/types";
 import { combineQueries } from "@/queries/combine";
@@ -119,7 +120,7 @@ function SearchPage() {
 
   const combined = combineQueries(configQuery, indexersQuery);
 
-  return match(combined)
+  const content = match(combined)
     .with({ status: "pending" }, () =>
       submittedQuery.length > 0 ? (
         <>
@@ -145,9 +146,9 @@ function SearchPage() {
               <div>
                 Maybe try searching for something else?
                 <br />
-                Like...{" "}
+                Like…{" "}
                 <Link
-                  className="inline-block underline decoration-stone-400 decoration-1 underline-offset-3 transition-[color,transform,text-decoration-color] duration-150 hover:-translate-y-px hover:text-stone-950 hover:decoration-stone-950 dark:text-stone-400 dark:hover:text-stone-100 dark:hover:decoration-stone-100"
+                  className="decoration-fg-4 hover-hover:hover:text-fg-1 hover-hover:hover:decoration-fg-1 inline-block underline decoration-1 underline-offset-3 transition-[color,transform,text-decoration-color] duration-fast hover:-translate-y-px"
                   to="/search"
                   search={{ q: "The Matrix" }}
                 >
@@ -160,7 +161,7 @@ function SearchPage() {
         .with("filter-empty", () => (
           <EmptyState
             icon="🤨"
-            title="Those filters... they do nothing!"
+            title="Those filters… they do nothing!"
             description="Try changing your filters."
           />
         ))
@@ -176,7 +177,7 @@ function SearchPage() {
         .exhaustive();
 
       return (
-        <section data-page="search">
+        <section data-page="search" className="flex flex-col gap-3 lg:gap-6">
           <SearchFilterBar
             filters={filters}
             onResolutionChange={(next) => {
@@ -206,4 +207,6 @@ function SearchPage() {
       );
     })
     .exhaustive();
+
+  return <SearchShell>{content}</SearchShell>;
 }

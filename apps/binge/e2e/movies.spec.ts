@@ -90,9 +90,9 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
 });
 
 async function openFirstMovieModal(page: Page) {
-  const firstArticle = page.locator("article").first();
-  await expect(firstArticle).toBeVisible();
-  await firstArticle.getByRole("button").click();
+  const firstCard = page.locator('[data-slot="poster-card"]').first();
+  await expect(firstCard).toBeVisible();
+  await firstCard.click();
 }
 
 test.describe("movies", () => {
@@ -111,9 +111,9 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/");
 
-    const articles = authenticatedPage.locator("article");
+    const articles = authenticatedPage.locator('[data-slot="poster-card"]');
     await expect(articles).toHaveCount(2);
-    await expect(authenticatedPage.locator("article img")).toHaveCount(2);
+    await expect(authenticatedPage.locator('[data-slot="poster-card"] img')).toHaveCount(2);
     await expect(articles.nth(0)).toContainText("Inception");
     await expect(articles.nth(1)).toContainText("Interstellar");
     await expect(authenticatedPage.getByRole("button", { name: "Expanded view" })).toHaveCount(0);
@@ -135,8 +135,8 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/");
 
-    await expect(authenticatedPage.getByRole("button", { name: "movies" })).toBeVisible();
-    await expect(authenticatedPage.getByRole("button", { name: "tv shows" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("tab", { name: "tv shows" })).toBeVisible();
     await expect(authenticatedPage.getByText("Inception")).toBeVisible();
   });
 
@@ -149,8 +149,8 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/");
 
-    await expect(authenticatedPage.getByRole("button", { name: "movies" })).toBeVisible();
-    await expect(authenticatedPage.locator("article")).toHaveCount(2);
+    await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
+    await expect(authenticatedPage.locator('[data-slot="poster-card"]')).toHaveCount(2);
   });
 
   test("empty state", async ({ authenticatedPage, mockRpc }) => {
@@ -191,7 +191,7 @@ test.describe("movies", () => {
     await expect(authenticatedPage.getByText("Action")).toBeVisible();
     await expect(authenticatedPage.getByLabel("Resolution")).toBeVisible();
     await expect(authenticatedPage.getByLabel("Codec")).toBeVisible();
-    await expect(authenticatedPage.getByLabel("Sort")).toBeVisible();
+    await expect(authenticatedPage.getByLabel("Sort", { exact: true })).toBeVisible();
     await expect(
       authenticatedPage.getByRole("button", { name: /send to put\.io/i }).last(),
     ).toBeVisible();
@@ -210,30 +210,32 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/");
     await openFirstMovieModal(authenticatedPage);
 
-    const resolutionSelect = authenticatedPage.getByLabel("Resolution");
-    const codecSelect = authenticatedPage.getByLabel("Codec");
-    const sortSelect = authenticatedPage.getByLabel("Sort");
+    const pickFromSelect = async (label: string, optionName: string | RegExp) => {
+      await authenticatedPage.getByRole("combobox", { name: label }).click();
+      await authenticatedPage.getByRole("option", { name: optionName, exact: true }).click();
+    };
+
     const resultsList = authenticatedPage.getByRole("list", { name: "Torrent results list" });
     const resultItems = resultsList.getByRole("listitem");
 
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Inception.2010.1080p.BluRay.x264");
 
-    await resolutionSelect.selectOption("2160p");
+    await pickFromSelect("Resolution", "2160p");
     await expect(resultItems).toHaveCount(1);
     await expect(resultItems.first()).toContainText("Inception.2010.2160p.WEB-DL.x265");
 
-    await resolutionSelect.selectOption("all");
-    await codecSelect.selectOption("x265");
+    await pickFromSelect("Resolution", "all resolutions");
+    await pickFromSelect("Codec", "x265");
     await expect(resultItems).toHaveCount(2);
     await expect(resultsList).not.toContainText("Inception.2010.1080p.BluRay.x264");
 
-    await codecSelect.selectOption("all");
-    await sortSelect.selectOption("age");
+    await pickFromSelect("Codec", "all codecs");
+    await pickFromSelect("Sort", "newest first");
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Inception.2010.720p.BluRay.x265");
 
-    await sortSelect.selectOption("size");
+    await pickFromSelect("Sort", "largest size");
     await expect(resultItems.first()).toContainText("Inception.2010.2160p.WEB-DL.x265");
   });
 

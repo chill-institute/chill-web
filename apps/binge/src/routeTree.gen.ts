@@ -12,9 +12,16 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
+import { Route as MoviesRouteRouteImport } from './routes/movies/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TvShowsIndexRouteImport } from './routes/tv-shows/index'
+import { Route as MoviesIndexRouteImport } from './routes/movies/index'
+import { Route as TvShowsIdRouteImport } from './routes/tv-shows/$id'
+import { Route as MoviesIdRouteImport } from './routes/movies/$id'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
+import { Route as AuthHandoffRouteImport } from './routes/auth/handoff'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
 
 const SignOutRoute = SignOutRouteImport.update({
@@ -32,10 +39,40 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TvShowsRouteRoute = TvShowsRouteRouteImport.update({
+  id: '/tv-shows',
+  path: '/tv-shows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoviesRouteRoute = MoviesRouteRouteImport.update({
+  id: '/movies',
+  path: '/movies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TvShowsIndexRoute = TvShowsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TvShowsRouteRoute,
+} as any)
+const MoviesIndexRoute = MoviesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MoviesRouteRoute,
+} as any)
+const TvShowsIdRoute = TvShowsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => TvShowsRouteRoute,
+} as any)
+const MoviesIdRoute = MoviesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MoviesRouteRoute,
 } as any)
 const DebugCrashRoute = DebugCrashRouteImport.update({
   id: '/debug/crash',
@@ -47,6 +84,11 @@ const AuthSuccessRoute = AuthSuccessRouteImport.update({
   path: '/auth/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthHandoffRoute = AuthHandoffRouteImport.update({
+  id: '/auth/handoff',
+  path: '/auth/handoff',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
   id: '/auth/cli-token',
   path: '/auth/cli-token',
@@ -55,12 +97,19 @@ const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/movies': typeof MoviesRouteRouteWithChildren
+  '/tv-shows': typeof TvShowsRouteRouteWithChildren
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
+  '/movies/$id': typeof MoviesIdRoute
+  '/tv-shows/$id': typeof TvShowsIdRoute
+  '/movies/': typeof MoviesIndexRoute
+  '/tv-shows/': typeof TvShowsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,29 +117,48 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
+  '/movies/$id': typeof MoviesIdRoute
+  '/tv-shows/$id': typeof TvShowsIdRoute
+  '/movies': typeof MoviesIndexRoute
+  '/tv-shows': typeof TvShowsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/movies': typeof MoviesRouteRouteWithChildren
+  '/tv-shows': typeof TvShowsRouteRouteWithChildren
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
+  '/movies/$id': typeof MoviesIdRoute
+  '/tv-shows/$id': typeof TvShowsIdRoute
+  '/movies/': typeof MoviesIndexRoute
+  '/tv-shows/': typeof TvShowsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/movies'
+    | '/tv-shows'
     | '/settings'
     | '/sign-in'
     | '/sign-out'
     | '/auth/cli-token'
+    | '/auth/handoff'
     | '/auth/success'
     | '/debug/crash'
+    | '/movies/$id'
+    | '/tv-shows/$id'
+    | '/movies/'
+    | '/tv-shows/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,25 +166,40 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/auth/cli-token'
+    | '/auth/handoff'
     | '/auth/success'
     | '/debug/crash'
+    | '/movies/$id'
+    | '/tv-shows/$id'
+    | '/movies'
+    | '/tv-shows'
   id:
     | '__root__'
     | '/'
+    | '/movies'
+    | '/tv-shows'
     | '/settings'
     | '/sign-in'
     | '/sign-out'
     | '/auth/cli-token'
+    | '/auth/handoff'
     | '/auth/success'
     | '/debug/crash'
+    | '/movies/$id'
+    | '/tv-shows/$id'
+    | '/movies/'
+    | '/tv-shows/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MoviesRouteRoute: typeof MoviesRouteRouteWithChildren
+  TvShowsRouteRoute: typeof TvShowsRouteRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
   AuthCliTokenRoute: typeof AuthCliTokenRoute
+  AuthHandoffRoute: typeof AuthHandoffRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
 }
@@ -144,12 +227,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tv-shows': {
+      id: '/tv-shows'
+      path: '/tv-shows'
+      fullPath: '/tv-shows'
+      preLoaderRoute: typeof TvShowsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/movies': {
+      id: '/movies'
+      path: '/movies'
+      fullPath: '/movies'
+      preLoaderRoute: typeof MoviesRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/tv-shows/': {
+      id: '/tv-shows/'
+      path: '/'
+      fullPath: '/tv-shows/'
+      preLoaderRoute: typeof TvShowsIndexRouteImport
+      parentRoute: typeof TvShowsRouteRoute
+    }
+    '/movies/': {
+      id: '/movies/'
+      path: '/'
+      fullPath: '/movies/'
+      preLoaderRoute: typeof MoviesIndexRouteImport
+      parentRoute: typeof MoviesRouteRoute
+    }
+    '/tv-shows/$id': {
+      id: '/tv-shows/$id'
+      path: '/$id'
+      fullPath: '/tv-shows/$id'
+      preLoaderRoute: typeof TvShowsIdRouteImport
+      parentRoute: typeof TvShowsRouteRoute
+    }
+    '/movies/$id': {
+      id: '/movies/$id'
+      path: '/$id'
+      fullPath: '/movies/$id'
+      preLoaderRoute: typeof MoviesIdRouteImport
+      parentRoute: typeof MoviesRouteRoute
     }
     '/debug/crash': {
       id: '/debug/crash'
@@ -165,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/handoff': {
+      id: '/auth/handoff'
+      path: '/auth/handoff'
+      fullPath: '/auth/handoff'
+      preLoaderRoute: typeof AuthHandoffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/cli-token': {
       id: '/auth/cli-token'
       path: '/auth/cli-token'
@@ -175,12 +307,43 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MoviesRouteRouteChildren {
+  MoviesIdRoute: typeof MoviesIdRoute
+  MoviesIndexRoute: typeof MoviesIndexRoute
+}
+
+const MoviesRouteRouteChildren: MoviesRouteRouteChildren = {
+  MoviesIdRoute: MoviesIdRoute,
+  MoviesIndexRoute: MoviesIndexRoute,
+}
+
+const MoviesRouteRouteWithChildren = MoviesRouteRoute._addFileChildren(
+  MoviesRouteRouteChildren,
+)
+
+interface TvShowsRouteRouteChildren {
+  TvShowsIdRoute: typeof TvShowsIdRoute
+  TvShowsIndexRoute: typeof TvShowsIndexRoute
+}
+
+const TvShowsRouteRouteChildren: TvShowsRouteRouteChildren = {
+  TvShowsIdRoute: TvShowsIdRoute,
+  TvShowsIndexRoute: TvShowsIndexRoute,
+}
+
+const TvShowsRouteRouteWithChildren = TvShowsRouteRoute._addFileChildren(
+  TvShowsRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MoviesRouteRoute: MoviesRouteRouteWithChildren,
+  TvShowsRouteRoute: TvShowsRouteRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
   AuthCliTokenRoute: AuthCliTokenRoute,
+  AuthHandoffRoute: AuthHandoffRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,
 }

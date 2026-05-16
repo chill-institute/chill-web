@@ -5,7 +5,15 @@ const AUTH_STORAGE_STATE = {
   origins: [
     {
       origin: "http://localhost:58300",
-      localStorage: [{ name: "chill.auth_token", value: "test-token" }],
+      localStorage: [
+        { name: "chill.auth_token", value: "test-token" },
+        {
+          name: "chill.user_messages.dismissed.v1",
+          value: JSON.stringify({
+            "binge-online-alberto-2026-05": "2026-05-16T00:00:00.000Z",
+          }),
+        },
+      ],
     },
   ],
 };
@@ -48,7 +56,7 @@ export const test = base.extend<{
   authenticatedPage: Page;
   mockRpc: MockRpc;
 }>({
-  authenticatedPage: async ({ browser }, use) => {
+  authenticatedPage: async ({ browser }, provide) => {
     const context = await browser.newContext({
       storageState: AUTH_STORAGE_STATE,
     });
@@ -60,12 +68,12 @@ export const test = base.extend<{
         body: JSON.stringify({ status: "ok" }),
       });
     });
-    await use(page);
+    await provide(page);
     await context.close();
   },
-  mockRpc: async ({ authenticatedPage }, use) => {
+  mockRpc: async ({ authenticatedPage }, provide) => {
     const mock = await createMockRpc(authenticatedPage);
-    await use(mock);
+    await provide(mock);
   },
 });
 
