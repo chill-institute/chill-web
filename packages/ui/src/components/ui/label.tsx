@@ -1,9 +1,10 @@
 import type { ComponentProps } from "react";
 import { cn } from "../../lib/cn";
 
-export function Label({ className, ...props }: ComponentProps<"label">) {
+export function Label({ className, htmlFor, ...props }: ComponentProps<"label">) {
   return (
     <label
+      htmlFor={htmlFor}
       data-slot="label"
       className={cn(
         "flex items-center gap-2 text-sm leading-none font-medium select-none cursor-pointer",

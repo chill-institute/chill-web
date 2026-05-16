@@ -29,6 +29,8 @@ graph LR
 
 The package graph is one-directional: both apps depend on all three packages; `packages/auth` depends on `packages/ui` and `packages/api`; `packages/ui` has no internal package dependencies.
 
+Root [DESIGN.md](../DESIGN.md) is the agent-readable design-system brief. It documents the current Institute visual language and points back to `packages/ui/src/styles.css` and `packages/ui/src/components/` as the implemented source of truth.
+
 ## Workspace Tooling
 
 The repo root owns the shared workspace contract:
@@ -84,14 +86,14 @@ graph TD
 
 Current route behavior:
 
-| App          | Route                                    | Responsibility                                   |
-| ------------ | ---------------------------------------- | ------------------------------------------------ |
-| `apps/chill` | `/`                                      | shell and catalog home with initial data preload |
-| `apps/chill` | `/search`                                | search flow, filters, and result listing         |
-| `apps/chill` | `/settings`                              | user settings and folder-related configuration   |
-| `apps/binge` | `/`                                      | catalog-focused home without the search flow     |
-| `apps/binge` | `/settings`                              | user settings and folder-related configuration   |
-| both apps    | `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                            |
+| App          | Route                                    | Responsibility                                 |
+| ------------ | ---------------------------------------- | ---------------------------------------------- |
+| `apps/chill` | `/`                                      | search home shell with authenticated setup     |
+| `apps/chill` | `/search`                                | search flow, filters, and result listing       |
+| `apps/chill` | `/settings`                              | user settings and folder-related configuration |
+| `apps/binge` | `/`                                      | catalog-focused home without the search flow   |
+| `apps/binge` | `/settings`                              | user settings and folder-related configuration |
+| both apps    | `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                          |
 
 ## Data Flow
 

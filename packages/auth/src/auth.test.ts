@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
+  buildAuthHandoffURL,
   clearStoredAuthState,
   consumeCallbackToken,
+  consumeHandoffToken,
   normalizeCallbackPath,
   prepareAuthSuccessURL,
   readAuthTokenFromLocation,
@@ -26,13 +28,23 @@ function createMapStorage() {
 }
 
 function withWindowLocation(url: string) {
+  const location = new URL(url);
+  const replaceState = vi.fn((_state: unknown, _title: string, nextURL?: string | URL | null) => {
+    if (nextURL != null) {
+      location.href = new URL(String(nextURL), location.origin).href;
+    }
+  });
   vi.stubGlobal("window", {
-    location: new URL(url),
+    location,
     sessionStorage: createMapStorage(),
     localStorage: createMapStorage(),
     crypto: globalThis.crypto,
-    history: { replaceState: vi.fn() },
+    history: { replaceState },
   });
+  vi.stubGlobal("document", {
+    referrer: "",
+  });
+  return { replaceState };
 }
 
 afterEach(() => {
@@ -140,6 +152,44 @@ describe("prepareAuthSuccessURL", () => {
   });
 });
 
+describe("buildAuthHandoffURL", () => {
+  it("puts the token in the fragment and not the query string", () => {
+    const url = new URL(
+      buildAuthHandoffURL({
+        targetOrigin: "https://binge.institute",
+        token: "handoff-token",
+      }),
+    );
+
+    expect(url.origin).toBe("https://binge.institute");
+    expect(url.pathname).toBe("/auth/handoff");
+    expect(url.searchParams.get("auth_token")).toBeNull();
+    expect(url.hash).toBe("#auth_token=handoff-token");
+  });
+
+  it("keeps same-origin callback paths", () => {
+    expect(
+      buildAuthHandoffURL({
+        targetOrigin: "https://binge.institute",
+        token: "handoff-token",
+        callbackPath: "/movies?sort=recent",
+      }),
+    ).toBe(
+      "https://binge.institute/auth/handoff?callbackUrl=%2Fmovies%3Fsort%3Drecent#auth_token=handoff-token",
+    );
+  });
+
+  it("drops auth callback paths", () => {
+    expect(
+      buildAuthHandoffURL({
+        targetOrigin: "https://binge.institute",
+        token: "handoff-token",
+        callbackPath: "/auth/success",
+      }),
+    ).toBe("https://binge.institute/auth/handoff#auth_token=handoff-token");
+  });
+});
+
 describe("consumeCallbackToken", () => {
   it("stores the token and returns the home path when the nonce matches", () => {
     withWindowLocation(
@@ -197,6 +247,42 @@ describe("consumeCallbackToken", () => {
 
     expect(consumeCallbackToken()).toBe("/search?q=matrix");
     expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+  });
+});
+
+describe("consumeHandoffToken", () => {
+  it("stores the fragment token when the referrer is trusted", () => {
+    const { replaceState } = withWindowLocation(
+      "https://binge.institute/auth/handoff#auth_token=valid-token",
+    );
+    vi.stubGlobal("document", { referrer: "https://chill.institute/search?q=matrix" });
+
+    expect(consumeHandoffToken({ trustedReferrerOrigins: ["https://chill.institute"] })).toBe("/");
+    expect(window.localStorage.getItem("chill.auth_token")).toBe("valid-token");
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/auth/handoff");
+  });
+
+  it("honors a safe callback path", () => {
+    withWindowLocation(
+      "https://binge.institute/auth/handoff?callbackUrl=%2Fmovies%3Fsort%3Drecent#auth_token=valid-token",
+    );
+    vi.stubGlobal("document", { referrer: "https://chill.institute/" });
+
+    expect(consumeHandoffToken({ trustedReferrerOrigins: ["https://chill.institute"] })).toBe(
+      "/movies?sort=recent",
+    );
+  });
+
+  it("rejects missing and untrusted referrers", () => {
+    withWindowLocation("https://binge.institute/auth/handoff#auth_token=attacker-token");
+
+    expect(consumeHandoffToken({ trustedReferrerOrigins: ["https://chill.institute"] })).toBeNull();
+    expect(window.localStorage.getItem("chill.auth_token")).toBeNull();
+
+    vi.stubGlobal("document", { referrer: "https://evil.example/" });
+
+    expect(consumeHandoffToken({ trustedReferrerOrigins: ["https://chill.institute"] })).toBeNull();
+    expect(window.localStorage.getItem("chill.auth_token")).toBeNull();
   });
 });
 

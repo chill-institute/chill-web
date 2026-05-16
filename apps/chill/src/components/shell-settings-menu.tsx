@@ -1,24 +1,20 @@
 import { useState } from "react";
-import { Settings } from "lucide-react";
 
 import { SettingsPanel } from "@/components/settings-panel";
 import { SettingsModal } from "@chill-institute/ui/components/settings-modal";
-import { Button } from "@chill-institute/ui/components/ui/button";
 
 export function ShellSettingsMenu() {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="text-fg-3 mt-2 [&_svg:not([class*=size-])]:size-3.5"
+        className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-surface mt-2 inline-flex h-[var(--control-h)] cursor-pointer items-center rounded-sm text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
       >
-        <Settings aria-hidden="true" />
         <span>settings</span>
-      </Button>
+      </button>
       <SettingsModal
         open={open}
         onOpenChange={setOpen}

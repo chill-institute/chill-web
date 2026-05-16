@@ -64,6 +64,7 @@ vp config --hooks-dir .vite-hooks
 - This repo contains two client-rendered SPAs under `apps/chill/` and `apps/binge/`.
 - The root owns shared workspace config such as `package.json`, `pnpm-workspace.yaml`, `vite.config.ts`, hooks, and CI workflows.
 - Each app owns its own runtime entrypoints and config including `src/`, `public/`, `e2e/`, `vite.config.ts`, `tsconfig.json`, and `components.json`.
+- Root [DESIGN.md](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and shared presentational primitives live in `packages/ui/`.
 - Shared package versions live in the workspace catalog in `pnpm-workspace.yaml`.
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
 - Both apps talk directly to the hosted API.
@@ -71,7 +72,7 @@ vp config --hooks-dir .vite-hooks
 - `apps/binge/` serves `binge.institute`, `www.binge.institute`, `staging.binge.institute`, and `*.binge-institute.pages.dev`.
 - Localhost in either app resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
-- When generating or updating shadcn components, work from the target app directory so the app-local `components.json` is used.
+- When generating or updating reusable shadcn/base primitives, work from `packages/ui/` so `packages/ui/components.json` writes into the shared UI package. For app-specific surfaces, work from the target app directory so the app-local `components.json` resolves aliases correctly.
 - Playwright keeps traces, screenshots, and videos on failure. Check `apps/*/playwright-report/` and `apps/*/test-results/` after a failing run.
 - GitHub-owned Cloudflare deploys require `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to be configured for the repo or inherited from the org.
 - Once the GitHub deploy workflow is in use, disable direct Cloudflare Pages Git integration so production deploys remain fully gated by `Main`.

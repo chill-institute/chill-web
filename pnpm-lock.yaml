@@ -266,9 +266,6 @@ importers:
       '@connectrpc/connect-web':
         specifier: 'catalog:'
         version: 2.1.1(@bufbuild/protobuf@2.12.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.12.0))
-      react:
-        specifier: 'catalog:'
-        version: 19.2.6
     devDependencies:
       '@bufbuild/protobuf':
         specifier: 'catalog:'
@@ -340,25 +337,16 @@ importers:
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.6.0
-      ts-pattern:
-        specifier: 'catalog:'
-        version: 5.9.0
       vaul:
         specifier: 'catalog:'
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
     devDependencies:
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.3.0(@voidzero-dev/vite-plus-core@0.1.20(@types/node@25.8.0)(jiti@2.7.0)(typescript@6.0.3)(yaml@2.9.0))
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.2.3(@types/react@19.2.14)
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.0
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

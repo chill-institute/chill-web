@@ -6,7 +6,7 @@ import {
   RefreshCw,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
 import { Button } from "./ui/button";
@@ -35,6 +35,7 @@ function getClientReportContext(release?: string) {
 function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallbackProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [notes, setNotes] = useState("");
+  const notesId = useId();
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -95,9 +96,11 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
         </div>
       </div>
 
-      <label className="flex flex-col gap-2 text-sm">
+      <label htmlFor={notesId} className="flex flex-col gap-2 text-sm">
         <span className="font-medium">What were you doing?</span>
         <Textarea
+          id={notesId}
+          name="error-report-notes"
           className="min-h-24"
           placeholder="Optional notes to include in the copied report."
           value={notes}

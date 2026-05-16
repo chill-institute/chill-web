@@ -41,10 +41,6 @@ export function DownloadFolderPicker({ triggerLabel = "change", onSave }: Props)
       />
 
       <PopoverContent>
-        {/*
-          Keyed by `open` so navigation state remounts fresh on each open —
-          we always start at root since UserFile has no parent_id.
-        */}
         <PickerBody
           key={String(open)}
           open={open}

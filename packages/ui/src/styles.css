@@ -42,6 +42,25 @@
   --color-warn-bg: color-mix(in oklab, oklch(0.85 0.15 80) 12%, transparent);
   --color-warn-border: color-mix(in oklab, oklch(0.85 0.15 80) 50%, transparent);
   --color-warn-text: oklch(0.55 0.18 80);
+  --color-background: var(--color-app);
+  --color-foreground: var(--color-fg-1);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-fg-1);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-fg-1);
+  --color-primary: var(--color-fg-1);
+  --color-primary-foreground: var(--color-fg-inverse);
+  --color-secondary: var(--color-surface-2);
+  --color-secondary-foreground: var(--color-fg-1);
+  --color-muted: var(--color-surface-2);
+  --color-muted-foreground: var(--color-fg-3);
+  --color-accent: var(--color-hover);
+  --color-accent-foreground: var(--color-fg-1);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-fg-inverse);
+  --color-border: var(--color-border-strong);
+  --color-input: var(--color-border-strong);
+  --color-ring: var(--color-ring-focus);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);

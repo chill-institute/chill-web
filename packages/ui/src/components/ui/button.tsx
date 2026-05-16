@@ -42,10 +42,14 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  type,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const buttonType = props.render ? type : (type ?? "button");
+
   return (
     <ButtonPrimitive
+      type={buttonType}
       data-slot="button"
       className={cn(buttonVariants({ variant, size }), PRESS_TRANSITION, className)}
       {...props}

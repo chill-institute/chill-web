@@ -1,5 +1,7 @@
 export {
   AuthProvider,
+  buildAuthHandoffURL,
+  consumeHandoffToken,
   useAuth,
   consumeCallbackToken,
   normalizeCallbackPath,

@@ -17,6 +17,14 @@
 - Vite+ workspace tooling through `vp`
 - app-local Playwright suites in each app directory
 
+## Design
+
+- Read [DESIGN.md](./DESIGN.md) before creating, redesigning, or reviewing UI.
+- Treat `packages/ui/src/styles.css` and `packages/ui/src/components/` as the implemented design-system source of truth.
+- Treat external mockups and generated design exports as reference material. If they conflict with current code, preserve the current code unless the user explicitly asks for a visual change.
+- Use shadcn/base project context from the relevant `components.json` before adding or updating UI primitives.
+- Translate upstream shadcn token classes back to the Institute token vocabulary in [DESIGN.md](./DESIGN.md) before committing generated UI.
+
 ## Commands
 
 - `vp install`

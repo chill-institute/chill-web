@@ -5,6 +5,8 @@ const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
 const AUTH_NONCE_STORAGE_KEY = "chill.auth_nonce";
 const AUTH_NONCE_QUERY_PARAM = "nonce";
+const AUTH_HANDOFF_PATH = "/auth/handoff";
+const AUTH_HANDOFF_CALLBACK_QUERY_PARAM = "callbackUrl";
 
 type AuthContextValue = {
   authToken: string | null;
@@ -141,13 +143,54 @@ export function readCurrentCallbackPath(): null | string {
   );
 }
 
-// Fragment only — query-string auth_token would let a phishing link plant a token via referer/server-log leaks.
 export function readAuthTokenFromLocation(location: Pick<Location, "hash">): string {
   const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
   return (fragment.get("auth_token") ?? "").trim();
 }
 
-// Stored nonce is consumed unconditionally on entry so a phishing retry cannot reuse it.
+export function buildAuthHandoffURL({
+  targetOrigin,
+  token,
+  callbackPath = "/",
+}: {
+  targetOrigin: string;
+  token: string;
+  callbackPath?: string;
+}) {
+  const url = new URL(AUTH_HANDOFF_PATH, targetOrigin);
+  const normalizedCallbackPath = normalizeCallbackPathForOrigin(callbackPath, url.origin);
+  if (normalizedCallbackPath && normalizedCallbackPath !== "/") {
+    url.searchParams.set(AUTH_HANDOFF_CALLBACK_QUERY_PARAM, normalizedCallbackPath);
+  }
+  url.hash = new URLSearchParams({ auth_token: token }).toString();
+  return url.toString();
+}
+
+export function consumeHandoffToken({
+  trustedReferrerOrigins,
+}: {
+  trustedReferrerOrigins: readonly string[];
+}): string | null {
+  if (!isTrustedReferrer(document.referrer, trustedReferrerOrigins)) {
+    return null;
+  }
+
+  const token = readAuthTokenFromLocation(window.location);
+  if (!token) {
+    return null;
+  }
+
+  const callbackPath = normalizeCallbackPathForOrigin(
+    new URLSearchParams(window.location.search).get(AUTH_HANDOFF_CALLBACK_QUERY_PARAM),
+    window.location.origin,
+  );
+
+  window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  window.history.replaceState(null, "", AUTH_HANDOFF_PATH);
+
+  return callbackPath ?? "/";
+}
+
 function consumeAuthNonce(location: Pick<Location, "search">): boolean {
   const stored = window.sessionStorage.getItem(AUTH_NONCE_STORAGE_KEY)?.trim() ?? "";
   window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
@@ -178,4 +221,41 @@ export function consumeCallbackToken(): string | null {
   const callbackPath = normalizeCallbackPath(pending || null);
 
   return callbackPath ?? "/";
+}
+
+function isTrustedReferrer(rawReferrer: string, trustedReferrerOrigins: readonly string[]) {
+  if (!rawReferrer) {
+    return false;
+  }
+
+  try {
+    const referrer = new URL(rawReferrer);
+    return trustedReferrerOrigins.includes(referrer.origin);
+  } catch {
+    return false;
+  }
+}
+
+function normalizeCallbackPathForOrigin(raw: null | string, origin: string) {
+  const trimmed = raw?.trim() ?? "";
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(trimmed, origin);
+    if (parsed.origin !== origin) {
+      return null;
+    }
+    if (
+      parsed.pathname === "/sign-in" ||
+      parsed.pathname === "/sign-out" ||
+      parsed.pathname.startsWith("/auth/")
+    ) {
+      return null;
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
 }

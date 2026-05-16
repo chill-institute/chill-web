@@ -1,4 +1,3 @@
-import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
 import { type PropsWithChildren, useEffect, useRef, useState } from "react";
 
@@ -14,6 +13,8 @@ type Props = PropsWithChildren<{
   url: string;
 }>;
 
+type TransferStatus = "idle" | "pending" | "success" | "error";
+
 export function AddTransferButton({
   children = "send to put.io",
   ariaLabel,
@@ -22,6 +23,8 @@ export function AddTransferButton({
 }: Props) {
   const api = useApi();
   const [viewInPutio, setViewInPutio] = useState(false);
+  const [status, setStatus] = useState<TransferStatus>("idle");
+  const [error, setError] = useState<unknown>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -33,37 +36,40 @@ export function AddTransferButton({
     [],
   );
 
-  // eslint-disable-next-line react-doctor/query-mutation-missing-invalidation -- fire-and-forget into put.io, no local cache to refresh
-  const mutation = useMutation({
-    mutationFn: () => api.addTransfer(url),
-    onSuccess: () => {
-      successTimerRef.current = setTimeout(() => setViewInPutio(true), 1000);
-    },
-    onError: () => {
-      errorTimerRef.current = setTimeout(() => mutation.reset(), 3000);
-    },
-  });
-
-  const phase = viewInPutio ? "view" : mutation.status;
+  const phase = viewInPutio ? "view" : status;
   const { icon, text } = (() => {
     if (viewInPutio)
       return { icon: <ExternalLink className="text-success" />, text: "see in put.io" };
-    if (mutation.isPending) return { icon: <Spinner />, text: "sending" };
-    if (mutation.isSuccess)
+    if (status === "pending") return { icon: <Spinner />, text: "sending" };
+    if (status === "success")
       return { icon: <CheckCircle2 className="text-success" />, text: "sent!" };
-    if (mutation.isError)
-      return { icon: <XCircle className="text-error" />, text: toErrorMessage(mutation.error) };
+    if (status === "error")
+      return { icon: <XCircle className="text-error" />, text: toErrorMessage(error) };
     return { icon: null, text: children };
   })();
   const accessibleLabel = typeof text === "string" ? text : (ariaLabel ?? "send to put.io");
 
-  function sendOrOpenTransfer() {
+  async function sendOrOpenTransfer() {
     if (viewInPutio) {
       window.open("https://put.io/transfers", "_blank");
       return;
     }
-    if (mutation.isIdle) {
-      mutation.mutate();
+    if (status !== "idle") {
+      return;
+    }
+    setStatus("pending");
+    setError(null);
+    try {
+      await api.addTransfer(url);
+      setStatus("success");
+      successTimerRef.current = setTimeout(() => setViewInPutio(true), 1000);
+    } catch (transferError) {
+      setError(transferError);
+      setStatus("error");
+      errorTimerRef.current = setTimeout(() => {
+        setStatus("idle");
+        setError(null);
+      }, 3000);
     }
   }
 
@@ -71,7 +77,7 @@ export function AddTransferButton({
     <Button
       type="button"
       className={className}
-      disabled={mutation.isPending}
+      disabled={status === "pending"}
       onClick={sendOrOpenTransfer}
       aria-label={accessibleLabel}
       aria-live="polite"

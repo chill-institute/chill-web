@@ -24,6 +24,9 @@ import { publicLinks } from "@chill-institute/ui/lib/public-links";
 import { type UserSettings } from "@/lib/types";
 
 const LINKS = [
+  { title: "about", url: publicLinks.about },
+  { title: "guides", url: publicLinks.guides },
+  { title: "github", url: publicLinks.github },
   { title: "X (Twitter)", url: publicLinks.x },
   { title: "Email", url: publicLinks.email },
   { title: "Reddit", url: publicLinks.reddit },

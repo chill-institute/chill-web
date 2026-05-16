@@ -27,19 +27,20 @@ const columns = [
 ];
 
 function MetaLine({ info }: { info: ReleaseInfo }) {
-  const parts: string[] = [];
-  if (info.resolution) parts.push(info.resolution.toLowerCase());
-  if (info.codec) parts.push(info.codec);
-  if (info.hdr) parts.push(info.hdr);
-  if (info.audio) parts.push(info.audio);
-  if (info.group) parts.push(info.group);
+  const parts = [
+    info.resolution ? { key: "resolution", text: info.resolution.toLowerCase() } : null,
+    info.codec ? { key: "codec", text: info.codec } : null,
+    info.hdr ? { key: "hdr", text: info.hdr } : null,
+    info.audio ? { key: "audio", text: info.audio } : null,
+    info.group ? { key: "group", text: info.group } : null,
+  ].filter((part): part is { key: string; text: string } => part !== null);
   if (parts.length === 0) return null;
   return (
     <div className="text-fg-4 mt-1 block font-mono text-2xs leading-[1.4]">
-      {parts.map((text, i) => (
-        <span key={`${i}-${text}`}>
-          {i > 0 ? <span className="mx-1 opacity-60">·</span> : null}
-          <span>{text}</span>
+      {parts.map((part, index) => (
+        <span key={part.key}>
+          {index > 0 ? <span className="mx-1 opacity-60">·</span> : null}
+          <span>{part.text}</span>
         </span>
       ))}
     </div>

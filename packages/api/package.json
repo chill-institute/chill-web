@@ -14,8 +14,7 @@
   "dependencies": {
     "@chill-institute/contracts": "catalog:",
     "@connectrpc/connect": "catalog:",
-    "@connectrpc/connect-web": "catalog:",
-    "react": "catalog:"
+    "@connectrpc/connect-web": "catalog:"
   },
   "devDependencies": {
     "@bufbuild/protobuf": "catalog:",

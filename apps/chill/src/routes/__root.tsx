@@ -11,6 +11,8 @@ import { ChillApiProvider } from "@/lib/api";
 import { BackendHealthProvider, useBackendUnavailable } from "@/hooks/use-backend-unavailable";
 import { Toaster } from "@chill-institute/ui/components/ui/toaster";
 import { TooltipProvider } from "@chill-institute/ui/components/ui/tooltip";
+import { UserMessageModal } from "@/components/user-message-modal";
+import { UserMessagesProvider } from "@/components/user-messages-provider";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: Root,
@@ -42,10 +44,11 @@ function RootContent() {
   }
 
   return (
-    <>
+    <UserMessagesProvider>
       <AppShell />
+      <UserMessageModal />
       <Toaster />
-    </>
+    </UserMessagesProvider>
   );
 }
 

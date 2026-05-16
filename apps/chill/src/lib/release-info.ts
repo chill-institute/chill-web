@@ -3,7 +3,7 @@ import { ReleaseInfoSchema, type ReleaseInfo } from "@chill-institute/contracts/
 
 import type { SearchResult } from "./types";
 
-export function deriveInfoFromRaw(raw: string): ReleaseInfo {
+function deriveInfoFromRaw(raw: string): ReleaseInfo {
   const lower = raw.toLowerCase();
   const resolution =
     lower.match(/\b(2160p|1080p|720p|480p)\b/)?.[1] ?? (lower.includes("4k") ? "2160p" : "");

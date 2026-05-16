@@ -44,7 +44,7 @@ const SearchOverlay = lazy(() =>
   import("@/components/search-overlay").then((m) => ({ default: m.SearchOverlay })),
 );
 
-export type CatalogTab = "movies" | "tv-shows";
+type CatalogTab = "movies" | "tv-shows";
 export type SortKey = "popular" | "rating" | "recent";
 
 export function parseSortKey(value: unknown): SortKey | undefined {

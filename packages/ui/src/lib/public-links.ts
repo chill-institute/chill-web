@@ -3,6 +3,7 @@ const GITHUB_ORG_URL = "https://github.com/chill-institute";
 
 export const publicLinks = {
   about: `${WEB_REPOSITORY_URL}/blob/main/docs/ABOUT.md`,
+  binge: "https://binge.institute",
   guides: `${WEB_REPOSITORY_URL}/blob/main/docs/GUIDES.md`,
   github: GITHUB_ORG_URL,
   x: "https://x.com/chill_institute",

@@ -42,7 +42,6 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
   const deferredQuery = useDeferredValue(query);
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [lastSeenQuery, setLastSeenQuery] = useState("");
 
   const trimmed = deferredQuery.trim();
   const searchQuery = useFreeSearchQuery({ query: trimmed, enabled: open });
@@ -50,6 +49,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     () => searchQuery.data?.results?.slice(0, MAX_RESULTS) ?? [],
     [searchQuery.data?.results],
   );
+  const activeHighlight = visible.length === 0 ? 0 : Math.min(highlight, visible.length - 1);
 
   useEffect(() => {
     if (!open) {
@@ -61,11 +61,6 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     return () => window.clearTimeout(id);
   }, [open]);
 
-  if (trimmed !== lastSeenQuery) {
-    setLastSeenQuery(trimmed);
-    setHighlight(0);
-  }
-
   function handleKey(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === "ArrowDown") {
       event.preventDefault();
@@ -76,7 +71,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     } else if (event.key === "Enter") {
       if (visible.length === 0) return;
       event.preventDefault();
-      const target = visible[Math.min(highlight, visible.length - 1)];
+      const target = visible[activeHighlight];
       if (!target) return;
       const option = document.getElementById(optionId(rowKey(target)));
       option?.querySelector<HTMLButtonElement>("button")?.click();
@@ -102,17 +97,14 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
             <InputGroupInput
               ref={inputRef}
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setHighlight(0);
+              }}
               placeholder="search any title…"
               autoComplete="off"
-              role="combobox"
               aria-label="search"
-              aria-expanded={visible.length > 0}
-              aria-controls={LISTBOX_ID}
-              aria-autocomplete="list"
-              aria-activedescendant={
-                visible.length > 0 ? optionId(rowKey(visible[highlight] ?? visible[0]!)) : undefined
-              }
+              aria-describedby="search-overlay-shortcuts"
             />
             <InputGroupAddon align="inline-end">
               <button
@@ -130,13 +122,16 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
           <ResultsBody
             trimmed={trimmed}
             visible={visible}
-            highlight={highlight}
+            highlight={activeHighlight}
             isPending={searchQuery.isPending && trimmed.length > 0}
             isError={searchQuery.isError}
             onHighlight={setHighlight}
           />
         </div>
-        <div className="text-fg-3 border-border-faint flex items-center justify-between gap-3 border-t px-3 py-2 text-2xs">
+        <div
+          id="search-overlay-shortcuts"
+          className="text-fg-3 border-border-faint flex items-center justify-between gap-3 border-t px-3 py-2 text-2xs"
+        >
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
               <span className="kbd">↑</span>
@@ -211,15 +206,14 @@ function ResultsBody({
     );
   }
   return (
-    <ul id={LISTBOX_ID} role="listbox" aria-label="Search results" className="m-0 list-none p-0">
+    <ul id={LISTBOX_ID} role="list" aria-label="Search results" className="m-0 list-none p-0">
       {visible.map((result, index) => {
         const key = rowKey(result);
         return (
           <li
             key={key}
             id={optionId(key)}
-            role="option"
-            aria-selected={index === highlight}
+            data-highlighted={index === highlight ? "" : undefined}
             onMouseEnter={() => onHighlight(index)}
             className={cn(
               "flex items-center gap-3 px-3 py-2",
@@ -249,7 +243,11 @@ function ResultsBody({
                 ) : null}
               </div>
             </div>
-            <AddTransferButton url={result.link} className="shrink-0">
+            <AddTransferButton
+              url={result.link}
+              className="shrink-0"
+              ariaLabel={`send ${result.title} to put.io`}
+            >
               send to put.io
             </AddTransferButton>
             {index === highlight ? <CornerDownLeft className="text-fg-3 size-3.5" /> : null}
