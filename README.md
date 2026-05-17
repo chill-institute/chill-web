@@ -2,15 +2,15 @@
 
 ![chill.institute web](https://chill.institute/banner.png)
 
-Vite+ workspace repo for the Cloudflare Pages frontends of [chill.institute](https://chill.institute) and [binge.institute](https://binge.institute).
+Vite+ workspace repo for the Institute's two Cloudflare Pages frontends: [chill.institute](https://chill.institute) and [binge.institute](https://binge.institute).
 
 ## Apps
 
-- `apps/chill/` powers `https://chill.institute` with the search experience
-- `apps/binge/` powers `https://binge.institute` with the catalog-focused experience
+- `apps/chill/` powers `https://chill.institute` with search, result comparison, and send-to-put.io flows
+- `apps/binge/` powers `https://binge.institute` with movie and TV browsing, detail pages, source pickers, and RSS shortcuts
 - the repo root owns shared workspace config, hooks, CI entrypoints, and package catalog wiring
 
-Both apps ship independently to Cloudflare Pages and talk to the same hosted API at `https://api.chill.institute`.
+Both apps ship independently to Cloudflare Pages and talk to the same hosted API: `https://api.chill.institute`
 
 ## Quickstart
 
@@ -40,8 +40,8 @@ vp run e2e
 ## Docs
 
 - [Design system](./DESIGN.md)
-- [About](./docs/ABOUT.md)
-- [Guides](./docs/GUIDES.md)
+- [About the Institute](./docs/ABOUT.md)
+- [User guides](./docs/GUIDES.md)
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Deployment](./docs/DEPLOYMENT.md)
 - [Contributing](./CONTRIBUTING.md)
