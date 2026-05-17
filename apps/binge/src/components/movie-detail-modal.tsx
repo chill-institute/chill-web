@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { ArrowUpRight, Search, Star, Users, X } from "lucide-react";
+import { ArrowUpRight, Search, Star, Users } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { Button } from "@chill-institute/ui/components/ui/button";
-import { IconButton } from "@chill-institute/ui/components/icon-button";
+import { ModalCloseButton } from "@chill-institute/ui/components/modal-close-button";
 import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Badge } from "@chill-institute/ui/components/ui/badge";
@@ -345,13 +345,11 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
           </div>
         </div>
 
-        <IconButton
+        <ModalCloseButton
           onClick={onClose}
           aria-label="Close movie details"
-          className="absolute top-2.5 right-2.5 z-20 rounded-full bg-surface/80 text-fg-1 backdrop-blur-sm hover-hover:hover:bg-surface sm:top-3 sm:right-3"
-        >
-          <X />
-        </IconButton>
+          className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3"
+        />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6">

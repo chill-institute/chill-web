@@ -1,7 +1,7 @@
-import { ArrowUpRight, X } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 import { Button } from "@chill-institute/ui/components/ui/button";
-import { IconButton } from "@chill-institute/ui/components/icon-button";
+import { ModalCloseButton } from "@chill-institute/ui/components/modal-close-button";
 import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { useUserMessages } from "@/components/user-messages-provider";
 
@@ -28,13 +28,11 @@ export function UserMessageModal() {
     >
       {message ? (
         <div className="relative flex flex-col gap-5 px-5 pt-6 pb-6 sm:gap-6 sm:px-6 sm:pt-7 sm:pb-6">
-          <IconButton
+          <ModalCloseButton
             onClick={dismissCurrentMessage}
             aria-label="Close update"
-            className="border-border-strong shadow-press absolute top-3 right-3 rounded-full border"
-          >
-            <X />
-          </IconButton>
+            className="absolute top-3 right-3"
+          />
           <div className="flex flex-col items-center gap-4">
             {message.sender ? (
               <div className="flex justify-center">

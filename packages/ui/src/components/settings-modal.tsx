@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Settings, X } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { Button } from "./ui/button";
 import { IconButton } from "./icon-button";
+import { ModalCloseButton } from "./modal-close-button";
 import { ResponsiveModal } from "./responsive-modal";
 import { useIsDesktop } from "../hooks/use-is-desktop";
 
@@ -33,13 +34,7 @@ function SettingsModalBody({
     >
       <div className="border-border-faint flex items-center justify-between gap-4 border-b px-5 py-4 sm:px-6">
         <h3 className="m-0 text-2xl">settings</h3>
-        <IconButton
-          onClick={onClose}
-          aria-label="Close settings"
-          className="border-border-strong shadow-press rounded-full border"
-        >
-          <X />
-        </IconButton>
+        <ModalCloseButton onClick={onClose} aria-label="Close settings" />
       </div>
       <div className="max-h-[min(85dvh,900px)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
         {children}

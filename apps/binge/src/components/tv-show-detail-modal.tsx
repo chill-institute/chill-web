@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import { ArrowUpRight, CloudUpload, Loader2, Star, X } from "lucide-react";
+import { ArrowUpRight, CloudUpload, Loader2, Star } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { TVShowStatusBadge } from "@/components/tv-show-status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@chill-institute/ui/components/ui/tabs";
 import { Badge } from "@chill-institute/ui/components/ui/badge";
 import { Button } from "@chill-institute/ui/components/ui/button";
-import { IconButton } from "@chill-institute/ui/components/icon-button";
+import { ModalCloseButton } from "@chill-institute/ui/components/modal-close-button";
 import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
@@ -149,13 +149,11 @@ function TvShowDetailContent({
     (downloadsQuery.isFetching && downloadsQuery.status === "success");
 
   const closeButton = (
-    <IconButton
+    <ModalCloseButton
       onClick={onClose}
       aria-label="Close TV show details"
-      className="absolute right-3 top-3 z-20 rounded-full bg-surface/80 backdrop-blur-sm text-fg-1 hover-hover:hover:bg-surface"
-    >
-      <X />
-    </IconButton>
+      className="absolute top-3 right-3"
+    />
   );
 
   const shellClassName = isDesktop
