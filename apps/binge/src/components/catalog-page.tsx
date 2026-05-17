@@ -35,9 +35,11 @@ import {
   parseMoviesSource,
   parseTVShowsSource,
   tvShowsSources,
+  applyBingeSettingsPatch,
+  toBingeSettings,
+  type BingeSettings,
   type Movie,
   type TVShow,
-  type UserSettings,
 } from "@/lib/types";
 
 const SearchOverlay = lazy(() =>
@@ -91,12 +93,13 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
 
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
+  const appSettings = configQuery.data ? toBingeSettings(configQuery.data) : undefined;
 
   const isSourceParamOutOfSync =
     configQuery.status === "success" &&
     source !== undefined &&
-    ((tab === "movies" && configQuery.data.moviesSource !== source) ||
-      (tab === "tv-shows" && configQuery.data.tvShowsSource !== source));
+    ((tab === "movies" && appSettings?.moviesSource !== source) ||
+      (tab === "tv-shows" && appSettings?.tvShowsSource !== source));
   const shouldFetchCatalog =
     configQuery.status === "success" &&
     !configQuery.isFetching &&
@@ -128,10 +131,10 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
       return;
     }
     if (tab === "movies") {
-      saveConfigMutation.flush({ ...configQuery.data, moviesSource: source });
+      saveConfigMutation.flush(applyBingeSettingsPatch(configQuery.data, { moviesSource: source }));
       return;
     }
-    saveConfigMutation.flush({ ...configQuery.data, tvShowsSource: source });
+    saveConfigMutation.flush(applyBingeSettingsPatch(configQuery.data, { tvShowsSource: source }));
   }, [
     configQuery.data,
     configQuery.isFetching,
@@ -142,9 +145,9 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
     tab,
   ]);
 
-  function patchConfig(patch: Partial<UserSettings>) {
+  function patchConfig(patch: Partial<BingeSettings>) {
     if (!configQuery.data) return;
-    saveConfigMutation.mutate({ ...configQuery.data, ...patch });
+    saveConfigMutation.mutate(applyBingeSettingsPatch(configQuery.data, patch));
   }
 
   if (!auth.isAuthenticated) {
@@ -173,7 +176,7 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
       </HomeShell>
     ))
     .with({ status: "success" }, (query) => {
-      const config = query.data;
+      const config = toBingeSettings(query.data);
       const effectiveMoviesSource =
         tab === "movies" && source !== undefined ? source : config.moviesSource;
       const effectiveTVShowsSource =
@@ -419,7 +422,7 @@ function PageHeading({ tab }: { tab: CatalogTab }) {
 
 type MoviesContentProps = {
   query: ReturnType<typeof useMoviesQuery>;
-  source: UserSettings["moviesSource"];
+  source: BingeSettings["moviesSource"];
   sort: SortKey;
   onPickAnotherSource: () => void;
 };
@@ -467,7 +470,7 @@ function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesConte
 
 type TVShowsContentProps = {
   query: ReturnType<typeof useTVShowsQuery>;
-  source: UserSettings["tvShowsSource"];
+  source: BingeSettings["tvShowsSource"];
   sort: SortKey;
   onPickAnotherSource: () => void;
 };

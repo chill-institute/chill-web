@@ -33,12 +33,14 @@ import {
 import { isThemePreference, useTheme } from "@chill-institute/ui/hooks/use-theme";
 import { publicLinks } from "@chill-institute/ui/lib/public-links";
 import {
-  defaultUserSettings,
+  applyChillSettingsPatch,
+  resetChillSettings,
   searchResultDisplayBehaviorLabels,
   searchResultDisplayBehaviors,
   searchResultTitleBehaviorLabels,
   searchResultTitleBehaviors,
-  type UserSettings,
+  toChillSettings,
+  type ChillSettings,
 } from "@/lib/types";
 
 const LINKS = [
@@ -50,7 +52,7 @@ const LINKS = [
   { title: "reddit", url: publicLinks.reddit },
 ];
 
-type PersistPatch = (patch: Partial<UserSettings>) => void;
+type PersistPatch = (patch: Partial<ChillSettings>) => void;
 type ProfileQuery = ReturnType<typeof useProfileQuery>;
 type DownloadFolderQuery = ReturnType<typeof useDownloadFolderQuery>;
 type IndexerOption = { id: string; label: string };
@@ -181,7 +183,7 @@ function DownloadFolderSection({
   downloadFolderQuery,
   persistPatch,
 }: {
-  effective: UserSettings;
+  effective: ChillSettings;
   downloadFolderQuery: DownloadFolderQuery;
   persistPatch: PersistPatch;
 }) {
@@ -221,7 +223,7 @@ function SearchSettingsSection({
   effective,
   persistPatch,
 }: {
-  effective: UserSettings;
+  effective: ChillSettings;
   persistPatch: PersistPatch;
 }) {
   return (
@@ -271,7 +273,7 @@ function IndexersSection({
   indexerOptions,
   persistPatch,
 }: {
-  effective: UserSettings;
+  effective: ChillSettings;
   indexerOptions: IndexerOption[];
   persistPatch: PersistPatch;
 }) {
@@ -326,7 +328,7 @@ function SearchResultDisplayBehaviorSection({
   effective,
   persistPatch,
 }: {
-  effective: UserSettings;
+  effective: ChillSettings;
   persistPatch: PersistPatch;
 }) {
   return (
@@ -365,7 +367,7 @@ function SearchResultTitleBehaviorSection({
   effective,
   persistPatch,
 }: {
-  effective: UserSettings;
+  effective: ChillSettings;
   persistPatch: PersistPatch;
 }) {
   return (
@@ -445,14 +447,14 @@ export function SettingsPanel() {
     [indexersQuery.data],
   );
 
-  const persistPatch = (patch: Partial<UserSettings>) => {
+  const persistPatch = (patch: Partial<ChillSettings>) => {
     if (!configQuery.data) return;
-    saveMutation.mutate({ ...configQuery.data, ...patch });
+    saveMutation.mutate(applyChillSettingsPatch(configQuery.data, patch));
   };
 
   const resetSettings = () => {
     if (!configQuery.data) return;
-    saveMutation.mutate({ ...configQuery.data, ...defaultUserSettings });
+    saveMutation.mutate(resetChillSettings(configQuery.data));
   };
 
   if (!auth.isAuthenticated) {
@@ -465,7 +467,7 @@ export function SettingsPanel() {
     .with({ status: "pending" }, () => <SettingsSkeleton />)
     .with({ status: "error" }, (q) => <UserErrorAlert error={q.error} />)
     .with({ status: "success" }, ({ data: [config] }) => {
-      const effective = config;
+      const effective = toChillSettings(config);
 
       return (
         <div className="flex flex-col gap-6">

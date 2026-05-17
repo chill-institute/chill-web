@@ -1,80 +1,131 @@
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vite-plus/test";
 import {
-  CardDisplayType,
+  CatalogSettingsSchema,
+  DownloadSettingsSchema,
   MoviesSource,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
+  SearchSettingsSchema,
   SortBy,
   SortDirection,
   TVShowsSource,
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { SEARCH_SETTINGS_FALLBACKS, withSearchSettingsDefaults } from "./settings-defaults";
+import {
+  CATALOG_SETTINGS_FALLBACKS,
+  SEARCH_SETTINGS_FALLBACKS,
+  withSearchSettingsDefaults,
+  withUserSettingsDefaults,
+} from "./settings-defaults";
 
 function unspecifiedSettings() {
   return create(UserSettingsSchema, {
-    searchResultDisplayBehavior: SearchResultDisplayBehavior.UNSPECIFIED,
-    searchResultTitleBehavior: SearchResultTitleBehavior.UNSPECIFIED,
-    sortBy: SortBy.UNSPECIFIED,
-    sortDirection: SortDirection.UNSPECIFIED,
-  });
-}
-
-describe("withSearchSettingsDefaults", () => {
-  it("fills UNSPECIFIED search enums with the fallback set", () => {
-    const out = withSearchSettingsDefaults(unspecifiedSettings());
-
-    expect(out.searchResultDisplayBehavior).toBe(
-      SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
-    );
-    expect(out.searchResultTitleBehavior).toBe(SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior);
-    expect(out.sortBy).toBe(SEARCH_SETTINGS_FALLBACKS.sortBy);
-    expect(out.sortDirection).toBe(SEARCH_SETTINGS_FALLBACKS.sortDirection);
-  });
-
-  it("preserves explicit search enum values", () => {
-    const explicit = create(UserSettingsSchema, {
-      searchResultDisplayBehavior: SearchResultDisplayBehavior.ALL,
-      searchResultTitleBehavior: SearchResultTitleBehavior.LINK,
-      sortBy: SortBy.SIZE,
-      sortDirection: SortDirection.ASC,
-    });
-
-    const out = withSearchSettingsDefaults(explicit);
-
-    expect(out.searchResultDisplayBehavior).toBe(SearchResultDisplayBehavior.ALL);
-    expect(out.searchResultTitleBehavior).toBe(SearchResultTitleBehavior.LINK);
-    expect(out.sortBy).toBe(SortBy.SIZE);
-    expect(out.sortDirection).toBe(SortDirection.ASC);
-  });
-
-  it("does not touch catalog fields — those belong to binge's normalizer hook", () => {
-    const withCatalogJunk = create(UserSettingsSchema, {
+    search: create(SearchSettingsSchema, {
       searchResultDisplayBehavior: SearchResultDisplayBehavior.UNSPECIFIED,
       searchResultTitleBehavior: SearchResultTitleBehavior.UNSPECIFIED,
       sortBy: SortBy.UNSPECIFIED,
       sortDirection: SortDirection.UNSPECIFIED,
-      cardDisplayType: CardDisplayType.UNSPECIFIED,
-      moviesSource: MoviesSource.UNSPECIFIED,
-      tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED,
+    }),
+  });
+}
+
+describe("withSearchSettingsDefaults", () => {
+  it("fills missing and UNSPECIFIED search fields with the fallback set", () => {
+    const out = withSearchSettingsDefaults(unspecifiedSettings());
+
+    expect(out.search?.searchResultDisplayBehavior).toBe(
+      SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
+    );
+    expect(out.search?.searchResultTitleBehavior).toBe(
+      SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
+    );
+    expect(out.search?.sortBy).toBe(SEARCH_SETTINGS_FALLBACKS.sortBy);
+    expect(out.search?.sortDirection).toBe(SEARCH_SETTINGS_FALLBACKS.sortDirection);
+  });
+
+  it("preserves explicit search enum values", () => {
+    const explicit = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, {
+        searchResultDisplayBehavior: SearchResultDisplayBehavior.ALL,
+        searchResultTitleBehavior: SearchResultTitleBehavior.LINK,
+        sortBy: SortBy.SIZE,
+        sortDirection: SortDirection.ASC,
+      }),
     });
 
-    const out = withSearchSettingsDefaults(withCatalogJunk);
+    const out = withSearchSettingsDefaults(explicit);
 
-    expect(out.cardDisplayType).toBe(CardDisplayType.UNSPECIFIED);
-    expect(out.moviesSource).toBe(MoviesSource.UNSPECIFIED);
-    expect(out.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED);
+    expect(out.search?.searchResultDisplayBehavior).toBe(SearchResultDisplayBehavior.ALL);
+    expect(out.search?.searchResultTitleBehavior).toBe(SearchResultTitleBehavior.LINK);
+    expect(out.search?.sortBy).toBe(SortBy.SIZE);
+    expect(out.search?.sortDirection).toBe(SortDirection.ASC);
   });
 
   it("does not mutate the input proto", () => {
     const input = unspecifiedSettings();
-    const before = input.sortBy;
+    const before = input.search?.sortBy;
 
     withSearchSettingsDefaults(input);
 
-    expect(input.sortBy).toBe(before);
-    expect(input.sortBy).toBe(SortBy.UNSPECIFIED);
+    expect(input.search?.sortBy).toBe(before);
+    expect(input.search?.sortBy).toBe(SortBy.UNSPECIFIED);
+  });
+});
+
+describe("withUserSettingsDefaults", () => {
+  it("fills missing search, catalog, and download domains", () => {
+    const out = withUserSettingsDefaults(create(UserSettingsSchema, {}));
+
+    expect(out.search?.searchResultDisplayBehavior).toBe(
+      SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
+    );
+    expect(out.search?.searchResultTitleBehavior).toBe(
+      SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
+    );
+    expect(out.search?.sortBy).toBe(SEARCH_SETTINGS_FALLBACKS.sortBy);
+    expect(out.search?.sortDirection).toBe(SEARCH_SETTINGS_FALLBACKS.sortDirection);
+    expect(out.catalog?.moviesSource).toBe(CATALOG_SETTINGS_FALLBACKS.moviesSource);
+    expect(out.catalog?.tvShowsSource).toBe(CATALOG_SETTINGS_FALLBACKS.tvShowsSource);
+    expect(out.download).toBeDefined();
+  });
+
+  it("normalizes UNSPECIFIED catalog enum values", () => {
+    const out = withUserSettingsDefaults(
+      create(UserSettingsSchema, {
+        catalog: create(CatalogSettingsSchema, {
+          moviesSource: MoviesSource.UNSPECIFIED,
+          tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED,
+        }),
+      }),
+    );
+
+    expect(out.catalog?.moviesSource).toBe(CATALOG_SETTINGS_FALLBACKS.moviesSource);
+    expect(out.catalog?.tvShowsSource).toBe(CATALOG_SETTINGS_FALLBACKS.tvShowsSource);
+  });
+
+  it("preserves explicit catalog values", () => {
+    const explicit = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.YTS,
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+      }),
+    });
+
+    const out = withUserSettingsDefaults(explicit);
+
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.catalog?.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+  });
+
+  it("preserves explicit download folder values", () => {
+    const out = withUserSettingsDefaults(
+      create(UserSettingsSchema, {
+        download: create(DownloadSettingsSchema, { folderId: 42n }),
+      }),
+    );
+
+    expect(out.download?.folderId).toBe(42n);
   });
 });

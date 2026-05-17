@@ -7,15 +7,15 @@ import { cn } from "@chill-institute/ui/lib/cn";
 import { useSearchDisplay, type SearchDisplayMode } from "@/hooks/use-search-display";
 import { formatAge, formatBytes } from "@chill-institute/ui/lib/format";
 import { effectiveInfo } from "@/lib/release-info";
-import type { SearchResult, UserSettings } from "@/lib/types";
+import type { ChillSettings, SearchResult } from "@/lib/types";
 import { SearchResultTitleBehavior, SortBy, SortDirection } from "@/lib/types";
 
 type Props = {
   results: SearchResult[];
-  sortBy: UserSettings["sortBy"];
-  sortDirection: UserSettings["sortDirection"];
-  titleBehavior: UserSettings["searchResultTitleBehavior"];
-  onSort: (sortBy: UserSettings["sortBy"]) => void;
+  sortBy: ChillSettings["sortBy"];
+  sortDirection: ChillSettings["sortDirection"];
+  titleBehavior: ChillSettings["searchResultTitleBehavior"];
+  onSort: (sortBy: ChillSettings["sortBy"]) => void;
 };
 
 const columns = [

@@ -1,14 +1,14 @@
 import { useState } from "react";
 
-import type { UserSettings } from "@/lib/types";
+import type { ChillSettings } from "@/lib/types";
 import { SortBy, SortDirection } from "@/lib/types";
 
 export type FilterState = {
-  resolution: UserSettings["resolutionFilters"];
-  codec: UserSettings["codecFilters"];
-  other: UserSettings["otherFilters"];
-  sortBy: UserSettings["sortBy"];
-  sortDirection: UserSettings["sortDirection"];
+  resolution: ChillSettings["resolutionFilters"];
+  codec: ChillSettings["codecFilters"];
+  other: ChillSettings["otherFilters"];
+  sortBy: ChillSettings["sortBy"];
+  sortDirection: ChillSettings["sortDirection"];
 };
 
 export type Action =
@@ -45,7 +45,7 @@ const initialState: FilterState = {
   sortDirection: SortDirection.DESC,
 };
 
-function toFilterState(settingsData: UserSettings | undefined): FilterState {
+function toFilterState(settingsData: ChillSettings | undefined): FilterState {
   if (!settingsData) {
     return initialState;
   }
@@ -59,7 +59,7 @@ function toFilterState(settingsData: UserSettings | undefined): FilterState {
   };
 }
 
-export function useSearchFilters(settingsData: UserSettings | undefined) {
+export function useSearchFilters(settingsData: ChillSettings | undefined) {
   const [filters, setFilters] = useState<FilterState>(() => toFilterState(settingsData));
   const [lastSeenSettings, setLastSeenSettings] = useState(settingsData);
 

@@ -3,6 +3,7 @@ import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 
 import { useMoviesQuery } from "@/queries/movies";
 import { useSettingsQuery } from "@/queries/settings";
+import { toBingeSettings } from "@/lib/types";
 
 const MovieDetailModal = lazy(() =>
   import("@/components/movie-detail-modal").then((m) => ({ default: m.MovieDetailModal })),
@@ -24,7 +25,7 @@ function MovieDetailRoute() {
   const close = () => void navigate({ to: "/movies", search: (prev) => prev });
 
   if (configQuery.status !== "success" || moviesQuery.status !== "success") return null;
-  if (moviesQuery.data.source !== configQuery.data.moviesSource) return null;
+  if (moviesQuery.data.source !== toBingeSettings(configQuery.data).moviesSource) return null;
 
   const movie = moviesQuery.data.movies.find((m) => m.id === id);
   if (!movie) throw notFound();

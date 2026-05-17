@@ -9,7 +9,7 @@ allowBuilds:
 catalog:
   "@base-ui/react": ^1.4.1
   "@bufbuild/protobuf": ^2.12.0
-  "@chill-institute/contracts": ^1.3.1
+  "@chill-institute/contracts": github:chill-institute/chill-contracts#a32775bf8cd01c4d3cca11728d69c9d06ffc046c
   "@connectrpc/connect": ^2.1.1
   "@connectrpc/connect-web": ^2.1.1
   "@playwright/test": ^1.60.0

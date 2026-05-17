@@ -1,10 +1,14 @@
 import { test as base, type Page, type Route } from "@playwright/test";
 
+import { playwrightPort } from "./port";
+
+const port = playwrightPort(58300);
+
 const AUTH_STORAGE_STATE = {
   cookies: [],
   origins: [
     {
-      origin: "http://localhost:58300",
+      origin: `http://localhost:${port}`,
       localStorage: [
         { name: "chill.auth_token", value: "test-token" },
         {

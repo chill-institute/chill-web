@@ -10,33 +10,97 @@ import {
   SearchResultSchema,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
+  SearchSettingsSchema,
   SortBy,
   SortDirection,
-  CardDisplayType,
+  DownloadSettingsSchema,
   MoviesSource,
+  TVShowsSource,
+  CatalogSettingsSchema,
   UserFileSchema,
   UserGetIndexersResponseSchema,
   UserIndexerSchema,
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-type ConfigInit = MessageInitShape<typeof UserSettingsSchema>;
+type ConfigInit = MessageInitShape<typeof UserSettingsSchema> & {
+  codecFilters?: MessageInitShape<typeof SearchSettingsSchema>["codecFilters"];
+  disabledIndexerIds?: string[];
+  downloadFolderId?: bigint;
+  filterNastyResults?: boolean;
+  filterResultsWithNoSeeders?: boolean;
+  otherFilters?: MessageInitShape<typeof SearchSettingsSchema>["otherFilters"];
+  rememberQuickFilters?: boolean;
+  resolutionFilters?: MessageInitShape<typeof SearchSettingsSchema>["resolutionFilters"];
+  searchResultDisplayBehavior?: SearchResultDisplayBehavior;
+  searchResultTitleBehavior?: SearchResultTitleBehavior;
+  sortBy?: SortBy;
+  sortDirection?: SortDirection;
+  moviesSource?: MoviesSource;
+  tvShowsSource?: TVShowsSource;
+  showMovies?: boolean;
+  showTvShows?: boolean;
+  cardDisplayType?: number;
+};
 type IndexerInit = MessageInitShape<typeof UserIndexerSchema>;
 type ResultInit = MessageInitShape<typeof SearchResultSchema>;
 type UserFileInit = MessageInitShape<typeof UserFileSchema>;
 
 export function userSettings(init?: ConfigInit) {
+  const {
+    codecFilters,
+    disabledIndexerIds,
+    downloadFolderId,
+    filterNastyResults,
+    filterResultsWithNoSeeders,
+    otherFilters,
+    rememberQuickFilters,
+    resolutionFilters,
+    searchResultDisplayBehavior,
+    searchResultTitleBehavior,
+    sortBy,
+    sortDirection,
+    moviesSource,
+    tvShowsSource,
+    search,
+    catalog,
+    download,
+    showMovies: _showMovies,
+    showTvShows: _showTvShows,
+    cardDisplayType: _cardDisplayType,
+  } = init ?? {};
   return toJson(
     UserSettingsSchema,
     create(UserSettingsSchema, {
-      searchResultDisplayBehavior: SearchResultDisplayBehavior.FASTEST,
-      searchResultTitleBehavior: SearchResultTitleBehavior.TEXT,
-      sortBy: SortBy.SEEDERS,
-      sortDirection: SortDirection.DESC,
-      cardDisplayType: CardDisplayType.COMPACT,
-      moviesSource: MoviesSource.IMDB_MOVIEMETER,
-      filterNastyResults: true,
-      ...init,
+      search: create(SearchSettingsSchema, {
+        codecFilters: codecFilters ?? search?.codecFilters ?? [],
+        disabledIndexerIds: disabledIndexerIds ?? search?.disabledIndexerIds ?? [],
+        filterNastyResults: filterNastyResults ?? search?.filterNastyResults ?? true,
+        filterResultsWithNoSeeders:
+          filterResultsWithNoSeeders ?? search?.filterResultsWithNoSeeders ?? false,
+        otherFilters: otherFilters ?? search?.otherFilters ?? [],
+        rememberQuickFilters: rememberQuickFilters ?? search?.rememberQuickFilters ?? false,
+        resolutionFilters: resolutionFilters ?? search?.resolutionFilters ?? [],
+        searchResultDisplayBehavior:
+          searchResultDisplayBehavior ??
+          search?.searchResultDisplayBehavior ??
+          SearchResultDisplayBehavior.FASTEST,
+        searchResultTitleBehavior:
+          searchResultTitleBehavior ??
+          search?.searchResultTitleBehavior ??
+          SearchResultTitleBehavior.TEXT,
+        sortBy: sortBy ?? search?.sortBy ?? SortBy.SEEDERS,
+        sortDirection: sortDirection ?? search?.sortDirection ?? SortDirection.DESC,
+      }),
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: moviesSource ?? catalog?.moviesSource ?? MoviesSource.IMDB_MOVIEMETER,
+        tvShowsSource:
+          tvShowsSource ?? catalog?.tvShowsSource ?? TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+      }),
+      download: create(
+        DownloadSettingsSchema,
+        downloadFolderId === undefined ? download : { folderId: downloadFolderId },
+      ),
     }),
   );
 }

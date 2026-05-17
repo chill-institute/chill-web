@@ -19,7 +19,7 @@ const profileResponse = {
 };
 
 type RequestSettingsPayload = Record<string, unknown> & {
-  downloadFolderId?: string | number;
+  download?: { folderId?: string | number };
 };
 
 const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
@@ -111,8 +111,8 @@ test.describe("settings", () => {
       const body = route.request().postDataJSON() as {
         settings?: RequestSettingsPayload;
       };
-      if (body.settings?.downloadFolderId !== undefined) {
-        savedDownloadFolderID = String(body.settings.downloadFolderId);
+      if (body.settings?.download?.folderId !== undefined) {
+        savedDownloadFolderID = String(body.settings.download.folderId);
         selectedFolderID = savedDownloadFolderID;
       }
       if (body.settings) {
@@ -186,9 +186,9 @@ test.describe("settings", () => {
       const body = route.request().postDataJSON() as {
         settings?: RequestSettingsPayload;
       };
-      if (body.settings?.downloadFolderId !== undefined) {
+      if (body.settings?.download?.folderId !== undefined) {
         settingsState = body.settings as typeof settingsState;
-        selectedFolderID = String(body.settings.downloadFolderId);
+        selectedFolderID = String(body.settings.download.folderId);
       }
       await route.fulfill({
         status: 200,

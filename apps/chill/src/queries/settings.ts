@@ -1,12 +1,31 @@
 import { useEffect, useRef } from "react";
+import { create } from "@bufbuild/protobuf";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { useApi } from "@chill-institute/auth/api-context";
 import { invalidateDownloadFolder } from "@chill-institute/auth/queries/download-folder";
-import type { UserSettings } from "@/lib/types";
+import { toChillSettings, type UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
 const SAVE_DEBOUNCE_MS = 500;
+
+export function hasCompleteSettingsDomains(settings: UserSettings) {
+  return (
+    settings.search !== undefined &&
+    settings.catalog !== undefined &&
+    settings.download !== undefined
+  );
+}
+
+export function mergeSettingsDomains(base: UserSettings, next: UserSettings): UserSettings {
+  return create(UserSettingsSchema, {
+    ...base,
+    search: next.search ?? base.search,
+    catalog: next.catalog ?? base.catalog,
+    download: next.download ?? base.download,
+  });
+}
 
 export function useSettingsQuery() {
   const api = useApi();
@@ -30,19 +49,42 @@ export function useSaveSettings() {
   const pendingRef = useRef<UserSettings | null>(null);
   const previousRef = useRef<UserSettings | null>(null);
 
+  async function settingsForSave(next: UserSettings): Promise<UserSettings> {
+    if (hasCompleteSettingsDomains(next)) {
+      return next;
+    }
+
+    const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
+    if (current && hasCompleteSettingsDomains(current)) {
+      return mergeSettingsDomains(current, next);
+    }
+
+    return mergeSettingsDomains(await api.getUserSettings(), next);
+  }
+
   const mutation = useMutation({
-    mutationFn: (next: UserSettings) => api.saveUserSettings(next),
-    onSuccess: (_data, variables) => {
+    mutationFn: async (next: UserSettings) => api.saveUserSettings(await settingsForSave(next)),
+    onSuccess: (data, variables) => {
+      if (pendingRef.current !== variables) {
+        return;
+      }
+      queryClient.setQueryData(["user-settings"], data);
+      writeCachedSettings(data);
       const prev = previousRef.current;
-      if (prev && prev.downloadFolderId !== variables.downloadFolderId) {
+      const prevSettings = prev ? toChillSettings(prev) : null;
+      const nextSettings = toChillSettings(data);
+      if (prevSettings && prevSettings.downloadFolderId !== nextSettings.downloadFolderId) {
         void invalidateDownloadFolder(queryClient);
       }
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey: ["user-settings"] });
     },
-    onSettled: () => {
-      pendingRef.current = null;
+    onSettled: (_data, _error, variables) => {
+      if (pendingRef.current === variables) {
+        previousRef.current = null;
+        pendingRef.current = null;
+      }
     },
   });
 
@@ -65,7 +107,7 @@ export function useSaveSettings() {
     ...mutation,
     mutate: (next: UserSettings) => {
       const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
-      if (current) {
+      if (pendingRef.current === null && current) {
         previousRef.current = current;
       }
       queryClient.setQueryData(["user-settings"], next);

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
 import { invalidateDownloadFolder } from "@chill-institute/auth/queries/download-folder";
-import { normalizeBingeUserSettings, type UserSettings } from "@/lib/types";
+import { toBingeSettings, type UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -34,13 +34,15 @@ export function useSaveSettings() {
     mutationFn: (next: UserSettings) => api.saveUserSettings(next),
     onSuccess: (_data, variables) => {
       const prev = previousRef.current;
-      if (prev && prev.moviesSource !== variables.moviesSource) {
+      const prevSettings = prev ? toBingeSettings(prev) : null;
+      const nextSettings = toBingeSettings(variables);
+      if (prevSettings && prevSettings.moviesSource !== nextSettings.moviesSource) {
         void queryClient.resetQueries({ queryKey: ["movies"] });
       }
-      if (prev && prev.tvShowsSource !== variables.tvShowsSource) {
+      if (prevSettings && prevSettings.tvShowsSource !== nextSettings.tvShowsSource) {
         void queryClient.resetQueries({ queryKey: ["tv-shows"] });
       }
-      if (prev && prev.downloadFolderId !== variables.downloadFolderId) {
+      if (prevSettings && prevSettings.downloadFolderId !== nextSettings.downloadFolderId) {
         void invalidateDownloadFolder(queryClient);
       }
     },
@@ -71,15 +73,14 @@ export function useSaveSettings() {
   );
 
   function stageSettings(next: UserSettings) {
-    const normalizedNext = normalizeBingeUserSettings(next);
     const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
     if (pendingRef.current === null && current) {
       previousRef.current = current;
     }
-    queryClient.setQueryData(["user-settings"], normalizedNext);
-    writeCachedSettings(normalizedNext);
-    pendingRef.current = normalizedNext;
-    return normalizedNext;
+    queryClient.setQueryData(["user-settings"], next);
+    writeCachedSettings(next);
+    pendingRef.current = next;
+    return next;
   }
 
   return {

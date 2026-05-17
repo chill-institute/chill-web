@@ -155,9 +155,9 @@ test.describe("binge routing", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
       const body = route.request().postDataJSON() as {
-        settings?: { moviesSource?: string | number };
+        settings?: { catalog?: { moviesSource?: string | number } };
       };
-      const nextSource = String(body.settings?.moviesSource ?? "");
+      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
       if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
         currentSource = MoviesSource.YTS;
       }
@@ -202,9 +202,9 @@ test.describe("binge routing", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
       const body = route.request().postDataJSON() as {
-        settings?: { moviesSource?: string | number };
+        settings?: { catalog?: { moviesSource?: string | number } };
       };
-      const nextSource = String(body.settings?.moviesSource ?? "");
+      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
       if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
         currentSource = MoviesSource.YTS;
       }
@@ -229,7 +229,10 @@ test.describe("binge routing", () => {
     let allowSettingsResponse = false;
     const releaseSettingsResponses: Array<() => void> = [];
     const savedBodies: Array<{
-      settings?: { moviesSource?: string | number; rememberQuickFilters?: boolean };
+      settings?: {
+        catalog?: { moviesSource?: string | number };
+        search?: { rememberQuickFilters?: boolean };
+      };
     }> = [];
 
     await authenticatedPage.addInitScript(
@@ -299,10 +302,13 @@ test.describe("binge routing", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
       const body = route.request().postDataJSON() as {
-        settings?: { moviesSource?: string | number; rememberQuickFilters?: boolean };
+        settings?: {
+          catalog?: { moviesSource?: string | number };
+          search?: { rememberQuickFilters?: boolean };
+        };
       };
       savedBodies.push(body);
-      const nextSource = String(body.settings?.moviesSource ?? "");
+      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
       if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
         currentSource = MoviesSource.YTS;
       }
@@ -313,7 +319,7 @@ test.describe("binge routing", () => {
           userSettings({
             showMovies: true,
             moviesSource: currentSource,
-            rememberQuickFilters: body.settings?.rememberQuickFilters,
+            rememberQuickFilters: body.settings?.search?.rememberQuickFilters,
           }),
         ),
       });
@@ -330,7 +336,7 @@ test.describe("binge routing", () => {
 
     await expect(authenticatedPage.getByText("The Raid")).toBeVisible({ timeout: 3000 });
     expect(savedBodies).toHaveLength(1);
-    expect(savedBodies[0]?.settings?.rememberQuickFilters).toBe(true);
+    expect(savedBodies[0]?.settings?.search?.rememberQuickFilters).toBe(true);
   });
 
   test("clicking a movie card navigates to /movies/:id", async ({ authenticatedPage, mockRpc }) => {

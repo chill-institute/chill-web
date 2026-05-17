@@ -21,7 +21,7 @@ import { useDownloadFolderQuery } from "@chill-institute/auth/queries/download-f
 import { useProfileQuery } from "@chill-institute/auth/queries/profile";
 import { isThemePreference, useTheme } from "@chill-institute/ui/hooks/use-theme";
 import { publicLinks } from "@chill-institute/ui/lib/public-links";
-import { type UserSettings } from "@/lib/types";
+import { applyBingeSettingsPatch, toBingeSettings, type BingeSettings } from "@/lib/types";
 
 const LINKS = [
   { title: "about", url: publicLinks.about },
@@ -58,9 +58,9 @@ export function SettingsPanel() {
 
   const saveMutation = useSaveSettings();
 
-  const persistPatch = (patch: Partial<UserSettings>) => {
+  const persistPatch = (patch: Partial<BingeSettings>) => {
     if (!configQuery.data) return;
-    saveMutation.mutate({ ...configQuery.data, ...patch });
+    saveMutation.mutate(applyBingeSettingsPatch(configQuery.data, patch));
   };
 
   if (!auth.isAuthenticated) {
@@ -72,7 +72,7 @@ export function SettingsPanel() {
     .with({ status: "error" }, (q) => <UserErrorAlert error={q.error} />)
     .with({ status: "success" }, (query) => {
       const config = query.data;
-      const effective = config;
+      const effective = toBingeSettings(config);
 
       const downloadFolderContent = match(downloadFolderQuery)
         .with({ status: "pending" }, () => <Skeleton className="h-9 w-full rounded" />)

@@ -1,104 +1,108 @@
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vite-plus/test";
 import {
-  CardDisplayType,
+  CatalogSettingsSchema,
+  DownloadSettingsSchema,
   MoviesSource,
-  SearchResultDisplayBehavior,
-  SearchResultTitleBehavior,
+  SearchSettingsSchema,
   SortBy,
-  SortDirection,
   TVShowsSource,
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { withCatalogDefaults } from "./api";
-import { defaultUserSettings, normalizeBingeUserSettings } from "./types";
-
-function unspecifiedCatalogSettings() {
-  return create(UserSettingsSchema, {
-    searchResultDisplayBehavior: SearchResultDisplayBehavior.FASTEST,
-    searchResultTitleBehavior: SearchResultTitleBehavior.TEXT,
-    sortBy: SortBy.SEEDERS,
-    sortDirection: SortDirection.DESC,
-    cardDisplayType: CardDisplayType.UNSPECIFIED,
-    moviesSource: MoviesSource.UNSPECIFIED,
-    tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED,
-    showMovies: false,
-    showTvShows: false,
-  });
-}
+import { applyBingeSettingsPatch, defaultUserSettings, toBingeSettings } from "./types";
 
 describe("withCatalogDefaults", () => {
-  it("fills UNSPECIFIED catalog fields with the binge defaults", () => {
-    const out = withCatalogDefaults(unspecifiedCatalogSettings());
+  it("leaves full user settings untouched after shared defaults run", () => {
+    const explicit = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.YTS,
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+      }),
+    });
 
-    expect(out.cardDisplayType).toBe(defaultUserSettings.cardDisplayType);
+    const out = withCatalogDefaults(explicit);
+
+    expect(out).toBe(explicit);
+  });
+});
+
+describe("toBingeSettings", () => {
+  it("fills catalog defaults for the app domain", () => {
+    const out = toBingeSettings(create(UserSettingsSchema, {}));
+
     expect(out.moviesSource).toBe(defaultUserSettings.moviesSource);
     expect(out.tvShowsSource).toBe(defaultUserSettings.tvShowsSource);
   });
+});
 
-  it("forces showMovies / showTvShows true regardless of incoming values", () => {
-    const out = withCatalogDefaults(unspecifiedCatalogSettings());
+describe("applyBingeSettingsPatch", () => {
+  it("updates catalog fields without touching search fields", () => {
+    const settings = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, {
+        sortBy: SortBy.SIZE,
+      }),
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.IMDB_MOVIEMETER,
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+      }),
+    });
 
-    expect(out.showMovies).toBe(true);
-    expect(out.showTvShows).toBe(true);
-  });
-
-  it("preserves explicit catalog values when set", () => {
-    const explicit = create(UserSettingsSchema, {
-      cardDisplayType: CardDisplayType.COMPACT,
+    const out = applyBingeSettingsPatch(settings, {
       moviesSource: MoviesSource.YTS,
       tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
     });
 
-    const out = withCatalogDefaults(explicit);
-
-    expect(out.cardDisplayType).toBe(CardDisplayType.COMPACT);
-    expect(out.moviesSource).toBe(MoviesSource.YTS);
-    expect(out.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+    expect(out.search?.sortBy).toBe(SortBy.SIZE);
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.catalog?.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
   });
 
-  it("does not touch the search-related fields — those run earlier in the shared pipeline", () => {
-    const explicit = create(UserSettingsSchema, {
-      searchResultDisplayBehavior: SearchResultDisplayBehavior.ALL,
-      searchResultTitleBehavior: SearchResultTitleBehavior.LINK,
-      sortBy: SortBy.SIZE,
-      sortDirection: SortDirection.ASC,
+  it("does not synthesize missing search or download domains", () => {
+    const settings = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.IMDB_MOVIEMETER,
+      }),
     });
 
-    const out = withCatalogDefaults(explicit);
-
-    expect(out.searchResultDisplayBehavior).toBe(SearchResultDisplayBehavior.ALL);
-    expect(out.searchResultTitleBehavior).toBe(SearchResultTitleBehavior.LINK);
-    expect(out.sortBy).toBe(SortBy.SIZE);
-    expect(out.sortDirection).toBe(SortDirection.ASC);
-  });
-});
-
-describe("normalizeBingeUserSettings", () => {
-  it("forces showMovies / showTvShows true even when explicitly false", () => {
-    const explicit = create(UserSettingsSchema, {
-      showMovies: false,
-      showTvShows: false,
-    });
-
-    const out = normalizeBingeUserSettings(explicit);
-
-    expect(out.showMovies).toBe(true);
-    expect(out.showTvShows).toBe(true);
-  });
-
-  it("does not touch other proto fields", () => {
-    const explicit = create(UserSettingsSchema, {
+    const out = applyBingeSettingsPatch(settings, {
       moviesSource: MoviesSource.YTS,
-      sortBy: SortBy.SIZE,
-      filterNastyResults: false,
     });
 
-    const out = normalizeBingeUserSettings(explicit);
+    expect(out.search).toBeUndefined();
+    expect(out.download).toBeUndefined();
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+  });
 
-    expect(out.moviesSource).toBe(MoviesSource.YTS);
-    expect(out.sortBy).toBe(SortBy.SIZE);
-    expect(out.filterNastyResults).toBe(false);
+  it("preserves download settings when catalog fields change", () => {
+    const settings = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.IMDB_MOVIEMETER,
+      }),
+      download: create(DownloadSettingsSchema, { folderId: 42n }),
+    });
+
+    const out = applyBingeSettingsPatch(settings, {
+      moviesSource: MoviesSource.YTS,
+    });
+
+    expect(out.download?.folderId).toBe(42n);
+  });
+
+  it("normalizes unspecified catalog fields before applying patches", () => {
+    const settings = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.UNSPECIFIED,
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED,
+      }),
+    });
+
+    const out = applyBingeSettingsPatch(settings, {
+      moviesSource: MoviesSource.YTS,
+    });
+
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.catalog?.tvShowsSource).toBe(defaultUserSettings.tvShowsSource);
   });
 });

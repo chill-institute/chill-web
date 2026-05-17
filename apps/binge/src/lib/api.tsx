@@ -6,23 +6,12 @@ import {
   type ChillApi,
 } from "@chill-institute/api";
 import { ApiProvider, useAuth } from "@chill-institute/auth";
-import { CardDisplayType } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { getPublicAPIBaseURL } from "./env";
-import { defaultUserSettings, normalizeBingeUserSettings, type UserSettings } from "./types";
+import { type UserSettings } from "./types";
 
 export function withCatalogDefaults(settings: UserSettings): UserSettings {
-  return normalizeBingeUserSettings({
-    ...settings,
-    cardDisplayType:
-      settings.cardDisplayType === CardDisplayType.UNSPECIFIED
-        ? defaultUserSettings.cardDisplayType
-        : settings.cardDisplayType,
-    moviesSource:
-      settings.moviesSource === 0 ? defaultUserSettings.moviesSource : settings.moviesSource,
-    tvShowsSource:
-      settings.tvShowsSource === 0 ? defaultUserSettings.tvShowsSource : settings.tvShowsSource,
-  });
+  return settings;
 }
 
 export function createApi(authToken: string): ChillApi {

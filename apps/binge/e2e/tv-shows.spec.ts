@@ -132,10 +132,10 @@ test.describe("tv shows home", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
       const body = route.request().postDataJSON() as {
-        settings?: { tvShowsSource?: string | number };
+        settings?: { catalog?: { tvShowsSource?: string | number } };
       };
 
-      const nextSource = String(body.settings?.tvShowsSource ?? "");
+      const nextSource = String(body.settings?.catalog?.tvShowsSource ?? "");
       if (
         nextSource.includes("HBO") ||
         nextSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX)

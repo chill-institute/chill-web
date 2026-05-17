@@ -4,6 +4,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTVShowsQuery } from "@/queries/tv-shows";
 import { useSettingsQuery } from "@/queries/settings";
 import { parseSortKey, parseTVShowsSource, type SortKey } from "@/components/catalog-page";
+import { toBingeSettings } from "@/lib/types";
 
 type Search = {
   season?: number;
@@ -58,7 +59,7 @@ function TVShowDetailRoute() {
   const fallbackShow =
     configQuery.status === "success" &&
     tvShowsQuery.status === "success" &&
-    tvShowsQuery.data.source === configQuery.data.tvShowsSource
+    tvShowsQuery.data.source === toBingeSettings(configQuery.data).tvShowsSource
       ? tvShowsQuery.data.shows.find((show) => show.imdbId === id)
       : undefined;
 

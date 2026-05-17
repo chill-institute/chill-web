@@ -13,7 +13,7 @@ import {
   resolutionFilters,
   sortByLabels,
   sortByValues,
-  type UserSettings,
+  type ChillSettings,
 } from "@/lib/types";
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
   onResolutionChange: (next: FilterState["resolution"]) => void;
   onCodecChange: (next: FilterState["codec"]) => void;
   onOtherChange: (next: FilterState["other"]) => void;
-  onSort: (sortBy: UserSettings["sortBy"]) => void;
+  onSort: (sortBy: ChillSettings["sortBy"]) => void;
 };
 
 export function SearchFilterBar({

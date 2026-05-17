@@ -6,10 +6,10 @@ import {
   parseTVShowsSource,
   TVShowsSource,
   tvShowsSources,
-  type UserSettings,
+  type BingeSettings,
 } from "@/lib/types";
 
-const tvShowsSourceTabLabels: Record<UserSettings["tvShowsSource"], string> = {
+const tvShowsSourceTabLabels: Record<BingeSettings["tvShowsSource"], string> = {
   [TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED]: "netflix",
   [TVShowsSource.TV_SHOWS_SOURCE_NETFLIX]: "netflix",
   [TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX]: "hbo max",
@@ -22,8 +22,8 @@ export function TVShowsSourceSelect({
   value,
   onChange,
 }: {
-  value: UserSettings["tvShowsSource"];
-  onChange: (value: UserSettings["tvShowsSource"]) => void;
+  value: BingeSettings["tvShowsSource"];
+  onChange: (value: BingeSettings["tvShowsSource"]) => void;
 }) {
   return (
     <ToggleGroup

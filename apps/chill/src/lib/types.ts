@@ -1,17 +1,24 @@
+import { create } from "@bufbuild/protobuf";
+import {
+  SEARCH_SETTINGS_FALLBACKS,
+  withSearchSettingsDefaults,
+  withUserSettingsDefaults,
+} from "@chill-institute/api/settings-defaults";
 import {
   CodecFilter,
+  DownloadSettingsSchema,
   OtherFilter,
   ResolutionFilter,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
+  SearchSettingsSchema,
   SortBy,
   SortDirection,
-  CardDisplayType,
-  MoviesSource,
-  TVShowsSource,
   type SearchResult,
+  type SearchSettings,
   type UserSettings,
   type UserIndexer,
+  UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 export {
@@ -26,7 +33,11 @@ export {
 
 export type { SearchResult, UserSettings, UserIndexer };
 
-type UserSettingsDefaults = Omit<UserSettings, "$typeName">;
+export type ChillSettings = Omit<SearchSettings, "$typeName"> & {
+  downloadFolderId?: bigint;
+};
+
+type ChillSettingsDefaults = Omit<ChillSettings, "$typeName">;
 
 export const resolutionFilters = [
   ResolutionFilter.RESOLUTION_FILTER_720P,
@@ -95,7 +106,7 @@ export const sortByLabels: Record<(typeof sortByValues)[number], string> = {
   [SortBy.SOURCE]: "Source",
 };
 
-export const defaultUserSettings: UserSettingsDefaults = {
+export const defaultUserSettings: ChillSettingsDefaults = {
   codecFilters: [],
   disabledIndexerIds: [],
   filterNastyResults: true,
@@ -103,13 +114,59 @@ export const defaultUserSettings: UserSettingsDefaults = {
   otherFilters: [],
   rememberQuickFilters: false,
   resolutionFilters: [],
-  searchResultDisplayBehavior: SearchResultDisplayBehavior.FASTEST,
-  searchResultTitleBehavior: SearchResultTitleBehavior.TEXT,
-  showMovies: true,
-  showTvShows: true,
-  sortBy: SortBy.SEEDERS,
-  sortDirection: SortDirection.DESC,
-  cardDisplayType: CardDisplayType.COMPACT,
-  moviesSource: MoviesSource.IMDB_MOVIEMETER,
-  tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+  searchResultDisplayBehavior: SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
+  searchResultTitleBehavior: SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
+  sortBy: SEARCH_SETTINGS_FALLBACKS.sortBy,
+  sortDirection: SEARCH_SETTINGS_FALLBACKS.sortDirection,
 };
+
+export function toChillSettings(settings: UserSettings): ChillSettings {
+  const normalized = withUserSettingsDefaults(settings);
+  return {
+    ...defaultUserSettings,
+    ...normalized.search,
+    downloadFolderId: normalized.download?.folderId,
+  };
+}
+
+export function applyChillSettingsPatch(
+  settings: UserSettings,
+  patch: Partial<ChillSettings>,
+): UserSettings {
+  const normalized = withSearchSettingsDefaults(settings);
+  const { downloadFolderId, ...searchPatch } = patch;
+  const next = create(UserSettingsSchema, {
+    ...normalized,
+    search: create(SearchSettingsSchema, {
+      codecFilters: normalized.search?.codecFilters ?? [],
+      disabledIndexerIds: normalized.search?.disabledIndexerIds ?? [],
+      filterNastyResults: normalized.search?.filterNastyResults ?? true,
+      filterResultsWithNoSeeders: normalized.search?.filterResultsWithNoSeeders ?? false,
+      otherFilters: normalized.search?.otherFilters ?? [],
+      rememberQuickFilters: normalized.search?.rememberQuickFilters ?? false,
+      resolutionFilters: normalized.search?.resolutionFilters ?? [],
+      searchResultDisplayBehavior:
+        normalized.search?.searchResultDisplayBehavior ??
+        SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
+      searchResultTitleBehavior:
+        normalized.search?.searchResultTitleBehavior ??
+        SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
+      sortBy: normalized.search?.sortBy ?? SEARCH_SETTINGS_FALLBACKS.sortBy,
+      sortDirection: normalized.search?.sortDirection ?? SEARCH_SETTINGS_FALLBACKS.sortDirection,
+      ...searchPatch,
+    }),
+  });
+  if (downloadFolderId !== undefined || normalized.download !== undefined) {
+    next.download = create(DownloadSettingsSchema, {
+      folderId: downloadFolderId ?? normalized.download?.folderId,
+    });
+  }
+  return next;
+}
+
+export function resetChillSettings(settings: UserSettings): UserSettings {
+  return create(UserSettingsSchema, {
+    ...settings,
+    search: create(SearchSettingsSchema, defaultUserSettings),
+  });
+}

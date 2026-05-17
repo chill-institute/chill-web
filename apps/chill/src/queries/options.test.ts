@@ -1,6 +1,11 @@
 import { create } from "@bufbuild/protobuf";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { UserIndexerSchema, UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  DownloadSettingsSchema,
+  SearchSettingsSchema,
+  UserIndexerSchema,
+  UserSettingsSchema,
+} from "@chill-institute/contracts/chill/v4/api_pb";
 
 import {
   readCachedIndexers,
@@ -40,27 +45,27 @@ afterEach(() => {
 describe("cached settings", () => {
   it("round-trips valid cached settings", () => {
     const settings = create(UserSettingsSchema, {
-      codecFilters: [],
-      disabledIndexerIds: ["yts"],
-      filterNastyResults: true,
-      filterResultsWithNoSeeders: false,
-      otherFilters: [],
-      rememberQuickFilters: false,
-      resolutionFilters: [],
-      searchResultDisplayBehavior: 2,
-      searchResultTitleBehavior: 2,
-      showMovies: false,
-      showTvShows: true,
-      sortBy: 2,
-      sortDirection: 2,
-      cardDisplayType: 1,
-      moviesSource: 1,
-      tvShowsSource: 1,
+      search: create(SearchSettingsSchema, {
+        codecFilters: [],
+        disabledIndexerIds: ["yts"],
+        filterNastyResults: true,
+        filterResultsWithNoSeeders: false,
+        otherFilters: [],
+        rememberQuickFilters: false,
+        resolutionFilters: [],
+        searchResultDisplayBehavior: 2,
+        searchResultTitleBehavior: 2,
+        sortBy: 2,
+        sortDirection: 2,
+      }),
+      download: create(DownloadSettingsSchema, { folderId: 42n }),
     });
 
     writeCachedSettings(settings);
 
-    expect(readCachedSettings()).toEqual(settings);
+    expect(readCachedSettings()?.search).toEqual(settings.search);
+    expect(readCachedSettings()?.download).toEqual(settings.download);
+    expect(readCachedSettings()?.catalog).toBeUndefined();
   });
 
   it("ignores cached settings with an unexpected shape", () => {

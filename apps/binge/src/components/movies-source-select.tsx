@@ -6,10 +6,10 @@ import {
   moviesSources,
   MoviesSource,
   parseMoviesSource,
-  type UserSettings,
+  type BingeSettings,
 } from "@/lib/types";
 
-const moviesSourceTabLabels: Record<UserSettings["moviesSource"], string> = {
+const moviesSourceTabLabels: Record<BingeSettings["moviesSource"], string> = {
   [MoviesSource.UNSPECIFIED]: "imdb moviemeter",
   [MoviesSource.IMDB_MOVIEMETER]: "imdb moviemeter",
   [MoviesSource.IMDB_TOP_250]: "imdb top 250",
@@ -22,8 +22,8 @@ export function MoviesSourceSelect({
   value,
   onChange,
 }: {
-  value: UserSettings["moviesSource"];
-  onChange: (value: UserSettings["moviesSource"]) => void;
+  value: BingeSettings["moviesSource"];
+  onChange: (value: BingeSettings["moviesSource"]) => void;
 }) {
   return (
     <ToggleGroup

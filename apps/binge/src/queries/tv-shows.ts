@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@chill-institute/auth/api-context";
 import { useSettingsQuery } from "@/queries/settings";
+import { toBingeSettings } from "@/lib/types";
 
 export function useTVShowsQuery({ enabled }: { enabled: boolean }) {
   const api = useApi();
   const settingsQuery = useSettingsQuery();
-  const source = settingsQuery.data?.tvShowsSource;
+  const source = settingsQuery.data ? toBingeSettings(settingsQuery.data).tvShowsSource : undefined;
   return useQuery({
     queryKey: ["tv-shows", source],
     queryFn: ({ signal }) => api.getTVShows(signal),

@@ -10,7 +10,13 @@ import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
 import { useAuth, readStoredToken } from "@chill-institute/auth/auth";
 import { formatSearchResults, normalizeQuery } from "@/lib/search";
-import { SearchResultDisplayBehavior, SortDirection, type UserSettings } from "@/lib/types";
+import {
+  applyChillSettingsPatch,
+  SearchResultDisplayBehavior,
+  SortDirection,
+  toChillSettings,
+  type ChillSettings,
+} from "@/lib/types";
 import { combineQueries } from "@/queries/combine";
 import { useSettingsQuery, useSaveSettings } from "@/queries/settings";
 import { useIndexersQuery } from "@/queries/indexers";
@@ -39,20 +45,24 @@ function SearchPage() {
 
   const configQuery = useSettingsQuery();
   const indexersQuery = useIndexersQuery();
-  const { filters, dispatch } = useSearchFilters(configQuery.data);
+  const appSettings = useMemo(
+    () => (configQuery.data ? toChillSettings(configQuery.data) : undefined),
+    [configQuery.data],
+  );
+  const { filters, dispatch } = useSearchFilters(appSettings);
   const saveConfigMutation = useSaveSettings();
 
-  function patchConfig(patch: Partial<UserSettings>) {
+  function patchConfig(patch: Partial<ChillSettings>) {
     if (!configQuery.data) return;
-    saveConfigMutation.mutate({ ...configQuery.data, ...patch });
+    saveConfigMutation.mutate(applyChillSettingsPatch(configQuery.data, patch));
   }
 
   const enabledIndexers = useMemo(() => {
-    const disabled = new Set(configQuery.data?.disabledIndexerIds ?? []);
+    const disabled = new Set(appSettings?.disabledIndexerIds ?? []);
     return (indexersQuery.data ?? []).filter(
       (indexer) => indexer.enabled && !disabled.has(indexer.id),
     );
-  }, [indexersQuery.data, configQuery.data?.disabledIndexerIds]);
+  }, [indexersQuery.data, appSettings?.disabledIndexerIds]);
 
   const searchState = useSearchQueries(submittedQuery, enabledIndexers);
 
@@ -76,7 +86,7 @@ function SearchPage() {
     ],
   );
 
-  const behavior = configQuery.data?.searchResultDisplayBehavior;
+  const behavior = appSettings?.searchResultDisplayBehavior;
   const isFastestMode = behavior === SearchResultDisplayBehavior.FASTEST;
   const fastestPhase = useFastestMode(isFastestMode, submittedQuery, searchState);
 
@@ -100,7 +110,7 @@ function SearchPage() {
     return "empty";
   })();
 
-  function setSort(nextSortBy: UserSettings["sortBy"]) {
+  function setSort(nextSortBy: ChillSettings["sortBy"]) {
     if (filters.sortBy === nextSortBy) {
       const nextDirection =
         filters.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
@@ -135,6 +145,7 @@ function SearchPage() {
       </div>
     ))
     .with({ status: "success" }, ({ data: [config] }) => {
+      const effective = toChillSettings(config);
       const renderContent = match(renderPhase)
         .with("idle", () => null)
         .with("loading", () => <SearchLoading />)
@@ -170,7 +181,7 @@ function SearchPage() {
             results={formattedResults}
             sortBy={filters.sortBy}
             sortDirection={filters.sortDirection}
-            titleBehavior={config.searchResultTitleBehavior}
+            titleBehavior={effective.searchResultTitleBehavior}
             onSort={setSort}
           />
         ))
@@ -182,15 +193,15 @@ function SearchPage() {
             filters={filters}
             onResolutionChange={(next) => {
               dispatch({ type: "SET_RESOLUTION", value: next });
-              if (config.rememberQuickFilters) patchConfig({ resolutionFilters: next });
+              if (effective.rememberQuickFilters) patchConfig({ resolutionFilters: next });
             }}
             onCodecChange={(next) => {
               dispatch({ type: "SET_CODEC", value: next });
-              if (config.rememberQuickFilters) patchConfig({ codecFilters: next });
+              if (effective.rememberQuickFilters) patchConfig({ codecFilters: next });
             }}
             onOtherChange={(next) => {
               dispatch({ type: "SET_OTHER", value: next });
-              if (config.rememberQuickFilters) patchConfig({ otherFilters: next });
+              if (effective.rememberQuickFilters) patchConfig({ otherFilters: next });
             }}
             onSort={setSort}
           />

@@ -9,7 +9,7 @@ import {
   tvShowsResponse,
   userSettings,
 } from "./support/seeds";
-import { CardDisplayType, MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
+import { MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 const movies = [
   movie({
@@ -104,7 +104,6 @@ test.describe("movies", () => {
       homeMethods({
         GetUserSettings: userSettings({
           showMovies: true,
-          cardDisplayType: CardDisplayType.COMPACT,
         }),
       }),
     );
@@ -269,10 +268,10 @@ test.describe("movies", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
       const body = route.request().postDataJSON() as {
-        settings?: { moviesSource?: string | number };
+        settings?: { catalog?: { moviesSource?: string | number } };
       };
 
-      const nextSource = String(body.settings?.moviesSource ?? "");
+      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
       if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
         currentSource = MoviesSource.YTS;
       }
@@ -332,10 +331,10 @@ test.describe("movies", () => {
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
       const body = route.request().postDataJSON() as {
-        settings?: { moviesSource?: string | number };
+        settings?: { catalog?: { moviesSource?: string | number } };
       };
 
-      const nextSource = String(body.settings?.moviesSource ?? "");
+      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
       if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
         currentSource = MoviesSource.YTS;
       }

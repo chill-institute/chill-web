@@ -17,12 +17,14 @@ const profileResponse = {
 };
 
 type RequestSettingsPayload = Record<string, unknown> & {
-  downloadFolderId?: string | number;
-  disabledIndexerIds?: string[];
-  searchResultDisplayBehavior?: number;
-  filterNastyResults?: boolean;
-  filterResultsWithNoSeeders?: boolean;
-  rememberQuickFilters?: boolean;
+  download?: { folderId?: string | number };
+  search?: {
+    disabledIndexerIds?: string[];
+    searchResultDisplayBehavior?: number;
+    filterNastyResults?: boolean;
+    filterResultsWithNoSeeders?: boolean;
+    rememberQuickFilters?: boolean;
+  };
 };
 
 const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
@@ -97,8 +99,8 @@ test.describe("settings", () => {
       const body = route.request().postDataJSON() as {
         settings?: RequestSettingsPayload;
       };
-      if (body.settings?.downloadFolderId !== undefined) {
-        savedDownloadFolderID = String(body.settings.downloadFolderId);
+      if (body.settings?.download?.folderId !== undefined) {
+        savedDownloadFolderID = String(body.settings.download.folderId);
         selectedFolderID = savedDownloadFolderID;
       }
       if (body.settings) {
@@ -171,9 +173,9 @@ test.describe("settings", () => {
       const body = route.request().postDataJSON() as {
         settings?: RequestSettingsPayload;
       };
-      if (body.settings?.downloadFolderId !== undefined) {
+      if (body.settings?.download?.folderId !== undefined) {
         settingsState = body.settings as typeof settingsState;
-        selectedFolderID = String(body.settings.downloadFolderId);
+        selectedFolderID = String(body.settings.download.folderId);
       }
       await route.fulfill({
         status: 200,
@@ -334,7 +336,7 @@ test.describe("settings", () => {
       };
       if (body.settings) {
         settingsState = body.settings as typeof settingsState;
-        savedDisabledIds = body.settings.disabledIndexerIds ?? [];
+        savedDisabledIds = body.settings.search?.disabledIndexerIds ?? [];
       }
       await route.fulfill({
         status: 200,
@@ -379,8 +381,8 @@ test.describe("settings", () => {
       };
       if (body.settings) {
         settingsState = body.settings as typeof settingsState;
-        savedFilterNasty = body.settings.filterNastyResults;
-        savedFilterNoSeeders = body.settings.filterResultsWithNoSeeders;
+        savedFilterNasty = body.settings.search?.filterNastyResults;
+        savedFilterNoSeeders = body.settings.search?.filterResultsWithNoSeeders;
       }
       await route.fulfill({
         status: 200,

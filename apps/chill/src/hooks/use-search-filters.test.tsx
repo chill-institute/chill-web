@@ -3,9 +3,9 @@ import {
   CodecFilter,
   OtherFilter,
   ResolutionFilter,
+  SearchSettingsSchema,
   SortBy,
   SortDirection,
-  UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
 import { renderToString } from "react-dom/server";
@@ -20,7 +20,7 @@ function SearchFiltersHarness({ settings }: { settings: Parameters<typeof useSea
 
 describe("useSearchFilters", () => {
   it("initializes from saved settings available on first render", () => {
-    const settings = create(UserSettingsSchema, {
+    const settings = create(SearchSettingsSchema, {
       codecFilters: [CodecFilter.X265],
       disabledIndexerIds: [],
       filterNastyResults: true,
@@ -30,13 +30,8 @@ describe("useSearchFilters", () => {
       resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
       searchResultDisplayBehavior: 2,
       searchResultTitleBehavior: 2,
-      showMovies: false,
-      showTvShows: true,
       sortBy: SortBy.TITLE,
       sortDirection: SortDirection.ASC,
-      cardDisplayType: 1,
-      moviesSource: 1,
-      tvShowsSource: 1,
     });
 
     const html = renderToString(<SearchFiltersHarness settings={settings} />);

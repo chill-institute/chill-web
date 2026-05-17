@@ -1,31 +1,31 @@
+import { create } from "@bufbuild/protobuf";
 import {
-  CardDisplayType,
+  CATALOG_SETTINGS_FALLBACKS,
+  withUserSettingsDefaults,
+} from "@chill-institute/api/settings-defaults";
+import {
+  CatalogSettingsSchema,
+  DownloadSettingsSchema,
   MoviesSource,
-  SearchResultDisplayBehavior,
-  SearchResultTitleBehavior,
-  SortBy,
-  SortDirection,
   TVShowsSource,
   TVShowStatus,
+  type CatalogSettings,
   type Movie,
   type SearchResult,
   type TVShow,
   type UserSettings,
+  UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 export { MoviesSource, TVShowsSource, TVShowStatus };
 
 export type { Movie, SearchResult, TVShow, UserSettings };
 
-export function normalizeBingeUserSettings(settings: UserSettings): UserSettings {
-  return {
-    ...settings,
-    showMovies: true,
-    showTvShows: true,
-  };
-}
+export type BingeSettings = Omit<CatalogSettings, "$typeName"> & {
+  downloadFolderId?: bigint;
+};
 
-type UserSettingsDefaults = Omit<UserSettings, "$typeName">;
+type BingeSettingsDefaults = Omit<BingeSettings, "$typeName">;
 
 export const moviesSources = [
   MoviesSource.IMDB_MOVIEMETER,
@@ -97,21 +97,38 @@ export function getTVShowStatusLabel(status: TVShowStatus): string {
   }
 }
 
-export const defaultUserSettings: UserSettingsDefaults = {
-  codecFilters: [],
-  disabledIndexerIds: [],
-  filterNastyResults: true,
-  filterResultsWithNoSeeders: false,
-  otherFilters: [],
-  rememberQuickFilters: false,
-  resolutionFilters: [],
-  searchResultDisplayBehavior: SearchResultDisplayBehavior.FASTEST,
-  searchResultTitleBehavior: SearchResultTitleBehavior.TEXT,
-  showMovies: true,
-  showTvShows: true,
-  sortBy: SortBy.SEEDERS,
-  sortDirection: SortDirection.DESC,
-  cardDisplayType: CardDisplayType.EXPANDED,
-  moviesSource: MoviesSource.IMDB_MOVIEMETER,
-  tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+export const defaultUserSettings: BingeSettingsDefaults = {
+  moviesSource: CATALOG_SETTINGS_FALLBACKS.moviesSource,
+  tvShowsSource: CATALOG_SETTINGS_FALLBACKS.tvShowsSource,
 };
+
+export function toBingeSettings(settings: UserSettings): BingeSettings {
+  const normalized = withUserSettingsDefaults(settings);
+  return {
+    ...defaultUserSettings,
+    ...normalized.catalog,
+    downloadFolderId: normalized.download?.folderId,
+  };
+}
+
+export function applyBingeSettingsPatch(
+  settings: UserSettings,
+  patch: Partial<BingeSettings>,
+): UserSettings {
+  const { downloadFolderId, ...catalogPatch } = patch;
+  const current = toBingeSettings(settings);
+  const next = create(UserSettingsSchema, {
+    ...settings,
+    catalog: create(CatalogSettingsSchema, {
+      moviesSource: current.moviesSource,
+      tvShowsSource: current.tvShowsSource,
+      ...catalogPatch,
+    }),
+  });
+  if (downloadFolderId !== undefined || settings.download !== undefined) {
+    next.download = create(DownloadSettingsSchema, {
+      folderId: downloadFolderId ?? settings.download?.folderId,
+    });
+  }
+  return next;
+}

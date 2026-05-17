@@ -1,10 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { playwrightPort } from "./e2e/support/port";
 
 // Playwright/webServer child processes force color in this environment.
 // Drop NO_COLOR here so Node does not warn about the conflicting pair.
 delete process.env.NO_COLOR;
 
-const port = Number(process.env.PLAYWRIGHT_PORT ?? 58400);
+const port = playwrightPort(58400);
 const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({

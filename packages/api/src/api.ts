@@ -18,7 +18,7 @@ import {
 
 import { redirectToSignInOnAuthFailure } from "./auth-failure";
 import { withTimeoutSignal } from "./request-timeout";
-import { withSearchSettingsDefaults } from "./settings-defaults";
+import { withUserSettingsDefaults } from "./settings-defaults";
 
 const REQUEST_TIMEOUT_MS = 8000;
 const SEARCH_TIMEOUT_MS = 10000;
@@ -77,8 +77,8 @@ export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOp
   }
 
   function applySettingsDefaults(settings: UserSettings): UserSettings {
-    const withSearch = withSearchSettingsDefaults(settings);
-    return normalizeSettings ? normalizeSettings(withSearch) : withSearch;
+    const withDefaults = withUserSettingsDefaults(settings);
+    return normalizeSettings ? normalizeSettings(withDefaults) : withDefaults;
   }
 
   return {

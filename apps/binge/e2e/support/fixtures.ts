@@ -1,6 +1,8 @@
 import { test as base, type Page, type Route } from "@playwright/test";
 
-const port = Number(process.env.PLAYWRIGHT_PORT ?? 58400);
+import { playwrightPort } from "./port";
+
+const port = playwrightPort(58400);
 
 const AUTH_STORAGE_STATE = {
   cookies: [],
