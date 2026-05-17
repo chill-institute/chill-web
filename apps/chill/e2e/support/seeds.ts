@@ -14,9 +14,6 @@ import {
   SortBy,
   SortDirection,
   DownloadSettingsSchema,
-  MoviesSource,
-  TVShowsSource,
-  CatalogSettingsSchema,
   UserFileSchema,
   UserGetIndexersResponseSchema,
   UserIndexerSchema,
@@ -35,8 +32,6 @@ type ConfigInit = MessageInitShape<typeof UserSettingsSchema> & {
   searchResultTitleBehavior?: SearchResultTitleBehavior;
   sortBy?: SortBy;
   sortDirection?: SortDirection;
-  moviesSource?: MoviesSource;
-  tvShowsSource?: TVShowsSource;
 };
 type IndexerInit = MessageInitShape<typeof UserIndexerSchema>;
 type ResultInit = MessageInitShape<typeof SearchResultSchema>;
@@ -55,10 +50,7 @@ export function userSettings(init?: ConfigInit) {
     searchResultTitleBehavior,
     sortBy,
     sortDirection,
-    moviesSource,
-    tvShowsSource,
     search,
-    catalog,
     download,
   } = init ?? {};
   return toJson(
@@ -84,11 +76,7 @@ export function userSettings(init?: ConfigInit) {
         sortBy: sortBy ?? search?.sortBy ?? SortBy.SEEDERS,
         sortDirection: sortDirection ?? search?.sortDirection ?? SortDirection.DESC,
       }),
-      catalog: create(CatalogSettingsSchema, {
-        moviesSource: moviesSource ?? catalog?.moviesSource ?? MoviesSource.IMDB_MOVIEMETER,
-        tvShowsSource:
-          tvShowsSource ?? catalog?.tvShowsSource ?? TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
-      }),
+      catalog: init?.catalog,
       download: create(DownloadSettingsSchema, download),
     }),
   );

@@ -249,7 +249,7 @@ test.describe("binge routing", () => {
     await mockRpc({
       GetUserSettings: userSettings({
         moviesSource: MoviesSource.IMDB_MOVIEMETER,
-        rememberQuickFilters: true,
+        search: { rememberQuickFilters: true },
       }),
       GetMovies: moviesResponse([inception]),
       GetTVShows: tvShowsResponse([]),
@@ -267,7 +267,7 @@ test.describe("binge routing", () => {
         body: JSON.stringify(
           userSettings({
             moviesSource: MoviesSource.IMDB_MOVIEMETER,
-            rememberQuickFilters: true,
+            search: { rememberQuickFilters: true },
           }),
         ),
       });
@@ -303,7 +303,7 @@ test.describe("binge routing", () => {
         body: JSON.stringify(
           userSettings({
             moviesSource: currentSource,
-            rememberQuickFilters: body.settings?.search?.rememberQuickFilters,
+            search: { rememberQuickFilters: body.settings?.search?.rememberQuickFilters },
           }),
         ),
       });
