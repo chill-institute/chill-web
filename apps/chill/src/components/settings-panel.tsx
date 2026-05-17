@@ -45,9 +45,9 @@ const LINKS = [
   { title: "about", url: publicLinks.about },
   { title: "guides", url: publicLinks.guides },
   { title: "github", url: publicLinks.github },
-  { title: "X (Twitter)", url: publicLinks.x },
-  { title: "Email", url: publicLinks.email },
-  { title: "Reddit", url: publicLinks.reddit },
+  { title: "X", url: publicLinks.x },
+  { title: "email", url: publicLinks.email },
+  { title: "reddit", url: publicLinks.reddit },
 ];
 
 type PersistPatch = (patch: Partial<UserSettings>) => void;

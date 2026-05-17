@@ -19,7 +19,7 @@
 
 For everything, please reach out via [chillardinho@chill.institute](mailto:chillardinho@chill.institute)
 
-X (Twitter) or Reddit DMs are also fine but I barely check them.
+Social DMs are also fine, but I barely check them.
 
 ## Frequently Asked Questions
 
