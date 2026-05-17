@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useRouterState } from "@tanstack/react-router";
+import { Navigate } from "@tanstack/react-router";
 import { Eye, EyeOff, ShieldAlert } from "lucide-react";
 
 import { AuthPage } from "@chill-institute/ui/components/auth-page";
@@ -7,16 +7,20 @@ import { CopyButton } from "@chill-institute/ui/components/copy-button";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { Input } from "@chill-institute/ui/components/ui/input";
 
-import { useAuth } from "../auth";
+import { readCurrentCallbackPath, useAuth } from "../auth";
 
 function CliTokenPage() {
   const auth = useAuth();
-  const callbackURL = useRouterState({ select: (state) => state.location.href });
+  const callbackURL = readCurrentCallbackPath();
   const [revealed, setRevealed] = useState(false);
 
   if (!auth.isAuthenticated || !auth.authToken) {
     return (
-      <Navigate to="/sign-in" search={{ error: undefined, callbackUrl: callbackURL }} replace />
+      <Navigate
+        to="/sign-in"
+        search={{ error: undefined, callbackUrl: callbackURL ?? undefined }}
+        replace
+      />
     );
   }
 
