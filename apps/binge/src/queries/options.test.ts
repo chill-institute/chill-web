@@ -1,13 +1,8 @@
 import { create } from "@bufbuild/protobuf";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { UserIndexerSchema, UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
+import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import {
-  readCachedIndexers,
-  readCachedSettings,
-  writeCachedIndexers,
-  writeCachedSettings,
-} from "./options";
+import { readCachedSettings, writeCachedSettings } from "./options";
 
 const storage = new Map<string, string>();
 
@@ -75,26 +70,6 @@ describe("cached settings", () => {
     expect(readCachedSettings()).toBeUndefined();
     expect(console.warn).toHaveBeenCalledWith(
       "[chill] Ignoring cached settings with an unexpected shape",
-    );
-  });
-});
-
-describe("cached indexers", () => {
-  it("round-trips valid cached indexers", () => {
-    const indexers = [create(UserIndexerSchema, { id: "yts", name: "YTS", enabled: true })];
-
-    writeCachedIndexers(indexers);
-
-    expect(readCachedIndexers()).toEqual(indexers);
-  });
-
-  it("warns when cached indexers cannot be parsed", () => {
-    storage.set("chill.indexers", "{not-json");
-
-    expect(readCachedIndexers()).toBeUndefined();
-    expect(console.warn).toHaveBeenCalledWith(
-      "[chill] Failed to read cached indexers",
-      expect.any(SyntaxError),
     );
   });
 });

@@ -1,13 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useApi } from "@/lib/api";
+import { useApi } from "@chill-institute/auth/api-context";
+import { invalidateDownloadFolder } from "@chill-institute/auth/queries/download-folder";
 import type { UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
 
 const SAVE_DEBOUNCE_MS = 500;
-const MOVIES_REFRESH_PENDING_QUERY_KEY = ["movies-refresh-pending"] as const;
-const TV_SHOWS_REFRESH_PENDING_QUERY_KEY = ["tv-shows-refresh-pending"] as const;
 
 export function useSettingsQuery() {
   const api = useApi();
@@ -24,57 +23,19 @@ export function useSettingsQuery() {
   });
 }
 
-export function usePendingMoviesRefresh() {
-  const query = useQuery({
-    queryKey: MOVIES_REFRESH_PENDING_QUERY_KEY,
-    queryFn: async () => false,
-    initialData: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-
-  return query.data === true;
-}
-
-export function usePendingTVShowsRefresh() {
-  const query = useQuery({
-    queryKey: TV_SHOWS_REFRESH_PENDING_QUERY_KEY,
-    queryFn: async () => false,
-    initialData: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-
-  return query.data === true;
-}
-
 export function useSaveSettings() {
   const api = useApi();
   const queryClient = useQueryClient();
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pendingRef = useRef<UserSettings | null>(null);
   const previousRef = useRef<UserSettings | null>(null);
-  const mutateRef = useRef<((next: UserSettings) => void) | null>(null);
 
   const mutation = useMutation({
     mutationFn: (next: UserSettings) => api.saveUserSettings(next),
     onSuccess: (_data, variables) => {
       const prev = previousRef.current;
-      if (
-        prev &&
-        (prev.moviesSource !== variables.moviesSource || prev.showMovies !== variables.showMovies)
-      ) {
-        void queryClient.resetQueries({ queryKey: ["movies"] });
-      }
-      if (
-        prev &&
-        (prev.tvShowsSource !== variables.tvShowsSource ||
-          prev.showTvShows !== variables.showTvShows)
-      ) {
-        void queryClient.resetQueries({ queryKey: ["tv-shows"] });
-      }
       if (prev && prev.downloadFolderId !== variables.downloadFolderId) {
-        void queryClient.invalidateQueries({ queryKey: ["download-folder"] });
+        void invalidateDownloadFolder(queryClient);
       }
     },
     onError: () => {
@@ -82,17 +43,18 @@ export function useSaveSettings() {
     },
     onSettled: () => {
       pendingRef.current = null;
-      queryClient.setQueryData(MOVIES_REFRESH_PENDING_QUERY_KEY, false);
-      queryClient.setQueryData(TV_SHOWS_REFRESH_PENDING_QUERY_KEY, false);
     },
   });
 
-  mutateRef.current = mutation.mutate;
+  const flushRef = useRef(mutation.mutate);
+  useEffect(() => {
+    flushRef.current = mutation.mutate;
+  });
 
   useEffect(
     () => () => {
       if (pendingRef.current) {
-        mutateRef.current?.(pendingRef.current);
+        flushRef.current(pendingRef.current);
       }
       clearTimeout(debounceRef.current);
     },
@@ -105,16 +67,6 @@ export function useSaveSettings() {
       const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
       if (current) {
         previousRef.current = current;
-        const moviesChanged =
-          current.moviesSource !== next.moviesSource || current.showMovies !== next.showMovies;
-        if (moviesChanged) {
-          queryClient.setQueryData(MOVIES_REFRESH_PENDING_QUERY_KEY, true);
-        }
-        const tvShowsChanged =
-          current.tvShowsSource !== next.tvShowsSource || current.showTvShows !== next.showTvShows;
-        if (tvShowsChanged) {
-          queryClient.setQueryData(TV_SHOWS_REFRESH_PENDING_QUERY_KEY, true);
-        }
       }
       queryClient.setQueryData(["user-settings"], next);
       writeCachedSettings(next);

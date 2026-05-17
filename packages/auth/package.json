@@ -1,0 +1,33 @@
+{
+  "name": "@chill-institute/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth.tsx",
+    "./api-context": "./src/api-context.tsx",
+    "./errors": "./src/errors.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./queries/*": "./src/queries/*.ts",
+    "./routes/*": "./src/routes/*.tsx"
+  },
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test src --run --passWithNoTests"
+  },
+  "dependencies": {
+    "@chill-institute/api": "workspace:*",
+    "@chill-institute/ui": "workspace:*",
+    "@connectrpc/connect": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

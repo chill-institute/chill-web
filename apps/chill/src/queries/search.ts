@@ -1,11 +1,12 @@
 import { useQueries } from "@tanstack/react-query";
 
-import { useApi } from "@/lib/api";
-import { isIgnorableAbortError } from "@/lib/errors";
+import { useApi } from "@chill-institute/auth/api-context";
+import { isIgnorableAbortError } from "@chill-institute/auth/errors";
 import type { SearchResult, UserIndexer } from "@/lib/types";
 
 export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) {
   const api = useApi();
+
   return useQueries({
     queries: enabledIndexers.map((indexer) => ({
       queryKey: ["search", query, indexer.id],
@@ -23,7 +24,7 @@ export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) 
       const seen = new Set<string>();
       const results: SearchResult[] = [];
       for (const q of queries) {
-        for (const r of (q.data?.results ?? []) as SearchResult[]) {
+        for (const r of q.data?.results ?? []) {
           const key = `${r.id}:${r.link}`;
           if (!seen.has(key)) {
             seen.add(key);

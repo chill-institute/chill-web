@@ -18,11 +18,18 @@ graph LR
 
 ## Workspace Layout
 
-| Path          | Responsibility                                                        |
-| ------------- | --------------------------------------------------------------------- |
-| `apps/chill/` | `chill.institute` app with search, catalog, settings, and auth routes |
-| `apps/binge/` | `binge.institute` app with catalog, settings, and auth routes         |
-| repo root     | workspace scripts, Vite+ config, lint/format config, CI entrypoints   |
+| Path             | Responsibility                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `apps/chill/`    | `chill.institute` app — search experience (search shell + results table), settings, auth    |
+| `apps/binge/`    | `binge.institute` app — catalog (movies + tv shows grids, detail modals), settings, auth    |
+| `packages/ui/`   | `@chill-institute/ui` — purely presentational primitives, design tokens, pure hooks/lib     |
+| `packages/auth/` | `@chill-institute/auth` — auth + api context + api-coupled components/queries/routes        |
+| `packages/api/`  | `@chill-institute/api` — connect-rpc client, auth-error constants, settings/timeout helpers |
+| repo root        | workspace scripts, Vite+ config, lint/format config, CI entrypoints                         |
+
+The package graph is one-directional: both apps depend on all three packages; `packages/auth` depends on `packages/ui` and `packages/api`; `packages/ui` has no internal package dependencies.
+
+Root [DESIGN.md](../DESIGN.md) is the agent-readable design-system brief. It documents the current Institute visual language and points back to `packages/ui/src/styles.css` and `packages/ui/src/components/` as the implemented source of truth.
 
 ## Workspace Tooling
 
@@ -45,8 +52,8 @@ Each app owns its app-local config:
 
 - Each app is its own client-rendered SPA.
 - The browser calls the hosted API directly for normal app traffic.
-- Shared contract types come from `@chill-institute/contracts`
-- UI and query code are intentionally duplicated between apps for now. We have not introduced shared `packages/` boundaries yet.
+- Shared contract types come from `@chill-institute/contracts`.
+- Shared UI primitives, auth wiring, and connect-rpc client live in `packages/ui`, `packages/auth`, and `packages/api` respectively. App-local code is reserved for surfaces that genuinely diverge (shells, search/catalog-specific components, source pickers).
 
 ## App Shape
 
@@ -79,39 +86,45 @@ graph TD
 
 Current route behavior:
 
-| App          | Route                                    | Responsibility                                   |
-| ------------ | ---------------------------------------- | ------------------------------------------------ |
-| `apps/chill` | `/`                                      | shell and catalog home with initial data preload |
-| `apps/chill` | `/search`                                | search flow, filters, and result listing         |
-| `apps/chill` | `/settings`                              | user settings and folder-related configuration   |
-| `apps/binge` | `/`                                      | catalog-focused home without the search flow     |
-| `apps/binge` | `/settings`                              | user settings and folder-related configuration   |
-| both apps    | `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                            |
+| App          | Route                                    | Responsibility                                 |
+| ------------ | ---------------------------------------- | ---------------------------------------------- |
+| `apps/chill` | `/`                                      | search home shell with authenticated setup     |
+| `apps/chill` | `/search`                                | search flow, filters, and result listing       |
+| `apps/chill` | `/settings`                              | user settings and folder-related configuration |
+| `apps/binge` | `/`                                      | catalog-focused home without the search flow   |
+| `apps/binge` | `/settings`                              | user settings and folder-related configuration |
+| both apps    | `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                          |
 
 ## Data Flow
 
 ```mermaid
 graph TD
   Route["route loader / component"] --> Query["TanStack Query"]
-  Query --> API["apps/*/src/lib/api.ts"]
-  API --> Transport["Connect-Web transport"]
+  Query --> UseApi["useApi() — @chill-institute/auth/api-context"]
+  UseApi --> CreateApi["createApi() — @chill-institute/api"]
+  CreateApi --> Transport["Connect-Web transport"]
   Transport --> Backend["/v4 API"]
   Backend --> Transport
-  Transport --> API
-  API --> Query
+  Transport --> CreateApi
+  CreateApi --> UseApi
+  UseApi --> Query
   Query --> Route
 ```
 
 Key frontend modules:
 
-| Module                       | Responsibility                                                   |
-| ---------------------------- | ---------------------------------------------------------------- |
-| `apps/*/src/router.tsx`      | create the app router and router context                         |
-| `apps/*/src/query-client.ts` | shared TanStack Query client configuration for that app          |
-| `apps/*/src/lib/api.ts`      | typed API calls, auth header wiring, request IDs, auth redirects |
-| `apps/*/src/lib/auth.tsx`    | browser auth token lifecycle                                     |
-| `apps/*/src/queries/`        | query options and mutation helpers for screens                   |
-| `apps/*/src/routes/`         | screen entrypoints and route-specific loaders                    |
+| Module                                                    | Responsibility                                                                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `apps/*/src/router.tsx`                                   | create the app router and router context                                                        |
+| `apps/*/src/query-client.ts`                              | shared TanStack Query client configuration for that app                                         |
+| `apps/*/src/lib/api.tsx`                                  | thin app-local bridge: `createApi(token)` (route loaders) + `<*ApiProvider>` (React subtree)    |
+| `apps/*/src/lib/env.ts`                                   | resolve the public API base URL from the current hostname                                       |
+| `@chill-institute/api`                                    | typed connect-rpc client, auth header wiring, request IDs, auth redirects                       |
+| `@chill-institute/auth/auth`                              | browser auth token lifecycle (PASETO + put.io OAuth callback storage), `AuthProvider`/`useAuth` |
+| `@chill-institute/auth/api-context`                       | React context exposing the api client + `getPutioStartURL` to the rest of the tree              |
+| `@chill-institute/auth/queries/{profile,download-folder}` | shared TanStack Query hooks                                                                     |
+| `apps/*/src/queries/`                                     | app-specific query options and mutation helpers (settings, search, movies, tv-shows)            |
+| `apps/*/src/routes/`                                      | screen entrypoints — auth-flow routes are 3-line shims onto `@chill-institute/auth/routes/*`    |
 
 ## Auth Flow
 
@@ -130,7 +143,9 @@ sequenceDiagram
   Web->>API: authenticated requests
 ```
 
-When authenticated requests fail with auth-related errors, the API layer clears client auth state and redirects through the sign-out path.
+When authenticated requests fail with auth-related errors, the connect-rpc client (`@chill-institute/api`) clears client auth state and redirects through the sign-out path.
+
+The auth lifecycle routes (`/sign-in`, `/sign-out`, `/auth/success`, `/auth/cli-token`, `/debug/crash`) are shared via `@chill-institute/auth/routes/*RouteOptions` — each app's route file is a 3-line shim that calls `createFileRoute("/path")(routeOptions)`. Both apps register the same options object so the OAuth dance, callback consumption, and sign-out flow stay byte-equivalent across the two apps.
 
 ## Environment
 

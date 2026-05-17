@@ -2,7 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@chill-institute/ui/components/ui/button";
+import { IconButton } from "@chill-institute/ui/components/icon-button";
+import { Field, FieldLabel } from "@chill-institute/ui/components/ui/field";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@chill-institute/ui/components/ui/input-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@chill-institute/ui/components/ui/tooltip";
 import { normalizeQuery } from "@/lib/search";
 
 export function ShellSearchForm({
@@ -20,7 +28,12 @@ export function ShellSearchForm({
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "/" && !focused) {
+      if (event.key === "/" && !focused && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const tag = target?.tagName?.toLowerCase();
+        const editable =
+          tag === "input" || tag === "textarea" || target?.isContentEditable === true;
+        if (editable) return;
         event.preventDefault();
         inputRef.current?.focus();
       }
@@ -38,42 +51,40 @@ export function ShellSearchForm({
     [],
   );
 
-  const icon = useMemo(() => {
+  const trailingAddon = useMemo(() => {
     if (value) {
       return (
-        <button
-          type="button"
-          className="cursor-pointer"
-          aria-label="Clear search query"
-          onClick={() => {
-            setDraft({ base: initialQuery, value: "" });
-            inputRef.current?.focus();
-          }}
-        >
-          <X />
-        </button>
+        <InputGroupAddon align="inline-end">
+          <IconButton
+            type="button"
+            aria-label="Clear search query"
+            onClick={() => {
+              setDraft({ base: initialQuery, value: "" });
+              inputRef.current?.focus();
+            }}
+          >
+            <X />
+          </IconButton>
+        </InputGroupAddon>
       );
     }
     if (focused || isTouchDevice) {
       return null;
     }
     return (
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <kbd className="min-h-[18px] inline-flex justify-center items-center px-1 bg-stone-200 border border-transparent font-mono text-xs text-stone-800 rounded dark:bg-stone-800 dark:text-stone-200 cursor-default">
-              /
-            </kbd>
-          }
-        />
-        <TooltipContent>
-          <p>Press / to focus, esc to cancel</p>
-        </TooltipContent>
-      </Tooltip>
+      <InputGroupAddon align="inline-end">
+        <Tooltip>
+          <TooltipTrigger render={<kbd className="kbd cursor-default">/</kbd>} />
+          <TooltipContent>
+            <p>Press / to focus, esc to cancel</p>
+          </TooltipContent>
+        </Tooltip>
+      </InputGroupAddon>
     );
   }, [focused, isTouchDevice, value, initialQuery]);
 
   return (
+    // eslint-disable-next-line react-doctor/no-prevent-default -- progressive enhancement via action+method
     <form
       className="w-full"
       action="/search"
@@ -90,18 +101,13 @@ export function ShellSearchForm({
         });
       }}
     >
-      <fieldset>
-        {label ? (
-          <label className="mb-1 block" htmlFor="search-global">
-            {label}
-          </label>
-        ) : null}
-        <div className="flex flex-row space-x-2">
-          <div className="flex-1 relative">
-            <input
+      <Field>
+        {label ? <FieldLabel htmlFor="search-global">{label}</FieldLabel> : null}
+        <div className="flex flex-row gap-2">
+          <InputGroup className="h-7.5! flex-1">
+            <InputGroupInput
               ref={inputRef}
               id="search-global"
-              className="input w-full pl-2 pr-7 py-0 text-lg"
               required
               type="text"
               name="q"
@@ -110,13 +116,11 @@ export function ShellSearchForm({
               onBlur={() => setFocused(false)}
               onChange={(event) => setDraft({ base: initialQuery, value: event.target.value })}
             />
-            <div className="absolute right-0 top-0 h-full flex items-center px-1.5">{icon}</div>
-          </div>
-          <button type="submit" className="btn">
-            and chill
-          </button>
+            {trailingAddon}
+          </InputGroup>
+          <Button type="submit">and chill</Button>
         </div>
-      </fieldset>
+      </Field>
     </form>
   );
 }

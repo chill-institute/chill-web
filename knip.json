@@ -1,4 +1,24 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["apps/*/e2e/**/*.ts", "apps/*/src/**/*.test.ts", "apps/*/src/**/*.test.tsx"]
+  "ignoreFiles": ["vite.config.ts"],
+  "rules": {
+    "catalog": "off"
+  },
+  "workspaces": {
+    "apps/binge": {
+      "entry": ["src/**/*.test.ts", "e2e/**/*.ts"]
+    },
+    "apps/chill": {
+      "entry": ["src/**/*.test.ts", "src/**/*.test.tsx", "e2e/**/*.ts"]
+    },
+    "packages/api": {
+      "entry": ["src/**/*.test.ts"]
+    },
+    "packages/auth": {
+      "entry": ["src/**/*.test.ts"]
+    },
+    "packages/ui": {
+      "entry": ["src/**/*.test.ts"]
+    }
+  }
 }

@@ -16,6 +16,7 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
+import { Route as AuthHandoffRouteImport } from './routes/auth/handoff'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
 
 const SignOutRoute = SignOutRouteImport.update({
@@ -53,6 +54,11 @@ const AuthSuccessRoute = AuthSuccessRouteImport.update({
   path: '/auth/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthHandoffRoute = AuthHandoffRouteImport.update({
+  id: '/auth/handoff',
+  path: '/auth/handoff',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
   id: '/auth/cli-token',
   path: '/auth/cli-token',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/auth/cli-token'
+    | '/auth/handoff'
     | '/auth/success'
     | '/debug/crash'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/auth/cli-token'
+    | '/auth/handoff'
     | '/auth/success'
     | '/debug/crash'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/auth/cli-token'
+    | '/auth/handoff'
     | '/auth/success'
     | '/debug/crash'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
   AuthCliTokenRoute: typeof AuthCliTokenRoute
+  AuthHandoffRoute: typeof AuthHandoffRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
 }
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/handoff': {
+      id: '/auth/handoff'
+      path: '/auth/handoff'
+      fullPath: '/auth/handoff'
+      preLoaderRoute: typeof AuthHandoffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/cli-token': {
       id: '/auth/cli-token'
       path: '/auth/cli-token'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
   AuthCliTokenRoute: AuthCliTokenRoute,
+  AuthHandoffRoute: AuthHandoffRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,
 }

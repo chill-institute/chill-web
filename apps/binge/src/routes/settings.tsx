@@ -1,7 +1,8 @@
 import { Navigate, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 
-import { SettingsModal } from "@/components/settings-modal";
-import { useAuth } from "@/lib/auth";
+import { SettingsPanel } from "@/components/settings-panel";
+import { SettingsModal } from "@chill-institute/ui/components/settings-modal";
+import { useAuth } from "@chill-institute/auth/auth";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -21,11 +22,14 @@ function SettingsPage() {
   return (
     <SettingsModal
       open
+      description="Adjust your binge preferences, download folder, and home page visibility."
       onOpenChange={(open) => {
         if (!open) {
           void navigate({ to: "/" });
         }
       }}
-    />
+    >
+      <SettingsPanel />
+    </SettingsModal>
   );
 }

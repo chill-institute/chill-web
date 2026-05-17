@@ -1,10 +1,12 @@
 import { test as base, type Page, type Route } from "@playwright/test";
 
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 58400);
+
 const AUTH_STORAGE_STATE = {
   cookies: [],
   origins: [
     {
-      origin: "http://localhost:58400",
+      origin: `http://localhost:${port}`,
       localStorage: [{ name: "chill.auth_token", value: "test-token" }],
     },
   ],
@@ -48,7 +50,7 @@ export const test = base.extend<{
   authenticatedPage: Page;
   mockRpc: MockRpc;
 }>({
-  authenticatedPage: async ({ browser }, use) => {
+  authenticatedPage: async ({ browser }, provide) => {
     const context = await browser.newContext({
       storageState: AUTH_STORAGE_STATE,
     });
@@ -60,12 +62,12 @@ export const test = base.extend<{
         body: JSON.stringify({ status: "ok" }),
       });
     });
-    await use(page);
+    await provide(page);
     await context.close();
   },
-  mockRpc: async ({ authenticatedPage }, use) => {
+  mockRpc: async ({ authenticatedPage }, provide) => {
     const mock = await createMockRpc(authenticatedPage);
-    await use(mock);
+    await provide(mock);
   },
 });
 

@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Loader } from "lucide-react";
 
-import { AuthPage } from "@/components/auth-page";
-import { getPutioStartURL } from "@/lib/api";
-import { ACCESS_DENIED_ERROR, SESSION_EXPIRED_ERROR, UNKNOWN_AUTH_ERROR } from "@/lib/auth-errors";
-import { normalizeCallbackPath, prepareAuthSuccessURL, useAuth } from "@/lib/auth";
-import { publicLinks } from "@/lib/public-links";
+import { AuthPage } from "@chill-institute/ui/components/auth-page";
+import { Button } from "@chill-institute/ui/components/ui/button";
+import {
+  ACCESS_DENIED_ERROR,
+  SESSION_EXPIRED_ERROR,
+  UNKNOWN_AUTH_ERROR,
+} from "@chill-institute/api/auth-errors";
+import { useGetPutioStartURL } from "@chill-institute/auth/api-context";
+import { normalizeCallbackPath, prepareAuthSuccessURL, useAuth } from "@chill-institute/auth/auth";
+import { publicLinks } from "@chill-institute/ui/lib/public-links";
 
 export const Route = createFileRoute("/sign-in")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -20,6 +25,7 @@ function SignInPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
+  const getPutioStartURL = useGetPutioStartURL();
   const [loading, setLoading] = useState<null | "help" | "sign-in">(null);
   const authSuccessURL = useMemo(
     () => new URL("/auth/success", window.location.origin).toString(),
@@ -34,125 +40,122 @@ function SignInPage() {
       return {
         actionLabel: "learn more",
         actionURL: publicLinks.about,
-        message: (
-          <p>
-            The Institute is an exclusive extension for put.io users and it requires an active
-            put.io membership in to work.
-            <br />
-          </p>
-        ),
+        message:
+          "the institute is an exclusive extension for put.io users — it needs an active put.io membership to work.",
         type: ACCESS_DENIED_ERROR,
       };
     }
     if (search.error === SESSION_EXPIRED_ERROR) {
       return {
-        message: "Your session has expired, please sign in again.",
+        message: "your session expired. sign in again to keep going.",
         type: SESSION_EXPIRED_ERROR,
       };
     }
     return {
-      message: (
-        <p>
-          An error occurred while signing you in.
-          <br />
-          Please try clearing your cookies or signing in with a different browser.
-        </p>
-      ),
+      message:
+        "something went sideways while signing you in. try clearing cookies, or pop a different browser open.",
       type: UNKNOWN_AUTH_ERROR,
     };
   }, [search.error]);
   const visibleError = loading === "sign-in" ? null : error;
 
   useEffect(() => {
-    if (!auth.isAuthenticated) {
-      return;
-    }
+    if (!auth.isAuthenticated) return;
     const callback = search.callbackUrl?.trim();
     const normalized = callback ? normalizeCallbackPath(callback) : null;
-    if (normalized) {
-      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      if (current !== normalized) {
-        window.location.replace(normalized);
-        return;
-      }
-    }
-    void navigate({ to: "/", replace: true });
+    void navigate({ href: normalized ?? "/", replace: true });
   }, [auth.isAuthenticated, navigate, search.callbackUrl]);
 
   if (auth.isAuthenticated) {
-    return <p>Redirecting...</p>;
+    return (
+      <AuthPage title="redirecting">
+        <div className="text-fg-2 flex items-center gap-2 text-sm">
+          <Loader className="motion-safe:animate-spin" />
+          <span>taking you to the institute…</span>
+        </div>
+      </AuthPage>
+    );
+  }
+
+  function startSignIn() {
+    setLoading("sign-in");
+    const callback = search.callbackUrl?.trim();
+    if (callback) {
+      const normalized = normalizeCallbackPath(callback);
+      if (normalized) {
+        auth.setPendingCallbackURL(normalized);
+      }
+    }
+    window.location.href = getPutioStartURL(prepareAuthSuccessURL(authSuccessURL));
   }
 
   return (
-    <AuthPage centered>
+    <AuthPage title="welcome to chill.institute">
       {visibleError ? (
-        <div className="flex flex-col items-center space-y-4">
-          <div className="flex flex-col items-center text-center">{visibleError?.message}</div>
-          <div className="flex flex-row space-x-4">
-            <AuthButton
-              busy={loading === "help"}
-              onClick={() => {
-                setLoading("help");
-                window.location.href = visibleError?.actionURL ?? "/about";
-              }}
-            >
-              {visibleError?.actionLabel ?? "get help"}
-            </AuthButton>
-            <AuthButton
-              busy={loading === "sign-in"}
-              onClick={() => {
-                setLoading("sign-in");
-                const callback = search.callbackUrl?.trim();
-                if (callback) {
-                  const normalized = normalizeCallbackPath(callback);
-                  if (normalized) {
-                    auth.setPendingCallbackURL(normalized);
-                  }
-                }
-                window.location.href = getPutioStartURL(prepareAuthSuccessURL(authSuccessURL));
-              }}
-            >
-              {visibleError?.type === SESSION_EXPIRED_ERROR ? "sign in again" : "try again"}
-            </AuthButton>
-          </div>
-        </div>
-      ) : (
-        <AuthButton
-          busy={loading === "sign-in"}
-          onClick={() => {
-            setLoading("sign-in");
-            const callback = search.callbackUrl?.trim();
-            if (callback) {
-              const normalized = normalizeCallbackPath(callback);
-              if (normalized) {
-                auth.setPendingCallbackURL(normalized);
-              }
-            }
-            window.location.href = getPutioStartURL(prepareAuthSuccessURL(authSuccessURL));
-          }}
-        >
-          authenticate at put.io
-        </AuthButton>
-      )}
-    </AuthPage>
-  );
-}
+        <p className="text-fg-2 m-0 text-sm leading-relaxed">{visibleError.message}</p>
+      ) : null}
 
-function AuthButton({
-  busy = false,
-  children,
-  onClick,
-}: {
-  busy?: boolean;
-  children: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" className={`btn ${busy ? "cursor-wait" : ""}`} onClick={onClick}>
-      <span className="flex flex-row space-x-1 items-center justify-center text-sm">
-        {busy ? <Loader className="animate-spin text-xs" /> : null}
-        <span className="leading-none">{children}</span>
-      </span>
-    </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {visibleError?.actionURL ? (
+          <Button
+            disabled={loading === "help"}
+            onClick={() => {
+              setLoading("help");
+              window.location.href = visibleError.actionURL ?? publicLinks.about;
+            }}
+          >
+            {loading === "help" ? <Loader className="motion-safe:animate-spin" /> : null}
+            {visibleError.actionLabel ?? "learn more"}
+          </Button>
+        ) : null}
+        <Button
+          variant="primary"
+          size="hero"
+          disabled={loading === "sign-in"}
+          onClick={startSignIn}
+        >
+          {loading === "sign-in" ? (
+            <Loader className="motion-safe:animate-spin" />
+          ) : (
+            <ExternalLink />
+          )}
+          <span>
+            {visibleError?.type === SESSION_EXPIRED_ERROR
+              ? "sign in again"
+              : visibleError
+                ? "try again"
+                : "sign in with put.io"}
+          </span>
+        </Button>
+      </div>
+
+      <div className="text-fg-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 font-mono text-2xs leading-relaxed">
+        <span>not affiliated with put.io</span>
+        <nav aria-label="external links" className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {[
+            { label: "about", href: publicLinks.about },
+            { label: "guides", href: publicLinks.guides },
+            { label: "github", href: publicLinks.github },
+          ].map((link, index) => (
+            <span key={link.href} className="inline-flex items-center gap-1">
+              {index > 0 ? (
+                <span aria-hidden="true" className="text-fg-4">
+                  ·
+                </span>
+              ) : null}
+              <a
+                href={link.href}
+                rel="noreferrer noopener"
+                target="_blank"
+                className="hover-hover:hover:text-fg-1 inline-flex items-center gap-0.5"
+              >
+                <span>{link.label}</span>
+                <ArrowUpRight className="size-3" strokeWidth={1.25} aria-hidden="true" />
+              </a>
+            </span>
+          ))}
+        </nav>
+      </div>
+    </AuthPage>
   );
 }

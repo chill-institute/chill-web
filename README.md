@@ -6,7 +6,7 @@ Vite+ workspace repo for the Cloudflare Pages frontends of [chill.institute](htt
 
 ## Apps
 
-- `apps/chill/` powers `https://chill.institute` with search and catalog flows
+- `apps/chill/` powers `https://chill.institute` with the search experience
 - `apps/binge/` powers `https://binge.institute` with the catalog-focused experience
 - the repo root owns shared workspace config, hooks, CI entrypoints, and package catalog wiring
 
@@ -39,6 +39,7 @@ vp run e2e
 
 ## Docs
 
+- [Design system](./DESIGN.md)
 - [About](./docs/ABOUT.md)
 - [Guides](./docs/GUIDES.md)
 - [Architecture](./docs/ARCHITECTURE.md)

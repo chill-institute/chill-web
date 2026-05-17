@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { getPublicAPIBaseURL } from "@/lib/env";
 
@@ -33,15 +42,23 @@ async function checkBackendHealth(): Promise<boolean> {
 
 export function BackendHealthProvider({ children }: { children: ReactNode }) {
   const [isBackendUnavailable, setIsBackendUnavailable] = useState(false);
+  const mountedRef = useRef(true);
 
-  async function retry() {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const retry = useCallback(async () => {
     const isHealthy = await checkBackendHealth();
-    setIsBackendUnavailable(!isHealthy);
-  }
+    if (mountedRef.current) setIsBackendUnavailable(!isHealthy);
+  }, []);
 
   useEffect(() => {
     void retry();
-  }, []);
+  }, [retry]);
 
   useEffect(() => {
     if (!isBackendUnavailable) {
@@ -53,21 +70,21 @@ export function BackendHealthProvider({ children }: { children: ReactNode }) {
     }, OUTAGE_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [isBackendUnavailable]);
+  }, [isBackendUnavailable, retry]);
 
   const value = useMemo(
     () => ({
       isBackendUnavailable,
       retry,
     }),
-    [isBackendUnavailable],
+    [isBackendUnavailable, retry],
   );
 
   return <BackendHealthContext.Provider value={value}>{children}</BackendHealthContext.Provider>;
 }
 
 export function useBackendUnavailable() {
-  const context = useContext(BackendHealthContext);
+  const context = use(BackendHealthContext);
   if (!context) {
     throw new Error("useBackendUnavailable must be used within BackendHealthProvider");
   }

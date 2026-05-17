@@ -1,8 +1,12 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
+import type { ReleaseInfo } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { AddTransferButton } from "@/components/add-transfer-button";
-import { CopyButton } from "@/components/copy-button";
-import { formatAge, formatBytes } from "@/lib/format";
+import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
+import { CopyButton } from "@chill-institute/ui/components/copy-button";
+import { cn } from "@chill-institute/ui/lib/cn";
+import { useSearchDisplay, type SearchDisplayMode } from "@/hooks/use-search-display";
+import { formatAge, formatBytes } from "@chill-institute/ui/lib/format";
+import { effectiveInfo } from "@/lib/release-info";
 import type { SearchResult, UserSettings } from "@/lib/types";
 import { SearchResultTitleBehavior, SortBy, SortDirection } from "@/lib/types";
 
@@ -22,118 +26,192 @@ const columns = [
   { key: SortBy.UPLOADED_AT, label: "age", align: "center" as const },
 ];
 
+function MetaLine({ info }: { info: ReleaseInfo }) {
+  const parts = [
+    info.resolution ? { key: "resolution", text: info.resolution.toLowerCase() } : null,
+    info.codec ? { key: "codec", text: info.codec } : null,
+    info.hdr ? { key: "hdr", text: info.hdr } : null,
+    info.audio ? { key: "audio", text: info.audio } : null,
+    info.group ? { key: "group", text: info.group } : null,
+  ].filter((part): part is { key: string; text: string } => part !== null);
+  if (parts.length === 0) return null;
+  return (
+    <div className="text-fg-4 mt-1 block font-mono text-2xs leading-[1.4]">
+      {parts.map((part, index) => (
+        <span key={part.key}>
+          {index > 0 ? <span className="mx-1 opacity-60">·</span> : null}
+          <span>{part.text}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function TitleCell({
   result,
   titleBehavior,
+  mode,
 }: {
   result: SearchResult;
   titleBehavior: Props["titleBehavior"];
+  mode: SearchDisplayMode;
 }) {
-  if (titleBehavior === SearchResultTitleBehavior.LINK) {
-    return (
+  const linkable = titleBehavior === SearchResultTitleBehavior.LINK;
+  const wrap = (children: React.ReactNode) =>
+    linkable ? (
       <a href={result.link} title="Open URL" className="hover:underline hover:underline-offset-2">
-        {result.title}
+        {children}
       </a>
+    ) : (
+      <>{children}</>
     );
-  }
-  return <>{result.title}</>;
+
+  const titleSpan = (
+    <span className="text-fg-1 block text-sm leading-[1.4] break-words [overflow-wrap:anywhere]">
+      {wrap(result.title)}
+    </span>
+  );
+
+  if (mode === "raw") return titleSpan;
+
+  return (
+    <div>
+      {titleSpan}
+      <MetaLine info={effectiveInfo(result)} />
+    </div>
+  );
 }
 
 export function SearchResults({ results, sortBy, sortDirection, titleBehavior, onSort }: Props) {
+  const { mode } = useSearchDisplay();
+
   return (
     <>
-      <div className="hidden lg:block w-full max-w-5xl mx-auto">
-        <table className="w-full min-w-full">
-          <thead className="border-b border-solid border-stone-950 dark:border-stone-700">
+      <div className="mx-auto hidden w-full max-w-5xl lg:block">
+        <table className="w-full min-w-full border-collapse">
+          <thead className="border-border-strong border-b">
             <tr>
               {columns.map((column) => {
                 const active = sortBy === column.key;
                 const isTitle = column.key === SortBy.TITLE;
+                const ariaSort = active
+                  ? sortDirection === SortDirection.ASC
+                    ? "ascending"
+                    : "descending"
+                  : "none";
                 return (
                   <th
                     key={column.key}
-                    className={isTitle ? "pr-2 text-left" : "text-center px-2 font-normal"}
+                    scope="col"
+                    aria-sort={ariaSort}
+                    className={
+                      isTitle
+                        ? "pr-2 pb-1.5 text-left font-serif text-base leading-5 font-normal tracking-[-0.01em] whitespace-nowrap"
+                        : "px-2 pb-1 text-center text-sm font-normal whitespace-nowrap"
+                    }
                   >
                     <button
                       type="button"
-                      className={`w-full cursor-pointer ${isTitle ? "text-left" : "text-center"}`}
+                      className={cn("w-full cursor-pointer", isTitle ? "text-left" : "text-center")}
                       onClick={() => onSort(column.key)}
                     >
-                      <div
-                        className={`flex flex-row items-center ${
-                          isTitle ? "space-x-0.5" : "justify-center space-x-0.5"
-                        }`}
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-0.5",
+                          !isTitle && "justify-center",
+                        )}
                       >
                         <span>{column.label}</span>
                         {active ? (
-                          <span className="text-sm -mb-0.5">
+                          <span className="inline-flex size-3" aria-hidden="true">
                             {sortDirection === SortDirection.ASC ? <ArrowUp /> : <ArrowDown />}
                           </span>
                         ) : null}
-                      </div>
+                      </span>
                     </button>
                   </th>
                 );
               })}
 
-              <th className="px-2 font-normal">url</th>
-              <th className="font-normal text-center">🤠</th>
+              <th
+                scope="col"
+                className="px-2 pb-1 text-center text-sm font-normal whitespace-nowrap"
+              >
+                url
+              </th>
+              <th
+                scope="col"
+                aria-label="send to put.io"
+                className="pb-1 text-center text-sm font-normal whitespace-nowrap"
+              >
+                <span aria-hidden="true">🤠</span>
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {results.map((result) => (
-              <tr key={result.id}>
-                <td className="pr-2 pt-3 text-left break-all">
-                  <TitleCell result={result} titleBehavior={titleBehavior} />
-                </td>
-                <td className="px-2 pt-3 text-center whitespace-nowrap">{result.source}</td>
-                <td className="px-2 pt-3 text-center whitespace-nowrap">
-                  {formatBytes(result.size)}
-                </td>
-                <td className="px-2 pt-3 text-center whitespace-nowrap">{result.seeders}</td>
-                <td className="px-2 pt-3 text-center whitespace-nowrap">
-                  {formatAge(result.uploadedAt)}
-                </td>
-                <td className="px-2 pt-3 text-center whitespace-nowrap">
-                  <CopyButton value={result.link} />
-                </td>
-                <td className="w-25 pl-1 pt-3 whitespace-nowrap">
-                  <AddTransferButton className="w-full" url={result.link}>
-                    send to put.io
-                  </AddTransferButton>
-                </td>
-              </tr>
-            ))}
+            {results.map((result) => {
+              return (
+                <tr key={result.id} className="border-border-faint border-b last:border-b-0">
+                  <td className="py-3.5 pr-2 pl-0 align-middle">
+                    <TitleCell result={result} titleBehavior={titleBehavior} mode={mode} />
+                  </td>
+                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                    {result.source}
+                  </td>
+                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                    {formatBytes(result.size)}
+                  </td>
+                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                    {result.seeders}
+                  </td>
+                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                    {formatAge(result.uploadedAt)}
+                  </td>
+                  <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+                    <CopyButton variant="icon" value={result.link} />
+                  </td>
+                  <td className="w-[130px] py-3.5 pr-0 pl-1 align-middle whitespace-nowrap">
+                    <AddTransferButton className="w-full" url={result.link}>
+                      send to put.io
+                    </AddTransferButton>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <div className="lg:hidden">
-        {results.map((result) => (
-          <div key={result.id} className="my-4">
-            <div className="relative rounded overflow-hidden border border-solid border-stone-950 dark:border-stone-700 bg-stone-100 dark:bg-stone-900">
-              <div className="py-5 px-6">
-                <h5 className="leading-5 break-words">
-                  <TitleCell result={result} titleBehavior={titleBehavior} />
-                </h5>
+      <ul className="m-0 list-none p-0 lg:hidden" aria-label="Search results">
+        {results.map((result) => {
+          return (
+            <li
+              key={result.id}
+              className="border-border-strong bg-surface my-4 overflow-hidden rounded border"
+            >
+              <div className="px-6 py-5">
+                <TitleCell result={result} titleBehavior={titleBehavior} mode={mode} />
 
-                <div className="flex flex-row items-center justify-between my-3 py-1 border-t border-b border-solid border-stone-950 dark:border-stone-700">
-                  <div>{result.source}</div>
-                  <div>{formatBytes(result.size)}</div>
-                  <div>{result.seeders} seeders</div>
-                  <div>{formatAge(result.uploadedAt)}</div>
+                <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 font-mono text-xs">
+                  <span className="text-fg-1">{result.source}</span>
+                  <span className="text-fg-4">·</span>
+                  <span className="tabular-nums">{formatBytes(result.size)}</span>
+                  <span className="text-fg-4">·</span>
+                  <span className="tabular-nums">{result.seeders} seeders</span>
+                  <span className="text-fg-4">·</span>
+                  <span className="tabular-nums">{formatAge(result.uploadedAt)}</span>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <CopyButton value={result.link} />
                   <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            </li>
+          );
+        })}
+      </ul>
     </>
   );
 }

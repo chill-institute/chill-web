@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useApi } from "@/lib/api";
+import { useApi } from "@chill-institute/auth/api-context";
 import { readCachedIndexers, writeCachedIndexers } from "@/queries/options";
 
 export function useIndexersQuery() {

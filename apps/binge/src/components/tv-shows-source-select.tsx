@@ -1,18 +1,21 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@chill-institute/ui/components/ui/toggle-group";
+import { tabsContainerClass } from "@chill-institute/ui/components/tabs";
+import { cn } from "@chill-institute/ui/cn";
 import {
   getTVShowsSourceLabel,
+  parseTVShowsSource,
   TVShowsSource,
   tvShowsSources,
   type UserSettings,
 } from "@/lib/types";
 
 const tvShowsSourceTabLabels: Record<UserSettings["tvShowsSource"], string> = {
-  [TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED]: "Netflix",
-  [TVShowsSource.TV_SHOWS_SOURCE_NETFLIX]: "Netflix",
-  [TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX]: "HBO Max",
-  [TVShowsSource.TV_SHOWS_SOURCE_APPLE_TV_PLUS]: "Apple TV+",
-  [TVShowsSource.TV_SHOWS_SOURCE_PRIME_VIDEO]: "Prime",
-  [TVShowsSource.TV_SHOWS_SOURCE_DISNEY_PLUS]: "Disney+",
+  [TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED]: "netflix",
+  [TVShowsSource.TV_SHOWS_SOURCE_NETFLIX]: "netflix",
+  [TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX]: "hbo max",
+  [TVShowsSource.TV_SHOWS_SOURCE_APPLE_TV_PLUS]: "apple tv+",
+  [TVShowsSource.TV_SHOWS_SOURCE_PRIME_VIDEO]: "prime",
+  [TVShowsSource.TV_SHOWS_SOURCE_DISNEY_PLUS]: "disney+",
 };
 
 export function TVShowsSourceSelect({
@@ -24,12 +27,20 @@ export function TVShowsSourceSelect({
 }) {
   return (
     <ToggleGroup
-      className="w-full justify-start gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      variant="tab"
+      className={cn(
+        tabsContainerClass,
+        "order-3 w-full justify-start overflow-x-auto sm:order-none sm:w-auto",
+      )}
       onValueChange={(next) => {
         if (next.length === 0) {
           return;
         }
-        onChange(Number(next[0]) as UserSettings["tvShowsSource"]);
+        const parsed = parseTVShowsSource(next[0]);
+        if (parsed === undefined) {
+          return;
+        }
+        onChange(parsed);
       }}
       value={[String(value)]}
     >
@@ -38,7 +49,7 @@ export function TVShowsSourceSelect({
           key={source}
           value={String(source)}
           aria-label={getTVShowsSourceLabel(source)}
-          className="h-7.5 shrink-0 rounded-md px-2 text-[12px] whitespace-nowrap border border-transparent data-[pressed]:border-stone-950 data-[pressed]:shadow-[1px_1px_rgba(12,10,9,1)] dark:data-[pressed]:border-stone-700 dark:data-[pressed]:shadow-[1px_1px_rgba(68,64,60,1)]"
+          className="h-8 shrink-0 gap-1.5 whitespace-nowrap px-2.5 text-base sm:h-7 sm:text-sm"
         >
           {tvShowsSourceTabLabels[source]}
         </ToggleGroupItem>
