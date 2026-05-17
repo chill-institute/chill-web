@@ -42,7 +42,7 @@ export function useSaveSettings() {
       if (prevSettings && prevSettings.tvShowsSource !== nextSettings.tvShowsSource) {
         void queryClient.resetQueries({ queryKey: ["tv-shows"] });
       }
-      if (prevSettings && prevSettings.downloadFolderId !== nextSettings.downloadFolderId) {
+      if (prevSettings && prevSettings.download.folderId !== nextSettings.download.folderId) {
         void invalidateDownloadFolder(queryClient);
       }
     },

@@ -10,6 +10,7 @@ import {
   TVShowsSource,
   TVShowStatus,
   type CatalogSettings,
+  type DownloadSettings,
   type Movie,
   type SearchResult,
   type TVShow,
@@ -22,10 +23,10 @@ export { MoviesSource, TVShowsSource, TVShowStatus };
 export type { Movie, SearchResult, TVShow, UserSettings };
 
 export type BingeSettings = Omit<CatalogSettings, "$typeName"> & {
-  downloadFolderId?: bigint;
+  download: Omit<DownloadSettings, "$typeName">;
 };
 
-type BingeSettingsDefaults = Omit<BingeSettings, "$typeName">;
+type BingeSettingsDefaults = Omit<CatalogSettings, "$typeName">;
 
 export const moviesSources = [
   MoviesSource.IMDB_MOVIEMETER,
@@ -107,7 +108,9 @@ export function toBingeSettings(settings: UserSettings): BingeSettings {
   return {
     ...defaultUserSettings,
     ...normalized.catalog,
-    downloadFolderId: normalized.download?.folderId,
+    download: {
+      folderId: normalized.download?.folderId,
+    },
   };
 }
 
@@ -115,7 +118,7 @@ export function applyBingeSettingsPatch(
   settings: UserSettings,
   patch: Partial<BingeSettings>,
 ): UserSettings {
-  const { downloadFolderId, ...catalogPatch } = patch;
+  const { download, ...catalogPatch } = patch;
   const current = toBingeSettings(settings);
   const next = create(UserSettingsSchema, {
     ...settings,
@@ -125,9 +128,9 @@ export function applyBingeSettingsPatch(
       ...catalogPatch,
     }),
   });
-  if (downloadFolderId !== undefined || settings.download !== undefined) {
+  if (download !== undefined || settings.download !== undefined) {
     next.download = create(DownloadSettingsSchema, {
-      folderId: downloadFolderId ?? settings.download?.folderId,
+      folderId: download?.folderId ?? settings.download?.folderId,
     });
   }
   return next;

@@ -22,7 +22,7 @@ test.describe("mobile settings (drawer branch of ResponsiveModal)", () => {
     mockRpc,
   }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([]),
       GetTVShows: tvShowsResponse([]),
       GetIndexers: indexersResponse([indexer({ id: "yts", name: "YTS" })]),

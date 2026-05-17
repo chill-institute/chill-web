@@ -80,7 +80,7 @@ test.describe("visual review · chill", () => {
 
   test("home (welcome shell)", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: false, showTvShows: false }),
+      GetUserSettings: userSettings(),
     });
     await authenticatedPage.goto("/");
 
@@ -95,7 +95,7 @@ test.describe("visual review · chill", () => {
 
   test("search results", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: false, showTvShows: false }),
+      GetUserSettings: userSettings(),
       GetIndexers: indexersResponse([indexer({ id: "yts", name: "YTS", enabled: true })]),
       Search: searchResponse("Dune Part Two 2024", duneResults),
     });

@@ -9,10 +9,7 @@ test.describe("smoke", () => {
 
   test("authenticated settings shell renders", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
-      GetUserSettings: {
-        showMovies: true,
-        showTvShows: true,
-      },
+      GetUserSettings: {},
       GetIndexers: {
         indexers: [
           { id: "yts", name: "YTS", enabled: true },
@@ -51,10 +48,7 @@ test.describe("smoke", () => {
     mockRpc,
   }) => {
     await mockRpc({
-      GetUserSettings: {
-        showMovies: true,
-        showTvShows: true,
-      },
+      GetUserSettings: {},
       GetMovies: {
         movies: [],
         source: 1,

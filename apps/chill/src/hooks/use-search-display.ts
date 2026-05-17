@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from "react";
 
 const MODE_KEY = "chill.search.displayMode";
-const LEGACY_STORAGE_KEYS = ["chill.search.showMetaLine"] as const;
 const MODE_DEFAULT: SearchDisplayMode = "detailed";
 
 export type SearchDisplayMode = "raw" | "detailed";
@@ -17,22 +16,11 @@ export function isSearchDisplayMode(value: string | null): value is SearchDispla
   return value === "raw" || value === "detailed";
 }
 
-export function migrateLegacyValue(raw: string | null): SearchDisplayMode | null {
-  if (raw === "legacy") return "raw";
-  if (raw === "clean" || raw === "full") return "detailed";
-  return null;
-}
-
 function readFromStorage(): SearchDisplayMode {
   if (typeof window === "undefined") return MODE_DEFAULT;
   try {
     const raw = window.localStorage.getItem(MODE_KEY);
     if (isSearchDisplayMode(raw)) return raw;
-    const migrated = migrateLegacyValue(raw);
-    if (migrated) {
-      window.localStorage.setItem(MODE_KEY, migrated);
-      return migrated;
-    }
   } catch {
     /* empty */
   }
@@ -87,16 +75,6 @@ function setMode(next: SearchDisplayMode): void {
     }
   }
   notify();
-}
-
-if (typeof window !== "undefined") {
-  for (const key of LEGACY_STORAGE_KEYS) {
-    try {
-      window.localStorage.removeItem(key);
-    } catch {
-      /* empty */
-    }
-  }
 }
 
 if (import.meta.hot) {

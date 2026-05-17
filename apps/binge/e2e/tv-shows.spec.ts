@@ -60,8 +60,6 @@ const defaultEpisodes = [
 
 const homeMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings({
-    showMovies: true,
-    showTvShows: true,
     tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
   }),
   GetMovies: moviesResponse(movies),
@@ -70,15 +68,10 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
 });
 
 test.describe("tv shows home", () => {
-  test("always shows home tabs even for legacy tv-only settings", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
+  test("always shows home tabs with tv source settings", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({
         GetUserSettings: userSettings({
-          showMovies: false,
-          showTvShows: true,
           tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
         }),
         GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows),
@@ -148,8 +141,6 @@ test.describe("tv shows home", () => {
         contentType: "application/json",
         body: JSON.stringify(
           userSettings({
-            showMovies: true,
-            showTvShows: true,
             tvShowsSource: currentSource,
           }),
         ),

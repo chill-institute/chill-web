@@ -83,7 +83,7 @@ const inceptionSearchResults = [
 ];
 
 const homeMethods = (overrides?: Record<string, unknown>) => ({
-  GetUserSettings: userSettings({ showMovies: true, showTvShows: true }),
+  GetUserSettings: userSettings(),
   GetMovies: moviesResponse(movies),
   GetTVShows: tvShowsResponse([]),
   ...overrides,
@@ -102,9 +102,7 @@ test.describe("movies", () => {
   }) => {
     await mockRpc(
       homeMethods({
-        GetUserSettings: userSettings({
-          showMovies: true,
-        }),
+        GetUserSettings: userSettings({}),
       }),
     );
 
@@ -122,13 +120,10 @@ test.describe("movies", () => {
     );
   });
 
-  test("always shows home tabs even for legacy movie-only settings", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
+  test("always shows home tabs with default settings", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({
-        GetUserSettings: userSettings({ showMovies: true, showTvShows: false }),
+        GetUserSettings: userSettings(),
       }),
     );
 
@@ -137,19 +132,6 @@ test.describe("movies", () => {
     await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
     await expect(authenticatedPage.getByRole("tab", { name: "tv shows" })).toBeVisible();
     await expect(authenticatedPage.getByText("Inception")).toBeVisible();
-  });
-
-  test("legacy hidden-home settings are ignored", async ({ authenticatedPage, mockRpc }) => {
-    await mockRpc(
-      homeMethods({
-        GetUserSettings: userSettings({ showMovies: false, showTvShows: false }),
-      }),
-    );
-
-    await authenticatedPage.goto("/");
-
-    await expect(authenticatedPage.getByRole("tab", { name: "movies" })).toBeVisible();
-    await expect(authenticatedPage.locator('[data-slot="poster-card"]')).toHaveCount(2);
   });
 
   test("empty state", async ({ authenticatedPage, mockRpc }) => {
@@ -247,7 +229,6 @@ test.describe("movies", () => {
     await mockRpc(
       homeMethods({
         GetUserSettings: userSettings({
-          showMovies: true,
           moviesSource: MoviesSource.IMDB_MOVIEMETER,
         }),
       }),
@@ -281,7 +262,6 @@ test.describe("movies", () => {
         contentType: "application/json",
         body: JSON.stringify(
           userSettings({
-            showMovies: true,
             moviesSource: currentSource,
           }),
         ),
@@ -308,7 +288,6 @@ test.describe("movies", () => {
     await mockRpc(
       homeMethods({
         GetUserSettings: userSettings({
-          showMovies: true,
           moviesSource: MoviesSource.IMDB_MOVIEMETER,
         }),
       }),
@@ -344,7 +323,6 @@ test.describe("movies", () => {
         contentType: "application/json",
         body: JSON.stringify(
           userSettings({
-            showMovies: true,
             moviesSource: currentSource,
           }),
         ),
@@ -369,25 +347,14 @@ test.describe("movies", () => {
 
     await authenticatedPage.addInitScript(
       (cachedSettings) => {
-        window.localStorage.setItem("chill.settings", cachedSettings);
+        window.localStorage.setItem("binge.catalog.settings.v1", cachedSettings);
       },
       JSON.stringify({
-        codecFilters: [],
-        disabledIndexerIds: [],
-        filterNastyResults: true,
-        filterResultsWithNoSeeders: false,
-        otherFilters: [],
-        rememberQuickFilters: false,
-        resolutionFilters: [],
-        searchResultDisplayBehavior: 1,
-        searchResultTitleBehavior: 2,
-        showMovies: true,
-        showTvShows: true,
-        sortBy: 2,
-        sortDirection: 2,
-        cardDisplayType: 1,
-        moviesSource: MoviesSource.IMDB_MOVIEMETER,
-        tvShowsSource: 1,
+        catalog: {
+          moviesSource: MoviesSource.IMDB_MOVIEMETER,
+          tvShowsSource: 1,
+        },
+        download: {},
       }),
     );
 
@@ -407,7 +374,6 @@ test.describe("movies", () => {
         contentType: "application/json",
         body: JSON.stringify(
           userSettings({
-            showMovies: true,
             moviesSource: MoviesSource.IMDB_MOVIEMETER,
           }),
         ),
@@ -439,7 +405,7 @@ test.describe("movies", () => {
   test("error state shows error message", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({
-        GetUserSettings: userSettings({ showMovies: true }),
+        GetUserSettings: userSettings(),
       }),
     );
 

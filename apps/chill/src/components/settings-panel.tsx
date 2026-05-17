@@ -192,8 +192,8 @@ function DownloadFolderSection({
     .with({ status: "error" }, (dq) => <UserErrorAlert error={dq.error} />)
     .with({ status: "success" }, (dq) => {
       const hasMatchingFolder =
-        effective.downloadFolderId === undefined ||
-        dq.data.folder?.id === effective.downloadFolderId;
+        effective.download.folderId === undefined ||
+        dq.data.folder?.id === effective.download.folderId;
 
       if (!hasMatchingFolder) {
         return <Skeleton className="h-9 w-full rounded" />;
@@ -209,7 +209,7 @@ function DownloadFolderSection({
           </div>
           <DownloadFolderPicker
             triggerLabel={dq.data.folder ? "change" : "choose"}
-            onSave={(id) => persistPatch({ downloadFolderId: id })}
+            onSave={(id) => persistPatch({ download: { folderId: id } })}
           />
         </div>
       );

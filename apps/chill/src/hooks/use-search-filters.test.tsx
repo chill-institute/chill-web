@@ -20,19 +20,22 @@ function SearchFiltersHarness({ settings }: { settings: Parameters<typeof useSea
 
 describe("useSearchFilters", () => {
   it("initializes from saved settings available on first render", () => {
-    const settings = create(SearchSettingsSchema, {
-      codecFilters: [CodecFilter.X265],
-      disabledIndexerIds: [],
-      filterNastyResults: true,
-      filterResultsWithNoSeeders: false,
-      otherFilters: [OtherFilter.HDR],
-      rememberQuickFilters: true,
-      resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-      searchResultDisplayBehavior: 2,
-      searchResultTitleBehavior: 2,
-      sortBy: SortBy.TITLE,
-      sortDirection: SortDirection.ASC,
-    });
+    const settings = {
+      ...create(SearchSettingsSchema, {
+        codecFilters: [CodecFilter.X265],
+        disabledIndexerIds: [],
+        filterNastyResults: true,
+        filterResultsWithNoSeeders: false,
+        otherFilters: [OtherFilter.HDR],
+        rememberQuickFilters: true,
+        resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+        searchResultDisplayBehavior: 2,
+        searchResultTitleBehavior: 2,
+        sortBy: SortBy.TITLE,
+        sortDirection: SortDirection.ASC,
+      }),
+      download: {},
+    };
 
     const html = renderToString(<SearchFiltersHarness settings={settings} />);
     const serialized = html.replace("<pre>", "").replace("</pre>", "").replaceAll("&quot;", '"');

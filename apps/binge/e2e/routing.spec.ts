@@ -69,7 +69,7 @@ const inceptionSearchResults = [
 test.describe("binge routing", () => {
   test("/ redirects to /movies by default", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true, showTvShows: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([inception]),
       GetTVShows: tvShowsResponse([]),
     });
@@ -84,7 +84,7 @@ test.describe("binge routing", () => {
     mockRpc,
   }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true, showTvShows: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([inception]),
       GetTVShows: tvShowsResponse([]),
     });
@@ -99,7 +99,7 @@ test.describe("binge routing", () => {
 
   test("deep link /tv-shows lands on the tv tab", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true, showTvShows: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([inception]),
       GetTVShows: tvShowsResponse([]),
     });
@@ -116,7 +116,7 @@ test.describe("binge routing", () => {
     mockRpc,
   }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([inception, interstellar]),
       GetTVShows: tvShowsResponse([]),
     });
@@ -134,7 +134,6 @@ test.describe("binge routing", () => {
 
     await mockRpc({
       GetUserSettings: userSettings({
-        showMovies: true,
         moviesSource: MoviesSource.IMDB_MOVIEMETER,
       }),
       GetMovies: moviesResponse([inception]),
@@ -164,7 +163,7 @@ test.describe("binge routing", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(userSettings({ showMovies: true, moviesSource: currentSource })),
+        body: JSON.stringify(userSettings({ moviesSource: currentSource })),
       });
     });
 
@@ -181,7 +180,6 @@ test.describe("binge routing", () => {
 
     await mockRpc({
       GetUserSettings: userSettings({
-        showMovies: true,
         moviesSource: MoviesSource.IMDB_MOVIEMETER,
       }),
       GetMovies: moviesResponse([inception]),
@@ -211,7 +209,7 @@ test.describe("binge routing", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(userSettings({ showMovies: true, moviesSource: currentSource })),
+        body: JSON.stringify(userSettings({ moviesSource: currentSource })),
       });
     });
 
@@ -237,31 +235,19 @@ test.describe("binge routing", () => {
 
     await authenticatedPage.addInitScript(
       (cachedSettings) => {
-        window.localStorage.setItem("chill.settings", cachedSettings);
+        window.localStorage.setItem("binge.catalog.settings.v1", cachedSettings);
       },
       JSON.stringify({
-        codecFilters: [],
-        disabledIndexerIds: [],
-        filterNastyResults: false,
-        filterResultsWithNoSeeders: false,
-        otherFilters: [],
-        rememberQuickFilters: false,
-        resolutionFilters: [],
-        searchResultDisplayBehavior: 1,
-        searchResultTitleBehavior: 2,
-        showMovies: true,
-        showTvShows: true,
-        sortBy: 2,
-        sortDirection: 2,
-        cardDisplayType: 1,
-        moviesSource: MoviesSource.IMDB_MOVIEMETER,
-        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+        catalog: {
+          moviesSource: MoviesSource.IMDB_MOVIEMETER,
+          tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+        },
+        download: {},
       }),
     );
 
     await mockRpc({
       GetUserSettings: userSettings({
-        showMovies: true,
         moviesSource: MoviesSource.IMDB_MOVIEMETER,
         rememberQuickFilters: true,
       }),
@@ -280,7 +266,6 @@ test.describe("binge routing", () => {
         contentType: "application/json",
         body: JSON.stringify(
           userSettings({
-            showMovies: true,
             moviesSource: MoviesSource.IMDB_MOVIEMETER,
             rememberQuickFilters: true,
           }),
@@ -317,7 +302,6 @@ test.describe("binge routing", () => {
         contentType: "application/json",
         body: JSON.stringify(
           userSettings({
-            showMovies: true,
             moviesSource: currentSource,
             rememberQuickFilters: body.settings?.search?.rememberQuickFilters,
           }),
@@ -341,7 +325,7 @@ test.describe("binge routing", () => {
 
   test("clicking a movie card navigates to /movies/:id", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([inception, interstellar]),
       GetTVShows: tvShowsResponse([]),
       Search: searchResponse("Inception 2010", inceptionSearchResults),
@@ -358,7 +342,7 @@ test.describe("binge routing", () => {
     mockRpc,
   }) => {
     await mockRpc({
-      GetUserSettings: userSettings({ showMovies: true }),
+      GetUserSettings: userSettings(),
       GetMovies: moviesResponse([inception, interstellar]),
       GetTVShows: tvShowsResponse([]),
       Search: searchResponse("Inception 2010", inceptionSearchResults),
@@ -380,8 +364,6 @@ test.describe("binge routing", () => {
   }) => {
     await mockRpc({
       GetUserSettings: userSettings({
-        showMovies: true,
-        showTvShows: true,
         tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
       }),
       GetMovies: moviesResponse([]),

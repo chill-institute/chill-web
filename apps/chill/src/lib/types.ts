@@ -14,6 +14,7 @@ import {
   SearchSettingsSchema,
   SortBy,
   SortDirection,
+  type DownloadSettings,
   type SearchResult,
   type SearchSettings,
   type UserSettings,
@@ -34,10 +35,10 @@ export {
 export type { SearchResult, UserSettings, UserIndexer };
 
 export type ChillSettings = Omit<SearchSettings, "$typeName"> & {
-  downloadFolderId?: bigint;
+  download: Omit<DownloadSettings, "$typeName">;
 };
 
-type ChillSettingsDefaults = Omit<ChillSettings, "$typeName">;
+type ChillSettingsDefaults = Omit<SearchSettings, "$typeName">;
 
 export const resolutionFilters = [
   ResolutionFilter.RESOLUTION_FILTER_720P,
@@ -125,7 +126,9 @@ export function toChillSettings(settings: UserSettings): ChillSettings {
   return {
     ...defaultUserSettings,
     ...normalized.search,
-    downloadFolderId: normalized.download?.folderId,
+    download: {
+      folderId: normalized.download?.folderId,
+    },
   };
 }
 
@@ -134,7 +137,7 @@ export function applyChillSettingsPatch(
   patch: Partial<ChillSettings>,
 ): UserSettings {
   const normalized = withSearchSettingsDefaults(settings);
-  const { downloadFolderId, ...searchPatch } = patch;
+  const { download, ...searchPatch } = patch;
   const next = create(UserSettingsSchema, {
     ...normalized,
     search: create(SearchSettingsSchema, {
@@ -156,9 +159,9 @@ export function applyChillSettingsPatch(
       ...searchPatch,
     }),
   });
-  if (downloadFolderId !== undefined || normalized.download !== undefined) {
+  if (download !== undefined || normalized.download !== undefined) {
     next.download = create(DownloadSettingsSchema, {
-      folderId: downloadFolderId ?? normalized.download?.folderId,
+      folderId: download?.folderId ?? normalized.download?.folderId,
     });
   }
   return next;

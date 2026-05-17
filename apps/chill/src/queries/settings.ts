@@ -73,7 +73,7 @@ export function useSaveSettings() {
       const prev = previousRef.current;
       const prevSettings = prev ? toChillSettings(prev) : null;
       const nextSettings = toChillSettings(data);
-      if (prevSettings && prevSettings.downloadFolderId !== nextSettings.downloadFolderId) {
+      if (prevSettings && prevSettings.download.folderId !== nextSettings.download.folderId) {
         void invalidateDownloadFolder(queryClient);
       }
     },

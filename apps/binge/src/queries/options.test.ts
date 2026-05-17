@@ -53,7 +53,7 @@ describe("cached settings", () => {
   });
 
   it("ignores cached settings with an unexpected shape", () => {
-    storage.set("chill.settings", JSON.stringify({ nope: true }));
+    storage.set("binge.catalog.settings.v1", JSON.stringify({ nope: true }));
 
     expect(readCachedSettings()).toBeUndefined();
     expect(console.warn).toHaveBeenCalledWith(

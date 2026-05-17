@@ -79,8 +79,6 @@ const shows = [
 
 const homeMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings({
-    showMovies: true,
-    showTvShows: true,
     tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
   }),
   GetMovies: moviesResponse(movies),

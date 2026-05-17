@@ -26,7 +26,6 @@ import {
 type ConfigInit = MessageInitShape<typeof UserSettingsSchema> & {
   codecFilters?: MessageInitShape<typeof SearchSettingsSchema>["codecFilters"];
   disabledIndexerIds?: string[];
-  downloadFolderId?: bigint;
   filterNastyResults?: boolean;
   filterResultsWithNoSeeders?: boolean;
   otherFilters?: MessageInitShape<typeof SearchSettingsSchema>["otherFilters"];
@@ -38,9 +37,6 @@ type ConfigInit = MessageInitShape<typeof UserSettingsSchema> & {
   sortDirection?: SortDirection;
   moviesSource?: MoviesSource;
   tvShowsSource?: TVShowsSource;
-  showMovies?: boolean;
-  showTvShows?: boolean;
-  cardDisplayType?: number;
 };
 type IndexerInit = MessageInitShape<typeof UserIndexerSchema>;
 type ResultInit = MessageInitShape<typeof SearchResultSchema>;
@@ -50,7 +46,6 @@ export function userSettings(init?: ConfigInit) {
   const {
     codecFilters,
     disabledIndexerIds,
-    downloadFolderId,
     filterNastyResults,
     filterResultsWithNoSeeders,
     otherFilters,
@@ -65,9 +60,6 @@ export function userSettings(init?: ConfigInit) {
     search,
     catalog,
     download,
-    showMovies: _showMovies,
-    showTvShows: _showTvShows,
-    cardDisplayType: _cardDisplayType,
   } = init ?? {};
   return toJson(
     UserSettingsSchema,
@@ -97,10 +89,7 @@ export function userSettings(init?: ConfigInit) {
         tvShowsSource:
           tvShowsSource ?? catalog?.tvShowsSource ?? TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
       }),
-      download: create(
-        DownloadSettingsSchema,
-        downloadFolderId === undefined ? download : { folderId: downloadFolderId },
-      ),
+      download: create(DownloadSettingsSchema, download),
     }),
   );
 }

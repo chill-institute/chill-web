@@ -47,7 +47,7 @@ test.describe("settings", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ downloadFolderId: 0n });
+    let settingsState = userSettings({ download: { folderId: 0n } });
     let selectedFolderID = "0";
     let savedDownloadFolderID = "";
     const folderRequests: string[] = [];
@@ -127,7 +127,7 @@ test.describe("settings", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    let settingsState = userSettings({ downloadFolderId: 0n });
+    let settingsState = userSettings({ download: { folderId: 0n } });
     let selectedFolderID = "0";
 
     const root = userFile({ id: 0n, name: "your files" });
