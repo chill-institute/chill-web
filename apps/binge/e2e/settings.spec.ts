@@ -20,6 +20,7 @@ const profileResponse = {
 
 type RequestSettingsPayload = Record<string, unknown> & {
   download?: { folderId?: string | number };
+  search?: { rememberQuickFilters?: boolean };
 };
 
 const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
@@ -134,6 +135,101 @@ test.describe("settings", () => {
     expect(folderRequests).toContain("0");
     expect(folderRequests).toContain("10");
     await expect.poll(() => savedDownloadFolderID).toBe("10");
+  });
+
+  test("cached settings save preserves search preferences from canonical settings", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const serverSettings = userSettings({
+      search: { rememberQuickFilters: true },
+      download: { folderId: 0n },
+    });
+    const savedSettings: RequestSettingsPayload[] = [];
+    let selectedFolderID = "0";
+    let releaseServerSettings: (() => void) | undefined;
+    const serverSettingsReady = new Promise<void>((resolve) => {
+      releaseServerSettings = resolve;
+    });
+
+    const root = userFile({ id: 0n, name: "your files" });
+    const movies = userFile({ id: 10n, name: "Movies" });
+    const folderByID = new Map<string, ReturnType<typeof userFile>>([
+      ["0", root],
+      ["10", movies],
+    ]);
+    const folderResponseByID = new Map<string, unknown>([
+      ["0", folderResponse(root, [movies])],
+      ["10", folderResponse(movies, [])],
+    ]);
+
+    await authenticatedPage.addInitScript(
+      (cachedSettings) => {
+        window.localStorage.setItem("binge.catalog.settings.v1", JSON.stringify(cachedSettings));
+      },
+      {
+        catalog: { moviesSource: 1, tvShowsSource: 1 },
+        download: { folderId: "0n" },
+      },
+    );
+
+    await mockRpc(baseSettingsMethods({ GetUserSettings: serverSettings }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await serverSettingsReady;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(serverSettings),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetDownloadFolder", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(downloadFolderResponse(folderByID.get(selectedFolderID) ?? root)),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
+      const body = route.request().postDataJSON() as { id?: string | number };
+      const folderID = body.id !== undefined ? String(body.id) : "0";
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(folderResponseByID.get(folderID) ?? folderResponse(root, [])),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: RequestSettingsPayload;
+      };
+      if (body.settings) {
+        savedSettings.push(body.settings);
+      }
+      if (body.settings?.download?.folderId !== undefined) {
+        selectedFolderID = String(body.settings.download.folderId);
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(body.settings ?? serverSettings),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+    await authenticatedPage.getByRole("button", { name: "change" }).click();
+    const picker = folderPicker(authenticatedPage);
+    await picker.getByRole("button", { name: "Open folder Movies" }).click();
+    await picker.getByRole("button", { name: "download here" }).click();
+
+    releaseServerSettings?.();
+
+    await expect.poll(() => savedSettings.length).toBe(1);
+    expect(savedSettings[0]?.download?.folderId).toBe("10");
+    expect(savedSettings[0]?.search?.rememberQuickFilters).toBe(true);
   });
 
   test("changing download folder does not keep showing the stale saved folder name", async ({

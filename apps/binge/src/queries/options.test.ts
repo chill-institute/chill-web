@@ -50,6 +50,7 @@ describe("cached settings", () => {
 
     expect(readCachedSettings()?.catalog).toEqual(settings.catalog);
     expect(readCachedSettings()?.download).toEqual(settings.download);
+    expect(readCachedSettings()?.search).toBeUndefined();
   });
 
   it("ignores cached settings with an unexpected shape", () => {

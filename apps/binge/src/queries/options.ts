@@ -3,8 +3,8 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   CatalogSettingsSchema,
   DownloadSettingsSchema,
+  UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
-import { withUserSettingsDefaults } from "@chill-institute/api/settings-defaults";
 
 import { createApi } from "@/lib/api";
 import { toBingeSettings, type UserSettings } from "@/lib/types";
@@ -49,7 +49,10 @@ export function readCachedSettings(): UserSettings | undefined {
         console.warn("[chill] Ignoring cached settings with an unexpected shape");
         return undefined;
       }
-      return withUserSettingsDefaults(parsed);
+      return create(UserSettingsSchema, {
+        catalog: create(CatalogSettingsSchema, parsed.catalog),
+        download: create(DownloadSettingsSchema, parsed.download),
+      });
     }
   } catch (error) {
     warnCacheFailure("Failed to read cached settings", error);
