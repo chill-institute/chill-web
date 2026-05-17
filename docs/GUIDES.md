@@ -9,7 +9,7 @@
 
 Want a little more institutional power? Here you go.
 
-1. Pick a movies source on the home page.
+1. Open [binge.institute](https://binge.institute) and pick a movies source on the home page.
 
 ![Choose a movies source](./assets/guides/rss-source.jpg)
 
@@ -29,7 +29,7 @@ Want a little more institutional power? Here you go.
 
 RSS feed URLs include a token tied to your session, so keep them private.
 
-If you revoke the token, sign out, or I break something on my side, the old URL may stop working. If that happens, sign out and sign back in to `chill.institute`, then replace the feed URL in put.io with a freshly generated one.
+If you revoke the token, sign out, or I break something on my side, the old URL may stop working. If that happens, sign out and sign back in to the app you used to create the feed, then replace the feed URL in put.io with a freshly generated one.
 
 ![Expired or invalid feed example in put.io](./assets/guides/rss-invalid-feed.jpg)
 
