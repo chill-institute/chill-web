@@ -165,8 +165,8 @@ Build outputs are static bundles at:
 - `apps/chill/dist/`
 - `apps/binge/dist/`
 
-Typical production shape:
+Target production shape after SST cutover:
 
-- static assets on separate Cloudflare Pages projects
+- static assets on SST-managed Cloudflare Workers
 - API on a separate `api.chill.institute` origin
 - browser -> API communication over Connect-Web

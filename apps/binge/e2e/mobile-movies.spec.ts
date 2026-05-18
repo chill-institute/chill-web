@@ -96,5 +96,7 @@ test.describe("mobile movies", () => {
 
     await expect(resolutionSelect).toHaveValue("1080p");
     await expect(resultItems).toHaveCount(16);
+    await expect(resultItems.last()).toContainText("Part16");
+    await expect(authenticatedPage.getByText("Part17")).not.toBeVisible();
   });
 });

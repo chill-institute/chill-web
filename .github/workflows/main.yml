@@ -6,6 +6,19 @@ on:
       - main
 
 env:
+  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
+  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
+  BINGE_PRODUCTION_VALIDATION_DOMAIN: ${{ vars.BINGE_PRODUCTION_VALIDATION_DOMAIN || 'next.binge.institute' }}
+  BINGE_STAGING_DOMAIN: ${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
+  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
+  CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
+  CHILL_PRODUCTION_VALIDATION_DOMAIN: ${{ vars.CHILL_PRODUCTION_VALIDATION_DOMAIN || 'next.chill.institute' }}
+  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+  SST_PRODUCTION_AUTO_DEPLOY_ENABLED: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED || 'false' }}
+  SST_PRODUCTION_DOMAIN_MODE: ${{ vars.SST_PRODUCTION_DOMAIN_MODE || 'validation' }}
+  SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
+  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
+  SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
   VITE_PLUS_VERSION: "0.1.20"
 
 permissions:
@@ -37,6 +50,8 @@ jobs:
     outputs:
       chill: ${{ steps.filter.outputs.chill }}
       binge: ${{ steps.filter.outputs.binge }}
+      deploy_chill: ${{ steps.filter.outputs.deploy_chill }}
+      deploy_binge: ${{ steps.filter.outputs.deploy_binge }}
       any_app: ${{ steps.set_outputs.outputs.any_app }}
     steps:
       - name: Check out repository
@@ -81,12 +96,46 @@ jobs:
               - 'sst.config.ts'
               - 'tsconfig.json'
               - 'vite.config.ts'
+            deploy_chill:
+              - 'apps/chill/**'
+              - '!apps/chill/e2e/**'
+              - 'packages/**'
+              - 'tools/**'
+              - '.node-version'
+              - '.gitignore'
+              - '.vite-hooks/**'
+              - '.githooks/**'
+              - 'knip.json'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'sst.config.ts'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
+            deploy_binge:
+              - 'apps/binge/**'
+              - '!apps/binge/e2e/**'
+              - 'packages/**'
+              - 'tools/**'
+              - '.node-version'
+              - '.gitignore'
+              - '.vite-hooks/**'
+              - '.githooks/**'
+              - 'knip.json'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'sst.config.ts'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
 
       - name: Publish change summary
         id: set_outputs
         env:
           CHILL_CHANGED: ${{ steps.filter.outputs.chill }}
           BINGE_CHANGED: ${{ steps.filter.outputs.binge }}
+          CHILL_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_chill }}
+          BINGE_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_binge }}
         run: |
           if [ "${CHILL_CHANGED}" = "true" ] || [ "${BINGE_CHANGED}" = "true" ]; then
             echo "any_app=true" >> "${GITHUB_OUTPUT}"
@@ -99,6 +148,8 @@ jobs:
             echo
             echo "- Chill: \`${CHILL_CHANGED}\`"
             echo "- Binge: \`${BINGE_CHANGED}\`"
+            echo "- Chill deploy: \`${CHILL_DEPLOY_CHANGED}\`"
+            echo "- Binge deploy: \`${BINGE_DEPLOY_CHANGED}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   verify-chill:
@@ -272,15 +323,19 @@ jobs:
           if-no-files-found: ignore
 
   deploy-chill:
-    needs: [workflow-security, verify-chill, e2e-chill]
-    if: ${{ needs.workflow-security.result == 'success' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
+    needs: [workflow-security, changes, verify-chill, e2e-chill]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_chill == 'true' && needs.workflow-security.result == 'success' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
     concurrency:
       group: web-deploy-production-chill
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
+      url: https://${{ (vars.SST_PRODUCTION_DOMAIN_MODE == 'apex' && (vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute')) || (vars.CHILL_PRODUCTION_VALIDATION_DOMAIN || 'next.chill.institute') }}
     permissions:
       contents: read
+    env:
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_CHILL || 'chill-web/production/chill/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -299,25 +354,51 @@ jobs:
           cache: false
           run-install: false
 
-      - name: Deploy chill production to Cloudflare Pages
-        uses: ./.github/actions/cloudflare-pages-deploy
-        with:
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          project-name: chill-institute
-          dist-dir: apps/chill/dist
-          branch: main
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
+
+      - name: Deploy chill production to SST
+        env:
+          CHILL_WEB_APP: chill
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage production --print-logs
+
+      - name: Save encrypted SST local state
+        if: always()
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-binge:
-    needs: [workflow-security, verify-binge, e2e-binge]
-    if: ${{ needs.workflow-security.result == 'success' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
+    needs: [workflow-security, changes, verify-binge, e2e-binge]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_binge == 'true' && needs.workflow-security.result == 'success' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
     concurrency:
       group: web-deploy-production-binge
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
+      url: https://${{ (vars.SST_PRODUCTION_DOMAIN_MODE == 'apex' && (vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute')) || (vars.BINGE_PRODUCTION_VALIDATION_DOMAIN || 'next.binge.institute') }}
     permissions:
       contents: read
+    env:
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_BINGE || 'chill-web/production/binge/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -336,14 +417,36 @@ jobs:
           cache: false
           run-install: false
 
-      - name: Deploy binge production to Cloudflare Pages
-        uses: ./.github/actions/cloudflare-pages-deploy
-        with:
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          project-name: binge-institute
-          dist-dir: apps/binge/dist
-          branch: main
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
+
+      - name: Deploy binge production to SST
+        env:
+          CHILL_WEB_APP: binge
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage production --print-logs
+
+      - name: Save encrypted SST local state
+        if: always()
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-summary:
     needs: [changes, deploy-chill, deploy-binge]
@@ -355,17 +458,25 @@ jobs:
           CHILL_RESULT: ${{ needs.deploy-chill.result }}
           BINGE_RESULT: ${{ needs.deploy-binge.result }}
         run: |
+          chill_url="${CHILL_PRODUCTION_VALIDATION_DOMAIN}"
+          binge_url="${BINGE_PRODUCTION_VALIDATION_DOMAIN}"
+          if [ "${SST_PRODUCTION_DOMAIN_MODE}" = "apex" ]; then
+            chill_url="${CHILL_PRODUCTION_DOMAIN}"
+            binge_url="${BINGE_PRODUCTION_DOMAIN}"
+          fi
+
           {
             echo "## Web deploy"
             echo
             echo "- Environment: \`production\`"
+            echo "- Domain mode: \`${SST_PRODUCTION_DOMAIN_MODE}\`"
             if [ "${CHILL_RESULT}" = "success" ]; then
-              echo "- Chill: [https://chill.institute](https://chill.institute)"
+              echo "- Chill: [https://${chill_url}](https://${chill_url})"
             else
               echo "- Chill: skipped"
             fi
             if [ "${BINGE_RESULT}" = "success" ]; then
-              echo "- Binge: [https://binge.institute](https://binge.institute)"
+              echo "- Binge: [https://${binge_url}](https://${binge_url})"
             else
               echo "- Binge: skipped"
             fi

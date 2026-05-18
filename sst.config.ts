@@ -1,12 +1,29 @@
+function readEnvironment(name: string, fallback: string) {
+  return process.env[name]?.trim() || fallback;
+}
+
+function readProductionDomainMode() {
+  const mode = process.env.SST_PRODUCTION_DOMAIN_MODE?.trim() || "validation";
+  if (mode === "validation" || mode === "apex") {
+    return mode;
+  }
+
+  throw new Error("SST_PRODUCTION_DOMAIN_MODE must be validation or apex");
+}
+
 const surfaces = {
   chill: {
     domain: {
       staging: {
-        name: "staging.chill.institute",
+        name: readEnvironment("CHILL_STAGING_DOMAIN", "staging.chill.institute"),
       },
       production: {
-        name: "chill.institute",
-        redirects: ["www.chill.institute"],
+        name: readEnvironment("CHILL_PRODUCTION_DOMAIN", "chill.institute"),
+        validationName: readEnvironment(
+          "CHILL_PRODUCTION_VALIDATION_DOMAIN",
+          "next.chill.institute",
+        ),
+        redirects: [readEnvironment("CHILL_PRODUCTION_REDIRECT_DOMAIN", "www.chill.institute")],
       },
     },
     path: "apps/chill/dist",
@@ -14,11 +31,15 @@ const surfaces = {
   binge: {
     domain: {
       staging: {
-        name: "staging.binge.institute",
+        name: readEnvironment("BINGE_STAGING_DOMAIN", "staging.binge.institute"),
       },
       production: {
-        name: "binge.institute",
-        redirects: ["www.binge.institute"],
+        name: readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
+        validationName: readEnvironment(
+          "BINGE_PRODUCTION_VALIDATION_DOMAIN",
+          "next.binge.institute",
+        ),
+        redirects: [readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN", "www.binge.institute")],
       },
     },
     path: "apps/binge/dist",
@@ -27,11 +48,11 @@ const surfaces = {
 
 const zoneHardening = [
   {
-    name: "chill.institute",
+    name: surfaces.chill.domain.production.name,
     prefix: "Chill",
   },
   {
-    name: "binge.institute",
+    name: surfaces.binge.domain.production.name,
     prefix: "Binge",
   },
 ] as const;
@@ -54,6 +75,7 @@ type Surface = AppSurface | "zones";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
+    aliases?: readonly string[];
     name: string;
     redirects?: readonly string[];
   };
@@ -141,6 +163,26 @@ async function resolveZoneId(accountId: string, name: string) {
   return zone.id;
 }
 
+function resolveStaticSiteDomain(surface: AppSurface, stage: Stage): StaticSiteV2Args["domain"] {
+  if (stage === "staging") {
+    return surfaces[surface].domain.staging;
+  }
+
+  const config = surfaces[surface].domain.production;
+  const mode = readProductionDomainMode();
+  if (mode === "validation") {
+    return {
+      name: config.validationName,
+    };
+  }
+
+  return {
+    aliases: [config.validationName],
+    name: config.name,
+    redirects: config.redirects,
+  };
+}
+
 async function configureZoneHardening() {
   const accountId = resolveAccountId();
   const outputs: Record<string, string> = {};
@@ -197,7 +239,7 @@ export default $config({
 
     const site = new sst.cloudflare.StaticSiteV2("Web", {
       path: config.path,
-      domain: config.domain[stage],
+      domain: resolveStaticSiteDomain(surface, stage),
       notFound: "single-page-application",
     });
 

@@ -24,9 +24,15 @@ on:
         type: boolean
 
 env:
-  SST_STATE_REPO: https://github.com/chill-institute/chill-web-sst-state.git
-  SST_STATE_REPO_BRANCH: main
-  SST_STATE_FILE: chill-web/staging/sst-local-state.tar.gz.age
+  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
+  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
+  BINGE_STAGING_DOMAIN: ${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
+  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
+  CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
+  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+  SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
+  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
+  SST_STATE_FILE: ${{ vars.SST_STATE_FILE_STAGING || 'chill-web/staging/sst-local-state.tar.gz.age' }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
   VITE_PLUS_VERSION: "0.1.20"
 
@@ -329,7 +335,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.chill.institute
+      url: https://${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
     permissions:
       contents: read
     steps:
@@ -372,7 +378,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/delete-cloudflare-dns-records chill.institute staging.chill.institute
+        run: scripts/ci/delete-cloudflare-dns-records "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_STAGING_DOMAIN}"
 
       - name: Deploy chill staging to SST
         env:
@@ -394,7 +400,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.binge.institute
+      url: https://${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
     permissions:
       contents: read
     steps:
@@ -437,7 +443,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/delete-cloudflare-dns-records binge.institute staging.binge.institute
+        run: scripts/ci/delete-cloudflare-dns-records "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_STAGING_DOMAIN}"
 
       - name: Deploy binge staging to SST
         env:
@@ -459,7 +465,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.chill.institute
+      url: https://${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
     permissions:
       contents: read
     steps:
@@ -532,12 +538,12 @@ jobs:
               echo "- Zones: skipped"
             fi
             if [ "${CHILL_RESULT}" = "success" ]; then
-              echo "- Chill: [https://staging.chill.institute](https://staging.chill.institute)"
+              echo "- Chill: [https://${CHILL_STAGING_DOMAIN}](https://${CHILL_STAGING_DOMAIN})"
             else
               echo "- Chill: skipped"
             fi
             if [ "${BINGE_RESULT}" = "success" ]; then
-              echo "- Binge: [https://staging.binge.institute](https://staging.binge.institute)"
+              echo "- Binge: [https://${BINGE_STAGING_DOMAIN}](https://${BINGE_STAGING_DOMAIN})"
             else
               echo "- Binge: skipped"
             fi

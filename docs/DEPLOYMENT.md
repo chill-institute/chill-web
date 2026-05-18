@@ -4,12 +4,12 @@ Deployment model for `chill-web`
 
 ## Hosting Shape
 
-Production shape:
+Target production shape after SST cutover:
 
-- static assets on Cloudflare Pages
+- static assets on SST-managed Cloudflare Workers
 - API on `https://api.chill.institute`
 
-Staging web deploys to SST-managed Cloudflare Workers static assets. The staging API remains on `https://staging-api.chill.institute`
+Staging also deploys to SST-managed Cloudflare Workers static assets. The staging API remains on `https://staging-api.chill.institute`
 
 Build output:
 
@@ -63,60 +63,36 @@ Workflow shape:
 - PRs verify and run e2e only; they do not create public preview deploys
 - `Deploy Staging` is a manual workflow that must be run from `main` and promotes built artifacts from a validated same-repo branch or commit SHA to the `staging` GitHub Environment after approval; its secret-bearing SST deploy jobs use trusted `main` deploy code, and its `app` input accepts `chill` or `binge` for branch artifact deploys while `all` and `zones` must use `main`
 - pushes to `main` run `Main`
-- `Main` runs the same selective checks, then deploys only the affected production app surfaces
-- `Deploy` remains available as a manual production deploy fallback for current `main` only and accepts `all`, `chill`, or `binge`
+- `Main` runs the same selective checks, then deploys only when `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true`; `SST_PRODUCTION_DOMAIN_MODE` controls whether it targets validation or apex hostnames
+- `Main` does not deploy for docs, workflow-only, script-only, or app e2e-only changes
+- `Deploy` remains available as a manual production deploy fallback for current `main` only and accepts `all`, `chill`, or `binge`; legacy Pages domain detach is only allowed for a single app at a time
 
-Staging deploys are app-specific SST deployments:
+SST deploy config:
 
-- `apps/chill/dist/` deploys to `https://staging.chill.institute`
-- `apps/binge/dist/` deploys to `https://staging.binge.institute`
-- `CHILL_WEB_APP=zones` manages shared Cloudflare zone settings through the separate `chill-web-zones` SST app and the `staging` SST stage
-- SST uses `home: "local"` for staging state so deploys do not require Cloudflare R2 billing; GitHub Actions restores and saves the SST local state directory through an encrypted state blob in the private `chill-institute/chill-web-sst-state` repo
-- the `Deploy Staging` workflow is serialized with the `web-deploy-staging` concurrency group, and within a run the SST deploy order is `zones` -> `chill` -> `binge` so each deploy sees the encrypted state saved by the previous deploy
-- before each app deploy, the workflow removes exact-match legacy `A`, `AAAA`, and `CNAME` DNS records for that staging hostname so Cloudflare can attach the Worker custom domain
-- public staging hostname uptime is monitored outside GitHub Actions; the deploy workflow does not hard-fail on GitHub-runner HTTP checks because Cloudflare edge rules can block runner traffic while the site is healthy for normal browser traffic
-- required staging GitHub Environment secret: `CLOUDFLARE_API_TOKEN`
-- required staging GitHub Environment secret: `SST_STATE_AGE_IDENTITY`
-- required staging GitHub Environment secret: `SST_STATE_REPO_TOKEN`
-- required staging GitHub Environment variable: `CLOUDFLARE_DEFAULT_ACCOUNT_ID`
-- required repository variable: `SST_STATE_AGE_RECIPIENT`
+- staging deploys `chill`, `binge`, and shared `zones`; production deploys `chill` and `binge`
+- staging uses `staging.chill.institute` and `staging.binge.institute`; production validation uses `next.chill.institute` and `next.binge.institute`
+- production cutover uses the apex domains with `www` redirects and keeps `next.*` as aliases
+- SST uses `home: "local"`; GitHub Actions restores and saves encrypted state through the private repo named by `SST_STATE_REPO`
+- production keeps separate state files for chill and binge so app deploy lanes do not overwrite each other
+- GitHub Environments provide `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_DEFAULT_ACCOUNT_ID`, `SST_STATE_AGE_IDENTITY`, and `SST_STATE_REPO_TOKEN`
+- repository variables provide domain names, legacy Pages project names, `SST_PRODUCTION_AUTO_DEPLOY_ENABLED`, `SST_PRODUCTION_DOMAIN_MODE`, `SST_STATE_REPO`, `SST_STATE_REPO_BRANCH`, `SST_STATE_AGE_RECIPIENT`, and the `SST_STATE_FILE_*` paths
+- first deploy only: run with `bootstrap_state=true`; later deploys fail closed when encrypted state is missing
+- SST manages `always_use_https` and `automatic_https_rewrites` for both zones
 
-SST state repository:
+Keep the legacy Pages project variables as rollback references until the SST production cutover is stable. They are not used by GitHub Actions after the SST migration.
 
-- repo: `chill-institute/chill-web-sst-state`
-- staging blob path: `chill-web/staging/sst-local-state.tar.gz.age`
-- production chill blob path after the SST production migration: `chill-web/production/chill/sst-local-state.tar.gz.age`
-- production binge blob path after the SST production migration: `chill-web/production/binge/sst-local-state.tar.gz.age`
-- shared encryption recipient: `SST_STATE_AGE_RECIPIENT` repository variable
-- shared encryption identity: `SST_STATE_AGE_IDENTITY`, stored in the relevant GitHub Environments
-- write identity: `SST_STATE_REPO_TOKEN`, scoped to Contents read/write on `chill-institute/chill-web-sst-state`
-- the same `SST_STATE_REPO_TOKEN` may be stored in staging and production because it is scoped only to the private state repo
-- first deploy only: run with `bootstrap_state=true`; later deploys fail closed when the encrypted state blob is missing
+## Production Cutover
 
-SST-managed zone settings:
+Freeze old Pages deploys and production DNS changes before cutover.
 
-- `always_use_https = on` for `chill.institute` and `binge.institute`
-- `automatic_https_rewrites = on` for `chill.institute` and `binge.institute`
+Cut over from Pages to SST one app at a time:
 
-Production deploys are still app-specific Cloudflare Pages deploys:
+1. Deploy production SST to validation: manual `Deploy` with `domain_mode=validation`, `bootstrap_state=true`, and `detach_pages_domains=false`.
+2. Verify `https://next.chill.institute/` and `https://next.binge.institute/`.
+3. Cut over `chill`: manual `Deploy` with `app=chill`, `domain_mode=apex`, `bootstrap_state=false`, and `detach_pages_domains=true`.
+4. Verify `https://chill.institute/` and `https://www.chill.institute/`.
+5. Repeat for `binge`, then set `SST_PRODUCTION_DOMAIN_MODE=apex` and `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true` for normal push-to-main deploys.
 
-- `apps/chill/dist/` deploys to the Cloudflare Pages project `chill-institute`
-- `apps/binge/dist/` deploys to the Cloudflare Pages project `binge-institute`
-- after the SST production migration, `www.chill.institute` redirects to `chill.institute`
-- after the SST production migration, `www.binge.institute` redirects to `binge.institute`
+The detach step resolves from repository variables. Later deploys use `bootstrap_state=false` and `detach_pages_domains=false`.
 
-GitHub-owned deploy configuration:
-
-- Cloudflare Pages project: `chill-institute`
-- Cloudflare Pages default domain: `chill-institute.pages.dev`
-- Cloudflare Pages project: `binge-institute`
-- Cloudflare Pages default domain: `binge-institute.pages.dev`
-- required GitHub secret: `CLOUDFLARE_API_TOKEN`
-- required GitHub variable: `CLOUDFLARE_ACCOUNT_ID`
-
-Operator follow-up:
-
-- disable direct Cloudflare Pages Git integration for this repo so GitHub Actions is the only production deploy path
-- disable the local Mac web staging services after SST staging is confirmed
-
-Keep browser-side API resolution app-local in `apps/*/src/lib/env.ts`
+Rollback is to reattach the affected custom domains to the existing Pages project. Do not run `sst remove` for production; production resources are retained/protected.

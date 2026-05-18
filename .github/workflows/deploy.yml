@@ -17,8 +17,40 @@ on:
           - all
           - chill
           - binge
+      domain_mode:
+        description: Production hostname target
+        required: true
+        default: validation
+        type: choice
+        options:
+          - validation
+          - apex
+      bootstrap_state:
+        description: Allow the first SST production deploy to create missing encrypted state
+        required: true
+        default: false
+        type: boolean
+      detach_pages_domains:
+        description: Detach legacy Cloudflare Pages custom domains before this deploy
+        required: true
+        default: false
+        type: boolean
 
 env:
+  BINGE_PAGES_PROJECT: ${{ vars.BINGE_PAGES_PROJECT || 'binge-institute' }}
+  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
+  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
+  BINGE_PRODUCTION_VALIDATION_DOMAIN: ${{ vars.BINGE_PRODUCTION_VALIDATION_DOMAIN || 'next.binge.institute' }}
+  BINGE_STAGING_DOMAIN: ${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
+  CHILL_PAGES_PROJECT: ${{ vars.CHILL_PAGES_PROJECT || 'chill-institute' }}
+  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
+  CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
+  CHILL_PRODUCTION_VALIDATION_DOMAIN: ${{ vars.CHILL_PRODUCTION_VALIDATION_DOMAIN || 'next.chill.institute' }}
+  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+  SST_PRODUCTION_DOMAIN_MODE: ${{ inputs.domain_mode }}
+  SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
+  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
+  SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
   VITE_PLUS_VERSION: "0.1.20"
 
 permissions:
@@ -34,6 +66,10 @@ jobs:
       - name: Validate production ref
         id: validate
         env:
+          APP: ${{ inputs.app }}
+          BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
+          DETACH_PAGES_DOMAINS: ${{ inputs.detach_pages_domains }}
+          DOMAIN_MODE: ${{ inputs.domain_mode }}
           INPUT_REF: ${{ inputs.ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ github.token }}
@@ -50,6 +86,16 @@ jobs:
           ref="$(printf '%s' "${INPUT_REF}" | tr -d '[:space:]')"
           if [ -z "${ref}" ]; then
             echo "ref is required" >&2
+            exit 1
+          fi
+
+          if [ "${DETACH_PAGES_DOMAINS}" = "true" ] && [ "${APP}" = "all" ]; then
+            echo "detach_pages_domains requires app=chill or app=binge" >&2
+            exit 1
+          fi
+
+          if [ "${DETACH_PAGES_DOMAINS}" = "true" ] && [ "${DOMAIN_MODE}" != "apex" ]; then
+            echo "detach_pages_domains requires domain_mode=apex" >&2
             exit 1
           fi
 
@@ -79,9 +125,13 @@ jobs:
       group: web-deploy-production-chill
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
+      url: https://${{ (inputs.domain_mode == 'apex' && (vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute')) || (vars.CHILL_PRODUCTION_VALIDATION_DOMAIN || 'next.chill.institute') }}
     permissions:
       contents: read
+    env:
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_CHILL || 'chill-web/production/chill/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -105,14 +155,39 @@ jobs:
       - name: Build chill production bundle
         run: vp run build:chill
 
-      - name: Deploy chill production to Cloudflare Pages
-        uses: ./.github/actions/cloudflare-pages-deploy
-        with:
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          project-name: chill-institute
-          dist-dir: apps/chill/dist
-          branch: main
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
+
+      - name: Detach legacy chill Pages domains
+        if: ${{ inputs.detach_pages_domains && inputs.domain_mode == 'apex' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+          CONFIRM_CLOUDFLARE_PAGES_DOMAIN_DETACH: "true"
+        run: scripts/ci/detach-cloudflare-pages-domains "${CHILL_PAGES_PROJECT}" "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_REDIRECT_DOMAIN}"
+
+      - name: Deploy chill production to SST
+        env:
+          CHILL_WEB_APP: chill
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage production --print-logs
+
+      - name: Save encrypted SST local state
+        if: always()
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-binge:
     needs: validate
@@ -121,9 +196,13 @@ jobs:
       group: web-deploy-production-binge
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
+      url: https://${{ (inputs.domain_mode == 'apex' && (vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute')) || (vars.BINGE_PRODUCTION_VALIDATION_DOMAIN || 'next.binge.institute') }}
     permissions:
       contents: read
+    env:
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_BINGE || 'chill-web/production/binge/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -147,14 +226,39 @@ jobs:
       - name: Build binge production bundle
         run: vp run build:binge
 
-      - name: Deploy binge production to Cloudflare Pages
-        uses: ./.github/actions/cloudflare-pages-deploy
-        with:
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          project-name: binge-institute
-          dist-dir: apps/binge/dist
-          branch: main
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
+
+      - name: Detach legacy binge Pages domains
+        if: ${{ inputs.detach_pages_domains && inputs.domain_mode == 'apex' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+          CONFIRM_CLOUDFLARE_PAGES_DOMAIN_DETACH: "true"
+        run: scripts/ci/detach-cloudflare-pages-domains "${BINGE_PAGES_PROJECT}" "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}"
+
+      - name: Deploy binge production to SST
+        env:
+          CHILL_WEB_APP: binge
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage production --print-logs
+
+      - name: Save encrypted SST local state
+        if: always()
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-summary:
     needs: [validate, deploy-chill, deploy-binge]
@@ -166,9 +270,19 @@ jobs:
           REF: ${{ inputs.ref }}
           SHA: ${{ needs.validate.outputs.sha }}
           APP: ${{ inputs.app }}
+          BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
+          DETACH_PAGES_DOMAINS: ${{ inputs.detach_pages_domains }}
+          DOMAIN_MODE: ${{ inputs.domain_mode }}
           CHILL_RESULT: ${{ needs.deploy-chill.result }}
           BINGE_RESULT: ${{ needs.deploy-binge.result }}
         run: |
+          chill_url="${CHILL_PRODUCTION_VALIDATION_DOMAIN}"
+          binge_url="${BINGE_PRODUCTION_VALIDATION_DOMAIN}"
+          if [ "${DOMAIN_MODE}" = "apex" ]; then
+            chill_url="${CHILL_PRODUCTION_DOMAIN}"
+            binge_url="${BINGE_PRODUCTION_DOMAIN}"
+          fi
+
           {
             echo "## Manual deploy"
             echo
@@ -176,13 +290,16 @@ jobs:
             echo "- SHA: \`${SHA}\`"
             echo "- Requested app: \`${APP}\`"
             echo "- Environment: \`production\`"
+            echo "- Domain mode: \`${DOMAIN_MODE}\`"
+            echo "- Bootstrap state: \`${BOOTSTRAP_STATE}\`"
+            echo "- Detached Pages domains: \`${DETACH_PAGES_DOMAINS}\`"
             if [ "${CHILL_RESULT}" = "success" ]; then
-              echo "- Chill: [https://chill.institute](https://chill.institute)"
+              echo "- Chill: [https://${chill_url}](https://${chill_url})"
             elif [ "${APP}" = "binge" ]; then
               echo "- Chill: skipped"
             fi
             if [ "${BINGE_RESULT}" = "success" ]; then
-              echo "- Binge: [https://binge.institute](https://binge.institute)"
+              echo "- Binge: [https://${binge_url}](https://${binge_url})"
             elif [ "${APP}" = "chill" ]; then
               echo "- Binge: skipped"
             fi

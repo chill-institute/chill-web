@@ -68,14 +68,14 @@ vp config --hooks-dir .vite-hooks
 - Shared package versions live in the workspace catalog in `pnpm-workspace.yaml`.
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
 - Both apps talk directly to the hosted API.
-- `apps/chill/` serves `chill.institute`, `www.chill.institute`, `staging.chill.institute`, and `*.chill-institute.pages.dev`.
-- `apps/binge/` serves `binge.institute`, `www.binge.institute`, `staging.binge.institute`, and `*.binge-institute.pages.dev`.
+- `apps/chill/` serves `chill.institute`, `www.chill.institute`, and `staging.chill.institute`.
+- `apps/binge/` serves `binge.institute`, `www.binge.institute`, and `staging.binge.institute`.
 - Localhost in either app resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 - When generating or updating reusable shadcn/base primitives, work from `packages/ui/` so `packages/ui/components.json` writes into the shared UI package. For app-specific surfaces, work from the target app directory so the app-local `components.json` resolves aliases correctly.
 - Playwright keeps traces, screenshots, and videos on failure. Check `apps/*/playwright-report/` and `apps/*/test-results/` after a failing run.
-- GitHub-owned Cloudflare deploys require `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to be configured for the repo or inherited from the org.
-- Once the GitHub deploy workflow is in use, disable direct Cloudflare Pages Git integration so production deploys remain fully gated by `Main`.
+- GitHub-owned Cloudflare deploys require `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_DEFAULT_ACCOUNT_ID`, `SST_STATE_AGE_IDENTITY`, and `SST_STATE_REPO_TOKEN` in the target GitHub Environment.
+- SST state repository, branch, blob paths, encryption recipient, deploy domains, and legacy Pages project names live in repository variables.
 
 ## Pull Requests
 

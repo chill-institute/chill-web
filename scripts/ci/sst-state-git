@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 command="$1"
-state_repo="${SST_STATE_REPO:-https://github.com/chill-institute/chill-web-sst-state.git}"
+state_repo="${SST_STATE_REPO:-}"
 state_branch="${SST_STATE_REPO_BRANCH:-main}"
 state_file="${SST_STATE_FILE:-chill-web/staging/sst-local-state.tar.gz.age}"
 bootstrap_state="${SST_STATE_BOOTSTRAP:-false}"
@@ -19,7 +19,7 @@ case "${state_file}" in
     ;;
 esac
 
-for required in SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY; do
+for required in SST_STATE_REPO SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY; do
   if [ -z "${!required:-}" ]; then
     echo "${required} is required" >&2
     exit 1
@@ -114,8 +114,21 @@ case "${command}" in
     fi
 
     git -C "${repo_dir}" commit -m "chore: update SST state ${state_file}" >/dev/null
-    git -C "${repo_dir}" push origin "HEAD:${state_branch}" >/dev/null
-    echo "Saved encrypted SST state to ${state_file}"
+
+    for attempt in 1 2 3; do
+      if git -C "${repo_dir}" push origin "HEAD:${state_branch}" >/dev/null; then
+        echo "Saved encrypted SST state to ${state_file}"
+        exit 0
+      fi
+
+      if [ "${attempt}" -eq 3 ]; then
+        echo "Failed to push encrypted SST state after ${attempt} attempts" >&2
+        exit 1
+      fi
+
+      echo "State repo changed while saving ${state_file}; rebasing and retrying" >&2
+      git -C "${repo_dir}" pull --rebase origin "${state_branch}" >/dev/null
+    done
     ;;
 
   *)
