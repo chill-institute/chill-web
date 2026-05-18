@@ -27,7 +27,7 @@ env:
   SST_STATE_REPO: https://github.com/chill-institute/chill-web-sst-state.git
   SST_STATE_REPO_BRANCH: main
   SST_STATE_FILE: chill-web/staging/sst-local-state.tar.gz.age
-  SST_STATE_AGE_RECIPIENT: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIODANZ+vfrOYvSdrohoJS2Q93SY9GgKHHCXIf93X0s2X chill-web-sst-state-age-staging
+  SST_STATE_AGE_RECIPIENT: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICspcSGh+K8iQ4p3etk6xgwlOXfMjnsDjhcqwTMWdhdv chill-web-sst-state-shared
   VITE_PLUS_VERSION: "0.1.20"
 
 permissions:
