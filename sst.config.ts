@@ -23,7 +23,6 @@ const surfaces = {
           "CHILL_PRODUCTION_VALIDATION_DOMAIN",
           "next.chill.institute",
         ),
-        redirects: [readEnvironment("CHILL_PRODUCTION_REDIRECT_DOMAIN", "www.chill.institute")],
       },
     },
     path: "apps/chill/dist",
@@ -39,7 +38,6 @@ const surfaces = {
           "BINGE_PRODUCTION_VALIDATION_DOMAIN",
           "next.binge.institute",
         ),
-        redirects: [readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN", "www.binge.institute")],
       },
     },
     path: "apps/binge/dist",
@@ -75,7 +73,6 @@ type Surface = AppSurface | "zones";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
-    aliases?: readonly string[];
     name: string;
   };
   notFound: "single-page-application";

@@ -4,7 +4,7 @@ Deployment model for `chill-web`
 
 ## Hosting Shape
 
-Target production shape after SST cutover:
+Production hosting shape:
 
 - static assets on SST-managed Cloudflare Workers
 - API on `https://api.chill.institute`
@@ -63,36 +63,32 @@ Workflow shape:
 - PRs verify and run e2e only; they do not create public preview deploys
 - `Deploy Staging` is a manual workflow that must be run from `main` and promotes built artifacts from a validated same-repo branch or commit SHA to the `staging` GitHub Environment after approval; its secret-bearing SST deploy jobs use trusted `main` deploy code, and its `app` input accepts `chill` or `binge` for branch artifact deploys while `all` and `zones` must use `main`
 - pushes to `main` run `Main`
-- `Main` runs the same selective checks, then deploys only when `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true`; `SST_PRODUCTION_DOMAIN_MODE` controls whether it targets validation or apex hostnames
+- `Main` runs the same selective checks, then deploys only when `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true`; production normally runs with `SST_PRODUCTION_DOMAIN_MODE=apex`
 - `Main` does not deploy for docs, workflow-only, script-only, or app e2e-only changes
-- `Deploy` remains available as a manual production deploy fallback for current `main` only and accepts `all`, `chill`, or `binge`; legacy Pages domain detach is only allowed for a single app at a time
+- `Deploy` remains available as a manual production deploy fallback for current `main` only and accepts `all`, `chill`, or `binge`
 
 SST deploy config:
 
 - staging deploys `chill`, `binge`, and shared `zones`; production deploys `chill` and `binge`
-- staging uses `staging.chill.institute` and `staging.binge.institute`; production validation uses `next.chill.institute` and `next.binge.institute`
-- production cutover uses the apex domains, then explicitly keeps `www.*` and `next.*` attached as Workers domains
+- staging uses `staging.chill.institute` and `staging.binge.institute`; production validation mode uses `next.chill.institute` and `next.binge.institute`
+- production apex mode uses `chill.institute` and `binge.institute`, then explicitly keeps `www.*` and `next.*` attached as Workers domains
 - SST uses `home: "local"`; GitHub Actions restores and saves encrypted state through the private repo named by `SST_STATE_REPO`
 - production keeps separate state files for chill and binge so app deploy lanes do not overwrite each other
 - GitHub Environments provide `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_DEFAULT_ACCOUNT_ID`, `SST_STATE_AGE_IDENTITY`, and `SST_STATE_REPO_TOKEN`
-- repository variables provide domain names, legacy Pages project names, `SST_PRODUCTION_AUTO_DEPLOY_ENABLED`, `SST_PRODUCTION_DOMAIN_MODE`, `SST_STATE_REPO`, `SST_STATE_REPO_BRANCH`, `SST_STATE_AGE_RECIPIENT`, and the `SST_STATE_FILE_*` paths
+- repository variables provide domain names, `SST_PRODUCTION_AUTO_DEPLOY_ENABLED`, `SST_PRODUCTION_DOMAIN_MODE`, `SST_STATE_REPO`, `SST_STATE_REPO_BRANCH`, `SST_STATE_AGE_RECIPIENT`, and the `SST_STATE_FILE_*` paths
 - first deploy only: run with `bootstrap_state=true`; later deploys fail closed when encrypted state is missing
 - SST manages `always_use_https` and `automatic_https_rewrites` for both zones
 
-Keep the legacy Pages project variables as rollback references until the SST production cutover is stable. They are not used by GitHub Actions after the SST migration.
+## Production Operations
 
-## Production Cutover
+Production has been cut over to SST. Normal deploys are push-to-`main` through `Main` with `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true` and `SST_PRODUCTION_DOMAIN_MODE=apex`.
 
-Freeze old Pages deploys and production DNS changes before cutover.
+Use manual `Deploy` only to rerun the current `main` production deploy path after an incident or GitHub Actions retry failure:
 
-Cut over from Pages to SST one app at a time:
+1. Choose `app=chill`, `app=binge`, or `app=all`.
+2. Use `domain_mode=apex` for normal production.
+3. Keep `bootstrap_state=false` unless intentionally bootstrapping a missing encrypted state file.
 
-1. Deploy production SST to validation: manual `Deploy` with `domain_mode=validation`, `bootstrap_state=true`, and `detach_pages_domains=false`.
-2. Verify `https://next.chill.institute/` and `https://next.binge.institute/`.
-3. Cut over `chill`: manual `Deploy` with `app=chill`, `domain_mode=apex`, `bootstrap_state=false`, and `detach_pages_domains=true`.
-4. Verify `https://chill.institute/` and `https://www.chill.institute/`.
-5. Repeat for `binge`, then set `SST_PRODUCTION_DOMAIN_MODE=apex` and `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true` for normal push-to-main deploys.
+Both production deploy paths restore encrypted SST state, refresh Cloudflare/SST state, deploy, explicitly ensure `www.*` and `next.*` Workers domains, and then save encrypted state.
 
-The detach step resolves from repository variables. Later deploys use `bootstrap_state=false` and `detach_pages_domains=false`.
-
-Rollback is to reattach the affected custom domains to the existing Pages project. Do not run `sst remove` for production; production resources are retained/protected.
+Rollback is to redeploy the last known good `main` commit through the manual `Deploy` workflow. Do not run `sst remove` for production; production resources are retained/protected.

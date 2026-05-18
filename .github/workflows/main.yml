@@ -371,6 +371,13 @@ jobs:
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 
+      - name: Refresh chill production SST state
+        env:
+          CHILL_WEB_APP: chill
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst refresh --stage production --print-logs
+
       - name: Deploy chill production to SST
         env:
           CHILL_WEB_APP: chill
@@ -442,6 +449,13 @@ jobs:
           SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
+
+      - name: Refresh binge production SST state
+        env:
+          CHILL_WEB_APP: binge
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst refresh --stage production --print-logs
 
       - name: Deploy binge production to SST
         env:
