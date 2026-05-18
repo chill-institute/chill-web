@@ -175,6 +175,13 @@ jobs:
           CONFIRM_CLOUDFLARE_PAGES_DOMAIN_DETACH: "true"
         run: scripts/ci/detach-cloudflare-pages-domains "${CHILL_PAGES_PROJECT}" "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_REDIRECT_DOMAIN}"
 
+      - name: Refresh chill production SST state
+        env:
+          CHILL_WEB_APP: chill
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst refresh --stage production --print-logs
+
       - name: Deploy chill production to SST
         env:
           CHILL_WEB_APP: chill
@@ -245,6 +252,13 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
           CONFIRM_CLOUDFLARE_PAGES_DOMAIN_DETACH: "true"
         run: scripts/ci/detach-cloudflare-pages-domains "${BINGE_PAGES_PROJECT}" "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}"
+
+      - name: Refresh binge production SST state
+        env:
+          CHILL_WEB_APP: binge
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst refresh --stage production --print-logs
 
       - name: Deploy binge production to SST
         env:

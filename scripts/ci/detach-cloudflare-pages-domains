@@ -82,6 +82,7 @@ zone_id="$(api_get "${zone_query}" | jq -er --arg zone_name "${zone_name}" '.res
 
 delete_dns_records() {
   local record_name="$1"
+  local preserve_managed="${2:-false}"
 
   for record_type in A AAAA CNAME; do
     records_query="zones/${zone_id}/dns_records?type=${record_type}&name=$(urlencode "${record_name}")&per_page=${list_page_size}"
@@ -92,6 +93,11 @@ delete_dns_records() {
           continue
         fi
 
+        if [ "${preserve_managed}" = "true" ] && [ "${type}" = "AAAA" ] && [ "${content}" = "100::" ]; then
+          echo "Keeping Cloudflare-managed DNS ${type} ${name} -> ${content}"
+          continue
+        fi
+
         echo "Deleting Cloudflare DNS ${type} ${name} -> ${content}"
         api_delete "zones/${zone_id}/dns_records/${record_id}"
       done
@@ -99,13 +105,24 @@ delete_dns_records() {
 }
 
 pages_domains="$(api_get "accounts/${account_id}/pages/projects/${project}/domains")"
+workers_domains="$(api_get "accounts/${account_id}/workers/domains")"
 
+domain_index=0
 for domain_name in "$@"; do
   encoded_domain="$(urlencode "${domain_name}")"
   has_pages_domain="$(
     printf '%s\n' "${pages_domains}" \
       | jq -r --arg domain_name "${domain_name}" 'any(.result[]?; .name == $domain_name)'
   )"
+  workers_domain_id="$(
+    printf '%s\n' "${workers_domains}" \
+      | jq -r --arg domain_name "${domain_name}" '.result[]? | select(.hostname == $domain_name) | .id' \
+      | head -n 1
+  )"
+  preserve_managed="false"
+  if [ "${domain_index}" -eq 0 ]; then
+    preserve_managed="true"
+  fi
 
   if [ "${has_pages_domain}" = "true" ]; then
     echo "Detaching Cloudflare Pages domain ${domain_name} from ${project_name}"
@@ -114,5 +131,11 @@ for domain_name in "$@"; do
     echo "Cloudflare Pages domain ${domain_name} is not attached to ${project_name}"
   fi
 
-  delete_dns_records "${domain_name}"
+  if [ "${preserve_managed}" != "true" ] && [ -n "${workers_domain_id}" ]; then
+    echo "Detaching Cloudflare Workers domain ${domain_name}"
+    api_delete "accounts/${account_id}/workers/domains/${workers_domain_id}"
+  fi
+
+  delete_dns_records "${domain_name}" "${preserve_managed}"
+  domain_index=$((domain_index + 1))
 done
