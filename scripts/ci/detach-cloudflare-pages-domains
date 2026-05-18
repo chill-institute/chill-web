@@ -92,11 +92,6 @@ delete_dns_records() {
           continue
         fi
 
-        if [ "${type}" = "AAAA" ] && [ "${content}" = "100::" ]; then
-          echo "Keeping Cloudflare-managed DNS ${type} ${name} -> ${content}"
-          continue
-        fi
-
         echo "Deleting Cloudflare DNS ${type} ${name} -> ${content}"
         api_delete "zones/${zone_id}/dns_records/${record_id}"
       done
