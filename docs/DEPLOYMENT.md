@@ -71,7 +71,7 @@ SST deploy config:
 
 - staging deploys `chill`, `binge`, and shared `zones`; production deploys `chill` and `binge`
 - staging uses `staging.chill.institute` and `staging.binge.institute`; production validation uses `next.chill.institute` and `next.binge.institute`
-- production cutover uses the apex domains and keeps `www.*` plus `next.*` as aliases
+- production cutover uses the apex domains with `www.*` aliases, then explicitly keeps `next.*` attached as validation domains
 - SST uses `home: "local"`; GitHub Actions restores and saves encrypted state through the private repo named by `SST_STATE_REPO`
 - production keeps separate state files for chill and binge so app deploy lanes do not overwrite each other
 - GitHub Environments provide `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_DEFAULT_ACCOUNT_ID`, `SST_STATE_AGE_IDENTITY`, and `SST_STATE_REPO_TOKEN`

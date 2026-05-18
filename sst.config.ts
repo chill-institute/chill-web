@@ -176,7 +176,7 @@ function resolveStaticSiteDomain(surface: AppSurface, stage: Stage): StaticSiteV
   }
 
   return {
-    aliases: [config.validationName, ...config.redirects],
+    aliases: config.redirects,
     name: config.name,
   };
 }
