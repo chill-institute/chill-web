@@ -37,6 +37,7 @@
   "devDependencies": {
     "knip": "catalog:",
     "sst": "catalog:",
+    "vite": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {
