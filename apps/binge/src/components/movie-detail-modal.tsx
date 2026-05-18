@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowUpRight, Search, Star, Users } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Search, Star, Users } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { Button } from "@chill-institute/ui/components/ui/button";
@@ -7,14 +7,6 @@ import { ModalCloseButton } from "@chill-institute/ui/components/modal-close-but
 import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Badge } from "@chill-institute/ui/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@chill-institute/ui/components/ui/select";
 import { Separator } from "@chill-institute/ui/components/ui/separator";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { cn } from "@chill-institute/ui/cn";
@@ -155,25 +147,27 @@ function FilterSelect<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <Select<T>
-      value={value}
-      onValueChange={(next) => {
-        if (next != null) onChange(next);
-      }}
-    >
-      <SelectTrigger size="sm" aria-label={label} className="w-full sm:w-fit">
-        <SelectValue>{(v) => options.find((o) => o.value === v)?.label ?? null}</SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <span className="relative block w-full sm:w-fit">
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => {
+          const next = options.find((option) => option.value === event.currentTarget.value);
+          if (next) onChange(next.value);
+        }}
+        className="border-border-strong h-7 w-full appearance-none rounded border bg-transparent py-1 pr-8 pl-2.5 text-sm whitespace-nowrap text-fg-1 outline-none transition-colors select-none focus-visible:border-ring-focus focus-visible:ring-3 focus-visible:ring-ring-focus/50 sm:w-fit"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-fg-2"
+      />
+    </span>
   );
 }
 
@@ -352,7 +346,10 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         />
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6">
+      <div
+        data-movie-detail-scroll
+        className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6"
+      >
         {synopsis ? (
           <p className="m-0 text-sm leading-relaxed text-pretty text-fg-2">{synopsis}</p>
         ) : null}
@@ -417,7 +414,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
                 <ul
                   aria-label="Torrent results list"
-                  className="border-border-soft bg-surface-2 m-0 list-none overflow-hidden rounded border p-0"
+                  className="border-border-soft bg-surface-2 m-0 shrink-0 list-none overflow-hidden rounded border p-0"
                 >
                   {visibleResults.map(({ result, resolution, codec }) => {
                     const isSendable = canSendResult(result);
@@ -599,7 +596,7 @@ export function MovieDetailModal({ movie, onClose }: Props) {
       title={`${movie.title} details`}
       description={`Torrent results for ${movie.title} (${movie.year})`}
       desktopContentClassName="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
-      drawerContentClassName="!max-h-[92dvh] border-0 bg-transparent p-0"
+      drawerContentClassName="!max-h-[92dvh] rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
     >
       <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop={isDesktop} />
     </ResponsiveModal>

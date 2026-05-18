@@ -191,9 +191,10 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/");
     await openFirstMovieModal(authenticatedPage);
 
-    const pickFromSelect = async (label: string, optionName: string | RegExp) => {
-      await authenticatedPage.getByRole("combobox", { name: label }).click();
-      await authenticatedPage.getByRole("option", { name: optionName, exact: true }).click();
+    const pickFromSelect = async (label: string, optionLabel: string) => {
+      await authenticatedPage.getByRole("combobox", { name: label }).selectOption({
+        label: optionLabel,
+      });
     };
 
     const resultsList = authenticatedPage.getByRole("list", { name: "Torrent results list" });
