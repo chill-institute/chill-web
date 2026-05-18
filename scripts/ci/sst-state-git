@@ -113,7 +113,7 @@ case "${command}" in
       exit 0
     fi
 
-    git -C "${repo_dir}" commit -m "chore: update staging SST state" >/dev/null
+    git -C "${repo_dir}" commit -m "chore: update SST state ${state_file}" >/dev/null
     git -C "${repo_dir}" push origin "HEAD:${state_branch}" >/dev/null
     echo "Saved encrypted SST state to ${state_file}"
     ;;
