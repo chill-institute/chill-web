@@ -98,7 +98,7 @@ delete_dns_records() {
   done
 }
 
-pages_domains="$(api_get "accounts/${account_id}/pages/projects/${project}/domains?per_page=${list_page_size}")"
+pages_domains="$(api_get "accounts/${account_id}/pages/projects/${project}/domains")"
 
 for domain_name in "$@"; do
   encoded_domain="$(urlencode "${domain_name}")"
