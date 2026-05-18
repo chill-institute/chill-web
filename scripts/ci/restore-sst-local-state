@@ -33,7 +33,7 @@ restore_dir="$(mktemp -d)"
 trap 'rm -rf "${restore_dir}"' EXIT
 
 artifact_zip="${restore_dir}/sst-local-state.zip"
-gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" --output "${artifact_zip}"
+gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > "${artifact_zip}"
 unzip -q "${artifact_zip}" -d "${restore_dir}/artifact"
 
 if [ ! -f "${restore_dir}/artifact/sst-local-state.tar.gz" ]; then
