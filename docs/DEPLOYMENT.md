@@ -79,13 +79,14 @@ Staging deploys are app-specific SST deployments:
 - required staging GitHub Environment secret: `SST_STATE_AGE_IDENTITY`
 - required staging GitHub Environment secret: `SST_STATE_REPO_TOKEN`
 - required staging GitHub Environment variable: `CLOUDFLARE_DEFAULT_ACCOUNT_ID`
+- required repository variable: `SST_STATE_AGE_RECIPIENT`
 
 SST state repository:
 
 - repo: `chill-institute/chill-web-sst-state`
 - staging blob path: `chill-web/staging/sst-local-state.tar.gz.age`
 - production blob path after the SST production migration: `chill-web/production/sst-local-state.tar.gz.age`
-- shared encryption recipient: `SST_STATE_AGE_RECIPIENT` in the deploy workflow
+- shared encryption recipient: `SST_STATE_AGE_RECIPIENT` repository variable
 - shared encryption identity: `SST_STATE_AGE_IDENTITY`, stored in the relevant GitHub Environments
 - write identity: `SST_STATE_REPO_TOKEN`, scoped to Contents read/write on `chill-institute/chill-web-sst-state`
 - the same `SST_STATE_REPO_TOKEN` may be stored in staging and production because it is scoped only to the private state repo
