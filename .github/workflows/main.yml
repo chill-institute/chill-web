@@ -378,12 +378,14 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage production --print-logs
 
-      - name: Ensure chill validation domain
+      - name: Ensure chill production aliases
         if: ${{ vars.SST_PRODUCTION_DOMAIN_MODE == 'apex' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_VALIDATION_DOMAIN}" "chill-web-chill-production-webrouterscript"
+        run: |
+          scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-chill-production-webrouterscript"
+          scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_VALIDATION_DOMAIN}" "chill-web-chill-production-webrouterscript"
 
       - name: Save encrypted SST local state
         if: always()
@@ -448,12 +450,14 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage production --print-logs
 
-      - name: Ensure binge validation domain
+      - name: Ensure binge production aliases
         if: ${{ vars.SST_PRODUCTION_DOMAIN_MODE == 'apex' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_VALIDATION_DOMAIN}" "chill-web-binge-production-webrouterscript"
+        run: |
+          scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-binge-production-webrouterscript"
+          scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_VALIDATION_DOMAIN}" "chill-web-binge-production-webrouterscript"
 
       - name: Save encrypted SST local state
         if: always()
