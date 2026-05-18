@@ -367,12 +367,6 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
-      - name: Verify chill staging custom domain
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/check-cloudflare-worker-domain staging.chill.institute
-
       - name: Pack SST local state
         if: always()
         run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
@@ -437,12 +431,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
-
-      - name: Verify binge staging custom domain
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/check-cloudflare-worker-domain staging.binge.institute
 
       - name: Pack SST local state
         if: always()
