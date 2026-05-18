@@ -1,3 +1,5 @@
+import { normalizeCodecFilterValue } from "@chill-institute/api/release-info";
+
 import { effectiveInfo } from "./release-info";
 import type { SearchResult } from "./types";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
@@ -29,7 +31,7 @@ function applyResolution(result: SearchResult, filter: ResolutionFilter) {
 }
 
 function applyCodec(result: SearchResult, filter: CodecFilter) {
-  const codec = effectiveInfo(result).codec.toLowerCase();
+  const codec = normalizeCodecFilterValue(effectiveInfo(result).codec);
   if (!codec) return false;
   switch (filter) {
     case CodecFilter.X264:

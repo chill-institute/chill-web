@@ -112,6 +112,84 @@ describe("formatSearchResults", () => {
 
     expect(formatted.map((result) => result.id)).toEqual(["raw-1080p"]);
   });
+
+  it("matches H.264-family releaseInfo values with the x264 quick filter", () => {
+    const results = [
+      create(SearchResultSchema, {
+        id: "h264",
+        title: "Movie.2024.1080p.WEB.H-264-GRP",
+        indexer: "yts",
+        source: "yts",
+        peers: BigInt(0),
+        seeders: BigInt(10),
+        size: BigInt(100),
+        uploadedAt: "2025-01-01T00:00:00Z",
+        link: "https://example.com/h264",
+        releaseInfo: release({ resolution: "1080p", codec: "H264" }),
+      }),
+      create(SearchResultSchema, {
+        id: "h265",
+        title: "Movie.2024.1080p.WEB.H-265-GRP",
+        indexer: "yts",
+        source: "yts",
+        peers: BigInt(0),
+        seeders: BigInt(20),
+        size: BigInt(100),
+        uploadedAt: "2025-01-02T00:00:00Z",
+        link: "https://example.com/h265",
+        releaseInfo: release({ resolution: "1080p", codec: "H265" }),
+      }),
+    ];
+
+    const formatted = formatSearchResults(
+      results,
+      [],
+      [CodecFilter.X264],
+      [],
+      SortBy.SEEDERS,
+      SortDirection.DESC,
+    );
+
+    expect(formatted.map((result) => result.id)).toEqual(["h264"]);
+  });
+
+  it("falls back to parsing dashed and underscored codec tokens from the raw release name", () => {
+    const results = [
+      create(SearchResultSchema, {
+        id: "x-264",
+        title: "Movie.2024.1080p.WEB.x-264-GRP",
+        indexer: "yts",
+        source: "yts",
+        peers: BigInt(0),
+        seeders: BigInt(10),
+        size: BigInt(100),
+        uploadedAt: "2025-01-01T00:00:00Z",
+        link: "https://example.com/x-264",
+      }),
+      create(SearchResultSchema, {
+        id: "h_265",
+        title: "Movie.2024.1080p.WEB.H_265-GRP",
+        indexer: "yts",
+        source: "yts",
+        peers: BigInt(0),
+        seeders: BigInt(20),
+        size: BigInt(100),
+        uploadedAt: "2025-01-02T00:00:00Z",
+        link: "https://example.com/h_265",
+      }),
+    ];
+
+    const formatted = formatSearchResults(
+      results,
+      [],
+      [CodecFilter.X264],
+      [],
+      SortBy.SEEDERS,
+      SortDirection.DESC,
+    );
+
+    expect(formatted.map((result) => result.id)).toEqual(["x-264"]);
+  });
 });
 
 describe("normalizeQuery", () => {

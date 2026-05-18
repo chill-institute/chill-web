@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, Search, Star, Users } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
+import { normalizeCodecFilterValue } from "@chill-institute/api/release-info";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { ModalCloseButton } from "@chill-institute/ui/components/modal-close-button";
 import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
@@ -121,9 +122,7 @@ function parseResolution(result: {
 function parseCodec(result: {
   releaseInfo?: { codec: string } | undefined;
 }): ParsedResult["codec"] {
-  const value = result.releaseInfo?.codec.toLowerCase();
-  if (value === "x265" || value === "x264") return value;
-  return undefined;
+  return normalizeCodecFilterValue(result.releaseInfo?.codec);
 }
 
 function parseUploadedAtTimestamp(uploadedAt: string) {

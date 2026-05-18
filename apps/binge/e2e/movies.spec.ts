@@ -1,5 +1,7 @@
 import { test, expect } from "./support/fixtures";
+import { create } from "@bufbuild/protobuf";
 import type { Page } from "@playwright/test";
+import { MoviesSource, ReleaseInfoSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import {
   movie,
   moviesResponse,
@@ -9,7 +11,6 @@ import {
   tvShowsResponse,
   userSettings,
 } from "./support/seeds";
-import { MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 const movies = [
   movie({
@@ -57,6 +58,10 @@ const inceptionSearchResults = [
     size: 2147483648n,
     source: "yts",
     uploadedAt: "2026-04-01T00:00:00Z",
+    releaseInfo: create(ReleaseInfoSchema, {
+      resolution: "1080p",
+      codec: "H264",
+    }),
   }),
   searchResult({
     id: "sr2",
@@ -211,6 +216,10 @@ test.describe("movies", () => {
     await pickFromSelect("Codec", "x265");
     await expect(resultItems).toHaveCount(2);
     await expect(resultsList).not.toContainText("Inception.2010.1080p.BluRay.x264");
+
+    await pickFromSelect("Codec", "x264");
+    await expect(resultItems).toHaveCount(1);
+    await expect(resultItems.first()).toContainText("Inception.2010.1080p.BluRay.x264");
 
     await pickFromSelect("Codec", "all codecs");
     await pickFromSelect("Sort", "newest first");
