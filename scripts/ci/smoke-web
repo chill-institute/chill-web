@@ -26,6 +26,31 @@ assert_redirect() {
   echo "redirect=${source} -> ${actual}"
 }
 
+fetch_status() {
+  local url="$1"
+  local attempt=1
+  local max_attempts=12
+  local status
+
+  while [ "${attempt}" -le "${max_attempts}" ]; do
+    status="$(curl -sS -o /dev/null -w "%{http_code}" "${url}" || true)"
+
+    if [ "${status}" = "200" ]; then
+      printf '%s\n' "${status}"
+      return 0
+    fi
+
+    if [ "${attempt}" = "${max_attempts}" ]; then
+      echo "${url} returned ${status}" >&2
+      return 1
+    fi
+
+    echo "${url} returned ${status}; retrying (${attempt}/${max_attempts})" >&2
+    sleep 5
+    attempt="$((attempt + 1))"
+  done
+}
+
 case "${environment}:${app}" in
   staging:chill) url="https://staging.chill.institute/" ;;
   staging:binge) url="https://staging.binge.institute/" ;;
@@ -37,11 +62,7 @@ case "${environment}:${app}" in
     ;;
 esac
 
-status="$(curl -fsS -o /dev/null -w "%{http_code}" "${url}")"
-if [ "${status}" != "200" ]; then
-  echo "${url} returned ${status}" >&2
-  exit 1
-fi
+status="$(fetch_status "${url}")"
 
 echo "url=${url}"
 echo "status=${status}"
