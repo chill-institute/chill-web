@@ -77,7 +77,6 @@ type StaticSiteV2Args = {
   domain: {
     aliases?: readonly string[];
     name: string;
-    redirects?: readonly string[];
   };
   notFound: "single-page-application";
   path: string;
@@ -177,9 +176,8 @@ function resolveStaticSiteDomain(surface: AppSurface, stage: Stage): StaticSiteV
   }
 
   return {
-    aliases: [config.validationName],
+    aliases: [config.validationName, ...config.redirects],
     name: config.name,
-    redirects: config.redirects,
   };
 }
 
