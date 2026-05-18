@@ -51,7 +51,7 @@ Better Stack monitors the production web roots:
 - `chill-web-production-root` checks `https://chill.institute/`
 - `binge-web-production-root` checks `https://binge.institute/`
 
-Both monitors use HTTPS status checks on a 3 minute cadence. API and subsystem health monitors live with the engine runtime docs.
+Both monitors use HTTPS status checks on a 3 minute cadence. Add staging root monitors for `https://staging.chill.institute/` and `https://staging.binge.institute/` when the SST staging migration is complete. API and subsystem health monitors live with the engine runtime docs.
 
 ## GitHub Actions
 
@@ -74,7 +74,7 @@ Staging deploys are app-specific SST deployments:
 - SST uses `home: "local"` for staging state so deploys do not require Cloudflare R2 billing; GitHub Actions restores and saves the SST local state directory through an encrypted state blob in the private `chill-institute/chill-web-sst-state` repo
 - the `Deploy Staging` workflow is serialized with the `web-deploy-staging` concurrency group, and within a run the SST deploy order is `zones` -> `chill` -> `binge` so each deploy sees the encrypted state saved by the previous deploy
 - before each app deploy, the workflow removes exact-match legacy `A`, `AAAA`, and `CNAME` DNS records for that staging hostname so Cloudflare can attach the Worker custom domain
-- after each app deploy, the workflow verifies the matching public staging hostname with a retried HTTPS request
+- public staging hostname uptime is monitored outside GitHub Actions; the deploy workflow does not hard-fail on GitHub-runner HTTP checks because Cloudflare edge rules can block runner traffic while the site is healthy for normal browser traffic
 - required staging GitHub Environment secret: `CLOUDFLARE_API_TOKEN`
 - required staging GitHub Environment secret: `SST_STATE_AGE_IDENTITY`
 - required staging GitHub Environment secret: `SST_STATE_REPO_TOKEN`

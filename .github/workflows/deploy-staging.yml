@@ -28,7 +28,6 @@ env:
   SST_STATE_REPO_BRANCH: main
   SST_STATE_FILE: chill-web/staging/sst-local-state.tar.gz.age
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
-  STAGING_DOMAIN_USER_AGENT: Mozilla/5.0 (compatible; chill-web-staging-check/1.0; +https://github.com/chill-institute/chill-web)
   VITE_PLUS_VERSION: "0.1.20"
 
 permissions:
@@ -382,18 +381,6 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
-      - name: Verify chill staging domain
-        run: |
-          for _ in $(seq 1 12); do
-            status="$(curl --user-agent "${STAGING_DOMAIN_USER_AGENT}" --compressed --silent --show-error --location --max-time 20 --output /dev/null --write-out "%{http_code}" https://staging.chill.institute/ || true)"
-            if [ "${status}" = "200" ]; then
-              exit 0
-            fi
-            echo "https://staging.chill.institute/ returned ${status}; retrying" >&2
-            sleep 5
-          done
-          curl --user-agent "${STAGING_DOMAIN_USER_AGENT}" --compressed --fail --show-error --location --max-time 20 --output /dev/null https://staging.chill.institute/
-
       - name: Save encrypted SST local state
         if: always()
         env:
@@ -458,18 +445,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
-
-      - name: Verify binge staging domain
-        run: |
-          for _ in $(seq 1 12); do
-            status="$(curl --user-agent "${STAGING_DOMAIN_USER_AGENT}" --compressed --silent --show-error --location --max-time 20 --output /dev/null --write-out "%{http_code}" https://staging.binge.institute/ || true)"
-            if [ "${status}" = "200" ]; then
-              exit 0
-            fi
-            echo "https://staging.binge.institute/ returned ${status}; retrying" >&2
-            sleep 5
-          done
-          curl --user-agent "${STAGING_DOMAIN_USER_AGENT}" --compressed --fail --show-error --location --max-time 20 --output /dev/null https://staging.binge.institute/
 
       - name: Save encrypted SST local state
         if: always()
