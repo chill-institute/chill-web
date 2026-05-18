@@ -502,7 +502,7 @@ jobs:
 
   smoke-chill:
     needs: deploy-chill
-    if: ${{ needs.deploy-chill.result == 'success' }}
+    if: ${{ always() && needs.deploy-chill.result == 'success' }}
     concurrency:
       group: web-smoke-staging-chill
       cancel-in-progress: false
@@ -540,7 +540,7 @@ jobs:
 
   smoke-binge:
     needs: deploy-binge
-    if: ${{ needs.deploy-binge.result == 'success' }}
+    if: ${{ always() && needs.deploy-binge.result == 'success' }}
     concurrency:
       group: web-smoke-staging-binge
       cancel-in-progress: false
