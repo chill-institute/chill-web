@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: scripts/ci/sst-state-git <restore|save>" >&2
+  exit 64
+fi
+
+command="$1"
+state_repo="${SST_STATE_REPO:-https://github.com/chill-institute/chill-web-sst-state.git}"
+state_branch="${SST_STATE_REPO_BRANCH:-main}"
+state_file="${SST_STATE_FILE:-chill-web/staging/sst-local-state.tar.gz.age}"
+bootstrap_state="${SST_STATE_BOOTSTRAP:-false}"
+
+case "${state_file}" in
+  ""|/*|*..*)
+    echo "unsupported SST_STATE_FILE: ${state_file}" >&2
+    exit 64
+    ;;
+esac
+
+for required in SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY; do
+  if [ -z "${!required:-}" ]; then
+    echo "${required} is required" >&2
+    exit 1
+  fi
+done
+
+if ! command -v age >/dev/null 2>&1; then
+  echo "age is required" >&2
+  exit 1
+fi
+
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "${tmp_dir}"' EXIT
+
+askpass="${tmp_dir}/git-askpass"
+cat > "${askpass}" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  *Username*) printf '%s\n' "x-access-token" ;;
+  *Password*) printf '%s\n' "${SST_STATE_REPO_TOKEN}" ;;
+  *) printf '\n' ;;
+esac
+EOF
+chmod 700 "${askpass}"
+
+age_identity="${tmp_dir}/age-identity"
+printf '%s\n' "${SST_STATE_AGE_IDENTITY}" > "${age_identity}"
+chmod 600 "${age_identity}"
+
+repo_dir="${tmp_dir}/state-repo"
+export GIT_ASKPASS="${askpass}"
+export GIT_TERMINAL_PROMPT=0
+
+git clone --depth 1 --branch "${state_branch}" "${state_repo}" "${repo_dir}" >/dev/null
+
+encrypted_state="${repo_dir}/${state_file}"
+
+case "${command}" in
+  restore)
+    if [ ! -f "${encrypted_state}" ]; then
+      if [ "${bootstrap_state}" = "true" ]; then
+        echo "No encrypted SST state found at ${state_file}; bootstrap_state=true so starting with empty local state"
+        exit 0
+      fi
+
+      echo "No encrypted SST state found at ${state_file}; rerun with bootstrap_state=true only for the first deploy" >&2
+      exit 1
+    fi
+
+    tarball="${tmp_dir}/sst-local-state.tar.gz"
+    age --decrypt --identity "${age_identity}" --output "${tarball}" "${encrypted_state}"
+
+    extracted="${tmp_dir}/extracted"
+    mkdir -p "${extracted}"
+    tar -xzf "${tarball}" -C "${extracted}"
+
+    if [ ! -d "${extracted}/state" ]; then
+      echo "Encrypted SST state ${state_file} did not contain a state directory" >&2
+      exit 1
+    fi
+
+    state_dir="$(scripts/ci/sst-local-state-path)"
+    rm -rf "${state_dir}"
+    mkdir -p "${state_dir}"
+    cp -a "${extracted}/state/." "${state_dir}/"
+    echo "Restored encrypted SST state from ${state_file} to ${state_dir}"
+    ;;
+
+  save)
+    if [ -z "${SST_STATE_AGE_RECIPIENT:-}" ]; then
+      echo "SST_STATE_AGE_RECIPIENT is required" >&2
+      exit 1
+    fi
+
+    tarball="${tmp_dir}/sst-local-state.tar.gz"
+    scripts/ci/pack-sst-local-state "${tarball}"
+    if [ ! -f "${tarball}" ]; then
+      echo "SST local state tarball was not created" >&2
+      exit 1
+    fi
+
+    mkdir -p "$(dirname "${encrypted_state}")"
+    age --encrypt --recipient "${SST_STATE_AGE_RECIPIENT}" --output "${encrypted_state}" "${tarball}"
+
+    git -C "${repo_dir}" config user.name "github-actions[bot]"
+    git -C "${repo_dir}" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    git -C "${repo_dir}" add "${state_file}"
+
+    if git -C "${repo_dir}" diff --cached --quiet; then
+      echo "Encrypted SST state is unchanged"
+      exit 0
+    fi
+
+    git -C "${repo_dir}" commit -m "chore: update staging SST state" >/dev/null
+    git -C "${repo_dir}" push origin "HEAD:${state_branch}" >/dev/null
+    echo "Saved encrypted SST state to ${state_file}"
+    ;;
+
+  *)
+    echo "unsupported command: ${command}" >&2
+    exit 64
+    ;;
+esac

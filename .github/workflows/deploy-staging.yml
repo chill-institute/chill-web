@@ -17,9 +17,17 @@ on:
           - chill
           - binge
           - zones
+      bootstrap_state:
+        description: Allow the first deploy to create missing encrypted SST state
+        required: true
+        default: false
+        type: boolean
 
 env:
-  SST_STATE_ARTIFACT_PREFIX: sst-local-state-staging-
+  SST_STATE_REPO: https://github.com/chill-institute/chill-web-sst-state.git
+  SST_STATE_REPO_BRANCH: main
+  SST_STATE_FILE: chill-web/staging/sst-local-state.tar.gz.age
+  SST_STATE_AGE_RECIPIENT: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIODANZ+vfrOYvSdrohoJS2Q93SY9GgKHHCXIf93X0s2X chill-web-sst-state-age-staging
   VITE_PLUS_VERSION: "0.1.20"
 
 permissions:
@@ -323,7 +331,6 @@ jobs:
       name: staging
       url: https://staging.chill.institute
     permissions:
-      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -349,10 +356,17 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Restore SST local state
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
 
       - name: Remove legacy chill staging DNS records
         env:
@@ -367,18 +381,22 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
-      - name: Pack SST local state
-        if: always()
-        run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
+      - name: Verify chill staging domain
+        run: |
+          for _ in $(seq 1 12); do
+            if curl --fail --silent --show-error --location --max-time 20 --output /dev/null https://staging.chill.institute/; then
+              exit 0
+            fi
+            sleep 5
+          done
+          curl --fail --show-error --location --max-time 20 --output /dev/null https://staging.chill.institute/
 
-      - name: Upload SST local state
+      - name: Save encrypted SST local state
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ env.SST_STATE_ARTIFACT_PREFIX }}${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
-          path: sst-local-state.tar.gz
-          if-no-files-found: warn
-          retention-days: 7
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-binge:
     needs: [validate, verify-binge, e2e-binge, deploy-zones, deploy-chill]
@@ -388,7 +406,6 @@ jobs:
       name: staging
       url: https://staging.binge.institute
     permissions:
-      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -414,10 +431,17 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Restore SST local state
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
 
       - name: Remove legacy binge staging DNS records
         env:
@@ -432,18 +456,22 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
-      - name: Pack SST local state
-        if: always()
-        run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
+      - name: Verify binge staging domain
+        run: |
+          for _ in $(seq 1 12); do
+            if curl --fail --silent --show-error --location --max-time 20 --output /dev/null https://staging.binge.institute/; then
+              exit 0
+            fi
+            sleep 5
+          done
+          curl --fail --show-error --location --max-time 20 --output /dev/null https://staging.binge.institute/
 
-      - name: Upload SST local state
+      - name: Save encrypted SST local state
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ env.SST_STATE_ARTIFACT_PREFIX }}${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
-          path: sst-local-state.tar.gz
-          if-no-files-found: warn
-          retention-days: 7
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-zones:
     needs: validate
@@ -453,7 +481,6 @@ jobs:
       name: staging
       url: https://staging.chill.institute
     permissions:
-      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -475,10 +502,17 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Restore SST local state
+      - name: Install age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+
+      - name: Restore encrypted SST local state
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
 
       - name: Deploy staging zone settings to SST
         env:
@@ -487,18 +521,12 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
-      - name: Pack SST local state
+      - name: Save encrypted SST local state
         if: always()
-        run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
-
-      - name: Upload SST local state
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ env.SST_STATE_ARTIFACT_PREFIX }}${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
-          path: sst-local-state.tar.gz
-          if-no-files-found: warn
-          retention-days: 7
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save
 
   deploy-summary:
     needs: [validate, deploy-chill, deploy-binge, deploy-zones]

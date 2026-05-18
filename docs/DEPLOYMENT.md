@@ -71,11 +71,22 @@ Staging deploys are app-specific SST deployments:
 - `apps/chill/dist/` deploys to `https://staging.chill.institute`
 - `apps/binge/dist/` deploys to `https://staging.binge.institute`
 - `CHILL_WEB_APP=zones` manages shared Cloudflare zone settings through the separate `chill-web-zones` SST app and the `staging` SST stage
-- SST uses `home: "local"` for staging state so deploys do not require Cloudflare R2 billing; GitHub Actions restores and saves the SST local state directory through `sst-local-state-staging-*` workflow artifacts
-- the `Deploy Staging` workflow is serialized with the `web-deploy-staging` concurrency group, and within a run the SST deploy order is `zones` -> `chill` -> `binge` so each deploy sees the state artifact saved by the previous deploy
+- SST uses `home: "local"` for staging state so deploys do not require Cloudflare R2 billing; GitHub Actions restores and saves the SST local state directory through an encrypted state blob in the private `chill-institute/chill-web-sst-state` repo
+- the `Deploy Staging` workflow is serialized with the `web-deploy-staging` concurrency group, and within a run the SST deploy order is `zones` -> `chill` -> `binge` so each deploy sees the encrypted state saved by the previous deploy
 - before each app deploy, the workflow removes exact-match legacy `A`, `AAAA`, and `CNAME` DNS records for that staging hostname so Cloudflare can attach the Worker custom domain
+- after each app deploy, the workflow verifies the matching public staging hostname with a retried HTTPS request
 - required staging GitHub Environment secret: `CLOUDFLARE_API_TOKEN`
+- required staging GitHub Environment secret: `SST_STATE_AGE_IDENTITY`
+- required staging GitHub Environment secret: `SST_STATE_REPO_TOKEN`
 - required staging GitHub Environment variable: `CLOUDFLARE_DEFAULT_ACCOUNT_ID`
+
+Staging SST state repository:
+
+- repo: `chill-institute/chill-web-sst-state`
+- blob path: `chill-web/staging/sst-local-state.tar.gz.age`
+- encryption recipient: `SST_STATE_AGE_RECIPIENT` in `.github/workflows/deploy-staging.yml`
+- write identity: `SST_STATE_REPO_TOKEN`, scoped to Contents read/write on `chill-institute/chill-web-sst-state`
+- first deploy only: run `Deploy Staging` with `bootstrap_state=true`; later deploys fail closed when the encrypted state blob is missing
 
 SST-managed zone settings:
 
