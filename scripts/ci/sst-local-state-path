@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -n "${SST_CONFIG_DIR:-}" ]; then
+  printf '%s/state\n' "${SST_CONFIG_DIR%/}"
+  exit 0
+fi
+
+version_output="$(
+  if command -v vp >/dev/null 2>&1; then
+    vp exec sst version --verbose 2>/dev/null || true
+  elif command -v sst >/dev/null 2>&1; then
+    sst version --verbose 2>/dev/null || true
+  fi
+)"
+
+config_dir="$(printf '%s\n' "${version_output}" | awk '/^config / { sub(/^config /, ""); print; exit }')"
+if [ -n "${config_dir}" ]; then
+  printf '%s/state\n' "${config_dir%/}"
+  exit 0
+fi
+
+case "$(uname -s)" in
+  Darwin)
+    printf '%s/Library/Application Support/sst/state\n' "${HOME}"
+    ;;
+  Linux)
+    printf '%s/sst/state\n' "${XDG_DATA_HOME:-${HOME}/.local/share}"
+    ;;
+  MINGW*|MSYS*|CYGWIN*)
+    printf '%s/sst/state\n' "${LOCALAPPDATA:-${HOME}/AppData/Local}"
+    ;;
+  *)
+    printf '%s/.sst/state\n' "${HOME}"
+    ;;
+esac

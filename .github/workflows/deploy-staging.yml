@@ -19,6 +19,7 @@ on:
           - zones
 
 env:
+  SST_STATE_ARTIFACT_PREFIX: sst-local-state-staging-
   VITE_PLUS_VERSION: "0.1.20"
 
 permissions:
@@ -314,13 +315,14 @@ jobs:
     needs: [validate, verify-chill, e2e-chill]
     if: ${{ needs.validate.outputs.chill == 'true' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
     concurrency:
-      group: web-deploy-staging-chill
+      group: web-deploy-staging-sst-state
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: https://staging.chill.institute
     permissions:
+      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -346,6 +348,11 @@ jobs:
       - name: Install dependencies
         run: vp install
 
+      - name: Restore SST local state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+
       - name: Deploy chill staging to SST
         env:
           CHILL_WEB_APP: chill
@@ -353,17 +360,31 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
+      - name: Pack SST local state
+        if: always()
+        run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
+
+      - name: Upload SST local state
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.SST_STATE_ARTIFACT_PREFIX }}${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          path: sst-local-state.tar.gz
+          if-no-files-found: warn
+          retention-days: 7
+
   deploy-binge:
     needs: [validate, verify-binge, e2e-binge]
     if: ${{ needs.validate.outputs.binge == 'true' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
     concurrency:
-      group: web-deploy-staging-binge
+      group: web-deploy-staging-sst-state
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: https://staging.binge.institute
     permissions:
+      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -389,6 +410,11 @@ jobs:
       - name: Install dependencies
         run: vp install
 
+      - name: Restore SST local state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+
       - name: Deploy binge staging to SST
         env:
           CHILL_WEB_APP: binge
@@ -396,17 +422,31 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
+      - name: Pack SST local state
+        if: always()
+        run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
+
+      - name: Upload SST local state
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.SST_STATE_ARTIFACT_PREFIX }}${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          path: sst-local-state.tar.gz
+          if-no-files-found: warn
+          retention-days: 7
+
   deploy-zones:
     needs: validate
     if: ${{ needs.validate.outputs.zones == 'true' }}
     concurrency:
-      group: web-deploy-staging-zones
+      group: web-deploy-staging-sst-state
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: https://staging.chill.institute
     permissions:
+      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -428,6 +468,11 @@ jobs:
       - name: Install dependencies
         run: vp install
 
+      - name: Restore SST local state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+
       - name: Deploy staging zone settings to SST
         env:
           CHILL_WEB_APP: zones
@@ -435,11 +480,24 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage staging --print-logs
 
+      - name: Pack SST local state
+        if: always()
+        run: scripts/ci/pack-sst-local-state sst-local-state.tar.gz
+
+      - name: Upload SST local state
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.SST_STATE_ARTIFACT_PREFIX }}${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          path: sst-local-state.tar.gz
+          if-no-files-found: warn
+          retention-days: 7
+
   smoke-chill:
     needs: deploy-chill
     if: ${{ needs.deploy-chill.result == 'success' }}
     concurrency:
-      group: web-deploy-staging-chill
+      group: web-smoke-staging-chill
       cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
@@ -458,7 +516,7 @@ jobs:
     needs: deploy-binge
     if: ${{ needs.deploy-binge.result == 'success' }}
     concurrency:
-      group: web-deploy-staging-binge
+      group: web-smoke-staging-binge
       cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: scripts/ci/pack-sst-local-state <output-tarball>" >&2
+  exit 64
+fi
+
+output="$1"
+state_dir="$(scripts/ci/sst-local-state-path)"
+
+if [ ! -d "${state_dir}" ]; then
+  echo "No SST local state directory found at ${state_dir}"
+  exit 0
+fi
+
+pack_dir="$(mktemp -d)"
+trap 'rm -rf "${pack_dir}"' EXIT
+
+mkdir -p "${pack_dir}/state"
+cp -a "${state_dir}/." "${pack_dir}/state/"
+tar -C "${pack_dir}" -czf "${output}" state
+echo "Packed SST local state from ${state_dir}"

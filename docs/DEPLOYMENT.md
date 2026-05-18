@@ -62,6 +62,8 @@ Staging deploys are app-specific SST deployments:
 - `apps/chill/dist/` deploys to `https://staging.chill.institute`
 - `apps/binge/dist/` deploys to `https://staging.binge.institute`
 - `CHILL_WEB_APP=zones` manages shared Cloudflare zone settings through the separate `chill-web-zones` SST app and the `staging` SST stage
+- SST uses `home: "local"` for staging state so deploys do not require Cloudflare R2 billing; GitHub Actions restores and saves the SST local state directory through `sst-local-state-staging-*` workflow artifacts
+- the SST deploy jobs share the `web-deploy-staging-sst-state` concurrency group so `chill`, `binge`, and `zones` cannot mutate local state at the same time
 - required staging GitHub Environment secret: `CLOUDFLARE_API_TOKEN`
 - required staging GitHub Environment variable: `CLOUDFLARE_DEFAULT_ACCOUNT_ID`
 

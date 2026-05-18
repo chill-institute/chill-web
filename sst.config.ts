@@ -75,7 +75,7 @@ type ZoneLookupResult = {
 declare const $app: { stage: string };
 declare const $config: (config: {
   app(input: { stage: string }): {
-    home: "cloudflare";
+    home: "local";
     name: string;
     protect: boolean;
     providers: { cloudflare: string };
@@ -171,7 +171,7 @@ export default $config({
 
     return {
       name: `chill-web-${surface}`,
-      home: "cloudflare",
+      home: "local",
       providers: {
         cloudflare: "6.15.0",
       },
