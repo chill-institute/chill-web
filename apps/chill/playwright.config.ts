@@ -6,8 +6,7 @@ import { playwrightPort } from "./e2e/support/port";
 delete process.env.NO_COLOR;
 
 const port = playwrightPort(58300);
-const liveBaseURL = process.env.LIVE_BASE_URL;
-const baseURL = liveBaseURL ?? `http://localhost:${port}`;
+const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -24,17 +23,13 @@ export default defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
-  ...(liveBaseURL
-    ? {}
-    : {
-        webServer: {
-          command: process.env.CI
-            ? `vp preview --host 0.0.0.0 --port ${port}`
-            : `vp build && vp preview --host 0.0.0.0 --port ${port}`,
-          url: baseURL,
-          reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
-          stdout: "pipe",
-          stderr: "pipe",
-        },
-      }),
+  webServer: {
+    command: process.env.CI
+      ? `vp preview --host 0.0.0.0 --port ${port}`
+      : `vp build && vp preview --host 0.0.0.0 --port ${port}`,
+    url: baseURL,
+    reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
+    stdout: "pipe",
+    stderr: "pipe",
+  },
 });

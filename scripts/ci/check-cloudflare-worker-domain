@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: scripts/ci/check-cloudflare-worker-domain <hostname>" >&2
+  exit 64
+fi
+
+hostname="$1"
+
+: "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
+: "${CLOUDFLARE_DEFAULT_ACCOUNT_ID:?CLOUDFLARE_DEFAULT_ACCOUNT_ID is required}"
+
+urlencode() {
+  jq -nr --arg value "$1" '$value | @uri'
+}
+
+response="$(
+  curl -fsS \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_DEFAULT_ACCOUNT_ID}/workers/domains?hostname=$(urlencode "${hostname}")&per_page=100"
+)"
+
+if [ "$(jq -r '.success' <<<"${response}")" != "true" ]; then
+  jq -c '{success, errors, messages}' <<<"${response}" >&2
+  exit 1
+fi
+
+match="$(jq -c --arg hostname "${hostname}" 'first(.result[]? | select(.hostname == $hostname)) // empty' <<<"${response}")"
+
+if [ -z "${match}" ]; then
+  echo "Cloudflare Worker custom domain not found: ${hostname}" >&2
+  jq -c '[.result[]? | {hostname, service, environment, zone_name}]' <<<"${response}" >&2
+  exit 1
+fi
+
+status="$(jq -r '.status // "unknown"' <<<"${match}")"
+service="$(jq -r '.service // "unknown"' <<<"${match}")"
+environment="$(jq -r '.environment // "unknown"' <<<"${match}")"
+zone_name="$(jq -r '.zone_name // "unknown"' <<<"${match}")"
+
+echo "cloudflare_worker_domain=${hostname} status=${status} service=${service} environment=${environment} zone=${zone_name}"
+
+case "${status}" in
+  active|provisioned|unknown) ;;
+  *)
+    echo "Cloudflare Worker custom domain ${hostname} has unexpected status: ${status}" >&2
+    exit 1
+    ;;
+esac
