@@ -8,6 +8,7 @@ fi
 
 environment="$1"
 app="$2"
+curl_user_agent="Mozilla/5.0 (compatible; chill-web-smoke/1.0; +https://github.com/chill-institute/chill-web)"
 
 normalize_url() {
   printf '%s\n' "${1%/}"
@@ -33,7 +34,7 @@ fetch_status() {
   local status
 
   while [ "${attempt}" -le "${max_attempts}" ]; do
-    status="$(curl -sS -o /dev/null -w "%{http_code}" "${url}" || true)"
+    status="$(curl -A "${curl_user_agent}" --compressed -sS -o /dev/null -w "%{http_code}" "${url}" || true)"
 
     if [ "${status}" = "200" ]; then
       printf '%s\n' "${status}"
@@ -68,7 +69,7 @@ echo "url=${url}"
 echo "status=${status}"
 
 http_url="${url/https:/http:}"
-http_redirect="$(curl -fsS -o /dev/null -w "%{redirect_url}" "${http_url}")"
+http_redirect="$(curl -A "${curl_user_agent}" --compressed -fsS -o /dev/null -w "%{redirect_url}" "${http_url}")"
 assert_redirect "${http_url}" "${http_redirect}" "${url}"
 
 if [ "${environment}" = "production" ]; then
@@ -83,6 +84,6 @@ if [ "${environment}" = "production" ]; then
       ;;
   esac
 
-  www_redirect="$(curl -fsS -o /dev/null -w "%{redirect_url}" "${redirect_source}")"
+  www_redirect="$(curl -A "${curl_user_agent}" --compressed -fsS -o /dev/null -w "%{redirect_url}" "${redirect_source}")"
   assert_redirect "${redirect_source}" "${www_redirect}" "${redirect_target}"
 fi
