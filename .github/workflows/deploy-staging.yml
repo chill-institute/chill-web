@@ -25,6 +25,10 @@ env:
 permissions:
   contents: read
 
+concurrency:
+  group: web-deploy-staging
+  cancel-in-progress: false
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -312,11 +316,8 @@ jobs:
           if-no-files-found: ignore
 
   deploy-chill:
-    needs: [validate, verify-chill, e2e-chill]
-    if: ${{ needs.validate.outputs.chill == 'true' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
-    concurrency:
-      group: web-deploy-staging-sst-state
-      cancel-in-progress: false
+    needs: [validate, verify-chill, e2e-chill, deploy-zones]
+    if: ${{ always() && needs.validate.outputs.chill == 'true' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') }}
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -374,11 +375,8 @@ jobs:
           retention-days: 7
 
   deploy-binge:
-    needs: [validate, verify-binge, e2e-binge]
-    if: ${{ needs.validate.outputs.binge == 'true' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
-    concurrency:
-      group: web-deploy-staging-sst-state
-      cancel-in-progress: false
+    needs: [validate, verify-binge, e2e-binge, deploy-zones, deploy-chill]
+    if: ${{ always() && needs.validate.outputs.binge == 'true' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') && (needs.deploy-chill.result == 'success' || needs.deploy-chill.result == 'skipped') }}
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -438,9 +436,6 @@ jobs:
   deploy-zones:
     needs: validate
     if: ${{ needs.validate.outputs.zones == 'true' }}
-    concurrency:
-      group: web-deploy-staging-sst-state
-      cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: staging
