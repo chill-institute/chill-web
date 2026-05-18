@@ -513,11 +513,30 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec --filter ./apps/chill playwright install chromium
+
       - name: Assert no cloud credentials
         run: scripts/ci/assert-no-cloud-credentials
 
       - name: Smoke chill staging
-        run: scripts/ci/smoke-web staging chill
+        env:
+          LIVE_BASE_URL: https://staging.chill.institute/
+        run: vp exec --filter ./apps/chill playwright test e2e/live-smoke.spec.ts
 
   smoke-binge:
     needs: deploy-binge
@@ -532,11 +551,30 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec --filter ./apps/binge playwright install chromium
+
       - name: Assert no cloud credentials
         run: scripts/ci/assert-no-cloud-credentials
 
       - name: Smoke binge staging
-        run: scripts/ci/smoke-web staging binge
+        env:
+          LIVE_BASE_URL: https://staging.binge.institute/
+        run: vp exec --filter ./apps/binge playwright test e2e/live-smoke.spec.ts
 
   deploy-summary:
     needs: [validate, smoke-chill, smoke-binge, deploy-zones]
