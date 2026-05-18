@@ -92,6 +92,11 @@ delete_dns_records() {
           continue
         fi
 
+        if [ "${type}" = "AAAA" ] && [ "${content}" = "100::" ]; then
+          echo "Keeping Cloudflare-managed DNS ${type} ${name} -> ${content}"
+          continue
+        fi
+
         echo "Deleting Cloudflare DNS ${type} ${name} -> ${content}"
         api_delete "zones/${zone_id}/dns_records/${record_id}"
       done
@@ -110,9 +115,9 @@ for domain_name in "$@"; do
   if [ "${has_pages_domain}" = "true" ]; then
     echo "Detaching Cloudflare Pages domain ${domain_name} from ${project_name}"
     api_delete "accounts/${account_id}/pages/projects/${project}/domains/${encoded_domain}"
-    delete_dns_records "${domain_name}"
   else
     echo "Cloudflare Pages domain ${domain_name} is not attached to ${project_name}"
-    echo "Skipping DNS deletion for ${domain_name}; this may already be served by SST"
   fi
+
+  delete_dns_records "${domain_name}"
 done
