@@ -1,6 +1,6 @@
 # Web
 
-`web` is a Vite+ workspace repo that hosts the Cloudflare Pages frontends for `chill.institute` and `binge.institute`.
+`web` is a Vite+ workspace repo that hosts the Cloudflare Workers frontends for `chill.institute` and `binge.institute`.
 
 ## Structure
 
@@ -59,5 +59,5 @@
 ## Read More
 
 - workspace architecture and app boundaries: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
-- hosted deployment and Pages project layout: [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- hosted deployment overview: [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 - day-to-day workflow: [CONTRIBUTING.md](./CONTRIBUTING.md)

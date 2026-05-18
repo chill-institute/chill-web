@@ -74,8 +74,7 @@ vp config --hooks-dir .vite-hooks
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 - When generating or updating reusable shadcn/base primitives, work from `packages/ui/` so `packages/ui/components.json` writes into the shared UI package. For app-specific surfaces, work from the target app directory so the app-local `components.json` resolves aliases correctly.
 - Playwright keeps traces, screenshots, and videos on failure. Check `apps/*/playwright-report/` and `apps/*/test-results/` after a failing run.
-- GitHub-owned Cloudflare deploys require `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_DEFAULT_ACCOUNT_ID`, `SST_STATE_AGE_IDENTITY`, and `SST_STATE_REPO_TOKEN` in the target GitHub Environment.
-- SST state repository, branch, blob paths, encryption recipient, deploy domains, and production auto-deploy flags live in repository variables.
+- Deployment credentials and operational runbooks are maintainer-managed. Do not add secrets, local machine paths, or maintainer-only notes to this repo.
 
 ## Pull Requests
 
