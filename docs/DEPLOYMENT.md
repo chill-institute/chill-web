@@ -44,6 +44,15 @@ After a hosted web change, verify:
 - one real app load in each SPA
 - one real auth redirect start URL
 
+## Observability
+
+Better Stack monitors the production web roots:
+
+- `chill-web-production-root` checks `https://chill.institute/`
+- `binge-web-production-root` checks `https://binge.institute/`
+
+Both monitors use HTTPS status checks on a 3 minute cadence. API and subsystem health monitors live with the engine runtime docs.
+
 ## GitHub Actions
 
 Workflow shape:
