@@ -46,6 +46,11 @@ for record_type in A AAAA CNAME; do
         continue
       fi
 
+      if [ "${type}" = "AAAA" ] && [ "${content}" = "100::" ]; then
+        echo "Keeping Cloudflare-managed DNS ${type} ${name} -> ${content}"
+        continue
+      fi
+
       echo "Deleting Cloudflare DNS ${type} ${name} -> ${content}"
       api DELETE "zones/${zone_id}/dns_records/${record_id}" >/dev/null
     done
