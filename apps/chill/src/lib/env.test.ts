@@ -39,12 +39,6 @@ describe("getPublicAPIBaseURL", () => {
     expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
 
-  it("uses production api for the production validation host", () => {
-    withWindowLocation("https://next.chill.institute/");
-
-    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
-  });
-
   it("uses production api for chill subdomains", () => {
     withWindowLocation("https://future.chill.institute/");
 
@@ -62,7 +56,6 @@ describe("resolveHostedAPIBaseURL", () => {
   it("resolves localhost and chill app hosts to the production api", () => {
     expect(resolveHostedAPIBaseURL("localhost")).toBe("https://api.chill.institute");
     expect(resolveHostedAPIBaseURL("chill.institute")).toBe("https://api.chill.institute");
-    expect(resolveHostedAPIBaseURL("next.chill.institute")).toBe("https://api.chill.institute");
     expect(resolveHostedAPIBaseURL("future.chill.institute")).toBe("https://api.chill.institute");
   });
 

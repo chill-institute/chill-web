@@ -39,12 +39,6 @@ describe("getPublicAPIBaseURL", () => {
     expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
 
-  it("uses production api for the production validation host", () => {
-    withWindowLocation("https://next.binge.institute/");
-
-    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
-  });
-
   it("uses production api for binge subdomains", () => {
     withWindowLocation("https://future.binge.institute/");
 
@@ -62,7 +56,6 @@ describe("resolveHostedAPIBaseURL", () => {
   it("resolves localhost and binge app hosts to the production api", () => {
     expect(resolveHostedAPIBaseURL("localhost")).toBe("https://api.chill.institute");
     expect(resolveHostedAPIBaseURL("binge.institute")).toBe("https://api.chill.institute");
-    expect(resolveHostedAPIBaseURL("next.binge.institute")).toBe("https://api.chill.institute");
     expect(resolveHostedAPIBaseURL("future.binge.institute")).toBe("https://api.chill.institute");
   });
 

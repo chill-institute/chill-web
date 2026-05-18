@@ -2,15 +2,6 @@ function readEnvironment(name: string, fallback: string) {
   return process.env[name]?.trim() || fallback;
 }
 
-function readProductionDomainMode() {
-  const mode = process.env.SST_PRODUCTION_DOMAIN_MODE?.trim() || "validation";
-  if (mode === "validation" || mode === "apex") {
-    return mode;
-  }
-
-  throw new Error("SST_PRODUCTION_DOMAIN_MODE must be validation or apex");
-}
-
 const surfaces = {
   chill: {
     domain: {
@@ -19,10 +10,6 @@ const surfaces = {
       },
       production: {
         name: readEnvironment("CHILL_PRODUCTION_DOMAIN", "chill.institute"),
-        validationName: readEnvironment(
-          "CHILL_PRODUCTION_VALIDATION_DOMAIN",
-          "next.chill.institute",
-        ),
       },
     },
     path: "apps/chill/dist",
@@ -34,10 +21,6 @@ const surfaces = {
       },
       production: {
         name: readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
-        validationName: readEnvironment(
-          "BINGE_PRODUCTION_VALIDATION_DOMAIN",
-          "next.binge.institute",
-        ),
       },
     },
     path: "apps/binge/dist",
@@ -164,17 +147,7 @@ function resolveStaticSiteDomain(surface: AppSurface, stage: Stage): StaticSiteV
     return surfaces[surface].domain.staging;
   }
 
-  const config = surfaces[surface].domain.production;
-  const mode = readProductionDomainMode();
-  if (mode === "validation") {
-    return {
-      name: config.validationName,
-    };
-  }
-
-  return {
-    name: config.name,
-  };
+  return surfaces[surface].domain.production;
 }
 
 async function configureZoneHardening() {

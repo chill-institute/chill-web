@@ -63,32 +63,31 @@ Workflow shape:
 - PRs verify and run e2e only; they do not create public preview deploys
 - `Deploy Staging` is a manual workflow that must be run from `main` and promotes built artifacts from a validated same-repo branch or commit SHA to the `staging` GitHub Environment after approval; its secret-bearing SST deploy jobs use trusted `main` deploy code, and its `app` input accepts `chill` or `binge` for branch artifact deploys while `all` and `zones` must use `main`
 - pushes to `main` run `Main`
-- `Main` runs the same selective checks, then deploys only when `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true`; production normally runs with `SST_PRODUCTION_DOMAIN_MODE=apex`
+- `Main` runs the same selective checks, then deploys only when `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true`
 - `Main` does not deploy for docs, workflow-only, script-only, or app e2e-only changes
 - `Deploy` remains available as a manual production deploy fallback for current `main` only and accepts `all`, `chill`, or `binge`
 
 SST deploy config:
 
 - staging deploys `chill`, `binge`, and shared `zones`; production deploys `chill` and `binge`
-- staging uses `staging.chill.institute` and `staging.binge.institute`; production validation mode uses `next.chill.institute` and `next.binge.institute`
-- production apex mode uses `chill.institute` and `binge.institute`, then explicitly keeps `www.*` and `next.*` attached as Workers domains
+- staging uses `staging.chill.institute` and `staging.binge.institute`; production uses `chill.institute` and `binge.institute`
+- production deploys explicitly keep `www.*` attached as Workers domains
 - SST uses `home: "local"`; GitHub Actions restores and saves encrypted state through the private repo named by `SST_STATE_REPO`
 - production keeps separate state files for chill and binge so app deploy lanes do not overwrite each other
 - GitHub Environments provide `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_DEFAULT_ACCOUNT_ID`, `SST_STATE_AGE_IDENTITY`, and `SST_STATE_REPO_TOKEN`
-- repository variables provide domain names, `SST_PRODUCTION_AUTO_DEPLOY_ENABLED`, `SST_PRODUCTION_DOMAIN_MODE`, `SST_STATE_REPO`, `SST_STATE_REPO_BRANCH`, `SST_STATE_AGE_RECIPIENT`, and the `SST_STATE_FILE_*` paths
+- repository variables provide domain names, `SST_PRODUCTION_AUTO_DEPLOY_ENABLED`, `SST_STATE_REPO`, `SST_STATE_REPO_BRANCH`, `SST_STATE_AGE_RECIPIENT`, and the `SST_STATE_FILE_*` paths
 - first deploy only: run with `bootstrap_state=true`; later deploys fail closed when encrypted state is missing
 - SST manages `always_use_https` and `automatic_https_rewrites` for both zones
 
 ## Production Operations
 
-Production has been cut over to SST. Normal deploys are push-to-`main` through `Main` with `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true` and `SST_PRODUCTION_DOMAIN_MODE=apex`.
+Production has been cut over to SST. Normal deploys are push-to-`main` through `Main` with `SST_PRODUCTION_AUTO_DEPLOY_ENABLED=true`.
 
 Use manual `Deploy` only to rerun the current `main` production deploy path after an incident or GitHub Actions retry failure:
 
 1. Choose `app=chill`, `app=binge`, or `app=all`.
-2. Use `domain_mode=apex` for normal production.
-3. Keep `bootstrap_state=false` unless intentionally bootstrapping a missing encrypted state file.
+2. Keep `bootstrap_state=false` unless intentionally bootstrapping a missing encrypted state file.
 
-Both production deploy paths restore encrypted SST state, refresh Cloudflare/SST state, deploy, explicitly ensure `www.*` and `next.*` Workers domains, and then save encrypted state.
+Both production deploy paths restore encrypted SST state, refresh Cloudflare/SST state, deploy, explicitly ensure `www.*` Workers domains, and then save encrypted state.
 
 Rollback is to redeploy the last known good `main` commit through the manual `Deploy` workflow. Do not run `sst remove` for production; production resources are retained/protected.

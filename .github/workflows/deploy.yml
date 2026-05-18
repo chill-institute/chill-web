@@ -17,14 +17,6 @@ on:
           - all
           - chill
           - binge
-      domain_mode:
-        description: Production hostname target
-        required: true
-        default: validation
-        type: choice
-        options:
-          - validation
-          - apex
       bootstrap_state:
         description: Allow the first SST production deploy to create missing encrypted state
         required: true
@@ -34,13 +26,10 @@ on:
 env:
   BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
   BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
-  BINGE_PRODUCTION_VALIDATION_DOMAIN: ${{ vars.BINGE_PRODUCTION_VALIDATION_DOMAIN || 'next.binge.institute' }}
   BINGE_STAGING_DOMAIN: ${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
   CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
   CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
-  CHILL_PRODUCTION_VALIDATION_DOMAIN: ${{ vars.CHILL_PRODUCTION_VALIDATION_DOMAIN || 'next.chill.institute' }}
   CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
-  SST_PRODUCTION_DOMAIN_MODE: ${{ inputs.domain_mode }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
   SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
@@ -61,7 +50,6 @@ jobs:
         env:
           APP: ${{ inputs.app }}
           BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
-          DOMAIN_MODE: ${{ inputs.domain_mode }}
           INPUT_REF: ${{ inputs.ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ github.token }}
@@ -109,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ (inputs.domain_mode == 'apex' && (vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute')) || (vars.CHILL_PRODUCTION_VALIDATION_DOMAIN || 'next.chill.institute') }}
+      url: https://${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
     permissions:
       contents: read
     env:
@@ -164,13 +152,10 @@ jobs:
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Ensure chill production aliases
-        if: ${{ inputs.domain_mode == 'apex' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: |
-          scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-chill-production-webrouterscript"
-          scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_VALIDATION_DOMAIN}" "chill-web-chill-production-webrouterscript"
+        run: scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-chill-production-webrouterscript"
 
       - name: Save encrypted SST local state
         if: always()
@@ -188,7 +173,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ (inputs.domain_mode == 'apex' && (vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute')) || (vars.BINGE_PRODUCTION_VALIDATION_DOMAIN || 'next.binge.institute') }}
+      url: https://${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
     permissions:
       contents: read
     env:
@@ -243,13 +228,10 @@ jobs:
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Ensure binge production aliases
-        if: ${{ inputs.domain_mode == 'apex' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: |
-          scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-binge-production-webrouterscript"
-          scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_VALIDATION_DOMAIN}" "chill-web-binge-production-webrouterscript"
+        run: scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-binge-production-webrouterscript"
 
       - name: Save encrypted SST local state
         if: always()
@@ -269,16 +251,11 @@ jobs:
           SHA: ${{ needs.validate.outputs.sha }}
           APP: ${{ inputs.app }}
           BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
-          DOMAIN_MODE: ${{ inputs.domain_mode }}
           CHILL_RESULT: ${{ needs.deploy-chill.result }}
           BINGE_RESULT: ${{ needs.deploy-binge.result }}
         run: |
-          chill_url="${CHILL_PRODUCTION_VALIDATION_DOMAIN}"
-          binge_url="${BINGE_PRODUCTION_VALIDATION_DOMAIN}"
-          if [ "${DOMAIN_MODE}" = "apex" ]; then
-            chill_url="${CHILL_PRODUCTION_DOMAIN}"
-            binge_url="${BINGE_PRODUCTION_DOMAIN}"
-          fi
+          chill_url="${CHILL_PRODUCTION_DOMAIN}"
+          binge_url="${BINGE_PRODUCTION_DOMAIN}"
 
           {
             echo "## Manual deploy"
@@ -287,7 +264,6 @@ jobs:
             echo "- SHA: \`${SHA}\`"
             echo "- Requested app: \`${APP}\`"
             echo "- Environment: \`production\`"
-            echo "- Domain mode: \`${DOMAIN_MODE}\`"
             echo "- Bootstrap state: \`${BOOTSTRAP_STATE}\`"
             if [ "${CHILL_RESULT}" = "success" ]; then
               echo "- Chill: [https://${chill_url}](https://${chill_url})"
