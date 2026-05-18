@@ -38,7 +38,7 @@ The repo root owns the shared workspace contract:
 - `package.json` for root commands such as `vp run verify`, `vp run verify:chill`, and `vp run e2e:binge`
 - `pnpm-workspace.yaml` for package globs and shared dependency catalog entries
 - `vite.config.ts` for root formatting, lint, and staged-check behavior
-- `.github/workflows/` for selective verify, preview deploy, and production deploy wiring
+- `.github/workflows/` for selective verify, manual staging deploy, and production deploy wiring
 
 Each app owns its app-local config:
 

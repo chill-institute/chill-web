@@ -1,0 +1,509 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Same-repo branch or full commit SHA to deploy
+        required: true
+        type: string
+      app:
+        description: App surface to deploy
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - chill
+          - binge
+          - zones
+
+env:
+  VITE_PLUS_VERSION: "0.1.20"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.validate.outputs.ref }}
+      sha: ${{ steps.validate.outputs.sha }}
+      chill: ${{ steps.select.outputs.chill }}
+      binge: ${{ steps.select.outputs.binge }}
+      zones: ${{ steps.select.outputs.zones }}
+    steps:
+      - name: Validate ref
+        id: validate
+        env:
+          APP: ${{ inputs.app }}
+          INPUT_REF: ${{ inputs.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [ "${WORKFLOW_REF}" != "${DEFAULT_BRANCH}" ]; then
+            echo "Deploy Staging must be run from ${DEFAULT_BRANCH}; got ${WORKFLOW_REF}" >&2
+            exit 1
+          fi
+
+          ref="$(printf '%s' "${INPUT_REF}" | tr -d '[:space:]')"
+          if [ -z "${ref}" ]; then
+            echo "ref is required" >&2
+            exit 1
+          fi
+
+          case "${ref}" in
+            refs/*|pull/*|origin/*|*://*|*..*|*~*|*^*|*:*|*' '*)
+              echo "unsupported ref: ${ref}" >&2
+              exit 1
+              ;;
+          esac
+
+          if printf '%s' "${ref}" | grep -Eq '^[0-9a-f]{40}$'; then
+            sha="${ref}"
+            if ! gh api "repos/${REPOSITORY}/commits/${sha}" --silent; then
+              echo "commit SHA not found in ${REPOSITORY}: ${sha}" >&2
+              exit 1
+            fi
+          else
+            if ! git check-ref-format --branch "${ref}" >/dev/null 2>&1; then
+              echo "invalid branch name: ${ref}" >&2
+              exit 1
+            fi
+
+            sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/${ref}" --jq '.object.sha')"
+            if [ -z "${sha}" ]; then
+              echo "branch not found in ${REPOSITORY}: ${ref}" >&2
+              exit 1
+            fi
+          fi
+
+          default_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/${DEFAULT_BRANCH}" --jq '.object.sha')"
+          case "${APP}" in
+            all|zones)
+              if [ "${ref}" != "${DEFAULT_BRANCH}" ] && [ "${sha}" != "${default_sha}" ]; then
+                echo "zone deploys must use ${DEFAULT_BRANCH}; got ${ref}" >&2
+                exit 1
+              fi
+              ;;
+          esac
+
+          {
+            echo "ref=${ref}"
+            echo "sha=${sha}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Select apps
+        id: select
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          set -euo pipefail
+
+          case "${APP}" in
+            all)
+              echo "chill=true" >> "${GITHUB_OUTPUT}"
+              echo "binge=true" >> "${GITHUB_OUTPUT}"
+              echo "zones=true" >> "${GITHUB_OUTPUT}"
+              ;;
+            chill)
+              echo "chill=true" >> "${GITHUB_OUTPUT}"
+              echo "binge=false" >> "${GITHUB_OUTPUT}"
+              echo "zones=false" >> "${GITHUB_OUTPUT}"
+              ;;
+            binge)
+              echo "chill=false" >> "${GITHUB_OUTPUT}"
+              echo "binge=true" >> "${GITHUB_OUTPUT}"
+              echo "zones=false" >> "${GITHUB_OUTPUT}"
+              ;;
+            zones)
+              echo "chill=false" >> "${GITHUB_OUTPUT}"
+              echo "binge=false" >> "${GITHUB_OUTPUT}"
+              echo "zones=true" >> "${GITHUB_OUTPUT}"
+              ;;
+            *)
+              echo "unsupported app: ${APP}" >&2
+              exit 1
+              ;;
+          esac
+
+  verify-chill:
+    needs: validate
+    if: ${{ needs.validate.outputs.chill == 'true' }}
+    concurrency:
+      group: web-staging-verify-chill-${{ needs.validate.outputs.sha }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Verify chill app
+        run: |
+          vp run check:chill
+          vp run test:chill
+          vp run build:chill
+
+      - name: Upload chill build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chill-dist
+          path: apps/chill/dist
+          if-no-files-found: error
+
+  verify-binge:
+    needs: validate
+    if: ${{ needs.validate.outputs.binge == 'true' }}
+    concurrency:
+      group: web-staging-verify-binge-${{ needs.validate.outputs.sha }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Verify binge app
+        run: |
+          vp run check:binge
+          vp run test:binge
+          vp run build:binge
+
+      - name: Upload binge build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: binge-dist
+          path: apps/binge/dist
+          if-no-files-found: error
+
+  e2e-chill:
+    needs: [validate, verify-chill]
+    if: ${{ needs.verify-chill.result == 'success' }}
+    concurrency:
+      group: web-staging-e2e-chill-${{ github.run_id }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - name: Download chill build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: chill-dist
+          path: apps/chill/dist
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec --filter ./apps/chill playwright install chromium
+
+      - name: Run chill end-to-end tests
+        run: vp run e2e:chill
+
+      - name: Upload chill Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-artifacts-chill
+          path: |
+            apps/chill/playwright-report
+            apps/chill/test-results
+          if-no-files-found: ignore
+
+  e2e-binge:
+    needs: [validate, verify-binge]
+    if: ${{ needs.verify-binge.result == 'success' }}
+    concurrency:
+      group: web-staging-e2e-binge-${{ github.run_id }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - name: Download binge build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: binge-dist
+          path: apps/binge/dist
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec --filter ./apps/binge playwright install chromium
+
+      - name: Run binge end-to-end tests
+        run: vp run e2e:binge
+
+      - name: Upload binge Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-artifacts-binge
+          path: |
+            apps/binge/playwright-report
+            apps/binge/test-results
+          if-no-files-found: ignore
+
+  deploy-chill:
+    needs: [validate, verify-chill, e2e-chill]
+    if: ${{ needs.validate.outputs.chill == 'true' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
+    concurrency:
+      group: web-deploy-staging-chill
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.chill.institute
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Download chill build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: chill-dist
+          path: apps/chill/dist
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: false
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Deploy chill staging to SST
+        env:
+          CHILL_WEB_APP: chill
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage staging
+
+  deploy-binge:
+    needs: [validate, verify-binge, e2e-binge]
+    if: ${{ needs.validate.outputs.binge == 'true' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
+    concurrency:
+      group: web-deploy-staging-binge
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.binge.institute
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Download binge build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: binge-dist
+          path: apps/binge/dist
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: false
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Deploy binge staging to SST
+        env:
+          CHILL_WEB_APP: binge
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage staging
+
+  deploy-zones:
+    needs: validate
+    if: ${{ needs.validate.outputs.zones == 'true' }}
+    concurrency:
+      group: web-deploy-staging-zones
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.chill.institute
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: false
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Deploy staging zone settings to SST
+        env:
+          CHILL_WEB_APP: zones
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: vp exec sst deploy --stage staging
+
+  smoke-chill:
+    needs: deploy-chill
+    if: ${{ needs.deploy-chill.result == 'success' }}
+    concurrency:
+      group: web-deploy-staging-chill
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Assert no cloud credentials
+        run: scripts/ci/assert-no-cloud-credentials
+
+      - name: Smoke chill staging
+        run: scripts/ci/smoke-web staging chill
+
+  smoke-binge:
+    needs: deploy-binge
+    if: ${{ needs.deploy-binge.result == 'success' }}
+    concurrency:
+      group: web-deploy-staging-binge
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Assert no cloud credentials
+        run: scripts/ci/assert-no-cloud-credentials
+
+      - name: Smoke binge staging
+        run: scripts/ci/smoke-web staging binge
+
+  deploy-summary:
+    needs: [validate, smoke-chill, smoke-binge, deploy-zones]
+    if: ${{ always() && (needs.smoke-chill.result == 'success' || needs.smoke-binge.result == 'success' || needs.deploy-zones.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish summary
+        env:
+          REF: ${{ needs.validate.outputs.ref }}
+          SHA: ${{ needs.validate.outputs.sha }}
+          CHILL_RESULT: ${{ needs.smoke-chill.result }}
+          BINGE_RESULT: ${{ needs.smoke-binge.result }}
+          ZONES_RESULT: ${{ needs.deploy-zones.result }}
+        run: |
+          {
+            echo "## Staging deploy"
+            echo
+            echo "- Ref: \`${REF}\`"
+            echo "- SHA: \`${SHA}\`"
+            if [ "${ZONES_RESULT}" = "success" ]; then
+              echo "- Zones: HTTPS redirects managed"
+            else
+              echo "- Zones: skipped"
+            fi
+            if [ "${CHILL_RESULT}" = "success" ]; then
+              echo "- Chill: [https://staging.chill.institute](https://staging.chill.institute)"
+            else
+              echo "- Chill: skipped"
+            fi
+            if [ "${BINGE_RESULT}" = "success" ]; then
+              echo "- Binge: [https://staging.binge.institute](https://staging.binge.institute)"
+            else
+              echo "- Binge: skipped"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"

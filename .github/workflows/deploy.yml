@@ -21,8 +21,59 @@ on:
 env:
   VITE_PLUS_VERSION: "0.1.20"
 
+permissions:
+  contents: read
+
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.validate.outputs.ref }}
+      sha: ${{ steps.validate.outputs.sha }}
+    steps:
+      - name: Validate production ref
+        id: validate
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [ "${WORKFLOW_REF}" != "${DEFAULT_BRANCH}" ]; then
+            echo "Deploy must be run from ${DEFAULT_BRANCH}; got ${WORKFLOW_REF}" >&2
+            exit 1
+          fi
+
+          ref="$(printf '%s' "${INPUT_REF}" | tr -d '[:space:]')"
+          if [ -z "${ref}" ]; then
+            echo "ref is required" >&2
+            exit 1
+          fi
+
+          default_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/${DEFAULT_BRANCH}" --jq '.object.sha')"
+          if [ "${ref}" = "${DEFAULT_BRANCH}" ]; then
+            sha="${default_sha}"
+          elif printf '%s' "${ref}" | grep -Eq '^[0-9a-f]{40}$'; then
+            sha="${ref}"
+            if [ "${sha}" != "${default_sha}" ]; then
+              echo "production deploys only support current ${DEFAULT_BRANCH}; got ${ref}" >&2
+              exit 1
+            fi
+          else
+            echo "production deploys only support ${DEFAULT_BRANCH} or its current full SHA; got ${ref}" >&2
+            exit 1
+          fi
+
+          {
+            echo "ref=${ref}"
+            echo "sha=${sha}"
+          } >> "${GITHUB_OUTPUT}"
+
   deploy-chill:
+    needs: validate
     if: ${{ inputs.app == 'all' || inputs.app == 'chill' }}
     concurrency:
       group: web-deploy-production-chill
@@ -33,12 +84,12 @@ jobs:
       contents: read
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.validate.outputs.sha }}
 
       - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@v1
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
         with:
           version: ${{ env.VITE_PLUS_VERSION }}
           node-version-file: ".node-version"
@@ -64,6 +115,7 @@ jobs:
           branch: main
 
   deploy-binge:
+    needs: validate
     if: ${{ inputs.app == 'all' || inputs.app == 'binge' }}
     concurrency:
       group: web-deploy-production-binge
@@ -74,12 +126,12 @@ jobs:
       contents: read
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.validate.outputs.sha }}
 
       - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@v1
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
         with:
           version: ${{ env.VITE_PLUS_VERSION }}
           node-version-file: ".node-version"
@@ -105,13 +157,14 @@ jobs:
           branch: main
 
   deploy-summary:
-    needs: [deploy-chill, deploy-binge]
+    needs: [validate, deploy-chill, deploy-binge]
     if: ${{ always() && (needs.deploy-chill.result == 'success' || needs.deploy-binge.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
         env:
           REF: ${{ inputs.ref }}
+          SHA: ${{ needs.validate.outputs.sha }}
           APP: ${{ inputs.app }}
           CHILL_RESULT: ${{ needs.deploy-chill.result }}
           BINGE_RESULT: ${{ needs.deploy-binge.result }}
@@ -120,6 +173,7 @@ jobs:
             echo "## Manual deploy"
             echo
             echo "- Ref: \`${REF}\`"
+            echo "- SHA: \`${SHA}\`"
             echo "- Requested app: \`${APP}\`"
             echo "- Environment: \`production\`"
             if [ "${CHILL_RESULT}" = "success" ]; then

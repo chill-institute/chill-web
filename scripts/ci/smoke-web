@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 2 ]; then
+  echo "usage: scripts/ci/smoke-web <staging|production> <chill|binge>" >&2
+  exit 64
+fi
+
+environment="$1"
+app="$2"
+
+normalize_url() {
+  printf '%s\n' "${1%/}"
+}
+
+assert_redirect() {
+  local source="$1"
+  local actual="$2"
+  local expected="$3"
+
+  if [ "$(normalize_url "${actual}")" != "$(normalize_url "${expected}")" ]; then
+    echo "${source} redirected to ${actual}, expected ${expected}" >&2
+    exit 1
+  fi
+
+  echo "redirect=${source} -> ${actual}"
+}
+
+case "${environment}:${app}" in
+  staging:chill) url="https://staging.chill.institute/" ;;
+  staging:binge) url="https://staging.binge.institute/" ;;
+  production:chill) url="https://chill.institute/" ;;
+  production:binge) url="https://binge.institute/" ;;
+  *)
+    echo "unsupported environment/app: ${environment}/${app}" >&2
+    exit 64
+    ;;
+esac
+
+status="$(curl -fsS -o /dev/null -w "%{http_code}" "${url}")"
+if [ "${status}" != "200" ]; then
+  echo "${url} returned ${status}" >&2
+  exit 1
+fi
+
+echo "url=${url}"
+echo "status=${status}"
+
+http_url="${url/https:/http:}"
+http_redirect="$(curl -fsS -o /dev/null -w "%{redirect_url}" "${http_url}")"
+assert_redirect "${http_url}" "${http_redirect}" "${url}"
+
+if [ "${environment}" = "production" ]; then
+  case "${app}" in
+    chill)
+      redirect_source="https://www.chill.institute/"
+      redirect_target="https://chill.institute/"
+      ;;
+    binge)
+      redirect_source="https://www.binge.institute/"
+      redirect_target="https://binge.institute/"
+      ;;
+  esac
+
+  www_redirect="$(curl -fsS -o /dev/null -w "%{redirect_url}" "${redirect_source}")"
+  assert_redirect "${redirect_source}" "${www_redirect}" "${redirect_target}"
+fi

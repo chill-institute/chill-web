@@ -46,6 +46,9 @@ runs:
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.api-token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account-id }}
+        DIST_DIR: ${{ inputs.dist-dir }}
+        PAGES_BRANCH: ${{ inputs.branch }}
+        PROJECT_NAME: ${{ inputs.project-name }}
       run: |
         set -euo pipefail
 
@@ -55,9 +58,9 @@ runs:
         echo "output_dir=$output_dir" >> "$GITHUB_OUTPUT"
         export WRANGLER_OUTPUT_FILE_DIRECTORY="$output_dir"
 
-        npx --yes wrangler@3.90.0 pages deploy "${{ inputs.dist-dir }}" \
-          --project-name "${{ inputs.project-name }}" \
-          --branch "${{ inputs.branch }}" 2>&1 | tee "$log_file"
+        npx --yes wrangler@4.92.0 pages deploy "$DIST_DIR" \
+          --project-name "$PROJECT_NAME" \
+          --branch "$PAGES_BRANCH" 2>&1 | tee "$log_file"
 
         {
           echo 'command-output<<EOF'
