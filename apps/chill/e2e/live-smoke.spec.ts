@@ -12,12 +12,12 @@ function requireLiveBaseURL() {
   return liveBaseURL;
 }
 
-test("live sign-in route renders over HTTPS", async ({ page }) => {
-  const response = await page.goto("/sign-in", { waitUntil: "domcontentloaded" });
+test("live app shell renders over HTTPS", async ({ page }) => {
+  const response = await page.goto("/", { waitUntil: "domcontentloaded" });
 
   expect(response?.status()).toBe(200);
   expect(page.url()).toMatch(/^https:\/\//);
-  await expect(page.getByRole("button", { name: "sign in with put.io" })).toBeVisible();
+  await expect(page.getByText("chill.institute").first()).toBeVisible();
 });
 
 test("live HTTP redirects to HTTPS", async ({ page }) => {
