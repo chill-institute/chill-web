@@ -354,6 +354,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
 
+      - name: Remove legacy chill staging DNS records
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: scripts/ci/delete-cloudflare-dns-records chill.institute staging.chill.institute
+
       - name: Deploy chill staging to SST
         env:
           CHILL_WEB_APP: chill
@@ -412,6 +418,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: scripts/ci/restore-sst-local-state "${SST_STATE_ARTIFACT_PREFIX}"
+
+      - name: Remove legacy binge staging DNS records
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+        run: scripts/ci/delete-cloudflare-dns-records binge.institute staging.binge.institute
 
       - name: Deploy binge staging to SST
         env:
