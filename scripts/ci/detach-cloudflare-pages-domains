@@ -28,12 +28,45 @@ fi
 api() {
   local method="$1"
   local path="$2"
+  local response
+  local status
 
-  curl -fsS \
-    -X "${method}" \
-    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-    -H "Content-Type: application/json" \
-    "https://api.cloudflare.com/client/v4/${path}"
+  response="$(
+    curl -sS \
+      -w '\n%{http_code}' \
+      -X "${method}" \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+      -H "Content-Type: application/json" \
+      "https://api.cloudflare.com/client/v4/${path}"
+  )"
+  status="${response##*$'\n'}"
+  response="${response%$'\n'*}"
+
+  if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+    echo "Cloudflare API ${method} ${path} failed with HTTP ${status}" >&2
+    printf '%s\n' "${response}" | jq -r '
+      if type == "object" and (.errors // []) != [] then
+        .errors[] | "Cloudflare error \(.code): \(.message)"
+      else
+        .
+      end
+    ' >&2
+    return 1
+  fi
+
+  printf '%s\n' "${response}"
+}
+
+api_delete() {
+  local path="$1"
+
+  api DELETE "${path}" >/dev/null
+}
+
+api_get() {
+  local path="$1"
+
+  api GET "${path}"
 }
 
 urlencode() {
@@ -42,15 +75,15 @@ urlencode() {
 
 account_id="$(urlencode "${CLOUDFLARE_DEFAULT_ACCOUNT_ID}")"
 project="$(urlencode "${project_name}")"
-zone_query="zones?account.id=${account_id}&name=$(urlencode "${zone_name}")&per_page=1"
-zone_id="$(api GET "${zone_query}" | jq -er --arg zone_name "${zone_name}" '.result[] | select(.name == $zone_name) | .id')"
+zone_query="zones?account.id=${account_id}&name=$(urlencode "${zone_name}")&per_page=5"
+zone_id="$(api_get "${zone_query}" | jq -er --arg zone_name "${zone_name}" '.result[] | select(.name == $zone_name) | .id')"
 
 delete_dns_records() {
   local record_name="$1"
 
   for record_type in A AAAA CNAME; do
     records_query="zones/${zone_id}/dns_records?type=${record_type}&name=$(urlencode "${record_name}")&per_page=100"
-    api GET "${records_query}" \
+    api_get "${records_query}" \
       | jq -r '.result[] | [.id, .type, .name, .content] | @tsv' \
       | while IFS=$'\t' read -r record_id type name content; do
         if [ -z "${record_id}" ]; then
@@ -58,12 +91,12 @@ delete_dns_records() {
         fi
 
         echo "Deleting Cloudflare DNS ${type} ${name} -> ${content}"
-        api DELETE "zones/${zone_id}/dns_records/${record_id}" >/dev/null
+        api_delete "zones/${zone_id}/dns_records/${record_id}"
       done
   done
 }
 
-pages_domains="$(api GET "accounts/${account_id}/pages/projects/${project}/domains?per_page=100")"
+pages_domains="$(api_get "accounts/${account_id}/pages/projects/${project}/domains?per_page=100")"
 
 for domain_name in "$@"; do
   encoded_domain="$(urlencode "${domain_name}")"
@@ -74,7 +107,7 @@ for domain_name in "$@"; do
 
   if [ "${has_pages_domain}" = "true" ]; then
     echo "Detaching Cloudflare Pages domain ${domain_name} from ${project_name}"
-    api DELETE "accounts/${account_id}/pages/projects/${project}/domains/${encoded_domain}" >/dev/null
+    api_delete "accounts/${account_id}/pages/projects/${project}/domains/${encoded_domain}"
     delete_dns_records "${domain_name}"
   else
     echo "Cloudflare Pages domain ${domain_name} is not attached to ${project_name}"
