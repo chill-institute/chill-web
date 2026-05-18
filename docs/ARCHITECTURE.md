@@ -155,8 +155,8 @@ The auth lifecycle routes (`/sign-in`, `/sign-out`, `/auth/success`, `/auth/cli-
 
 Hosted environments resolve the API from the current hostname in app-local files:
 
-- `apps/chill/src/lib/api-origin.ts` handles `localhost`, `chill.institute`, `staging.chill.institute`, and `*.chill-institute.pages.dev`
-- `apps/binge/src/lib/api-origin.ts` handles `localhost`, `binge.institute`, `staging.binge.institute`, and `*.binge-institute.pages.dev`
+- `apps/chill/src/lib/api-origin.ts` handles `localhost` and `*.chill.institute`, with `staging.chill.institute` pinned to the staging API
+- `apps/binge/src/lib/api-origin.ts` handles `localhost` and `*.binge.institute`, with `staging.binge.institute` pinned to the staging API
 
 ## Deployment Model
 

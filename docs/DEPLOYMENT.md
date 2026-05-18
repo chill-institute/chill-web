@@ -24,8 +24,8 @@ Build output:
 
 Hosted environments resolve the API like this:
 
-- `apps/chill`: `localhost`, `chill.institute`, `www.chill.institute`, `staging.chill.institute`, and `*.chill-institute.pages.dev` -> `https://api.chill.institute` or `https://staging-api.chill.institute` for staging
-- `apps/binge`: `localhost`, `binge.institute`, `www.binge.institute`, `staging.binge.institute`, and `*.binge-institute.pages.dev` -> `https://api.chill.institute` or `https://staging-api.chill.institute` for staging
+- `apps/chill`: `localhost` and `*.chill.institute` -> `https://api.chill.institute`, except `staging.chill.institute` -> `https://staging-api.chill.institute`
+- `apps/binge`: `localhost` and `*.binge.institute` -> `https://api.chill.institute`, except `staging.binge.institute` -> `https://staging-api.chill.institute`
 
 ## Public Endpoints
 

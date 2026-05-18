@@ -33,12 +33,6 @@ describe("getPublicAPIBaseURL", () => {
     expect(getPublicAPIBaseURL()).toBe("http://localhost:58780");
   });
 
-  it("uses production api for pages preview deployments", () => {
-    withWindowLocation("https://chore-preview-probe.binge-institute.pages.dev/");
-
-    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
-  });
-
   it("uses production api for the production app host", () => {
     withWindowLocation("https://binge.institute/");
 
@@ -51,6 +45,12 @@ describe("getPublicAPIBaseURL", () => {
     expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
 
+  it("uses production api for binge subdomains", () => {
+    withWindowLocation("https://future.binge.institute/");
+
+    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
+  });
+
   it("falls back to the current origin for unknown hosts", () => {
     withWindowLocation("https://custom.example/");
 
@@ -59,13 +59,11 @@ describe("getPublicAPIBaseURL", () => {
 });
 
 describe("resolveHostedAPIBaseURL", () => {
-  it("resolves localhost, previews, and app hosts to the production api", () => {
+  it("resolves localhost and binge app hosts to the production api", () => {
     expect(resolveHostedAPIBaseURL("localhost")).toBe("https://api.chill.institute");
-    expect(resolveHostedAPIBaseURL("chore-preview-probe.binge-institute.pages.dev")).toBe(
-      "https://api.chill.institute",
-    );
     expect(resolveHostedAPIBaseURL("binge.institute")).toBe("https://api.chill.institute");
     expect(resolveHostedAPIBaseURL("next.binge.institute")).toBe("https://api.chill.institute");
+    expect(resolveHostedAPIBaseURL("future.binge.institute")).toBe("https://api.chill.institute");
   });
 
   it("returns the current origin when already on the api host", () => {
@@ -82,6 +80,7 @@ describe("resolveHostedAPIBaseURL", () => {
   });
 
   it("returns null for unknown hosts", () => {
+    expect(resolveHostedAPIBaseURL("chore-preview-probe.binge-institute.pages.dev")).toBeNull();
     expect(resolveHostedAPIBaseURL("custom.example")).toBeNull();
   });
 });
