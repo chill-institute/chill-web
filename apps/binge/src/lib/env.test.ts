@@ -45,6 +45,12 @@ describe("getPublicAPIBaseURL", () => {
     expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
 
+  it("uses production api for the production validation host", () => {
+    withWindowLocation("https://next.binge.institute/");
+
+    expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
+  });
+
   it("falls back to the current origin for unknown hosts", () => {
     withWindowLocation("https://custom.example/");
 
@@ -59,6 +65,7 @@ describe("resolveHostedAPIBaseURL", () => {
       "https://api.chill.institute",
     );
     expect(resolveHostedAPIBaseURL("binge.institute")).toBe("https://api.chill.institute");
+    expect(resolveHostedAPIBaseURL("next.binge.institute")).toBe("https://api.chill.institute");
   });
 
   it("returns the current origin when already on the api host", () => {

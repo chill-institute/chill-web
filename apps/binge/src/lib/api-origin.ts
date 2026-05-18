@@ -1,4 +1,8 @@
-const PRODUCTION_APP_HOSTS = new Set(["binge.institute", "www.binge.institute"]);
+const PRODUCTION_APP_HOSTS = new Set([
+  "binge.institute",
+  "next.binge.institute",
+  "www.binge.institute",
+]);
 const PRODUCTION_API_BASE_URL = "https://api.chill.institute";
 
 const STAGING_APP_HOSTS = new Set(["staging.binge.institute"]);
