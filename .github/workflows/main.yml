@@ -291,6 +291,14 @@ jobs:
           name: chill-dist
           path: apps/chill/dist
 
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: false
+          run-install: false
+
       - name: Deploy chill production to Cloudflare Pages
         uses: ./.github/actions/cloudflare-pages-deploy
         with:
@@ -319,6 +327,14 @@ jobs:
         with:
           name: binge-dist
           path: apps/binge/dist
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: false
+          run-install: false
 
       - name: Deploy binge production to Cloudflare Pages
         uses: ./.github/actions/cloudflare-pages-deploy
