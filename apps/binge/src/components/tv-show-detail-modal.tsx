@@ -25,6 +25,7 @@ const SEASON_TAB_SKELETON_SLOTS = Array.from({ length: 3 }, (_, i) => `season-ta
 const EPISODE_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `episode-skel-${i}`);
 const EMPTY_SEASONS: NonNullable<ReturnType<typeof useTVShowDetailQuery>["data"]>["seasons"] = [];
 const EMPTY_GENRES: string[] = [];
+const DETAIL_GENRE_LIMIT = 2;
 
 const AIR_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -147,6 +148,7 @@ function TvShowDetailContent({
   const seasonRefreshing =
     (seasonQuery.isFetching && seasonQuery.status === "success") ||
     (downloadsQuery.isFetching && downloadsQuery.status === "success");
+  const visibleGenres = genres.slice(0, DETAIL_GENRE_LIMIT);
 
   const closeButton = (
     <ModalCloseButton
@@ -177,10 +179,10 @@ function TvShowDetailContent({
           <div className="min-w-0 flex-1">
             {show ? (
               <div className="text-fg-1 max-w-[520px]">
-                <h2 id="tv-show-detail-title" className="m-0">
+                <h2 id="tv-show-detail-title" className="m-0 text-3xl sm:text-5xl">
                   {show.title}
                 </h2>
-                <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
+                <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-base/6 sm:text-sm">
                   <span className="flex items-center gap-1">
                     <Star
                       className="size-3.5 fill-rating-amber text-rating-amber"
@@ -215,11 +217,11 @@ function TvShowDetailContent({
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <TVShowStatusBadge status={detailQuery.data?.show?.status ?? show.status} />
-                  {genres.length > 0 ? (
+                  {visibleGenres.length > 0 ? (
                     <>
                       <span className="text-fg-4">·</span>
                       <div className="flex flex-wrap items-center gap-2">
-                        {genres.map((genre) => (
+                        {visibleGenres.map((genre) => (
                           <Badge
                             key={genre}
                             variant="outline"
@@ -251,7 +253,9 @@ function TvShowDetailContent({
         ) : null}
 
         {show?.overview ? (
-          <p className="text-fg-2 mt-5 text-sm leading-relaxed">{show.overview}</p>
+          <p className="text-fg-2 mt-5 text-[0.9375rem]/6 sm:text-sm sm:leading-relaxed">
+            {show.overview}
+          </p>
         ) : detailQuery.isPending ? (
           <div className="mt-5 flex flex-col gap-2">
             <Skeleton className="h-4 w-full" />
@@ -274,12 +278,12 @@ function TvShowDetailContent({
                 if (Number.isFinite(next)) onSeasonChange(next);
               }}
             >
-              <TabsList className="mb-4 flex-wrap gap-1">
+              <TabsList className="border-border-soft bg-surface-2/60 mb-4 w-full overflow-x-auto rounded border p-1 sm:w-fit">
                 {seasons.map((season) => (
                   <TabsTrigger
                     key={season.seasonNumber}
                     value={String(season.seasonNumber)}
-                    className="h-6 px-2 font-mono text-xs"
+                    className="h-8 shrink-0 px-3 text-base data-[active]:shadow-press sm:h-7 sm:px-2.5 sm:text-sm"
                   >
                     {season.name || `season ${season.seasonNumber}`}
                   </TabsTrigger>
@@ -351,7 +355,6 @@ function TvShowDetailContent({
                   key={slot}
                   className="border-border-faint flex items-center gap-3 border-t px-3 py-2.5 first:border-t-0"
                 >
-                  <Skeleton className="h-3 w-6 rounded" />
                   <div className="flex flex-1 flex-col gap-1">
                     <Skeleton className="h-4 w-44" />
                     <Skeleton className="h-3 w-28" />
@@ -371,12 +374,11 @@ function TvShowDetailContent({
                     key={`${episode.seasonNumber}-${episode.episodeNumber}`}
                     className="border-border-faint flex items-center gap-3 border-t px-3 py-2.5 first:border-t-0"
                   >
-                    <span className="shrink-0 font-mono text-2xs tabular-nums text-fg-3">
-                      e{paddedEpisode}
-                    </span>
-
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm text-fg-1">
+                        <span className="mr-1.5 font-mono text-2xs tabular-nums text-fg-3">
+                          E{paddedEpisode}
+                        </span>{" "}
                         {episode.name || `episode ${episode.episodeNumber}`}
                       </div>
                       <div className="mt-0.5 flex flex-wrap gap-x-2 font-mono text-2xs text-fg-3">

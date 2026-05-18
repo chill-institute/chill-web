@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { CornerDownLeft, Search, Users } from "lucide-react";
+import { CornerDownLeft, Search, Users, X } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import {
@@ -82,7 +82,7 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="border-border-strong bg-surface shadow-modal top-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] -translate-x-1/2 overflow-hidden rounded-xl border sm:top-[12vh] sm:w-[min(92vw,640px)]"
+        className="border-border-strong bg-surface shadow-modal top-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] -translate-x-1/2 overflow-hidden rounded-md border sm:top-[12vh] sm:w-[min(92vw,640px)]"
         onKeyDown={handleKey}
       >
         <DialogTitle className="sr-only">search the institute</DialogTitle>
@@ -110,7 +110,15 @@ export function SearchOverlay({ open, onOpenChange }: Props) {
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="kbd cursor-pointer"
+                className="text-fg-3 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 flex size-7 items-center justify-center rounded transition-colors sm:hidden"
+                aria-label="close search"
+              >
+                <X className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="kbd max-sm:hidden cursor-pointer"
                 aria-label="close"
               >
                 esc

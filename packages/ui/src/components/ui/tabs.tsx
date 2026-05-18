@@ -30,7 +30,7 @@ function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitiv
       data-slot="tabs-trigger"
       className={cn(
         tabItemBaseClass,
-        "data-[selected]:bg-hover data-[selected]:text-fg-1 hover-hover:hover:data-[selected]:bg-hover",
+        "data-[active]:bg-hover data-[active]:text-fg-1 hover-hover:hover:data-[active]:bg-hover",
         className,
       )}
       {...props}

@@ -19,6 +19,7 @@ import { useMovieSearchQuery } from "@/queries/movies";
 
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
+const DETAIL_GENRE_LIMIT = 2;
 
 const UPLOADED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -45,7 +46,7 @@ function buildMetadataTags(movie: Movie): string[] {
   const seen = new Set<string>();
   const tags: string[] = [];
   for (const raw of movie.genres) {
-    if (tags.length >= 8) break;
+    if (tags.length >= DETAIL_GENRE_LIMIT) break;
     const value = raw.trim();
     if (!value) continue;
     const key = value.toLowerCase();
@@ -223,10 +224,10 @@ function PosterImage({ url, alt }: { url: string; alt: string }) {
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   return (
     <div className="text-fg-1 max-w-[560px]">
-      <h2 id="movie-detail-title" className="m-0">
+      <h2 id="movie-detail-title" className="m-0 text-3xl sm:text-5xl">
         {movie.title}
       </h2>
-      <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm">
+      <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-base/6 sm:text-sm">
         <span className="flex items-center gap-1">
           <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
           <span>{movie.rating ? movie.rating.toFixed(1) : "N/A"}</span>
@@ -260,6 +261,35 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
             </Badge>
           ))}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MovieSynopsis({ children }: { children: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const canCollapse = children.length > 170;
+
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <p
+        className={cn(
+          "m-0 text-[0.9375rem]/6 text-pretty text-fg-2 sm:text-sm sm:leading-relaxed",
+          canCollapse && !expanded && "line-clamp-3",
+        )}
+      >
+        {children}
+      </p>
+      {canCollapse ? (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto min-h-0 p-0 text-sm text-fg-4 hover:text-fg-2 sm:text-xs"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+        >
+          {expanded ? "show less" : "read more"}
+        </Button>
       ) : null}
     </div>
   );
@@ -349,9 +379,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         data-movie-detail-scroll
         className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6"
       >
-        {synopsis ? (
-          <p className="m-0 text-sm leading-relaxed text-pretty text-fg-2">{synopsis}</p>
-        ) : null}
+        {synopsis ? <MovieSynopsis>{synopsis}</MovieSynopsis> : null}
 
         <Separator className="bg-border-faint" />
 
@@ -387,8 +415,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
               codecFilter={codecFilter}
               sortBy={sortBy}
               hasActiveFilters={hasActiveFilters}
-              visibleCount={visibleResults.length}
-              totalCount={results.length}
               onResolutionChange={setResolutionFilter}
               onCodecChange={setCodecFilter}
               onSortChange={setSortBy}
@@ -510,8 +536,6 @@ function ResultsToolbar({
   codecFilter,
   sortBy,
   hasActiveFilters,
-  visibleCount,
-  totalCount,
   onResolutionChange,
   onCodecChange,
   onSortChange,
@@ -521,15 +545,13 @@ function ResultsToolbar({
   codecFilter: CodecFilterValue;
   sortBy: SortValue;
   hasActiveFilters: boolean;
-  visibleCount: number;
-  totalCount: number;
   onResolutionChange: (value: ResolutionFilterValue) => void;
   onCodecChange: (value: CodecFilterValue) => void;
   onSortChange: (value: SortValue) => void;
   onClearFilters: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
         <FilterSelect
           label="Resolution"
@@ -565,11 +587,6 @@ function ResultsToolbar({
           </Button>
         ) : null}
       </div>
-      <p className="m-0 self-end pb-0.5 font-mono text-2xs leading-none tabular-nums text-fg-3">
-        {visibleCount}
-        {visibleCount !== totalCount ? ` of ${totalCount}` : ""} result
-        {visibleCount === 1 ? "" : "s"}
-      </p>
     </div>
   );
 }

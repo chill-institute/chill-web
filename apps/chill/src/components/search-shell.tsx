@@ -9,9 +9,8 @@ import { publicLinks } from "@chill-institute/ui/lib/public-links";
 
 const FOOTER_LINKS = [
   { label: "about", href: publicLinks.about },
-  { label: "guides", href: publicLinks.guides },
   { label: "github", href: publicLinks.github },
-  { label: "X", href: publicLinks.x },
+  { label: "x", href: publicLinks.x },
   { label: "email", href: publicLinks.email },
   { label: "reddit", href: publicLinks.reddit },
 ];

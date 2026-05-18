@@ -19,11 +19,17 @@ function StickyHeader({ brand, tabs, right, children, className }: StickyHeaderP
         className,
       )}
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5">
-        {brand}
-        {tabs}
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 px-3 sm:flex sm:px-5">
+        <div className="min-w-0">{brand}</div>
+        {tabs ? (
+          <div className="min-w-0 justify-self-start sm:justify-self-auto">{tabs}</div>
+        ) : null}
         {children}
-        {right ? <div className="ml-auto flex items-center gap-0.5 sm:gap-1">{right}</div> : null}
+        {right ? (
+          <div className="-mr-2 flex items-center justify-end gap-0.5 sm:mr-0 sm:ml-auto sm:gap-1">
+            {right}
+          </div>
+        ) : null}
       </div>
     </header>
   );

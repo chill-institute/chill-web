@@ -45,9 +45,8 @@ import {
 
 const LINKS = [
   { title: "about", url: publicLinks.about },
-  { title: "guides", url: publicLinks.guides },
   { title: "github", url: publicLinks.github },
-  { title: "X", url: publicLinks.x },
+  { title: "x", url: publicLinks.x },
   { title: "email", url: publicLinks.email },
   { title: "reddit", url: publicLinks.reddit },
 ];
@@ -404,9 +403,8 @@ function SearchResultTitleBehaviorSection({
 
 function SettingsFooter() {
   return (
-    <div className="text-fg-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-2xs">
-      <span>release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}</span>
-      <nav aria-label="contact" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className="flex flex-col gap-1 font-mono text-2xs sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+      <nav aria-label="contact" className="text-fg-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         {LINKS.map(({ title, url }, index) => (
           <span key={url} className="inline-flex items-center gap-1">
             {index > 0 ? (
@@ -426,6 +424,9 @@ function SettingsFooter() {
           </span>
         ))}
       </nav>
+      <span className="text-fg-4 shrink-0">
+        release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}
+      </span>
     </div>
   );
 }

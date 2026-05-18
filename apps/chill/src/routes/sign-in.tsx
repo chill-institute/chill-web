@@ -134,7 +134,6 @@ function SignInPage() {
         <nav aria-label="external links" className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           {[
             { label: "about", href: publicLinks.about },
-            { label: "guides", href: publicLinks.guides },
             { label: "github", href: publicLinks.github },
           ].map((link, index) => (
             <span key={link.href} className="inline-flex items-center gap-1">

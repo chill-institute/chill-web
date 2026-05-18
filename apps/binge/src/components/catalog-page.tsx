@@ -8,6 +8,7 @@ import { TVShowsSourceSelect } from "@/components/tv-shows-source-select";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { IconButton } from "@chill-institute/ui/components/icon-button";
+import { cn } from "@chill-institute/ui/cn";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import {
   Empty,
@@ -22,7 +23,7 @@ import { tabsContainerClass } from "@chill-institute/ui/components/tabs";
 import { Tabs, TabsList, TabsTrigger } from "@chill-institute/ui/components/ui/tabs";
 import { PosterCard } from "@chill-institute/ui/components/poster-card";
 import { InstituteFooter } from "@chill-institute/ui/components/institute-footer";
-import { SortPill, SortRow, SortRowDivider } from "@chill-institute/ui/components/sort-row";
+import { SortPill, SortRow } from "@chill-institute/ui/components/sort-row";
 import { readCurrentCallbackPath, useAuth } from "@chill-institute/auth/auth";
 import { publicLinks } from "@chill-institute/ui/lib/public-links";
 
@@ -182,16 +183,6 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
       const effectiveTVShowsSource =
         tab === "tv-shows" && source !== undefined ? source : config.tvShowsSource;
 
-      const currentTVShowsResponse =
-        tvShowsQuery.status === "success" && tvShowsQuery.data.source === effectiveTVShowsSource
-          ? tvShowsQuery.data
-          : undefined;
-
-      const currentMoviesResponse =
-        moviesQuery.status === "success" && moviesQuery.data.source === effectiveMoviesSource
-          ? moviesQuery.data
-          : undefined;
-
       const sourceSelector =
         tab === "movies" ? (
           <MoviesSourceSelect
@@ -218,20 +209,6 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
             }}
           />
         );
-
-      const visibleCount =
-        tab === "movies"
-          ? (currentMoviesResponse?.movies.length ?? null)
-          : (currentTVShowsResponse?.shows.length ?? null);
-      const noun =
-        tab === "movies"
-          ? visibleCount === 1
-            ? "title"
-            : "titles"
-          : visibleCount === 1
-            ? "show"
-            : "shows";
-      const countLabel = visibleCount != null ? `${visibleCount} ${noun}` : null;
 
       const setSort = (next: SortKey) => {
         void navigate({
@@ -279,11 +256,18 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
       return (
         <HomeShell tab={tab} onOpenSearch={openSearch}>
           <PageHeading tab={tab} />
-          <SortRow count={countLabel}>
-            <div className={tabsContainerClass} role="radiogroup" aria-label="sort movies by">
+          <SortRow>
+            <div
+              className={cn(
+                tabsContainerClass,
+                "w-full justify-start overflow-x-auto sm:w-auto sm:overflow-visible",
+              )}
+              role="radiogroup"
+              aria-label="sort titles by"
+            >
               <SortPill
                 active={sort === "popular"}
-                className="h-8 text-base sm:h-7 sm:text-sm"
+                className="h-7 shrink-0 px-2 text-sm sm:px-2.5"
                 onClick={() => setSort("popular")}
               >
                 <Flame aria-hidden="true" />
@@ -291,7 +275,7 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
               </SortPill>
               <SortPill
                 active={sort === "rating"}
-                className="h-8 text-base sm:h-7 sm:text-sm"
+                className="h-7 shrink-0 px-2 text-sm sm:px-2.5"
                 onClick={() => setSort("rating")}
               >
                 <Star aria-hidden="true" />
@@ -299,14 +283,13 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
               </SortPill>
               <SortPill
                 active={sort === "recent"}
-                className="h-8 text-base sm:h-7 sm:text-sm"
+                className="h-7 shrink-0 px-2 text-sm sm:px-2.5"
                 onClick={() => setSort("recent")}
               >
                 <Calendar aria-hidden="true" />
                 recent
               </SortPill>
             </div>
-            <SortRowDivider />
             {sourceSelector}
           </SortRow>
 
@@ -331,15 +314,15 @@ export { parseMoviesSource, parseTVShowsSource };
 
 function BingeBrand() {
   return (
-    <Link to="/" className="flex min-w-0 items-center gap-2">
+    <Link to="/" className="flex min-w-0 items-center gap-2" aria-label="binge.institute home">
       <img
         src="/logo.png"
         width={22}
         height={22}
         alt=""
-        className="border-border-strong rounded border"
+        className="border-border-strong size-8 rounded border sm:size-[22px]"
       />
-      <h1 className="text-fg-1 m-0 truncate font-serif text-lg leading-7 font-normal tracking-[-0.01em]">
+      <h1 className="text-fg-1 m-0 hidden truncate font-serif text-lg leading-7 font-normal tracking-[-0.01em] sm:block">
         binge.institute
       </h1>
     </Link>
@@ -360,10 +343,12 @@ function HomeShell({
       <StickyHeader
         brand={<BingeBrand />}
         tabs={
-          <Tabs value={tab}>
-            <TabsList>
+          <Tabs value={tab} className="min-w-0">
+            <TabsList className="justify-center">
               <TabsTrigger
                 value="movies"
+                className="h-9 px-2 text-base sm:h-7 sm:px-2.5 sm:text-sm"
+                nativeButton={false}
                 render={<Link to="/movies" search={{ sort: undefined, source: undefined }} />}
               >
                 <Film aria-hidden="true" />
@@ -371,6 +356,8 @@ function HomeShell({
               </TabsTrigger>
               <TabsTrigger
                 value="tv-shows"
+                className="h-9 px-2 text-base sm:h-7 sm:px-2.5 sm:text-sm"
+                nativeButton={false}
                 render={<Link to="/tv-shows" search={{ sort: undefined, source: undefined }} />}
               >
                 <Tv aria-hidden="true" />
@@ -400,9 +387,8 @@ function HomeShell({
           appName="binge.institute"
           links={[
             { label: "about", href: publicLinks.about },
-            { label: "guides", href: publicLinks.guides },
             { label: "github", href: publicLinks.github },
-            { label: "X", href: publicLinks.x },
+            { label: "x", href: publicLinks.x },
             { label: "email", href: publicLinks.email },
             { label: "reddit", href: publicLinks.reddit },
           ]}
@@ -415,7 +401,9 @@ function HomeShell({
 function PageHeading({ tab }: { tab: CatalogTab }) {
   return (
     <div className="flex items-end justify-between gap-4 pt-5 pb-2.5 sm:pt-7 sm:pb-3.5">
-      <h2 className="m-0 leading-none">{tab === "movies" ? "movies" : "tv shows"}</h2>
+      <h2 className="m-0 text-3xl leading-none sm:text-5xl">
+        {tab === "movies" ? "movies" : "tv shows"}
+      </h2>
     </div>
   );
 }

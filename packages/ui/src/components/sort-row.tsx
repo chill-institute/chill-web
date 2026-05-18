@@ -7,24 +7,18 @@ import { tabItemActiveClass, tabItemBaseClass } from "./tabs";
 type SortRowProps = {
   className?: string;
   children: ReactNode;
-  count?: ReactNode;
 };
 
-function SortRow({ className, children, count }: SortRowProps) {
+function SortRow({ className, children }: SortRowProps) {
   return (
     <div
       data-slot="sort-row"
       className={cn(
-        "border-border-strong text-fg-3 bg-surface/60 -mx-4 mb-3.5 flex flex-wrap items-center gap-2 border-y px-4 py-2.5 text-sm sm:mx-0 sm:gap-3 sm:px-4 sm:py-2 lg:mb-4.5",
+        "border-border-strong text-fg-3 bg-surface/60 -mx-4 mb-3.5 flex flex-col gap-1.5 border-y px-4 py-2 text-sm sm:mx-0 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:px-4 lg:mb-4.5",
         className,
       )}
     >
       {children}
-      {count != null ? (
-        <span className="text-fg-3 order-2 ml-auto font-mono text-2xs tabular-nums sm:order-none">
-          {count}
-        </span>
-      ) : null}
     </div>
   );
 }

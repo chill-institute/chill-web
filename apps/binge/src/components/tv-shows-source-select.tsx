@@ -30,7 +30,7 @@ export function TVShowsSourceSelect({
       variant="tab"
       className={cn(
         tabsContainerClass,
-        "order-3 w-full justify-start overflow-x-auto sm:order-none sm:w-auto",
+        "w-full justify-start overflow-x-auto sm:w-auto sm:overflow-visible",
       )}
       onValueChange={(next) => {
         if (next.length === 0) {
@@ -49,7 +49,7 @@ export function TVShowsSourceSelect({
           key={source}
           value={String(source)}
           aria-label={getTVShowsSourceLabel(source)}
-          className="h-8 shrink-0 gap-1.5 whitespace-nowrap px-2.5 text-base sm:h-7 sm:text-sm"
+          className="h-7 shrink-0 gap-1.5 whitespace-nowrap px-2 text-sm sm:px-2.5"
         >
           {tvShowsSourceTabLabels[source]}
         </ToggleGroupItem>
