@@ -60,8 +60,9 @@ export const test = base.extend<{
   authenticatedPage: Page;
   mockRpc: MockRpc;
 }>({
-  authenticatedPage: async ({ browser }, provide) => {
+  authenticatedPage: async ({ browser, contextOptions }, provide) => {
     const context = await browser.newContext({
+      ...contextOptions,
       storageState: AUTH_STORAGE_STATE,
     });
     const page = await context.newPage();

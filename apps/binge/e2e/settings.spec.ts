@@ -43,7 +43,7 @@ function settingsPage(page: Page) {
 }
 
 function folderPicker(page: Page) {
-  return page.getByRole("dialog").filter({ has: page.getByText("download here") });
+  return page.getByRole("dialog", { name: "choose download folder" });
 }
 
 test.describe("settings", () => {
@@ -131,8 +131,11 @@ test.describe("settings", () => {
     await authenticatedPage.goto("/settings");
     await authenticatedPage.getByRole("button", { name: "change" }).click();
     const picker = folderPicker(authenticatedPage);
+    await expect(picker.getByLabel("At Your Files root")).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Go back to parent folder" })).toHaveCount(0);
     await picker.getByRole("button", { name: "Open folder Movies" }).click();
-    await picker.getByRole("button", { name: "download here" }).click();
+    await expect(picker.getByRole("button", { name: "Go back to parent folder" })).toBeVisible();
+    await picker.getByRole("button", { name: "Use Movies as download folder" }).click();
 
     expect(folderRequests).toContain("0");
     expect(folderRequests).toContain("10");
@@ -225,7 +228,7 @@ test.describe("settings", () => {
     await authenticatedPage.getByRole("button", { name: "change" }).click();
     const picker = folderPicker(authenticatedPage);
     await picker.getByRole("button", { name: "Open folder Movies" }).click();
-    await picker.getByRole("button", { name: "download here" }).click();
+    await picker.getByRole("button", { name: "Use Movies as download folder" }).click();
 
     releaseServerSettings?.();
 
@@ -302,7 +305,7 @@ test.describe("settings", () => {
     await authenticatedPage.getByRole("button", { name: "change" }).click();
     const picker = folderPicker(authenticatedPage);
     await picker.getByRole("button", { name: "Open folder Movies" }).click();
-    await picker.getByRole("button", { name: "download here" }).click();
+    await picker.getByRole("button", { name: "Use Movies as download folder" }).click();
 
     await expect(visibleFolderName).toBeHidden({ timeout: 400 });
     await expect(settingsPage(authenticatedPage).getByText("Movies")).toBeVisible({
@@ -339,7 +342,7 @@ test.describe("settings", () => {
 
     await authenticatedPage.getByRole("button", { name: "change" }).click();
     let picker = folderPicker(authenticatedPage);
-    await expect(picker.getByTitle("your files")).toBeVisible();
+    await expect(picker.getByTitle("Your Files")).toBeVisible();
     await picker.getByRole("button", { name: "Open folder Movies" }).click();
     await expect(picker.getByText("Anime")).toBeVisible();
 
@@ -347,7 +350,7 @@ test.describe("settings", () => {
     await authenticatedPage.getByRole("button", { name: "change" }).click();
 
     picker = folderPicker(authenticatedPage);
-    await expect(picker.getByTitle("your files")).toBeVisible();
+    await expect(picker.getByTitle("Your Files")).toBeVisible();
     await expect(picker.getByRole("button", { name: "Open folder Movies" })).toBeVisible();
   });
 

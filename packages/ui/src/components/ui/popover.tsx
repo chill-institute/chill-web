@@ -15,6 +15,7 @@ function PopoverArrow(props: ComponentProps<typeof PopoverPrimitive.Arrow>) {
 function PopoverContent({
   align = "center",
   alignOffset = 0,
+  portalContainer,
   side = "bottom",
   sideOffset = 0,
   className,
@@ -24,15 +25,18 @@ function PopoverContent({
   Pick<
     ComponentProps<typeof PopoverPrimitive.Positioner>,
     "side" | "sideOffset" | "align" | "alignOffset"
-  >) {
+  > & {
+    portalContainer?: ComponentProps<typeof PopoverPrimitive.Portal>["container"];
+  }) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={portalContainer}>
       <PopoverPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        className="z-50"
+        className="z-[60]"
+        style={{ zIndex: 60 }}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

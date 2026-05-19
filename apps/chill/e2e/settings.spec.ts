@@ -49,6 +49,10 @@ function settingsPage(page: Page) {
   return page.locator('[data-page="settings"]');
 }
 
+function folderPicker(page: Page) {
+  return page.getByRole("dialog", { name: "choose download folder" });
+}
+
 async function fulfillPutioProviderUnavailable(route: Route) {
   await route.fulfill({
     status: 503,
@@ -130,12 +134,110 @@ test.describe("settings", () => {
 
     await authenticatedPage.goto("/settings");
     await authenticatedPage.getByRole("button", { name: "change" }).click();
-    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
-    await authenticatedPage.getByRole("button", { name: "download here" }).click();
+    const picker = folderPicker(authenticatedPage);
+    await expect(picker.getByLabel("At Your Files root")).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Go back to parent folder" })).toHaveCount(0);
+    await authenticatedPage.getByRole("button", { name: "Open folder Movies" }).click();
+    await expect(picker.getByRole("button", { name: "Go back to parent folder" })).toBeVisible();
+    await authenticatedPage.getByRole("button", { name: "Use Movies as download folder" }).click();
 
     expect(folderRequests).toContain("0");
     expect(folderRequests).toContain("10");
     await expect.poll(() => savedDownloadFolderID).toBe("10");
+  });
+
+  test("folder picker can go back from a saved root-id folder alias", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const root = userFile({ id: 0n, name: "your files" });
+    const chill = userFile({ id: 0n, name: "chill.institute" });
+    const rss = userFile({ id: 12n, name: "rss" });
+
+    await mockRpc(baseSettingsMethods({ GetDownloadFolder: downloadFolderResponse(chill) }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(folderResponse(root, [chill, rss])),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+    await authenticatedPage.getByRole("button", { name: "change" }).click();
+
+    const picker = folderPicker(authenticatedPage);
+    await expect(
+      picker.getByRole("button", { name: "chill.institute", exact: true }),
+    ).toBeVisible();
+
+    await picker.getByRole("button", { name: "Go back to parent folder" }).click();
+
+    await expect(picker.getByLabel("At Your Files root")).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Go back to parent folder" })).toHaveCount(0);
+    await expect(picker.getByTitle("Your Files")).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Open folder rss" })).toBeVisible();
+  });
+
+  test("folder picker keeps long release names inside the fixed popover", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const root = userFile({ id: 0n, name: "your files" });
+    const releaseFolder = userFile({
+      id: 20n,
+      name: "Implosion The Titanic Sub Disaster (2025) [1080p] [WEBRip] [x265] [10bit] [YTS.MX]",
+    });
+    const subs = userFile({ id: 21n, name: "Subs" });
+
+    await mockRpc(baseSettingsMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
+      const body = route.request().postDataJSON() as { id?: string | number };
+      const folderID = body.id !== undefined ? String(body.id) : "0";
+      const response =
+        folderID === "20"
+          ? folderResponse(releaseFolder, [subs])
+          : folderID === "21"
+            ? folderResponse(subs, [])
+            : folderResponse(root, [releaseFolder]);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+    const trigger = authenticatedPage.getByRole("button", { name: "change" });
+    const triggerBox = await trigger.boundingBox();
+    await trigger.click();
+
+    const picker = folderPicker(authenticatedPage);
+    const row = picker.getByRole("button", {
+      name: "Open folder Implosion The Titanic Sub Disaster (2025) [1080p] [WEBRip] [x265] [10bit] [YTS.MX]",
+    });
+
+    await expect(row).toBeVisible();
+    await expect
+      .poll(async () => Math.round((await picker.boundingBox())?.width ?? 0))
+      .toBeLessThanOrEqual(300);
+    await expect
+      .poll(async () => Math.round((await row.boundingBox())?.width ?? 0))
+      .toBeLessThanOrEqual(292);
+
+    await row.click();
+    await picker.getByRole("button", { name: "Open folder Subs" }).click();
+    await expect(picker.getByRole("button", { name: "show parent folders" })).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Subs", exact: true })).toBeVisible();
+
+    const pickerBox = await picker.boundingBox();
+    expect(triggerBox).not.toBeNull();
+    expect(pickerBox).not.toBeNull();
+    expect(
+      Math.abs(pickerBox!.x + pickerBox!.width / 2 - (triggerBox!.x + triggerBox!.width / 2)),
+    ).toBeLessThan(16);
   });
 
   test("changing download folder does not keep showing the stale saved folder name", async ({
@@ -204,8 +306,8 @@ test.describe("settings", () => {
     await expect(visibleFolderName).toBeVisible();
 
     await authenticatedPage.getByRole("button", { name: "change" }).click();
-    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
-    await authenticatedPage.getByRole("button", { name: "download here" }).click();
+    await authenticatedPage.getByRole("button", { name: "Open folder Movies" }).click();
+    await authenticatedPage.getByRole("button", { name: "Use Movies as download folder" }).click();
 
     await expect(visibleFolderName).toBeHidden({ timeout: 400 });
     await expect(settingsPage(authenticatedPage).getByText("Movies")).toBeVisible({
@@ -241,15 +343,17 @@ test.describe("settings", () => {
     await authenticatedPage.goto("/settings");
 
     await authenticatedPage.getByRole("button", { name: "change" }).click();
-    await expect(authenticatedPage.getByTitle("your files")).toBeVisible();
-    await authenticatedPage.getByRole("button", { name: "Movies" }).click();
-    await expect(authenticatedPage.getByText("Anime")).toBeVisible();
+    let picker = folderPicker(authenticatedPage);
+    await expect(picker.getByTitle("Your Files")).toBeVisible();
+    await picker.getByRole("button", { name: "Open folder Movies" }).click();
+    await expect(picker.getByText("Anime")).toBeVisible();
 
-    await authenticatedPage.getByLabel("Close").click();
+    await picker.getByLabel("Close").click();
     await authenticatedPage.getByRole("button", { name: "change" }).click();
 
-    await expect(authenticatedPage.getByTitle("your files")).toBeVisible();
-    await expect(authenticatedPage.getByRole("button", { name: "Movies" })).toBeVisible();
+    picker = folderPicker(authenticatedPage);
+    await expect(picker.getByTitle("Your Files")).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Open folder Movies" })).toBeVisible();
   });
 
   test("download folder errors show a real error message", async ({
