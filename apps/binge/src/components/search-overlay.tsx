@@ -214,7 +214,7 @@ function ResultsBody({
     );
   }
   return (
-    <ul id={LISTBOX_ID} role="list" aria-label="Search results" className="m-0 list-none p-0">
+    <ul id={LISTBOX_ID} aria-label="Search results" className="m-0 list-none p-0">
       {visible.map((result, index) => {
         const key = rowKey(result);
         return (
