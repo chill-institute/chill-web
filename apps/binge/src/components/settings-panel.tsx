@@ -6,14 +6,7 @@ import { useAuth } from "@chill-institute/auth/auth";
 import { DownloadFolderPicker } from "@chill-institute/auth/components/download-folder-picker";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@chill-institute/ui/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@chill-institute/ui/components/ui/select";
+import { NativeSelect } from "@chill-institute/ui/components/ui/native-select";
 import { SettingsSection } from "@chill-institute/ui/components/settings-section";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { useSettingsQuery, useSaveSettings } from "@/queries/settings";
@@ -165,32 +158,21 @@ export function SettingsPanel() {
           </SettingsSection>
 
           <SettingsSection title="User-interface theme">
-            <Select<string>
+            <NativeSelect
+              aria-label="User-interface theme"
+              name="theme"
               value={theme}
-              onValueChange={(value) => {
-                if (value != null && isThemePreference(value)) {
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                if (isThemePreference(value)) {
                   setTheme(value);
                 }
               }}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue>
-                  {(value) => {
-                    if (value === "system") return `System (${systemDark ? "dark" : "light"})`;
-                    if (value === "light") return "Light";
-                    if (value === "dark") return "Dark";
-                    return null;
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="system">{`System (${systemDark ? "dark" : "light"})`}</SelectItem>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              <option value="system">{`System (${systemDark ? "dark" : "light"})`}</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </NativeSelect>
           </SettingsSection>
 
           <SettingsSection title="Download folder">{downloadFolderContent}</SettingsSection>

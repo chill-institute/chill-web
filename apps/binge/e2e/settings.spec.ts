@@ -483,13 +483,13 @@ test.describe("settings", () => {
       timeout: 5000,
     });
 
-    const themeTrigger = settingsPage(authenticatedPage).getByRole("combobox").first();
-    await themeTrigger.click();
-    await authenticatedPage.getByRole("option", { name: "Dark", exact: true }).click();
+    const themeSelect = settingsPage(authenticatedPage).getByRole("combobox", {
+      name: "User-interface theme",
+    });
+    await themeSelect.selectOption("dark");
     await expect(authenticatedPage.locator("html")).toHaveClass(/dark/);
 
-    await themeTrigger.click();
-    await authenticatedPage.getByRole("option", { name: "Light", exact: true }).click();
+    await themeSelect.selectOption("light");
     await expect(authenticatedPage.locator("html")).not.toHaveClass(/dark/);
   });
 

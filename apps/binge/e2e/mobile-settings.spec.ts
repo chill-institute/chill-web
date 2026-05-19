@@ -107,4 +107,32 @@ test.describe("mobile settings (drawer branch of ResponsiveModal)", () => {
 
     await expect.poll(() => savedDownloadFolderID).toBe("10");
   });
+
+  test("theme select works inside the mobile settings drawer", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse([]),
+      GetTVShows: tvShowsResponse([]),
+      GetIndexers: indexersResponse([indexer({ id: "yts", name: "YTS" })]),
+      GetUserProfile: profileResponse,
+      GetDownloadFolder: downloadFolderResponse(userFile({ id: 0n, name: "your files" })),
+    });
+
+    await authenticatedPage.goto("/movies");
+    await authenticatedPage.getByRole("button", { name: "Open settings" }).click();
+
+    const panel = authenticatedPage.locator('[data-page="settings"]');
+    await expect(panel.getByRole("heading", { name: "settings" })).toBeVisible();
+
+    const themeSelect = panel.getByRole("combobox", { name: "User-interface theme" });
+    await expect(themeSelect).toHaveValue("system");
+    await themeSelect.selectOption("dark");
+    await expect(authenticatedPage.locator("html")).toHaveClass(/dark/);
+
+    await themeSelect.selectOption("light");
+    await expect(authenticatedPage.locator("html")).not.toHaveClass(/dark/);
+  });
 });

@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { ArrowUpRight, ChevronDown, Search, Star, Users } from "lucide-react";
+import { ArrowUpRight, Search, Star, Users } from "lucide-react";
 
 import { AddTransferButton } from "@chill-institute/auth/components/add-transfer-button";
 import { normalizeCodecFilterValue } from "@chill-institute/api/release-info";
 import { Button } from "@chill-institute/ui/components/ui/button";
 import { ModalCloseButton } from "@chill-institute/ui/components/modal-close-button";
+import { NativeSelect } from "@chill-institute/ui/components/ui/native-select";
 import { ResponsiveModal } from "@chill-institute/ui/components/responsive-modal";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { Badge } from "@chill-institute/ui/components/ui/badge";
@@ -147,27 +148,23 @@ function FilterSelect<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <span className="relative block w-full sm:w-fit">
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(event) => {
-          const next = options.find((option) => option.value === event.currentTarget.value);
-          if (next) onChange(next.value);
-        }}
-        className="border-border-strong h-7 w-full appearance-none rounded border bg-transparent py-1 pr-8 pl-2.5 text-sm whitespace-nowrap text-fg-1 outline-none transition-colors select-none focus-visible:border-ring-focus focus-visible:ring-3 focus-visible:ring-ring-focus/50 sm:w-fit"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-fg-2"
-      />
-    </span>
+    <NativeSelect
+      aria-label={label}
+      name={label.toLowerCase()}
+      value={value}
+      wrapperClassName="block w-full sm:w-fit"
+      className="h-8 py-1.5 text-base whitespace-nowrap sm:h-7 sm:w-fit sm:py-1 sm:text-sm"
+      onChange={(event) => {
+        const next = options.find((option) => option.value === event.currentTarget.value);
+        if (next) onChange(next.value);
+      }}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </NativeSelect>
   );
 }
 

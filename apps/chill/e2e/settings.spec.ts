@@ -1,5 +1,9 @@
 import type { Page, Route } from "@playwright/test";
-import { MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  MoviesSource,
+  SearchResultDisplayBehavior,
+  SearchResultTitleBehavior,
+} from "@chill-institute/contracts/chill/v4/api_pb";
 import { test, expect } from "./support/fixtures";
 import {
   downloadFolderResponse,
@@ -28,6 +32,7 @@ type RequestSettingsPayload = Record<string, unknown> & {
   search?: {
     disabledIndexerIds?: string[];
     searchResultDisplayBehavior?: number;
+    searchResultTitleBehavior?: number;
     filterNastyResults?: boolean;
     filterResultsWithNoSeeders?: boolean;
     rememberQuickFilters?: boolean;
@@ -633,14 +638,81 @@ test.describe("settings", () => {
       timeout: 5000,
     });
 
-    const themeTrigger = settingsPage(authenticatedPage).getByRole("combobox").first();
-    await themeTrigger.click();
-    await authenticatedPage.getByRole("option", { name: "Dark", exact: true }).click();
+    const themeSelect = settingsPage(authenticatedPage).getByRole("combobox", {
+      name: "User-interface theme",
+    });
+    await themeSelect.selectOption("dark");
     await expect(authenticatedPage.locator("html")).toHaveClass(/dark/);
 
-    await themeTrigger.click();
-    await authenticatedPage.getByRole("option", { name: "Light", exact: true }).click();
+    await themeSelect.selectOption("light");
     await expect(authenticatedPage.locator("html")).not.toHaveClass(/dark/);
+  });
+
+  test("mobile settings drawer select values stay openable and persist", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let settingsState = userSettings({
+      searchResultDisplayBehavior: SearchResultDisplayBehavior.FASTEST,
+      searchResultTitleBehavior: SearchResultTitleBehavior.TEXT,
+    });
+    let savedDisplayBehavior: number | string | undefined;
+    let savedTitleBehavior: number | string | undefined;
+    let saveCalls = 0;
+
+    await authenticatedPage.setViewportSize({ width: 390, height: 844 });
+    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCalls += 1;
+      const body = route.request().postDataJSON() as {
+        settings?: RequestSettingsPayload;
+      };
+      if (body.settings) {
+        settingsState = body.settings as typeof settingsState;
+        savedDisplayBehavior = body.settings.search?.searchResultDisplayBehavior;
+        savedTitleBehavior = body.settings.search?.searchResultTitleBehavior;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.goto("/");
+    await authenticatedPage.getByRole("button", { name: "settings" }).click();
+
+    const panel = settingsPage(authenticatedPage);
+    await expect(panel.getByRole("heading", { name: "settings" })).toBeVisible({
+      timeout: 5000,
+    });
+
+    const displaySelect = panel.getByRole("combobox", {
+      name: "Search result display behavior",
+    });
+    await displaySelect.scrollIntoViewIfNeeded();
+    await expect(displaySelect).toHaveValue(String(SearchResultDisplayBehavior.FASTEST));
+    await displaySelect.selectOption(String(SearchResultDisplayBehavior.ALL));
+    await expect(displaySelect).toHaveValue(String(SearchResultDisplayBehavior.ALL));
+
+    const nameSelect = panel.getByRole("combobox", { name: "Search result name behavior" });
+    await nameSelect.scrollIntoViewIfNeeded();
+    await expect(nameSelect).toHaveValue(String(SearchResultTitleBehavior.TEXT));
+    await nameSelect.selectOption(String(SearchResultTitleBehavior.LINK));
+    await expect(nameSelect).toHaveValue(String(SearchResultTitleBehavior.LINK));
+
+    await expect.poll(() => saveCalls).toBeGreaterThanOrEqual(1);
+    expect(String(savedDisplayBehavior)).toMatch(/ALL|1/);
+    expect(String(savedTitleBehavior)).toMatch(/LINK|1/);
   });
 
   test("redirects to sign-in when unauthenticated", async ({ page }) => {

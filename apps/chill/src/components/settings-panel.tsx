@@ -9,14 +9,7 @@ import { UserErrorAlert } from "@chill-institute/auth/components/user-error-aler
 import { Avatar, AvatarFallback, AvatarImage } from "@chill-institute/ui/components/ui/avatar";
 import { CheckboxField } from "@chill-institute/ui/components/checkbox-field";
 import { CheckboxGroup } from "@chill-institute/ui/components/ui/checkbox-group";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@chill-institute/ui/components/ui/select";
+import { NativeSelect } from "@chill-institute/ui/components/ui/native-select";
 import { SettingsSection } from "@chill-institute/ui/components/settings-section";
 import { Skeleton } from "@chill-institute/ui/components/ui/skeleton";
 import { combineQueries } from "@/queries/combine";
@@ -147,32 +140,21 @@ function ThemeSection({
 }) {
   return (
     <SettingsSection title="User-interface theme">
-      <Select<string>
+      <NativeSelect
+        aria-label="User-interface theme"
+        name="theme"
         value={theme}
-        onValueChange={(value) => {
-          if (value != null && isThemePreference(value)) {
+        onChange={(event) => {
+          const { value } = event.currentTarget;
+          if (isThemePreference(value)) {
             setTheme(value);
           }
         }}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue>
-            {(value) => {
-              if (value === "system") return `System (${systemDark ? "dark" : "light"})`;
-              if (value === "light") return "Light";
-              if (value === "dark") return "Dark";
-              return null;
-            }}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectItem value="system">{`System (${systemDark ? "dark" : "light"})`}</SelectItem>
-            <SelectItem value="light">Light</SelectItem>
-            <SelectItem value="dark">Dark</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+        <option value="system">{`System (${systemDark ? "dark" : "light"})`}</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </NativeSelect>
     </SettingsSection>
   );
 }
@@ -309,29 +291,23 @@ function SearchResultLayoutSection({
 }) {
   return (
     <SettingsSection title="Search result layout">
-      <Select<string>
+      <NativeSelect
+        aria-label="Search result layout"
+        name="search-result-layout"
         value={searchDisplayMode}
-        onValueChange={(value) => {
-          if (value != null && isSearchDisplayMode(value)) {
+        onChange={(event) => {
+          const { value } = event.currentTarget;
+          if (isSearchDisplayMode(value)) {
             setSearchDisplayMode(value);
           }
         }}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue>
-            {(value) => (isSearchDisplayMode(value) ? SEARCH_DISPLAY_MODE_LABELS[value] : null)}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {SEARCH_DISPLAY_MODES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {SEARCH_DISPLAY_MODE_LABELS[value]}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+        {SEARCH_DISPLAY_MODES.map((value) => (
+          <option key={value} value={value}>
+            {SEARCH_DISPLAY_MODE_LABELS[value]}
+          </option>
+        ))}
+      </NativeSelect>
     </SettingsSection>
   );
 }
@@ -345,32 +321,22 @@ function SearchResultDisplayBehaviorSection({
 }) {
   return (
     <SettingsSection title="Search result display behavior">
-      <Select<string>
+      <NativeSelect
+        aria-label="Search result display behavior"
+        name="search-result-display-behavior"
         value={String(effective.searchResultDisplayBehavior)}
-        onValueChange={(value) => {
-          if (value == null) return;
+        onChange={(event) => {
+          const { value } = event.currentTarget;
           const next = searchResultDisplayBehaviors.find((b) => String(b) === value);
           if (next !== undefined) persistPatch({ searchResultDisplayBehavior: next });
         }}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue>
-            {(value) => {
-              const match = searchResultDisplayBehaviors.find((b) => String(b) === value);
-              return match !== undefined ? searchResultDisplayBehaviorLabels[match] : null;
-            }}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {searchResultDisplayBehaviors.map((behavior) => (
-              <SelectItem key={behavior} value={String(behavior)}>
-                {searchResultDisplayBehaviorLabels[behavior]}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+        {searchResultDisplayBehaviors.map((behavior) => (
+          <option key={behavior} value={String(behavior)}>
+            {searchResultDisplayBehaviorLabels[behavior]}
+          </option>
+        ))}
+      </NativeSelect>
     </SettingsSection>
   );
 }
@@ -384,32 +350,22 @@ function SearchResultTitleBehaviorSection({
 }) {
   return (
     <SettingsSection title="Search result name behavior">
-      <Select<string>
+      <NativeSelect
+        aria-label="Search result name behavior"
+        name="search-result-name-behavior"
         value={String(effective.searchResultTitleBehavior)}
-        onValueChange={(value) => {
-          if (value == null) return;
+        onChange={(event) => {
+          const { value } = event.currentTarget;
           const next = searchResultTitleBehaviors.find((b) => String(b) === value);
           if (next !== undefined) persistPatch({ searchResultTitleBehavior: next });
         }}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue>
-            {(value) => {
-              const match = searchResultTitleBehaviors.find((b) => String(b) === value);
-              return match !== undefined ? searchResultTitleBehaviorLabels[match] : null;
-            }}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {searchResultTitleBehaviors.map((behavior) => (
-              <SelectItem key={behavior} value={String(behavior)}>
-                {searchResultTitleBehaviorLabels[behavior]}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+        {searchResultTitleBehaviors.map((behavior) => (
+          <option key={behavior} value={String(behavior)}>
+            {searchResultTitleBehaviorLabels[behavior]}
+          </option>
+        ))}
+      </NativeSelect>
     </SettingsSection>
   );
 }

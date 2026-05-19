@@ -107,7 +107,7 @@ export const sortByLabels: Record<(typeof sortByValues)[number], string> = {
   [SortBy.SOURCE]: "Source",
 };
 
-export const defaultUserSettings: ChillSettingsDefaults = {
+const defaultUserSettings: ChillSettingsDefaults = {
   codecFilters: [],
   disabledIndexerIds: [],
   filterNastyResults: true,

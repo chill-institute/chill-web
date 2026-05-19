@@ -247,7 +247,7 @@ Prefer existing components before creating markup:
 - `Button` for actions
 - `IconButton` for icon-only actions
 - `Tabs`, `TabsList`, `TabsTrigger`, `SortPill`, and `SortRow` for compact mode and sort controls
-- `Select`, `SelectGroup`, and `SelectItem` for option menus
+- `NativeSelect` for option menus
 - `Empty` or `EmptyState` for empty states
 - `Alert` and `UserErrorAlert` for errors
 - `Skeleton` for loading placeholders
