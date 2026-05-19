@@ -9,6 +9,7 @@ import {
 import {
   CodecFilter,
   SearchResultDisplayBehavior,
+  SearchResultTitleBehavior,
   SortBy,
   SortDirection,
 } from "@chill-institute/contracts/chill/v4/api_pb";
@@ -338,6 +339,39 @@ test.describe("search page", () => {
     await sendButton.click();
 
     await expect(firstRow.getByText("sent!")).toBeVisible();
+  });
+
+  test("saved title link preference renders release titles as links", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const results = [
+      searchResult({
+        id: "r1",
+        title: "Ubuntu 24.04 LTS",
+        link: "magnet:?xt=urn:btih:abc",
+        indexer: "yts",
+        source: "YTS",
+      }),
+    ];
+
+    await mockRpc(
+      allModeMethods({
+        GetUserSettings: userSettings({
+          searchResultDisplayBehavior: SearchResultDisplayBehavior.ALL,
+          searchResultTitleBehavior: SearchResultTitleBehavior.LINK,
+        }),
+        Search: searchResponse("ubuntu", results),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+
+    const firstRow = authenticatedPage.locator("table tbody tr").first();
+    await expect(firstRow.getByRole("link", { name: "Ubuntu 24.04 LTS" })).toHaveAttribute(
+      "href",
+      "magnet:?xt=urn:btih:abc",
+    );
   });
 
   test("no query shows idle state", async ({ authenticatedPage, mockRpc }) => {

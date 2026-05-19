@@ -126,6 +126,41 @@ test.describe("binge routing", () => {
     await expect(authenticatedPage).toHaveURL(/sort=rating/);
   });
 
+  test("global search overlay opens from keyboard and sends highlighted result", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse([inception]),
+      GetTVShows: tvShowsResponse([]),
+      Search: searchResponse("raid", [
+        searchResult({
+          id: "raid-1080p",
+          title: "The.Raid.2011.1080p.BluRay.x264",
+          link: "magnet:?xt=urn:btih:raid1080",
+          seeders: 88n,
+          source: "YTS",
+          indexer: "YTS",
+        }),
+      ]),
+      AddTransfer: { status: "OK" },
+    });
+
+    await authenticatedPage.goto("/movies");
+    await authenticatedPage.keyboard.press("/");
+
+    const dialog = authenticatedPage.getByRole("dialog");
+    const input = dialog.getByRole("textbox", { name: "search" });
+    await expect(input).toBeFocused();
+
+    await input.fill("raid");
+    await expect(dialog.getByText("The.Raid.2011.1080p.BluRay.x264")).toBeVisible();
+
+    await authenticatedPage.keyboard.press("Enter");
+    await expect(dialog.getByText("sent!")).toBeVisible();
+  });
+
   test("picking a movie source updates the URL with the source param", async ({
     authenticatedPage,
     mockRpc,

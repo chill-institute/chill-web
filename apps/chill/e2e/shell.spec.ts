@@ -40,6 +40,26 @@ test.describe("shell search form", () => {
     expect(authenticatedPage.url()).toContain("q=test+query");
   });
 
+  test("search form normalizes IMDb title URLs before navigation", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetIndexers: indexersResponse([indexer()]),
+      Search: searchResponse("tt1375666", []),
+    });
+
+    await authenticatedPage.goto("/");
+
+    const searchInput = authenticatedPage.locator("#search-global");
+    await searchInput.fill("  https://www.imdb.com/title/tt1375666/?ref_=share  ");
+    await authenticatedPage.getByRole("button", { name: "and chill" }).click();
+
+    await authenticatedPage.waitForURL("**/search**");
+    expect(new URL(authenticatedPage.url()).searchParams.get("q")).toBe("tt1375666");
+  });
+
   test("search submit does not animate the route shell or content", async ({
     authenticatedPage,
     mockRpc,
