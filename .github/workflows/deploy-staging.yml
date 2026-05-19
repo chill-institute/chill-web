@@ -8,14 +8,13 @@ on:
         required: true
         type: string
       app:
-        description: App surface to deploy
+        description: Deployment target
         required: true
         default: all
         type: choice
         options:
           - all
           - chill
-          - binge
           - zones
       bootstrap_state:
         description: Allow the first deploy to create missing encrypted SST state
@@ -24,17 +23,12 @@ on:
         type: boolean
 
 env:
-  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
-  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
-  BINGE_STAGING_DOMAIN: ${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
-  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
-  CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
   CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
   SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
   SST_STATE_FILE: ${{ vars.SST_STATE_FILE_STAGING || 'chill-web/staging/sst-local-state.tar.gz.age' }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
-  VITE_PLUS_VERSION: "0.1.20"
+  VITE_PLUS_VERSION: "0.1.21"
 
 permissions:
   contents: read
@@ -44,13 +38,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  workflow-security:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Scan GitHub Actions security
+        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
+        with:
+          advanced-security: false
+          annotations: true
+          min-confidence: medium
+          min-severity: medium
+          version: v1.25.2
+
   validate:
     runs-on: ubuntu-latest
     outputs:
       ref: ${{ steps.validate.outputs.ref }}
       sha: ${{ steps.validate.outputs.sha }}
       chill: ${{ steps.select.outputs.chill }}
-      binge: ${{ steps.select.outputs.binge }}
       zones: ${{ steps.select.outputs.zones }}
     steps:
       - name: Validate ref
@@ -117,7 +130,7 @@ jobs:
             echo "sha=${sha}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Select apps
+      - name: Select deployment targets
         id: select
         env:
           APP: ${{ inputs.app }}
@@ -127,22 +140,14 @@ jobs:
           case "${APP}" in
             all)
               echo "chill=true" >> "${GITHUB_OUTPUT}"
-              echo "binge=true" >> "${GITHUB_OUTPUT}"
               echo "zones=true" >> "${GITHUB_OUTPUT}"
               ;;
             chill)
               echo "chill=true" >> "${GITHUB_OUTPUT}"
-              echo "binge=false" >> "${GITHUB_OUTPUT}"
-              echo "zones=false" >> "${GITHUB_OUTPUT}"
-              ;;
-            binge)
-              echo "chill=false" >> "${GITHUB_OUTPUT}"
-              echo "binge=true" >> "${GITHUB_OUTPUT}"
               echo "zones=false" >> "${GITHUB_OUTPUT}"
               ;;
             zones)
               echo "chill=false" >> "${GITHUB_OUTPUT}"
-              echo "binge=false" >> "${GITHUB_OUTPUT}"
               echo "zones=true" >> "${GITHUB_OUTPUT}"
               ;;
             *)
@@ -152,8 +157,8 @@ jobs:
           esac
 
   verify-chill:
-    needs: validate
-    if: ${{ needs.validate.outputs.chill == 'true' }}
+    needs: [workflow-security, validate]
+    if: ${{ needs.workflow-security.result == 'success' && needs.validate.outputs.chill == 'true' }}
     concurrency:
       group: web-staging-verify-chill-${{ needs.validate.outputs.sha }}
       cancel-in-progress: true
@@ -180,55 +185,15 @@ jobs:
 
       - name: Verify chill app
         run: |
-          vp run check:chill
-          vp run test:chill
-          vp run build:chill
+          vp run check
+          vp run test
+          vp run build
 
       - name: Upload chill build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: chill-dist
-          path: apps/chill/dist
-          if-no-files-found: error
-
-  verify-binge:
-    needs: validate
-    if: ${{ needs.validate.outputs.binge == 'true' }}
-    concurrency:
-      group: web-staging-verify-binge-${{ needs.validate.outputs.sha }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ needs.validate.outputs.sha }}
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Verify binge app
-        run: |
-          vp run check:binge
-          vp run test:binge
-          vp run build:binge
-
-      - name: Upload binge build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: binge-dist
-          path: apps/binge/dist
+          path: dist
           if-no-files-found: error
 
   e2e-chill:
@@ -248,7 +213,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: chill-dist
-          path: apps/chill/dist
+          path: dist
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
@@ -265,10 +230,10 @@ jobs:
         run: vp install
 
       - name: Install Playwright browser
-        run: vp exec --filter ./apps/chill playwright install chromium
+        run: vp exec playwright install chromium
 
       - name: Run chill end-to-end tests
-        run: vp run e2e:chill
+        run: vp run e2e
 
       - name: Upload chill Playwright artifacts
         if: failure()
@@ -276,57 +241,8 @@ jobs:
         with:
           name: playwright-artifacts-chill
           path: |
-            apps/chill/playwright-report
-            apps/chill/test-results
-          if-no-files-found: ignore
-
-  e2e-binge:
-    needs: [validate, verify-binge]
-    if: ${{ needs.verify-binge.result == 'success' }}
-    concurrency:
-      group: web-staging-e2e-binge-${{ github.run_id }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ needs.validate.outputs.sha }}
-
-      - name: Download binge build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: binge-dist
-          path: apps/binge/dist
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Install Playwright browser
-        run: vp exec --filter ./apps/binge playwright install chromium
-
-      - name: Run binge end-to-end tests
-        run: vp run e2e:binge
-
-      - name: Upload binge Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-artifacts-binge
-          path: |
-            apps/binge/playwright-report
-            apps/binge/test-results
+            playwright-report
+            test-results
           if-no-files-found: ignore
 
   deploy-chill:
@@ -346,7 +262,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: chill-dist
-          path: apps/chill/dist
+          path: dist
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
@@ -373,12 +289,6 @@ jobs:
           SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
-
-      - name: Remove legacy chill staging DNS records
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/delete-cloudflare-dns-records "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_STAGING_DOMAIN}"
 
       - name: Deploy chill staging to SST
         env:
@@ -394,74 +304,9 @@ jobs:
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git save
 
-  deploy-binge:
-    needs: [validate, verify-binge, e2e-binge, deploy-zones, deploy-chill]
-    if: ${{ always() && needs.validate.outputs.binge == 'true' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') && (needs.deploy-chill.result == 'success' || needs.deploy-chill.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Download binge build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: binge-dist
-          path: apps/binge/dist
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: false
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Install age
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y age
-
-      - name: Restore encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git restore
-
-      - name: Remove legacy binge staging DNS records
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/delete-cloudflare-dns-records "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_STAGING_DOMAIN}"
-
-      - name: Deploy binge staging to SST
-        env:
-          CHILL_WEB_APP: binge
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: vp exec sst deploy --stage staging --print-logs
-
-      - name: Save encrypted SST local state
-        if: always()
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git save
-
   deploy-zones:
-    needs: validate
-    if: ${{ needs.validate.outputs.zones == 'true' }}
+    needs: [workflow-security, validate]
+    if: ${{ needs.workflow-security.result == 'success' && needs.validate.outputs.zones == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -515,8 +360,8 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-summary:
-    needs: [validate, deploy-chill, deploy-binge, deploy-zones]
-    if: ${{ always() && (needs.deploy-chill.result == 'success' || needs.deploy-binge.result == 'success' || needs.deploy-zones.result == 'success') }}
+    needs: [validate, deploy-chill, deploy-zones]
+    if: ${{ always() && (needs.deploy-chill.result != 'skipped' || needs.deploy-zones.result != 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
@@ -524,7 +369,6 @@ jobs:
           REF: ${{ needs.validate.outputs.ref }}
           SHA: ${{ needs.validate.outputs.sha }}
           CHILL_RESULT: ${{ needs.deploy-chill.result }}
-          BINGE_RESULT: ${{ needs.deploy-binge.result }}
           ZONES_RESULT: ${{ needs.deploy-zones.result }}
         run: |
           {
@@ -534,17 +378,16 @@ jobs:
             echo "- SHA: \`${SHA}\`"
             if [ "${ZONES_RESULT}" = "success" ]; then
               echo "- Zones: HTTPS redirects managed"
-            else
+            elif [ "${ZONES_RESULT}" = "skipped" ]; then
               echo "- Zones: skipped"
+            else
+              echo "- Zones: ${ZONES_RESULT}"
             fi
             if [ "${CHILL_RESULT}" = "success" ]; then
               echo "- Chill: [https://${CHILL_STAGING_DOMAIN}](https://${CHILL_STAGING_DOMAIN})"
-            else
+            elif [ "${CHILL_RESULT}" = "skipped" ]; then
               echo "- Chill: skipped"
-            fi
-            if [ "${BINGE_RESULT}" = "success" ]; then
-              echo "- Binge: [https://${BINGE_STAGING_DOMAIN}](https://${BINGE_STAGING_DOMAIN})"
             else
-              echo "- Binge: skipped"
+              echo "- Chill: ${CHILL_RESULT}"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"

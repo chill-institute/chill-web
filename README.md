@@ -2,46 +2,43 @@
 
 ![chill.institute web](https://chill.institute/banner.png)
 
-Vite+ workspace repo for the Institute's two web apps: [chill.institute](https://chill.institute) and [binge.institute](https://binge.institute).
+Vite+ repo for the Institute web app at [chill.institute](https://chill.institute).
 
-## Apps
+## Product
 
-- `apps/chill/` powers `https://chill.institute` with search, result comparison, and send-to-put.io flows
-- `apps/binge/` powers `https://binge.institute` with movie and TV browsing, detail pages, source pickers, and RSS shortcuts
-- the repo root owns shared workspace config, hooks, CI entrypoints, and package catalog wiring
+- `./` powers `https://chill.institute` with search, movie and TV browsing, detail pages, source pickers, RSS shortcuts, and send-to-put.io flows
+- `https://binge.institute` redirects to `https://chill.institute`
+- the repo root owns app code, config, hooks, CI entrypoints, and dependencies
 
-## Quickstart
+## Install
 
-Install dependencies and verify the workspace:
+Install dependencies and verify the repo:
 
 ```bash
 vp install
 vp run ready
 ```
 
-Run an app locally:
+## Run Locally
 
 ```bash
-vp run dev:chill
-vp run dev:binge
+vp run dev
 ```
 
-Validate the repo:
+## Validate
 
 ```bash
 vp run verify
-vp run verify:chill
-vp run verify:binge
 vp run e2e
 ```
 
 ## Docs
 
-- [Design system](./DESIGN.md)
 - [About the Institute](./docs/ABOUT.md)
-- [User guides](./docs/GUIDES.md)
+- [Design system](./DESIGN.md)
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Deployment](./docs/DEPLOYMENT.md)
+- [Security](./SECURITY.md)
 - [Contributing](./CONTRIBUTING.md)
 
 ## Contributing

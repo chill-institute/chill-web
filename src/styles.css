@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant hover-hover (@media (hover: hover) and (pointer: fine));
+
+@import "./ui/styles.css";

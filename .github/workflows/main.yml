@@ -8,7 +8,6 @@ on:
 env:
   BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
   BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
-  BINGE_STAGING_DOMAIN: ${{ vars.BINGE_STAGING_DOMAIN || 'staging.binge.institute' }}
   CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
   CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
   CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
@@ -16,7 +15,7 @@ env:
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
   SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
-  VITE_PLUS_VERSION: "0.1.20"
+  VITE_PLUS_VERSION: "0.1.21"
 
 permissions:
   contents: read
@@ -46,10 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       chill: ${{ steps.filter.outputs.chill }}
-      binge: ${{ steps.filter.outputs.binge }}
       deploy_chill: ${{ steps.filter.outputs.deploy_chill }}
-      deploy_binge: ${{ steps.filter.outputs.deploy_binge }}
-      any_app: ${{ steps.set_outputs.outputs.any_app }}
+      deploy_redirects: ${{ steps.filter.outputs.deploy_redirects }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -62,9 +59,12 @@ jobs:
         with:
           filters: |
             chill:
-              - 'apps/chill/**'
-              - 'packages/**'
-              - 'tools/**'
+              - 'src/**'
+              - 'e2e/**'
+              - 'public/**'
+              - 'index.html'
+              - 'components.json'
+              - 'playwright.config.ts'
               - '.node-version'
               - '.gitignore'
               - '.vite-hooks/**'
@@ -73,31 +73,17 @@ jobs:
               - 'knip.json'
               - 'package.json'
               - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
-              - 'sst.config.ts'
-              - 'tsconfig.json'
-              - 'vite.config.ts'
-            binge:
-              - 'apps/binge/**'
-              - 'packages/**'
-              - 'tools/**'
-              - '.node-version'
-              - '.gitignore'
-              - '.vite-hooks/**'
-              - '.githooks/**'
-              - '.github/actions/**'
-              - 'knip.json'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
               - 'sst.config.ts'
               - 'tsconfig.json'
               - 'vite.config.ts'
             deploy_chill:
-              - 'apps/chill/**'
-              - '!apps/chill/e2e/**'
-              - 'packages/**'
-              - 'tools/**'
+              - 'src/**'
+              - 'e2e/**'
+              - 'public/**'
+              - 'index.html'
+              - 'components.json'
+              - 'playwright.config.ts'
+              - '!e2e/**'
               - '.node-version'
               - '.gitignore'
               - '.vite-hooks/**'
@@ -105,48 +91,28 @@ jobs:
               - 'knip.json'
               - 'package.json'
               - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
               - 'sst.config.ts'
               - 'tsconfig.json'
               - 'vite.config.ts'
-            deploy_binge:
-              - 'apps/binge/**'
-              - '!apps/binge/e2e/**'
-              - 'packages/**'
-              - 'tools/**'
-              - '.node-version'
-              - '.gitignore'
-              - '.vite-hooks/**'
-              - '.githooks/**'
-              - 'knip.json'
+            deploy_redirects:
+              - '.github/workflows/deploy.yml'
+              - '.github/workflows/main.yml'
               - 'package.json'
               - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
+              - 'scripts/ci/**'
               - 'sst.config.ts'
-              - 'tsconfig.json'
-              - 'vite.config.ts'
-
       - name: Publish change summary
-        id: set_outputs
         env:
           CHILL_CHANGED: ${{ steps.filter.outputs.chill }}
-          BINGE_CHANGED: ${{ steps.filter.outputs.binge }}
           CHILL_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_chill }}
-          BINGE_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_binge }}
+          REDIRECTS_CHANGED: ${{ steps.filter.outputs.deploy_redirects }}
         run: |
-          if [ "${CHILL_CHANGED}" = "true" ] || [ "${BINGE_CHANGED}" = "true" ]; then
-            echo "any_app=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "any_app=false" >> "${GITHUB_OUTPUT}"
-          fi
-
           {
-            echo "## Changed app surfaces"
+            echo "## Changed web surface"
             echo
             echo "- Chill: \`${CHILL_CHANGED}\`"
-            echo "- Binge: \`${BINGE_CHANGED}\`"
             echo "- Chill deploy: \`${CHILL_DEPLOY_CHANGED}\`"
-            echo "- Binge deploy: \`${BINGE_DEPLOY_CHANGED}\`"
+            echo "- Binge redirects deploy: \`${REDIRECTS_CHANGED}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   verify-chill:
@@ -175,48 +141,13 @@ jobs:
         run: vp install
 
       - name: Verify chill app
-        run: vp run verify:chill
+        run: vp run verify
 
       - name: Upload chill build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: chill-dist
-          path: apps/chill/dist
-          if-no-files-found: error
-
-  verify-binge:
-    needs: changes
-    if: ${{ needs.changes.outputs.binge == 'true' }}
-    concurrency:
-      group: web-main-verify-binge-${{ github.ref }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Verify binge app
-        run: vp run verify:binge
-
-      - name: Upload binge build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: binge-dist
-          path: apps/binge/dist
+          path: dist
           if-no-files-found: error
 
   e2e-chill:
@@ -234,7 +165,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: chill-dist
-          path: apps/chill/dist
+          path: dist
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
@@ -251,10 +182,10 @@ jobs:
         run: vp install
 
       - name: Install Playwright browser
-        run: vp exec --filter ./apps/chill playwright install chromium
+        run: vp exec playwright install chromium
 
       - name: Run chill end-to-end tests
-        run: vp run e2e:chill
+        run: vp run e2e
 
       - name: Upload chill Playwright artifacts
         if: failure()
@@ -262,55 +193,8 @@ jobs:
         with:
           name: playwright-artifacts-chill
           path: |
-            apps/chill/playwright-report
-            apps/chill/test-results
-          if-no-files-found: ignore
-
-  e2e-binge:
-    needs: verify-binge
-    if: ${{ needs.verify-binge.result == 'success' }}
-    concurrency:
-      group: web-main-e2e-binge-${{ github.ref }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Download binge build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: binge-dist
-          path: apps/binge/dist
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Install Playwright browser
-        run: vp exec --filter ./apps/binge playwright install chromium
-
-      - name: Run binge end-to-end tests
-        run: vp run e2e:binge
-
-      - name: Upload binge Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-artifacts-binge
-          path: |
-            apps/binge/playwright-report
-            apps/binge/test-results
+            playwright-report
+            test-results
           if-no-files-found: ignore
 
   deploy-chill:
@@ -335,7 +219,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: chill-dist
-          path: apps/chill/dist
+          path: dist
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
@@ -376,12 +260,6 @@ jobs:
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage production --print-logs
 
-      - name: Ensure chill production aliases
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/ensure-cloudflare-workers-domain "${CHILL_PRODUCTION_DOMAIN}" "${CHILL_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-chill-production-webrouterscript"
-
       - name: Save encrypted SST local state
         if: always()
         env:
@@ -389,11 +267,11 @@ jobs:
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git save
 
-  deploy-binge:
-    needs: [workflow-security, changes, verify-binge, e2e-binge]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_binge == 'true' && needs.workflow-security.result == 'success' && needs.verify-binge.result == 'success' && needs.e2e-binge.result == 'success' }}
+  deploy-redirects:
+    needs: [workflow-security, changes]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_redirects == 'true' && needs.workflow-security.result == 'success' }}
     concurrency:
-      group: web-deploy-production-binge
+      group: web-deploy-production-redirects
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
@@ -402,16 +280,10 @@ jobs:
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_BINGE || 'chill-web/production/binge/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_REDIRECTS || 'chill-web/production/redirects/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Download binge build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: binge-dist
-          path: apps/binge/dist
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
@@ -438,25 +310,19 @@ jobs:
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 
-      - name: Refresh binge production SST state
+      - name: Refresh binge redirect SST state
         env:
-          CHILL_WEB_APP: binge
+          CHILL_WEB_APP: redirects
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst refresh --stage production --print-logs
 
-      - name: Deploy binge production to SST
+      - name: Deploy binge redirects to SST
         env:
-          CHILL_WEB_APP: binge
+          CHILL_WEB_APP: redirects
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage production --print-logs
-
-      - name: Ensure binge production aliases
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: scripts/ci/ensure-cloudflare-workers-domain "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}" "chill-web-binge-production-webrouterscript"
 
       - name: Save encrypted SST local state
         if: always()
@@ -466,14 +332,14 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-summary:
-    needs: [changes, deploy-chill, deploy-binge]
-    if: ${{ always() && (needs.deploy-chill.result == 'success' || needs.deploy-binge.result == 'success') }}
+    needs: [changes, deploy-chill, deploy-redirects]
+    if: ${{ always() && (needs.deploy-chill.result != 'skipped' || needs.deploy-redirects.result != 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
         env:
           CHILL_RESULT: ${{ needs.deploy-chill.result }}
-          BINGE_RESULT: ${{ needs.deploy-binge.result }}
+          REDIRECTS_RESULT: ${{ needs.deploy-redirects.result }}
         run: |
           chill_url="${CHILL_PRODUCTION_DOMAIN}"
           binge_url="${BINGE_PRODUCTION_DOMAIN}"
@@ -484,13 +350,17 @@ jobs:
             echo "- Environment: \`production\`"
             if [ "${CHILL_RESULT}" = "success" ]; then
               echo "- Chill: [https://${chill_url}](https://${chill_url})"
-            else
+            elif [ "${CHILL_RESULT}" = "skipped" ]; then
               echo "- Chill: skipped"
-            fi
-            if [ "${BINGE_RESULT}" = "success" ]; then
-              echo "- Binge: [https://${binge_url}](https://${binge_url})"
             else
-              echo "- Binge: skipped"
+              echo "- Chill: ${CHILL_RESULT}"
+            fi
+            if [ "${REDIRECTS_RESULT}" = "success" ]; then
+              echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${chill_url}](https://${chill_url})"
+            elif [ "${REDIRECTS_RESULT}" = "skipped" ]; then
+              echo "- Binge redirect: skipped"
+            else
+              echo "- Binge redirect: ${REDIRECTS_RESULT}"
             fi
             echo "- Flow: \`push Main workflow\`"
           } >> "${GITHUB_STEP_SUMMARY}"

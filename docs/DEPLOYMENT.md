@@ -4,33 +4,33 @@ Public deployment overview for `chill-web`
 
 ## Hosting
 
-`chill-web` builds two React SPAs and serves them from SST-managed Cloudflare Workers static assets:
+`chill-web` builds one root React SPA and serves it from SST-managed Cloudflare Workers static assets:
 
-- `https://chill.institute` for search
-- `https://binge.institute` for browsing
+- `https://chill.institute` for search, movies, and TV shows
+- `https://binge.institute` redirects to `https://chill.institute`
 
-Both apps call the shared API at `https://api.chill.institute`. Staging web hosts use the staging API at `https://staging-api.chill.institute`
+The app calls the shared API at `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` is set for a local override.
 
 Build output:
 
-- `apps/chill/dist/`
-- `apps/binge/dist/`
+- `dist/`
 
 ## Routing
 
-- `apps/chill` owns `chill.institute`, `www.chill.institute`, and `staging.chill.institute`
-- `apps/binge` owns `binge.institute`, `www.binge.institute`, and `staging.binge.institute`
+- the root app owns `chill.institute`, `www.chill.institute`, and `staging.chill.institute`
+- `binge.institute` and `www.binge.institute` redirect to `chill.institute`
+- there is no staging binge host
 - `/auth/success` stays on the app host so the browser can finish the auth callback
 - RSS and download links should use the API host directly
 
 ## GitHub Actions
 
 - Pull requests run `Verify`
-- `Verify` detects whether `chill`, `binge`, or shared workspace surfaces changed and runs only the affected app jobs
+- `Verify` detects whether the web surface changed and runs root app checks
 - Pushes to `main` run `Main`
-- `Main` verifies, runs e2e, and deploys only the affected production app surfaces
-- Docs-only, workflow-only, script-only, and app e2e-only changes do not deploy app surfaces
-- Manual deploy workflows are maintainer-only fallbacks for staging or production reruns
+- `Main` verifies, runs e2e, deploys the production web surface, and deploys the production binge redirect worker when redirect infrastructure changes
+- Docs-only, workflow-only, script-only, and e2e-only changes do not deploy the web surface
+- Manual deploy workflows are maintainer-only fallbacks for staging, production web, or production redirect reruns
 - PRs do not create public preview deployments
 
 ## Verification
@@ -41,7 +41,8 @@ After a hosted web change, verify:
 - `https://www.chill.institute/`
 - `https://binge.institute/`
 - `https://www.binge.institute/`
-- one real app load in each SPA
+- both binge URLs redirect to `https://chill.institute/`
+- one real app load in the SPA
 - one real auth redirect start URL
 
 Maintainer-only operational details are intentionally outside the scope of this public document.

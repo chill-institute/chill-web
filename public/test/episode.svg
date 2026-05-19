@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Neutral test episode still">
+  <rect width="640" height="360" fill="#181411"/>
+  <rect x="52" y="52" width="536" height="256" rx="18" fill="#25201c" stroke="#534a43" stroke-width="4"/>
+  <path d="m278 132 112 48-112 48z" fill="#f3eee8"/>
+</svg>

@@ -10,17 +10,18 @@ Install [Vite+](https://viteplus.dev/guide/) and then install repo dependencies:
 vp install
 ```
 
-Check the workspace is ready:
+Check the repo is ready:
 
 ```bash
 vp run ready
 ```
 
-Start the apps locally from the workspace root:
+## Run Locally
+
+Start the app locally from the repo root:
 
 ```bash
-vp run dev:chill
-vp run dev:binge
+vp run dev
 ```
 
 ## Validation
@@ -31,17 +32,6 @@ Run the full repo checks before opening or updating a pull request:
 vp run verify
 vp run smoke
 vp run e2e
-```
-
-If you only changed one app, use the targeted root commands:
-
-```bash
-vp run verify:chill
-vp run verify:binge
-vp run smoke:chill
-vp run smoke:binge
-vp run e2e:chill
-vp run e2e:binge
 ```
 
 CI and deploy behavior is documented in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
@@ -61,19 +51,19 @@ vp config --hooks-dir .vite-hooks
 
 ## Development Notes
 
-- This repo contains two client-rendered SPAs under `apps/chill/` and `apps/binge/`.
-- The root owns shared workspace config such as `package.json`, `pnpm-workspace.yaml`, `vite.config.ts`, hooks, and CI workflows.
-- Each app owns its own runtime entrypoints and config including `src/`, `public/`, `e2e/`, `vite.config.ts`, `tsconfig.json`, and `components.json`.
-- Root [DESIGN.md](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and shared presentational primitives live in `packages/ui/`.
-- Shared package versions live in the workspace catalog in `pnpm-workspace.yaml`.
+- This repo contains one client-rendered SPA at the repository root.
+- Runtime code, assets, and tests live in `src/`, `public/`, and `e2e/`.
+- Root config lives in `package.json`, `vite.config.ts`, `tsconfig.json`, `components.json`, hooks, and CI workflows.
+- Root [DESIGN.md](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and UI primitives live in `src/ui/`.
+- Package versions live directly in `package.json`.
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
-- Both apps talk directly to the hosted API.
-- `apps/chill/` serves `chill.institute`, `www.chill.institute`, and `staging.chill.institute`.
-- `apps/binge/` serves `binge.institute`, `www.binge.institute`, and `staging.binge.institute`.
-- Localhost in either app resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
+- The app talks directly to the hosted API.
+- The root app serves `chill.institute`, `www.chill.institute`, and `staging.chill.institute`.
+- `binge.institute` and `www.binge.institute` redirect to `chill.institute`; there is no staging binge host.
+- Localhost resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
-- When generating or updating reusable shadcn/base primitives, work from `packages/ui/` so `packages/ui/components.json` writes into the shared UI package. For app-specific surfaces, work from the target app directory so the app-local `components.json` resolves aliases correctly.
-- Playwright keeps traces, screenshots, and videos on failure. Check `apps/*/playwright-report/` and `apps/*/test-results/` after a failing run.
+- When generating or updating shadcn/base primitives, work from `./` so `components.json` resolves aliases correctly.
+- Playwright keeps traces, screenshots, and videos on failure. Check `playwright-report/` and `test-results/` after a failing run.
 - Deployment credentials and operational runbooks are maintainer-managed. Do not add secrets, local machine paths, or maintainer-only notes to this repo.
 
 ## Pull Requests

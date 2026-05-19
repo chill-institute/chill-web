@@ -10,22 +10,17 @@ const surfaces = {
       },
       production: {
         name: readEnvironment("CHILL_PRODUCTION_DOMAIN", "chill.institute"),
+        redirects: [readEnvironment("CHILL_PRODUCTION_REDIRECT_DOMAIN", "www.chill.institute")],
       },
     },
-    path: "apps/chill/dist",
-  },
-  binge: {
-    domain: {
-      staging: {
-        name: readEnvironment("BINGE_STAGING_DOMAIN", "staging.binge.institute"),
-      },
-      production: {
-        name: readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
-      },
-    },
-    path: "apps/binge/dist",
+    path: "dist",
   },
 } as const;
+
+const bingeRedirectDomains = [
+  readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
+  readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN", "www.binge.institute"),
+] as const;
 
 const zoneHardening = [
   {
@@ -33,7 +28,7 @@ const zoneHardening = [
     prefix: "Chill",
   },
   {
-    name: surfaces.binge.domain.production.name,
+    name: readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
     prefix: "Binge",
   },
 ] as const;
@@ -52,11 +47,12 @@ const zoneSettings = [
 ] as const;
 
 type AppSurface = keyof typeof surfaces;
-type Surface = AppSurface | "zones";
+type Surface = AppSurface | "redirects" | "zones";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
     name: string;
+    redirects?: readonly string[];
   };
   notFound: "single-page-application";
   path: string;
@@ -71,6 +67,17 @@ type ZoneLookupResult = {
     id: string;
     name: string;
   }>;
+};
+type WorkersScriptArgs = {
+  accountId: string;
+  compatibilityDate: string;
+  content: string;
+  scriptName: string;
+};
+type WorkersRouteArgs = {
+  pattern: string;
+  script: string;
+  zoneId: string;
 };
 
 declare const $app: { stage: string };
@@ -98,15 +105,17 @@ declare const cloudflare: {
     name: string;
   }): Promise<ZoneLookupResult>;
   ZoneSetting: new (name: string, args: ZoneSettingArgs) => unknown;
+  WorkersScript: new (name: string, args: WorkersScriptArgs) => unknown;
+  WorkersRoute: new (name: string, args: WorkersRouteArgs) => unknown;
 };
 
 function resolveSurface(): Surface {
   const surface = process.env.CHILL_WEB_APP;
-  if (surface === "chill" || surface === "binge" || surface === "zones") {
+  if (surface === "chill" || surface === "redirects" || surface === "zones") {
     return surface;
   }
 
-  throw new Error("CHILL_WEB_APP must be set to chill, binge, or zones");
+  throw new Error("CHILL_WEB_APP must be set to chill, redirects, or zones");
 }
 
 function resolveStage(stage: string): Stage {
@@ -170,12 +179,55 @@ async function configureZoneHardening() {
   return outputs;
 }
 
+async function configureBingeRedirects(stage: Stage) {
+  if (stage !== "production") {
+    return {};
+  }
+
+  const accountId = resolveAccountId();
+  const zoneId = await resolveZoneId(
+    accountId,
+    readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
+  );
+  const scriptName = "chill-web-binge-redirect";
+
+  new cloudflare.WorkersScript("BingeRedirectWorker", {
+    accountId,
+    compatibilityDate: "2026-05-19",
+    scriptName,
+    content: `
+addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  url.protocol = "https:";
+  url.hostname = "${surfaces.chill.domain.production.name}";
+  event.respondWith(Response.redirect(url.toString(), 301));
+});
+`.trim(),
+  });
+
+  const routes: Record<string, string> = {};
+  for (const domain of bingeRedirectDomains) {
+    const name = domain.replace(/[^a-zA-Z0-9]/g, "");
+    new cloudflare.WorkersRoute(`BingeRedirect${name}`, {
+      zoneId,
+      pattern: `${domain}/*`,
+      script: scriptName,
+    });
+    routes[domain] = `https://${surfaces.chill.domain.production.name}`;
+  }
+
+  return routes;
+}
+
 export default $config({
   app(input) {
     const surface = resolveSurface();
     const stage = resolveStage(input.stage);
     if (surface === "zones" && stage !== "staging") {
       throw new Error("CHILL_WEB_APP=zones must use SST stage staging");
+    }
+    if (surface === "redirects" && stage !== "production") {
+      throw new Error("CHILL_WEB_APP=redirects must use SST stage production");
     }
 
     return {
@@ -199,6 +251,15 @@ export default $config({
         app: surface,
         stage,
         zones,
+      };
+    }
+    if (surface === "redirects") {
+      const redirects = await configureBingeRedirects(stage);
+
+      return {
+        app: surface,
+        stage,
+        redirects,
       };
     }
 

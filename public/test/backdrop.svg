@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Neutral test backdrop">
+  <rect width="1280" height="720" fill="#161311"/>
+  <path d="M0 520 260 320l160 120 240-220 240 260 160-140 220 180v200H0z" fill="#283531"/>
+  <circle cx="960" cy="180" r="96" fill="#d36f4a"/>
+  <rect x="96" y="96" width="420" height="96" rx="20" fill="#f3eee8" opacity=".16"/>
+</svg>

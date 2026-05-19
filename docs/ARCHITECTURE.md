@@ -1,107 +1,64 @@
 # Architecture
 
-This document describes how `chill-web` is structured as a Vite+ workspace hosting both web apps.
+This document describes `chill-web` as a Vite+ repo hosting the `chill.institute` web app.
 
 ## System Context
 
 ```mermaid
 graph LR
-  User --> Chill["apps/chill"]
-  User --> Binge["apps/binge"]
-  Chill --> API["Connect-Web client"]
-  Binge --> API
+  User --> Web["the root app"]
+  Web --> API["Connect-Web client"]
   API --> InstituteAPI["chill.institute API"]
-  Chill --> Contracts["contracts TS package"]
-  Binge --> Contracts
+  Web --> Contracts["contracts TS package"]
   Browser["browser storage"] --> Auth["auth state"]
 ```
 
-## Workspace Layout
+## Layout
 
-| Path             | Responsibility                                                                              |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `apps/chill/`    | `chill.institute` app — search experience (search shell + results table), settings, auth    |
-| `apps/binge/`    | `binge.institute` app — catalog (movies + tv shows grids, detail modals), settings, auth    |
-| `packages/ui/`   | `@chill-institute/ui` — purely presentational primitives, design tokens, pure hooks/lib     |
-| `packages/auth/` | `@chill-institute/auth` — auth + api context + api-coupled components/queries/routes        |
-| `packages/api/`  | `@chill-institute/api` — connect-rpc client, auth-error constants, settings/timeout helpers |
-| repo root        | workspace scripts, Vite+ config, lint/format config, CI entrypoints                         |
+| Path        | Responsibility                                                                 |
+| ----------- | ------------------------------------------------------------------------------ |
+| `./`        | `chill.institute` app: search, movies, TV shows, settings, auth, and e2e tests |
+| `src/ui/`   | presentational primitives, design tokens, pure hooks, and UI helpers           |
+| `src/api/`  | Connect-RPC client, auth-error constants, settings defaults, and timeouts      |
+| `src/auth/` | auth state, API context, auth routes, and API-coupled shared components        |
+| repo root   | Vite+ config, dependencies, hooks, SST config, and CI entrypoints              |
 
-The package graph is one-directional: both apps depend on all three packages; `packages/auth` depends on `packages/ui` and `packages/api`; `packages/ui` has no internal package dependencies.
-
-Root [DESIGN.md](../DESIGN.md) is the agent-readable design-system brief. It documents the current Institute visual language and points back to `packages/ui/src/styles.css` and `packages/ui/src/components/` as the implemented source of truth.
-
-## Workspace Tooling
-
-The repo root owns the shared workspace contract:
-
-- `package.json` for root commands such as `vp run verify`, `vp run verify:chill`, and `vp run e2e:binge`
-- `pnpm-workspace.yaml` for package globs and shared dependency catalog entries
-- `vite.config.ts` for root formatting, lint, and staged-check behavior
-- `.github/workflows/` for selective verify, manual staging deploy, and production deploy wiring
-
-Each app owns its app-local config:
-
-- `components.json`
-- `index.html`
-- `playwright.config.ts`
-- `tsconfig.json`
-- `vite.config.ts`
+The app keeps API, auth, UI, and catalog code local so there is no workspace package graph.
 
 ## Runtime Model
 
-- Each app is its own client-rendered SPA.
-- The browser calls the hosted API directly for normal app traffic.
+- The app is a client-rendered React SPA.
+- The browser calls the hosted API directly.
 - Shared contract types come from `@chill-institute/contracts`.
-- Shared UI primitives, auth wiring, and connect-rpc client live in `packages/ui`, `packages/auth`, and `packages/api` respectively. App-local code is reserved for surfaces that genuinely diverge (shells, search/catalog-specific components, source pickers).
+- `binge.institute` and `www.binge.institute` redirect to `chill.institute`.
+- There is no staging binge host.
 
-## App Shape
+## Boundaries
 
-Each app keeps the same broad internal layers:
+- `src/ui/` stays presentational and does not import auth or API code.
+- `src/api/` owns Connect-RPC transport and API helpers.
+- `src/auth/` owns token lifecycle, API context, auth routes, and API-coupled controls.
+- `src/catalog/` owns movie and TV catalog behavior.
+- `src/components/` owns app shell, search, settings, and cross-surface composition.
 
-| Layer         | Responsibility                                                     |
-| ------------- | ------------------------------------------------------------------ |
-| router        | route matching, loaders, navigation, auth-aware redirects          |
-| queries       | cache and request lifecycle for route screens                      |
-| API layer     | Connect-Web transport, auth headers, request IDs, response mapping |
-| auth layer    | persist auth token and callback state in browser storage           |
-| UI components | render shell, content surfaces, and settings                       |
+## Routes
 
-## Route Model
-
-```mermaid
-graph TD
-  ChillRoot["apps/chill root"] --> ChillHome["/"]
-  ChillRoot --> ChillSearch["/search"]
-  ChillRoot --> ChillSettings["/settings"]
-  ChillRoot --> ChillSignIn["/sign-in"]
-  ChillRoot --> ChillSignOut["/sign-out"]
-  ChillRoot --> ChillAuthSuccess["/auth/success"]
-  BingeRoot["apps/binge root"] --> BingeHome["/"]
-  BingeRoot --> BingeSettings["/settings"]
-  BingeRoot --> BingeSignIn["/sign-in"]
-  BingeRoot --> BingeSignOut["/sign-out"]
-  BingeRoot --> BingeAuthSuccess["/auth/success"]
-```
-
-Current route behavior:
-
-| App          | Route                                    | Responsibility                                 |
-| ------------ | ---------------------------------------- | ---------------------------------------------- |
-| `apps/chill` | `/`                                      | search home shell with authenticated setup     |
-| `apps/chill` | `/search`                                | search flow, filters, and result listing       |
-| `apps/chill` | `/settings`                              | user settings and folder-related configuration |
-| `apps/binge` | `/`                                      | catalog-focused home without the search flow   |
-| `apps/binge` | `/settings`                              | user settings and folder-related configuration |
-| both apps    | `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                          |
+| Route                                    | Responsibility                                 |
+| ---------------------------------------- | ---------------------------------------------- |
+| `/`                                      | search home shell                              |
+| `/search`                                | search flow, filters, and result listing       |
+| `/movies` and `/movies/$id`              | movie catalog and detail modal                 |
+| `/tv-shows` and `/tv-shows/$id`          | TV catalog and detail modal                    |
+| `/settings`                              | user settings and folder-related configuration |
+| `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                          |
 
 ## Data Flow
 
 ```mermaid
 graph TD
   Route["route loader / component"] --> Query["TanStack Query"]
-  Query --> UseApi["useApi() — @chill-institute/auth/api-context"]
-  UseApi --> CreateApi["createApi() — @chill-institute/api"]
+  Query --> UseApi["useApi()"]
+  UseApi --> CreateApi["createApi()"]
   CreateApi --> Transport["Connect-Web transport"]
   Transport --> Backend["/v4 API"]
   Backend --> Transport
@@ -111,41 +68,19 @@ graph TD
   Query --> Route
 ```
 
-Key frontend modules:
+Key modules:
 
-| Module                                                    | Responsibility                                                                                  |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `apps/*/src/router.tsx`                                   | create the app router and router context                                                        |
-| `apps/*/src/query-client.ts`                              | shared TanStack Query client configuration for that app                                         |
-| `apps/*/src/lib/api.tsx`                                  | thin app-local bridge: `createApi(token)` (route loaders) + `<*ApiProvider>` (React subtree)    |
-| `apps/*/src/lib/env.ts`                                   | resolve the public API base URL from the current hostname                                       |
-| `@chill-institute/api`                                    | typed connect-rpc client, auth header wiring, request IDs, auth redirects                       |
-| `@chill-institute/auth/auth`                              | browser auth token lifecycle (PASETO + put.io OAuth callback storage), `AuthProvider`/`useAuth` |
-| `@chill-institute/auth/api-context`                       | React context exposing the api client + `getPutioStartURL` to the rest of the tree              |
-| `@chill-institute/auth/queries/{profile,download-folder}` | shared TanStack Query hooks                                                                     |
-| `apps/*/src/queries/`                                     | app-specific query options and mutation helpers (settings, search, movies, tv-shows)            |
-| `apps/*/src/routes/`                                      | screen entrypoints — auth-flow routes are 3-line shims onto `@chill-institute/auth/routes/*`    |
-
-## Auth Flow
-
-```mermaid
-sequenceDiagram
-  participant User
-  participant Web
-  participant API
-  participant Browser
-
-  User->>Web: start sign-in
-  Web->>API: open /auth/putio/start
-  API-->>User: external auth flow
-  User->>Web: return to /auth/success
-  Web->>Browser: persist auth token
-  Web->>API: authenticated requests
-```
-
-When authenticated requests fail with auth-related errors, the connect-rpc client (`@chill-institute/api`) clears client auth state and redirects through the sign-out path.
-
-The auth lifecycle routes (`/sign-in`, `/sign-out`, `/auth/success`, `/auth/cli-token`, `/debug/crash`) are shared via `@chill-institute/auth/routes/*RouteOptions` — each app's route file is a 3-line shim that calls `createFileRoute("/path")(routeOptions)`. Both apps register the same options object so the OAuth dance, callback consumption, and sign-out flow stay byte-equivalent across the two apps.
+| Module                | Responsibility                                     |
+| --------------------- | -------------------------------------------------- |
+| `src/main.tsx`        | browser entrypoint and provider mounting           |
+| `src/router.tsx`      | create the app router and router context           |
+| `src/query-client.ts` | TanStack Query client configuration                |
+| `src/lib/api.tsx`     | browser API base URL bridge and React API provider |
+| `src/lib/env.ts`      | hosted API base URL resolution                     |
+| `src/components/`     | search shell, settings, and app-level components   |
+| `src/catalog/`        | movie and TV catalog routes, queries, and modals   |
+| `src/auth/`           | auth token lifecycle, auth routes, and API context |
+| `src/ui/`             | design tokens, primitives, and presentational UI   |
 
 ## Environment
 
@@ -153,20 +88,17 @@ The auth lifecycle routes (`/sign-in`, `/sign-out`, `/auth/success`, `/auth/cli-
 | -------------------------- | ------------------------------------------ |
 | `VITE_PUBLIC_API_BASE_URL` | optional local override for the public API |
 
-Hosted environments resolve the API from the current hostname in app-local files:
+Hosted environments resolve the API from the current hostname:
 
-- `apps/chill/src/lib/api-origin.ts` handles `localhost` and `*.chill.institute`, with `staging.chill.institute` pinned to the staging API
-- `apps/binge/src/lib/api-origin.ts` handles `localhost` and `*.binge.institute`, with `staging.binge.institute` pinned to the staging API
+- `localhost`, `127.0.0.1`, and `*.chill.institute` use the production API by default
+- `api.chill.institute` can use the current origin for API-local debug flows
 
-## Deployment Model
+## Deployment
 
-Build outputs are static bundles at:
-
-- `apps/chill/dist/`
-- `apps/binge/dist/`
+Build output is `dist/`.
 
 Production hosting shape:
 
 - static assets on SST-managed Cloudflare Workers
+- `binge.institute` production domains handled by a redirect worker
 - API on a separate `api.chill.institute` origin
-- browser -> API communication over Connect-Web

@@ -1,26 +1,4 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreDependencies": ["vite"],
-  "ignore": ["vite.config.ts"],
-  "treatConfigHintsAsErrors": false,
-  "rules": {
-    "catalog": "off"
-  },
-  "workspaces": {
-    "apps/binge": {
-      "entry": ["src/**/*.test.ts", "e2e/**/*.ts"]
-    },
-    "apps/chill": {
-      "entry": ["src/**/*.test.ts", "src/**/*.test.tsx", "e2e/**/*.ts"]
-    },
-    "packages/api": {
-      "entry": ["src/**/*.test.ts"]
-    },
-    "packages/auth": {
-      "entry": ["src/**/*.test.ts"]
-    },
-    "packages/ui": {
-      "entry": ["src/**/*.test.ts"]
-    }
-  }
+  "entry": ["src/**/*.test.ts", "src/**/*.test.tsx", "e2e/**/*.ts"]
 }

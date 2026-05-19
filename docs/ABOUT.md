@@ -1,22 +1,22 @@
 # About the Institute
 
-The Institute is a pair of put.io companion apps:
+The Institute is a put.io companion app:
 
-- [chill.institute](https://chill.institute) is the search experience for finding releases fast, comparing results, and sending downloads to put.io without a bunch of ceremony
-- [binge.institute](https://binge.institute) is the browse experience for movies, TV shows, detail pages, source pickers, and RSS shortcuts
+- [chill.institute](https://chill.institute) is the search and browse experience for finding releases fast, comparing results, browsing movies and TV shows, and sending downloads to put.io without a bunch of ceremony
+- [binge.institute](https://binge.institute) redirects to chill.institute
 
 ## What it does
 
 - search enabled trackers from `chill.institute`
-- browse movies and TV shows from `binge.institute`
+- browse movies and TV shows from `chill.institute`
 - compare results and catalog options quickly
 - send downloads to put.io
 - create RSS shortcuts for supported catalog feeds
 
 ## Privacy
 
-- the apps store your auth token in the browser so they can talk to the API on your behalf
-- the web apps do not send telemetry, and crash reports stay local unless you explicitly copy them or open a prefilled GitHub issue
+- the app stores your auth token in the browser so it can talk to the API on your behalf
+- the web app does not send telemetry, and crash reports stay local unless you explicitly copy them or open a prefilled GitHub issue
 - some operational diagnostics exist on the server side to keep the service healthy
 
 ## Contact
@@ -29,7 +29,7 @@ Social DMs are also fine, but I barely check them.
 
 ### Which app should I use?
 
-Use `chill.institute` when you know what you want and want search results. Use `binge.institute` when you want to browse movies or TV shows first.
+Use `chill.institute` for both search and browsing. The top menu switches between search, movies, and TV shows.
 
 ### How can I help, contribute, or donate?
 
@@ -45,7 +45,7 @@ Sure! Just reach out and say what you have in mind.
 
 ### Which browsers and devices are supported?
 
-Both apps are built and tested for modern evergreen browsers on desktop and mobile.
+The app is built and tested for modern evergreen browsers on desktop and mobile.
 
 If something breaks on your setup, sending your browser version and device details makes debugging much easier.
 
@@ -57,7 +57,7 @@ That said, please do not bother put.io support when the Institute is down. They 
 
 ### Why do I need an active put.io account?
 
-The Institute apps are designed to complement put.io, not act like a general-purpose torrent aggregator.
+The Institute app is designed to complement put.io, not act like a general-purpose torrent aggregator.
 
 If you want a fully self-managed setup, running your own search stack is probably a better fit.
 

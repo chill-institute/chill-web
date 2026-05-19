@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 480" role="img" aria-label="Neutral test season poster">
+  <rect width="320" height="480" fill="#161311"/>
+  <rect x="44" y="56" width="232" height="336" rx="20" fill="#293532" stroke="#6f8f88" stroke-width="4"/>
+  <path d="M94 160h132M94 216h132M94 272h88" stroke="#f3eee8" stroke-width="16" stroke-linecap="round"/>
+</svg>
