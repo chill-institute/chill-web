@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
   buildAuthHandoffURL,
+  clearPendingAuthRedirectSearch,
   clearStoredAuthState,
   consumeCallbackToken,
   consumeHandoffToken,
+  readPendingAuthRedirectSearch,
   normalizeCallbackPath,
   prepareAuthSuccessURL,
   prepareSignInAgainURL,
@@ -182,6 +184,47 @@ describe("prepareSignInAgainURL", () => {
 
     expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
     expect(window.sessionStorage.getItem("chill.auth_nonce")).toMatch(/^[0-9a-f]{32}$/);
+  });
+});
+
+describe("readPendingAuthRedirectSearch", () => {
+  it("returns a stored session-expired redirect", () => {
+    withWindowLocation("https://chill.institute/search");
+    window.sessionStorage.setItem(
+      "chill.auth_redirect",
+      JSON.stringify({ error: "SessionExpired", callbackUrl: "/search?q=matrix" }),
+    );
+
+    expect(readPendingAuthRedirectSearch("/settings")).toEqual({
+      error: "SessionExpired",
+      callbackUrl: "/search?q=matrix",
+    });
+    expect(window.sessionStorage.getItem("chill.auth_redirect")).not.toBeNull();
+  });
+
+  it("drops unsafe stored callbacks and keeps the current fallback", () => {
+    withWindowLocation("https://chill.institute/search");
+    window.sessionStorage.setItem(
+      "chill.auth_redirect",
+      JSON.stringify({ error: "SessionExpired", callbackUrl: "/auth/success" }),
+    );
+
+    expect(readPendingAuthRedirectSearch("/movies?sort=recent")).toEqual({
+      error: "SessionExpired",
+      callbackUrl: "/movies?sort=recent",
+    });
+  });
+
+  it("clears pending auth redirects explicitly", () => {
+    withWindowLocation("https://chill.institute/search");
+    window.sessionStorage.setItem(
+      "chill.auth_redirect",
+      JSON.stringify({ error: "SessionExpired", callbackUrl: "/search?q=matrix" }),
+    );
+
+    clearPendingAuthRedirectSearch();
+
+    expect(window.sessionStorage.getItem("chill.auth_redirect")).toBeNull();
   });
 });
 

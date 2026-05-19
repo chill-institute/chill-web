@@ -159,6 +159,26 @@ test.describe("movies", () => {
     expect(page.url()).toContain("/sign-in");
   });
 
+  test("redirects stale tokens to sign-in with the current movies callback", async ({
+    authenticatedPage,
+  }) => {
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "unauthenticated", message: "expired" }),
+      });
+    });
+
+    await authenticatedPage.goto("/movies?sort=recent&source=1");
+    await authenticatedPage.waitForURL("**/sign-in**");
+
+    const url = new URL(authenticatedPage.url());
+    expect(url.pathname).toBe("/sign-in");
+    expect(url.searchParams.get("error")).toBe("SessionExpired");
+    expect(url.searchParams.get("callbackUrl")).toBe("/movies?sort=recent&source=1");
+  });
+
   test("clicking a movie card opens the detail modal and shows torrent results", async ({
     authenticatedPage,
     mockRpc,

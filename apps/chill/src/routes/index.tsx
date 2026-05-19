@@ -1,6 +1,7 @@
-import { Navigate, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-import { readCurrentCallbackPath, useAuth } from "@chill-institute/auth/auth";
+import { SignInRedirect } from "@chill-institute/auth/components/sign-in-redirect";
+import { useAuth } from "@chill-institute/auth/auth";
 
 import { HomeShell } from "@/components/home-shell";
 
@@ -12,14 +13,7 @@ function HomePage() {
   const auth = useAuth();
 
   if (!auth.isAuthenticated) {
-    const callbackURL = readCurrentCallbackPath();
-    return (
-      <Navigate
-        to="/sign-in"
-        search={{ error: undefined, callbackUrl: callbackURL ?? undefined }}
-        replace
-      />
-    );
+    return <SignInRedirect />;
   }
 
   return <HomeShell />;

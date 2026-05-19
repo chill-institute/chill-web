@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Calendar, Film, Flame, Search, Star, Tv } from "lucide-react";
 import { match } from "ts-pattern";
 
@@ -24,7 +24,8 @@ import { Tabs, TabsList, TabsTrigger } from "@chill-institute/ui/components/ui/t
 import { PosterCard } from "@chill-institute/ui/components/poster-card";
 import { InstituteFooter } from "@chill-institute/ui/components/institute-footer";
 import { SortPill, SortRow } from "@chill-institute/ui/components/sort-row";
-import { readCurrentCallbackPath, useAuth } from "@chill-institute/auth/auth";
+import { SignInRedirect } from "@chill-institute/auth/components/sign-in-redirect";
+import { useAuth } from "@chill-institute/auth/auth";
 import { publicLinks } from "@chill-institute/ui/lib/public-links";
 
 import { writeLastTab } from "@/hooks/use-last-tab";
@@ -89,7 +90,6 @@ type CatalogPageProps = {
 
 export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
   const auth = useAuth();
-  const callbackURL = readCurrentCallbackPath();
   const navigate = useNavigate();
 
   const configQuery = useSettingsQuery();
@@ -152,13 +152,7 @@ export function CatalogPage({ tab, sort, source }: CatalogPageProps) {
   }
 
   if (!auth.isAuthenticated) {
-    return (
-      <Navigate
-        to="/sign-in"
-        search={{ error: undefined, callbackUrl: callbackURL ?? undefined }}
-        replace
-      />
-    );
+    return <SignInRedirect />;
   }
 
   return match(configQuery)

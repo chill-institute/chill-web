@@ -1,14 +1,15 @@
 import { useMemo } from "react";
-import { Navigate, Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { match } from "ts-pattern";
 
 import { EmptyState } from "@chill-institute/ui/components/empty-state";
+import { SignInRedirect } from "@chill-institute/auth/components/sign-in-redirect";
 import { UserErrorAlert } from "@chill-institute/auth/components/user-error-alert";
 import { SearchShell } from "@/components/search-shell";
 import { SearchFilterBar } from "@/components/search-filter-bar";
 import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
-import { useAuth, readStoredToken, readCurrentCallbackPath } from "@chill-institute/auth/auth";
+import { readStoredToken, useAuth } from "@chill-institute/auth/auth";
 import { formatSearchResults, normalizeQuery } from "@/lib/search";
 import {
   applyChillSettingsPatch,
@@ -40,7 +41,6 @@ export const Route = createFileRoute("/search")({
 function SearchPage() {
   const searchParams = Route.useSearch();
   const auth = useAuth();
-  const callbackURL = readCurrentCallbackPath();
   const submittedQuery = normalizeQuery(searchParams.q ?? "");
 
   const configQuery = useSettingsQuery();
@@ -123,13 +123,7 @@ function SearchPage() {
   }
 
   if (!auth.isAuthenticated) {
-    return (
-      <Navigate
-        to="/sign-in"
-        search={{ error: undefined, callbackUrl: callbackURL ?? undefined }}
-        replace
-      />
-    );
+    return <SignInRedirect />;
   }
 
   const combined = combineQueries(configQuery, indexersQuery);

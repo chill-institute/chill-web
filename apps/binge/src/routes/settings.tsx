@@ -1,8 +1,9 @@
-import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { SettingsPanel } from "@/components/settings-panel";
 import { SettingsModal } from "@chill-institute/ui/components/settings-modal";
-import { readCurrentCallbackPath, useAuth } from "@chill-institute/auth/auth";
+import { SignInRedirect } from "@chill-institute/auth/components/sign-in-redirect";
+import { useAuth } from "@chill-institute/auth/auth";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -11,16 +12,9 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const callbackURL = readCurrentCallbackPath();
 
   if (!auth.isAuthenticated) {
-    return (
-      <Navigate
-        to="/sign-in"
-        search={{ error: undefined, callbackUrl: callbackURL ?? undefined }}
-        replace
-      />
-    );
+    return <SignInRedirect />;
   }
 
   return (

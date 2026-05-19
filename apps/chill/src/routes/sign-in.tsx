@@ -10,7 +10,12 @@ import {
   UNKNOWN_AUTH_ERROR,
 } from "@chill-institute/api/auth-errors";
 import { useGetPutioStartURL } from "@chill-institute/auth/api-context";
-import { normalizeCallbackPath, prepareAuthSuccessURL, useAuth } from "@chill-institute/auth/auth";
+import {
+  clearPendingAuthRedirectSearch,
+  normalizeCallbackPath,
+  prepareAuthSuccessURL,
+  useAuth,
+} from "@chill-institute/auth/auth";
 import { publicLinks } from "@chill-institute/ui/lib/public-links";
 
 export const Route = createFileRoute("/sign-in")({
@@ -58,6 +63,10 @@ function SignInPage() {
     };
   }, [search.error]);
   const visibleError = loading === "sign-in" ? null : error;
+
+  useEffect(() => {
+    clearPendingAuthRedirectSearch();
+  }, []);
 
   useEffect(() => {
     if (!auth.isAuthenticated) return;

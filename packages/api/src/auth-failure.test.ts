@@ -55,7 +55,12 @@ describe("redirectToSignInOnAuthFailure", () => {
     sessionStorage.set("chill.auth_callback", "/results?q=dune");
     replaceSpy = vi.fn();
     vi.stubGlobal("window", {
-      location: { pathname: "/results", replace: replaceSpy },
+      location: {
+        pathname: "/search",
+        search: "?q=matrix",
+        hash: "",
+        replace: replaceSpy,
+      },
       localStorage: {
         getItem: (k: string) => localStorage.get(k) ?? null,
         setItem: (k: string, v: string) => localStorage.set(k, v),
@@ -78,7 +83,72 @@ describe("redirectToSignInOnAuthFailure", () => {
 
     expect(localStorage.has("chill.auth_token")).toBe(false);
     expect(sessionStorage.has("chill.auth_callback")).toBe(false);
-    expect(replaceSpy).toHaveBeenCalledWith("/sign-out?error=SessionExpired");
+    expect(sessionStorage.get("chill.auth_redirect")).toBe(
+      JSON.stringify({ error: "SessionExpired", callbackUrl: "/search?q=matrix" }),
+    );
+    expect(replaceSpy).toHaveBeenCalledWith(
+      "/sign-in?error=SessionExpired&callbackUrl=%2Fsearch%3Fq%3Dmatrix",
+    );
+  });
+
+  it("preserves Binge deep links on auth failure", () => {
+    vi.stubGlobal("window", {
+      location: {
+        pathname: "/movies",
+        search: "?sort=recent&source=2",
+        hash: "#grid",
+        replace: replaceSpy,
+      },
+      localStorage: {
+        getItem: (k: string) => localStorage.get(k) ?? null,
+        setItem: (k: string, v: string) => localStorage.set(k, v),
+        removeItem: (k: string) => localStorage.delete(k),
+      },
+      sessionStorage: {
+        getItem: (k: string) => sessionStorage.get(k) ?? null,
+        setItem: (k: string, v: string) => sessionStorage.set(k, v),
+        removeItem: (k: string) => sessionStorage.delete(k),
+      },
+    });
+
+    redirectToSignInOnAuthFailure(new ConnectError("expired", Code.Unauthenticated));
+
+    expect(replaceSpy).toHaveBeenCalledWith(
+      "/sign-in?error=SessionExpired&callbackUrl=%2Fmovies%3Fsort%3Drecent%26source%3D2%23grid",
+    );
+    expect(sessionStorage.get("chill.auth_redirect")).toBe(
+      JSON.stringify({ error: "SessionExpired", callbackUrl: "/movies?sort=recent&source=2#grid" }),
+    );
+  });
+
+  it("drops unsafe callback paths on auth failure", () => {
+    for (const pathname of ["/sign-out", "/auth/success", "//evil.test/path"]) {
+      replaceSpy.mockClear();
+      vi.stubGlobal("window", {
+        location: { pathname, search: "?q=matrix", hash: "", replace: replaceSpy },
+        localStorage: {
+          getItem: (k: string) => localStorage.get(k) ?? null,
+          setItem: (k: string, v: string) => localStorage.set(k, v),
+          removeItem: (k: string) => localStorage.delete(k),
+        },
+        sessionStorage: {
+          getItem: (k: string) => sessionStorage.get(k) ?? null,
+          setItem: (k: string, v: string) => sessionStorage.set(k, v),
+          removeItem: (k: string) => sessionStorage.delete(k),
+        },
+      });
+
+      redirectToSignInOnAuthFailure(new ConnectError("expired", Code.Unauthenticated));
+
+      if (pathname === "/sign-out") {
+        expect(replaceSpy).not.toHaveBeenCalled();
+      } else {
+        expect(replaceSpy).toHaveBeenCalledWith("/sign-in?error=SessionExpired");
+        expect(sessionStorage.get("chill.auth_redirect")).toBe(
+          JSON.stringify({ error: "SessionExpired" }),
+        );
+      }
+    }
   });
 
   it("is a no-op when the error is not an auth failure", () => {
@@ -91,7 +161,7 @@ describe("redirectToSignInOnAuthFailure", () => {
 
   it("does not loop back when already on /sign-in or /sign-out", () => {
     vi.stubGlobal("window", {
-      location: { pathname: "/sign-in", replace: replaceSpy },
+      location: { pathname: "/sign-in", search: "", hash: "", replace: replaceSpy },
       localStorage: {
         getItem: (k: string) => localStorage.get(k) ?? null,
         setItem: (k: string, v: string) => localStorage.set(k, v),

@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
 const AUTH_NONCE_STORAGE_KEY = "chill.auth_nonce";
+const AUTH_REDIRECT_STORAGE_KEY = "chill.auth_redirect";
 const AUTH_NONCE_QUERY_PARAM = "nonce";
 const AUTH_HANDOFF_PATH = "/auth/handoff";
 const AUTH_HANDOFF_CALLBACK_QUERY_PARAM = "callbackUrl";
@@ -38,6 +39,7 @@ export function clearStoredAuthState() {
   window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+  window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
 }
 
 // crypto.getRandomValues (not crypto.randomUUID) so non-secure contexts and pre-Safari-15.4 / pre-FF-95 / pre-Chrome-92 still work.
@@ -66,6 +68,44 @@ export function prepareSignInAgainURL(getPutioStartURL: (successURL?: string) =>
   }
   const successURL = new URL("/auth/success", window.location.origin).toString();
   return getPutioStartURL(prepareAuthSuccessURL(successURL));
+}
+
+type AuthRedirectSearch = {
+  error: string | undefined;
+  callbackUrl: string | undefined;
+};
+
+export function clearPendingAuthRedirectSearch() {
+  window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+}
+
+export function readPendingAuthRedirectSearch(
+  fallbackCallbackUrl: null | string,
+): AuthRedirectSearch {
+  const fallbackCallback = normalizeCallbackPath(fallbackCallbackUrl);
+  const fallback = { error: undefined, callbackUrl: fallbackCallback ?? undefined };
+  const raw = window.sessionStorage.getItem(AUTH_REDIRECT_STORAGE_KEY);
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return fallback;
+    }
+    const rawError = Reflect.get(parsed, "error");
+    const rawCallback = Reflect.get(parsed, "callbackUrl");
+    const error = typeof rawError === "string" && rawError.trim() ? rawError.trim() : undefined;
+    const callbackUrl =
+      typeof rawCallback === "string" ? (normalizeCallbackPath(rawCallback) ?? undefined) : null;
+    return {
+      error,
+      callbackUrl: callbackUrl ?? fallback.callbackUrl,
+    };
+  } catch {
+    return fallback;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

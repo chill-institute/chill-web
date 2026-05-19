@@ -227,6 +227,26 @@ test.describe("search page", () => {
     expect(url.searchParams.get("callbackUrl")).toBe("/search");
   });
 
+  test("redirects stale tokens to sign-in with the current search callback", async ({
+    authenticatedPage,
+  }) => {
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "unauthenticated", message: "expired" }),
+      });
+    });
+
+    await authenticatedPage.goto("/search?q=matrix");
+    await authenticatedPage.waitForURL("**/sign-in**");
+
+    const url = new URL(authenticatedPage.url());
+    expect(url.pathname).toBe("/sign-in");
+    expect(url.searchParams.get("error")).toBe("SessionExpired");
+    expect(url.searchParams.get("callbackUrl")).toBe("/search?q=matrix");
+  });
+
   test("quick filter narrows results to matching resolution", async ({
     authenticatedPage,
     mockRpc,
