@@ -59,6 +59,15 @@ export function prepareAuthSuccessURL(rawSuccessURL: string): string {
   return url.toString();
 }
 
+export function prepareSignInAgainURL(getPutioStartURL: (successURL?: string) => string): string {
+  const callbackPath = readCurrentCallbackPath();
+  if (callbackPath) {
+    storePendingCallbackURL(callbackPath);
+  }
+  const successURL = new URL("/auth/success", window.location.origin).toString();
+  return getPutioStartURL(prepareAuthSuccessURL(successURL));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authToken, setAuthTokenState] = useState<string | null>(() => readStoredToken());
   const queryClient = useQueryClient();

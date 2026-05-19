@@ -7,6 +7,7 @@ import {
   consumeHandoffToken,
   normalizeCallbackPath,
   prepareAuthSuccessURL,
+  prepareSignInAgainURL,
   readAuthTokenFromLocation,
   storePendingCallbackURL,
 } from "./auth";
@@ -149,6 +150,38 @@ describe("prepareAuthSuccessURL", () => {
     expect(window.sessionStorage.getItem("chill.auth_nonce")).toBe(
       second.searchParams.get("nonce"),
     );
+  });
+});
+
+describe("prepareSignInAgainURL", () => {
+  it("stores the current callback and passes a nonce-stamped success URL into the OAuth start URL", () => {
+    withWindowLocation("https://chill.institute/settings?tab=download#folder");
+
+    const startURL = prepareSignInAgainURL((successURL) => {
+      const url = new URL("https://api.chill.institute/auth/putio/start");
+      if (successURL) {
+        url.searchParams.set("success_url", successURL);
+      }
+      return url.toString();
+    });
+
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBe(
+      "/settings?tab=download#folder",
+    );
+    const successURL = new URL(startURL).searchParams.get("success_url");
+    expect(successURL).not.toBeNull();
+    const nonceFromURL = new URL(successURL!).searchParams.get("nonce");
+    expect(nonceFromURL).toMatch(/^[0-9a-f]{32}$/);
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBe(nonceFromURL);
+  });
+
+  it("keeps rejected current routes out of callback storage", () => {
+    withWindowLocation("https://chill.institute/auth/success");
+
+    prepareSignInAgainURL((successURL) => successURL ?? "");
+
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toMatch(/^[0-9a-f]{32}$/);
   });
 });
 

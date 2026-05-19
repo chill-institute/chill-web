@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 import { MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
 import { test, expect } from "./support/fixtures";
 import {
@@ -15,6 +15,11 @@ const profileResponse = {
   username: "putio-user",
   avatarUrl: "",
   email: "putio-user@example.com",
+};
+
+const putioProviderUnavailableError = {
+  code: "unavailable",
+  message: "putio provider unavailable",
 };
 
 type RequestSettingsPayload = Record<string, unknown> & {
@@ -42,6 +47,14 @@ const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
 
 function settingsPage(page: Page) {
   return page.locator('[data-page="settings"]');
+}
+
+async function fulfillPutioProviderUnavailable(route: Route) {
+  await route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: JSON.stringify(putioProviderUnavailableError),
+  });
 }
 
 test.describe("settings", () => {
@@ -269,14 +282,7 @@ test.describe("settings", () => {
     await mockRpc(baseSettingsMethods());
 
     await authenticatedPage.route("**/chill.v4.UserService/GetDownloadFolder", async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({
-          code: "unavailable",
-          message: "putio provider unavailable",
-        }),
-      });
+      await fulfillPutioProviderUnavailable(route);
     });
 
     await authenticatedPage.goto("/settings");
@@ -288,6 +294,60 @@ test.describe("settings", () => {
     await expect(alert).toBeVisible({ timeout: 5000 });
     await expect(alert.getByRole("button", { name: "retry" })).toBeVisible();
     await expect(alert.getByRole("button", { name: "sign in again" })).toBeVisible();
+  });
+
+  test("sign-in recovery completes auth success and returns to settings", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let providerRecovered = false;
+
+    await mockRpc(baseSettingsMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetDownloadFolder", async (route) => {
+      if (!providerRecovered) {
+        await fulfillPutioProviderUnavailable(route);
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(downloadFolderResponse(userFile({ id: 0n, name: "your files" }))),
+      });
+    });
+
+    await authenticatedPage.route(/\/auth\/putio\/start/, (route) =>
+      route.fulfill({ status: 200, body: "" }),
+    );
+
+    await authenticatedPage.goto("/settings");
+
+    const alert = settingsPage(authenticatedPage)
+      .getByRole("alert")
+      .filter({ hasText: "Could not connect to put.io. Please try again." });
+    await expect(alert).toBeVisible({ timeout: 5000 });
+
+    const startRequest = authenticatedPage.waitForRequest(/\/auth\/putio\/start/);
+    await alert.getByRole("button", { name: "sign in again" }).click();
+    const startURL = (await startRequest).url();
+
+    const successURL = new URL(startURL).searchParams.get("success_url");
+    expect(successURL).not.toBeNull();
+    const authSuccessURL = new URL(successURL!);
+    const nonce = authSuccessURL.searchParams.get("nonce");
+    expect(nonce).toMatch(/^[0-9a-f]{32}$/);
+
+    providerRecovered = true;
+    authSuccessURL.hash = new URLSearchParams({ auth_token: "recovered-token" }).toString();
+    await authenticatedPage.goto(authSuccessURL.toString());
+
+    await authenticatedPage.waitForURL("**/settings");
+    expect(new URL(authenticatedPage.url()).pathname).toBe("/settings");
+    expect(
+      await authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")),
+    ).toBe("recovered-token");
+    await expect(alert).toBeHidden({ timeout: 5000 });
   });
 
   test("shows username from profile", async ({ authenticatedPage, mockRpc }) => {

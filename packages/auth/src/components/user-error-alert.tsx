@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@chill-institute/ui/compone
 import { Button } from "@chill-institute/ui/components/ui/button";
 
 import { useGetPutioStartURL } from "../api-context";
-import { readCurrentCallbackPath, storePendingCallbackURL } from "../auth";
+import { prepareSignInAgainURL } from "../auth";
 import { localizeError, type LocalizedErrorRecoveryAction } from "../errors";
 
 type UserErrorAlertProps = {
@@ -45,12 +45,7 @@ export function UserErrorAlert({ error, className }: UserErrorAlertProps) {
   const suggestion = localized.recoverySuggestion;
 
   const handleSignInAgain = () => {
-    const callbackPath = readCurrentCallbackPath();
-    if (callbackPath) {
-      storePendingCallbackURL(callbackPath);
-    }
-    const successURL = new URL("/auth/success", window.location.origin).toString();
-    window.location.href = getPutioStartURL(successURL);
+    window.location.href = prepareSignInAgainURL(getPutioStartURL);
   };
 
   return (
