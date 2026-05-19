@@ -1,6 +1,8 @@
 {
   "short_name": "binge.institute",
   "name": "binge.institute",
+  "description": "Browse your movie and TV catalog from put.io with binge.institute.",
+  "id": "/",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +12,21 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#d6d3d1",
+  "background_color": "#d6d3d1",
+  "categories": ["entertainment"],
+  "prefer_related_applications": false
 }
