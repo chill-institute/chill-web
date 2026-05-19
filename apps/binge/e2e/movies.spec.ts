@@ -200,8 +200,13 @@ test.describe("movies", () => {
     await expect(authenticatedPage.getByLabel("Sort", { exact: true })).toBeVisible();
     const filterSelectWrappers = authenticatedPage.locator('[data-slot="native-select-wrapper"]');
     await expect(filterSelectWrappers).toHaveCount(3);
+    const firstFilterBox = await filterSelectWrappers.first().boundingBox();
+    if (firstFilterBox === null) throw new Error("Expected first filter select to have a box");
     for (let index = 0; index < 3; index += 1) {
       await expect(filterSelectWrappers.nth(index)).toHaveCSS("display", "grid");
+      const filterBox = await filterSelectWrappers.nth(index).boundingBox();
+      if (filterBox === null) throw new Error("Expected filter select to have a box");
+      expect(filterBox.width).toBeCloseTo(firstFilterBox.width, 0);
     }
     await expect(
       authenticatedPage.getByRole("button", { name: /send to put\.io/i }).last(),
