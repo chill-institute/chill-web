@@ -198,6 +198,11 @@ test.describe("movies", () => {
     await expect(authenticatedPage.getByLabel("Resolution")).toBeVisible();
     await expect(authenticatedPage.getByLabel("Codec")).toBeVisible();
     await expect(authenticatedPage.getByLabel("Sort", { exact: true })).toBeVisible();
+    const filterSelectWrappers = authenticatedPage.locator('[data-slot="native-select-wrapper"]');
+    await expect(filterSelectWrappers).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
+      await expect(filterSelectWrappers.nth(index)).toHaveCSS("display", "grid");
+    }
     await expect(
       authenticatedPage.getByRole("button", { name: /send to put\.io/i }).last(),
     ).toBeVisible();

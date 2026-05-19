@@ -152,7 +152,7 @@ function FilterSelect<T extends string>({
       aria-label={label}
       name={label.toLowerCase()}
       value={value}
-      wrapperClassName="block w-full sm:w-fit"
+      wrapperClassName="w-full sm:w-fit"
       className="h-8 py-1.5 text-base whitespace-nowrap sm:h-7 sm:w-fit sm:py-1 sm:text-sm"
       onChange={(event) => {
         const next = options.find((option) => option.value === event.currentTarget.value);
