@@ -124,10 +124,7 @@ jobs:
         run: vp install
 
       - name: Verify chill app
-        run: |
-          vp run check:chill
-          vp run test:chill
-          vp run build:chill
+        run: vp run verify:chill
 
       - name: Upload chill build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -159,10 +156,7 @@ jobs:
         run: vp install
 
       - name: Verify binge app
-        run: |
-          vp run check:binge
-          vp run test:binge
-          vp run build:binge
+        run: vp run verify:binge
 
       - name: Upload binge build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
