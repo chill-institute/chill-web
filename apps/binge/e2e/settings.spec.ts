@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 import { test, expect } from "./support/fixtures";
 import {
   downloadFolderResponse,
@@ -19,6 +20,7 @@ const profileResponse = {
 };
 
 type RequestSettingsPayload = Record<string, unknown> & {
+  catalog?: { moviesSource?: string | number; tvShowsSource?: string | number };
   download?: { folderId?: string | number };
   search?: { rememberQuickFilters?: boolean };
 };
@@ -407,6 +409,53 @@ test.describe("settings", () => {
     await expect(settingsPage(authenticatedPage).getByText("putio-user")).toBeVisible({
       timeout: 5000,
     });
+  });
+
+  test("reset settings restores catalog defaults and preserves download folder", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let settingsState = userSettings({
+      moviesSource: MoviesSource.YTS,
+      tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+      search: { rememberQuickFilters: true },
+      download: { folderId: 42n },
+    });
+    let savedSettings: RequestSettingsPayload | undefined;
+
+    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: RequestSettingsPayload;
+      };
+      if (body.settings) {
+        savedSettings = body.settings;
+        settingsState = body.settings as typeof settingsState;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+    await settingsPage(authenticatedPage).getByRole("button", { name: "reset settings" }).click();
+
+    await expect.poll(() => savedSettings?.catalog?.moviesSource).toBeTruthy();
+    expect(String(savedSettings?.catalog?.moviesSource)).toMatch(/IMDB_MOVIEMETER|1/);
+    expect(String(savedSettings?.catalog?.tvShowsSource)).toMatch(/NETFLIX|1/);
+    expect(String(savedSettings?.download?.folderId)).toBe("42");
+    expect(savedSettings?.search?.rememberQuickFilters).toBe(true);
   });
 
   test("sign-out link navigates to sign-out page", async ({ authenticatedPage, mockRpc }) => {

@@ -21,7 +21,12 @@ import { useDownloadFolderQuery } from "@chill-institute/auth/queries/download-f
 import { useProfileQuery } from "@chill-institute/auth/queries/profile";
 import { isThemePreference, useTheme } from "@chill-institute/ui/hooks/use-theme";
 import { publicLinks } from "@chill-institute/ui/lib/public-links";
-import { applyBingeSettingsPatch, toBingeSettings, type BingeSettings } from "@/lib/types";
+import {
+  applyBingeSettingsPatch,
+  resetBingeSettings,
+  toBingeSettings,
+  type BingeSettings,
+} from "@/lib/types";
 
 const LINKS = [
   { title: "about", url: publicLinks.about },
@@ -60,6 +65,11 @@ export function SettingsPanel() {
   const persistPatch = (patch: Partial<BingeSettings>) => {
     if (!configQuery.data) return;
     saveMutation.mutate(applyBingeSettingsPatch(configQuery.data, patch));
+  };
+
+  const resetSettings = () => {
+    if (!configQuery.data) return;
+    saveMutation.mutate(resetBingeSettings(configQuery.data));
   };
 
   if (!auth.isAuthenticated) {
@@ -122,13 +132,22 @@ export function SettingsPanel() {
                   {profileQuery.data?.username ?? "put.io user"}
                 </span>
               </div>
-              <Link
-                to="/sign-out"
-                search={{ error: undefined }}
-                className="text-error-text hover-hover:hover:text-error-text/80 focus-visible:ring-ring-focus focus-visible:ring-offset-app shrink-0 rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              >
-                sign out
-              </Link>
+              <div className="flex shrink-0 items-center gap-3">
+                <button
+                  type="button"
+                  className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-app cursor-pointer rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                  onClick={resetSettings}
+                >
+                  reset settings
+                </button>
+                <Link
+                  to="/sign-out"
+                  search={{ error: undefined }}
+                  className="text-error-text hover-hover:hover:text-error-text/80 focus-visible:ring-ring-focus focus-visible:ring-offset-app rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                >
+                  sign out
+                </Link>
+              </div>
             </div>
           </SettingsSection>
 

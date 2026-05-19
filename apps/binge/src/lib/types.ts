@@ -135,3 +135,10 @@ export function applyBingeSettingsPatch(
   }
   return next;
 }
+
+export function resetBingeSettings(settings: UserSettings): UserSettings {
+  return create(UserSettingsSchema, {
+    ...settings,
+    catalog: create(CatalogSettingsSchema, defaultUserSettings),
+  });
+}

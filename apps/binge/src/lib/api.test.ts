@@ -11,7 +11,12 @@ import {
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { withCatalogDefaults } from "./api";
-import { applyBingeSettingsPatch, defaultUserSettings, toBingeSettings } from "./types";
+import {
+  applyBingeSettingsPatch,
+  defaultUserSettings,
+  resetBingeSettings,
+  toBingeSettings,
+} from "./types";
 
 describe("withCatalogDefaults", () => {
   it("leaves full user settings untouched after shared defaults run", () => {
@@ -104,5 +109,27 @@ describe("applyBingeSettingsPatch", () => {
 
     expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
     expect(out.catalog?.tvShowsSource).toBe(defaultUserSettings.tvShowsSource);
+  });
+});
+
+describe("resetBingeSettings", () => {
+  it("resets catalog settings and preserves unrelated domains", () => {
+    const settings = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, {
+        sortBy: SortBy.SIZE,
+      }),
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.YTS,
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+      }),
+      download: create(DownloadSettingsSchema, { folderId: 42n }),
+    });
+
+    const out = resetBingeSettings(settings);
+
+    expect(out.search?.sortBy).toBe(SortBy.SIZE);
+    expect(out.catalog?.moviesSource).toBe(defaultUserSettings.moviesSource);
+    expect(out.catalog?.tvShowsSource).toBe(defaultUserSettings.tvShowsSource);
+    expect(out.download?.folderId).toBe(42n);
   });
 });
