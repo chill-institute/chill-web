@@ -106,7 +106,7 @@ jobs:
             echo "sha=${sha}"
           } >> "${GITHUB_OUTPUT}"
 
-  deploy-chill:
+  deploy-app:
     needs: [workflow-security, validate]
     if: ${{ needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'chill') }}
     concurrency:
@@ -145,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Build chill production bundle
+      - name: Build production bundle
         run: vp run build
 
       - name: Install age
@@ -158,19 +158,19 @@ jobs:
           SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
         run: scripts/ci/sst-state-git restore
 
-      - name: Refresh chill production SST state
+      - name: Refresh app production SST state
         if: ${{ !inputs.bootstrap_state }}
         run: vp exec sst refresh --stage production --print-logs
 
-      - name: Deploy chill production to SST
+      - name: Deploy app production to SST
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
         run: scripts/ci/sst-state-git save
 
   deploy-redirects:
-    needs: [workflow-security, validate, deploy-chill]
-    if: ${{ always() && needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'redirects') && (needs.deploy-chill.result == 'success' || needs.deploy-chill.result == 'skipped') }}
+    needs: [workflow-security, validate, deploy-app]
+    if: ${{ always() && needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'redirects') && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -228,8 +228,8 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-summary:
-    needs: [validate, deploy-chill, deploy-redirects]
-    if: ${{ always() && (needs.deploy-chill.result != 'skipped' || needs.deploy-redirects.result != 'skipped') }}
+    needs: [validate, deploy-app, deploy-redirects]
+    if: ${{ always() && (needs.deploy-app.result != 'skipped' || needs.deploy-redirects.result != 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
@@ -238,7 +238,7 @@ jobs:
           SHA: ${{ needs.validate.outputs.sha }}
           APP: ${{ inputs.app }}
           BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
-          CHILL_RESULT: ${{ needs.deploy-chill.result }}
+          APP_RESULT: ${{ needs.deploy-app.result }}
           REDIRECTS_RESULT: ${{ needs.deploy-redirects.result }}
         run: |
           chill_url="${CHILL_PRODUCTION_DOMAIN}"
@@ -252,12 +252,12 @@ jobs:
             echo "- Requested app: \`${APP}\`"
             echo "- Environment: \`production\`"
             echo "- Bootstrap state: \`${BOOTSTRAP_STATE}\`"
-            if [ "${CHILL_RESULT}" = "success" ]; then
-              echo "- Chill: [https://${chill_url}](https://${chill_url})"
-            elif [ "${CHILL_RESULT}" = "skipped" ]; then
-              echo "- Chill: skipped"
+            if [ "${APP_RESULT}" = "success" ]; then
+              echo "- App: [https://${chill_url}](https://${chill_url})"
+            elif [ "${APP_RESULT}" = "skipped" ]; then
+              echo "- App: skipped"
             else
-              echo "- Chill: ${CHILL_RESULT}"
+              echo "- App: ${APP_RESULT}"
             fi
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
               echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${chill_url}](https://${chill_url})"

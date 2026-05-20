@@ -43,8 +43,8 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      chill: ${{ steps.filter.outputs.chill }}
-      deploy_chill: ${{ steps.filter.outputs.deploy_chill }}
+      app: ${{ steps.filter.outputs.app }}
+      deploy_app: ${{ steps.filter.outputs.deploy_app }}
       deploy_redirects: ${{ steps.filter.outputs.deploy_redirects }}
     steps:
       - name: Check out repository
@@ -57,7 +57,7 @@ jobs:
         uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         with:
           filters: |
-            chill:
+            app:
               - 'src/**'
               - 'e2e/**'
               - 'public/**'
@@ -75,7 +75,7 @@ jobs:
               - 'sst.config.ts'
               - 'tsconfig.json'
               - 'vite.config.ts'
-            deploy_chill:
+            deploy_app:
               - 'src/**'
               - 'e2e/**'
               - 'public/**'
@@ -102,23 +102,23 @@ jobs:
               - 'sst.config.ts'
       - name: Publish change summary
         env:
-          CHILL_CHANGED: ${{ steps.filter.outputs.chill }}
-          CHILL_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_chill }}
+          APP_CHANGED: ${{ steps.filter.outputs.app }}
+          APP_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_app }}
           REDIRECTS_CHANGED: ${{ steps.filter.outputs.deploy_redirects }}
         run: |
           {
             echo "## Changed web surface"
             echo
-            echo "- Chill: \`${CHILL_CHANGED}\`"
-            echo "- Chill deploy: \`${CHILL_DEPLOY_CHANGED}\`"
+            echo "- App: \`${APP_CHANGED}\`"
+            echo "- App deploy: \`${APP_DEPLOY_CHANGED}\`"
             echo "- Binge redirects deploy: \`${REDIRECTS_CHANGED}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
 
-  verify-chill:
+  verify-app:
     needs: changes
-    if: ${{ needs.changes.outputs.chill == 'true' }}
+    if: ${{ needs.changes.outputs.app == 'true' }}
     concurrency:
-      group: web-main-verify-chill-${{ github.ref }}
+      group: web-main-verify-app-${{ github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
@@ -139,31 +139,31 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Verify chill app
+      - name: Verify app
         run: vp run verify
 
-      - name: Upload chill build artifact
+      - name: Upload app build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: chill-dist
+          name: app-dist
           path: dist
           if-no-files-found: error
 
-  e2e-chill:
-    needs: verify-chill
-    if: ${{ needs.verify-chill.result == 'success' }}
+  e2e:
+    needs: verify-app
+    if: ${{ needs.verify-app.result == 'success' }}
     concurrency:
-      group: web-main-e2e-chill-${{ github.ref }}
+      group: web-main-e2e-${{ github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Download chill build artifact
+      - name: Download app build artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: chill-dist
+          name: app-dist
           path: dist
 
       - name: Set up Vite+
@@ -183,22 +183,22 @@ jobs:
       - name: Install Playwright browser
         run: vp exec playwright install chromium
 
-      - name: Run chill end-to-end tests
+      - name: Run end-to-end tests
         run: vp run e2e
 
-      - name: Upload chill Playwright artifacts
+      - name: Upload Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-artifacts-chill
+          name: playwright-artifacts
           path: |
             playwright-report
             test-results
           if-no-files-found: ignore
 
-  deploy-chill:
-    needs: [workflow-security, changes, verify-chill, e2e-chill]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_chill == 'true' && needs.workflow-security.result == 'success' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
+  deploy-app:
+    needs: [workflow-security, changes, verify-app, e2e]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_app == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -219,10 +219,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Download chill build artifact
+      - name: Download app build artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: chill-dist
+          name: app-dist
           path: dist
 
       - name: Set up Vite+
@@ -247,15 +247,15 @@ jobs:
       - name: Restore encrypted SST local state
         run: scripts/ci/sst-state-git restore
 
-      - name: Deploy chill production to SST
+      - name: Deploy app production to SST
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
         run: scripts/ci/sst-state-git save
 
   deploy-redirects:
-    needs: [workflow-security, changes, deploy-chill]
-    if: ${{ always() && vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_redirects == 'true' && needs.workflow-security.result == 'success' && (needs.deploy-chill.result == 'success' || needs.deploy-chill.result == 'skipped') }}
+    needs: [workflow-security, changes, deploy-app]
+    if: ${{ always() && vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_redirects == 'true' && needs.workflow-security.result == 'success' && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -305,13 +305,13 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-summary:
-    needs: [changes, deploy-chill, deploy-redirects]
-    if: ${{ always() && (needs.deploy-chill.result != 'skipped' || needs.deploy-redirects.result != 'skipped') }}
+    needs: [changes, deploy-app, deploy-redirects]
+    if: ${{ always() && (needs.deploy-app.result != 'skipped' || needs.deploy-redirects.result != 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
         env:
-          CHILL_RESULT: ${{ needs.deploy-chill.result }}
+          APP_RESULT: ${{ needs.deploy-app.result }}
           REDIRECTS_RESULT: ${{ needs.deploy-redirects.result }}
         run: |
           chill_url="${CHILL_PRODUCTION_DOMAIN}"
@@ -321,12 +321,12 @@ jobs:
             echo "## Web deploy"
             echo
             echo "- Environment: \`production\`"
-            if [ "${CHILL_RESULT}" = "success" ]; then
-              echo "- Chill: [https://${chill_url}](https://${chill_url})"
-            elif [ "${CHILL_RESULT}" = "skipped" ]; then
-              echo "- Chill: skipped"
+            if [ "${APP_RESULT}" = "success" ]; then
+              echo "- App: [https://${chill_url}](https://${chill_url})"
+            elif [ "${APP_RESULT}" = "skipped" ]; then
+              echo "- App: skipped"
             else
-              echo "- Chill: ${CHILL_RESULT}"
+              echo "- App: ${APP_RESULT}"
             fi
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
               echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${chill_url}](https://${chill_url})"
