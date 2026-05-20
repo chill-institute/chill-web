@@ -79,6 +79,9 @@ type WorkersRouteArgs = {
   script: string;
   zoneId: string;
 };
+type ResourceOptions = {
+  dependsOn?: readonly unknown[];
+};
 
 declare const $app: { stage: string };
 declare const $config: (config: {
@@ -106,7 +109,7 @@ declare const cloudflare: {
   }): Promise<ZoneLookupResult>;
   ZoneSetting: new (name: string, args: ZoneSettingArgs) => unknown;
   WorkersScript: new (name: string, args: WorkersScriptArgs) => unknown;
-  WorkersRoute: new (name: string, args: WorkersRouteArgs) => unknown;
+  WorkersRoute: new (name: string, args: WorkersRouteArgs, opts?: ResourceOptions) => unknown;
 };
 
 function resolveSurface(): Surface {
@@ -191,7 +194,7 @@ async function configureBingeRedirects(stage: Stage) {
   );
   const scriptName = "chill-web-binge-redirect";
 
-  new cloudflare.WorkersScript("BingeRedirectWorker", {
+  const redirectWorker = new cloudflare.WorkersScript("BingeRedirectWorker", {
     accountId,
     compatibilityDate: "2026-05-19",
     scriptName,
@@ -208,11 +211,17 @@ addEventListener("fetch", (event) => {
   const routes: Record<string, string> = {};
   for (const domain of bingeRedirectDomains) {
     const name = domain.replace(/[^a-zA-Z0-9]/g, "");
-    new cloudflare.WorkersRoute(`BingeRedirect${name}`, {
-      zoneId,
-      pattern: `${domain}/*`,
-      script: scriptName,
-    });
+    new cloudflare.WorkersRoute(
+      `BingeRedirect${name}`,
+      {
+        zoneId,
+        pattern: `${domain}/*`,
+        script: scriptName,
+      },
+      {
+        dependsOn: [redirectWorker],
+      },
+    );
     routes[domain] = `https://${surfaces.chill.domain.production.name}`;
   }
 
