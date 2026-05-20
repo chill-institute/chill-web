@@ -24,6 +24,19 @@ const bingeRedirectDomains = [
   readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN"),
 ] as const;
 
+const redirectRouteGroups = [
+  {
+    zoneName: app.domain.production.name,
+    domains: [`www.${app.domain.production.name}`],
+    resourcePrefix: "ChillRedirect",
+  },
+  {
+    zoneName: readEnvironment("BINGE_PRODUCTION_DOMAIN"),
+    domains: bingeRedirectDomains,
+    resourcePrefix: "BingeRedirect",
+  },
+] as const;
+
 const zoneHardening = [
   {
     name: app.domain.production.name,
@@ -183,13 +196,12 @@ async function configureZoneHardening() {
   return outputs;
 }
 
-async function configureBingeRedirects(stage: Stage) {
+async function configureRedirects(stage: Stage) {
   if (stage !== "production") {
     return {};
   }
 
   const accountId = resolveAccountId();
-  const zoneId = await resolveZoneId(accountId, readEnvironment("BINGE_PRODUCTION_DOMAIN"));
   const scriptName = "chill-web-binge-redirect";
 
   const redirectWorker = new cloudflare.WorkersScript("BingeRedirectWorker", {
@@ -207,20 +219,24 @@ addEventListener("fetch", (event) => {
   });
 
   const routes: Record<string, string> = {};
-  for (const domain of bingeRedirectDomains) {
-    const name = domain.replace(/[^a-zA-Z0-9]/g, "");
-    new cloudflare.WorkersRoute(
-      `BingeRedirect${name}`,
-      {
-        zoneId,
-        pattern: `${domain}/*`,
-        script: scriptName,
-      },
-      {
-        dependsOn: [redirectWorker],
-      },
-    );
-    routes[domain] = `https://${app.domain.production.name}`;
+  for (const group of redirectRouteGroups) {
+    const zoneId = await resolveZoneId(accountId, group.zoneName);
+
+    for (const domain of group.domains) {
+      const name = domain.replace(/[^a-zA-Z0-9]/g, "");
+      new cloudflare.WorkersRoute(
+        `${group.resourcePrefix}${name}`,
+        {
+          zoneId,
+          pattern: `${domain}/*`,
+          script: scriptName,
+        },
+        {
+          dependsOn: [redirectWorker],
+        },
+      );
+      routes[domain] = `https://${app.domain.production.name}`;
+    }
   }
 
   return routes;
@@ -261,7 +277,7 @@ export default $config({
       };
     }
     if (target === "redirects") {
-      const redirects = await configureBingeRedirects(stage);
+      const redirects = await configureRedirects(stage);
 
       return {
         target,
