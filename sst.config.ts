@@ -7,18 +7,16 @@ function readEnvironment(name: string) {
   return value;
 }
 
-const surfaces = {
-  app: {
-    domain: {
-      staging: {
-        name: readEnvironment("CHILL_STAGING_DOMAIN"),
-      },
-      production: {
-        name: readEnvironment("CHILL_PRODUCTION_DOMAIN"),
-      },
+const app = {
+  domain: {
+    staging: {
+      name: readEnvironment("CHILL_STAGING_DOMAIN"),
     },
-    path: "dist",
+    production: {
+      name: readEnvironment("CHILL_PRODUCTION_DOMAIN"),
+    },
   },
+  path: "dist",
 } as const;
 
 const bingeRedirectDomains = [
@@ -28,7 +26,7 @@ const bingeRedirectDomains = [
 
 const zoneHardening = [
   {
-    name: surfaces.app.domain.production.name,
+    name: app.domain.production.name,
     prefix: "Chill",
   },
   {
@@ -50,8 +48,7 @@ const zoneSettings = [
   },
 ] as const;
 
-type AppSurface = keyof typeof surfaces;
-type Surface = AppSurface | "redirects" | "zones";
+type DeployTarget = "app" | "redirects" | "zones";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
@@ -116,10 +113,10 @@ declare const cloudflare: {
   WorkersRoute: new (name: string, args: WorkersRouteArgs, opts?: ResourceOptions) => unknown;
 };
 
-function resolveSurface(): Surface {
-  const surface = process.env.WEB_DEPLOY_TARGET;
-  if (surface === "app" || surface === "redirects" || surface === "zones") {
-    return surface;
+function resolveDeployTarget(): DeployTarget {
+  const target = process.env.WEB_DEPLOY_TARGET;
+  if (target === "app" || target === "redirects" || target === "zones") {
+    return target;
   }
 
   throw new Error("WEB_DEPLOY_TARGET must be set to app, redirects, or zones");
@@ -158,12 +155,12 @@ async function resolveZoneId(accountId: string, name: string) {
   return zone.id;
 }
 
-function resolveStaticSiteDomain(surface: AppSurface, stage: Stage): StaticSiteV2Args["domain"] {
+function resolveStaticSiteDomain(stage: Stage): StaticSiteV2Args["domain"] {
   if (stage === "staging") {
-    return surfaces[surface].domain.staging;
+    return app.domain.staging;
   }
 
-  return surfaces[surface].domain.production;
+  return app.domain.production;
 }
 
 async function configureZoneHardening() {
@@ -203,7 +200,7 @@ async function configureBingeRedirects(stage: Stage) {
 addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   url.protocol = "https:";
-  url.hostname = "${surfaces.app.domain.production.name}";
+  url.hostname = "${app.domain.production.name}";
   event.respondWith(Response.redirect(url.toString(), 301));
 });
 `.trim(),
@@ -223,7 +220,7 @@ addEventListener("fetch", (event) => {
         dependsOn: [redirectWorker],
       },
     );
-    routes[domain] = `https://${surfaces.app.domain.production.name}`;
+    routes[domain] = `https://${app.domain.production.name}`;
   }
 
   return routes;
@@ -231,17 +228,17 @@ addEventListener("fetch", (event) => {
 
 export default $config({
   app(input) {
-    const surface = resolveSurface();
+    const target = resolveDeployTarget();
     const stage = resolveStage(input.stage);
-    if (surface === "zones" && stage !== "staging") {
+    if (target === "zones" && stage !== "staging") {
       throw new Error("WEB_DEPLOY_TARGET=zones must use SST stage staging");
     }
-    if (surface === "redirects" && stage !== "production") {
+    if (target === "redirects" && stage !== "production") {
       throw new Error("WEB_DEPLOY_TARGET=redirects must use SST stage production");
     }
 
     return {
-      name: `chill-web-${surface === "app" ? "chill" : surface}`,
+      name: `chill-web-${target}`,
       home: "local",
       providers: {
         cloudflare: "6.15.0",
@@ -251,38 +248,36 @@ export default $config({
     };
   },
   async run() {
-    const surface = resolveSurface();
+    const target = resolveDeployTarget();
     const stage = resolveStage($app.stage);
 
-    if (surface === "zones") {
+    if (target === "zones") {
       const zones = await configureZoneHardening();
 
       return {
-        app: surface,
+        target,
         stage,
         zones,
       };
     }
-    if (surface === "redirects") {
+    if (target === "redirects") {
       const redirects = await configureBingeRedirects(stage);
 
       return {
-        app: surface,
+        target,
         stage,
         redirects,
       };
     }
 
-    const config = surfaces[surface];
-
     const site = new sst.cloudflare.StaticSiteV2("Web", {
-      path: config.path,
-      domain: resolveStaticSiteDomain(surface, stage),
+      path: app.path,
+      domain: resolveStaticSiteDomain(stage),
       notFound: "single-page-application",
     });
 
     return {
-      app: surface,
+      target,
       stage,
       url: site.url,
     };

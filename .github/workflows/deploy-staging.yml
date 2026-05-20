@@ -7,7 +7,7 @@ on:
         description: Same-repo branch or full commit SHA to deploy
         required: true
         type: string
-      app:
+      target:
         description: Deployment target
         required: true
         default: all
@@ -72,7 +72,7 @@ jobs:
       - name: Validate ref
         id: validate
         env:
-          APP: ${{ inputs.app }}
+          TARGET: ${{ inputs.target }}
           INPUT_REF: ${{ inputs.ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ github.token }}
@@ -119,7 +119,7 @@ jobs:
           fi
 
           default_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/${DEFAULT_BRANCH}" --jq '.object.sha')"
-          case "${APP}" in
+          case "${TARGET}" in
             all|zones)
               if [ "${ref}" != "${DEFAULT_BRANCH}" ] && [ "${sha}" != "${default_sha}" ]; then
                 echo "zone deploys must use ${DEFAULT_BRANCH}; got ${ref}" >&2
@@ -136,11 +136,11 @@ jobs:
       - name: Select deployment targets
         id: select
         env:
-          APP: ${{ inputs.app }}
+          TARGET: ${{ inputs.target }}
         run: |
           set -euo pipefail
 
-          case "${APP}" in
+          case "${TARGET}" in
             all)
               echo "app=true" >> "${GITHUB_OUTPUT}"
               echo "zones=true" >> "${GITHUB_OUTPUT}"
@@ -154,7 +154,7 @@ jobs:
               echo "zones=true" >> "${GITHUB_OUTPUT}"
               ;;
             *)
-              echo "unsupported app: ${APP}" >&2
+              echo "unsupported target: ${TARGET}" >&2
               exit 1
               ;;
           esac

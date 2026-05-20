@@ -8,7 +8,7 @@ on:
         required: true
         default: main
         type: string
-      app:
+      target:
         description: Deployment target
         required: true
         default: all
@@ -66,7 +66,7 @@ jobs:
       - name: Validate production ref
         id: validate
         env:
-          APP: ${{ inputs.app }}
+          TARGET: ${{ inputs.target }}
           BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
           INPUT_REF: ${{ inputs.ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -108,7 +108,7 @@ jobs:
 
   deploy-app:
     needs: [workflow-security, validate]
-    if: ${{ needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'app') }}
+    if: ${{ needs.workflow-security.result == 'success' && (inputs.target == 'all' || inputs.target == 'app') }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -170,7 +170,7 @@ jobs:
 
   deploy-redirects:
     needs: [workflow-security, validate, deploy-app]
-    if: ${{ always() && needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'redirects') && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
+    if: ${{ always() && needs.workflow-security.result == 'success' && (inputs.target == 'all' || inputs.target == 'redirects') && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -236,7 +236,7 @@ jobs:
         env:
           REF: ${{ inputs.ref }}
           SHA: ${{ needs.validate.outputs.sha }}
-          APP: ${{ inputs.app }}
+          TARGET: ${{ inputs.target }}
           BOOTSTRAP_STATE: ${{ inputs.bootstrap_state }}
           APP_RESULT: ${{ needs.deploy-app.result }}
           REDIRECTS_RESULT: ${{ needs.deploy-redirects.result }}
@@ -249,7 +249,7 @@ jobs:
             echo
             echo "- Ref: \`${REF}\`"
             echo "- SHA: \`${SHA}\`"
-            echo "- Requested app: \`${APP}\`"
+            echo "- Requested target: \`${TARGET}\`"
             echo "- Environment: \`production\`"
             echo "- Bootstrap state: \`${BOOTSTRAP_STATE}\`"
             if [ "${APP_RESULT}" = "success" ]; then
