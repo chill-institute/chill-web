@@ -48,7 +48,7 @@
 - Auth flow routes (sign-out, debug.crash, auth/success, auth/cli-token) live as `*RouteOptions` objects in `src/auth/route-options/*`. App route files should stay thin shims.
 - Keep Vite and hook/config changes minimal and intentional.
 - Keep `.vite-hooks/` as the canonical hook path; `.githooks/` exists only as a compatibility shim for stale local Git config.
-- CI verifies and deploys the chill app surface; docs-only, workflow-only, and e2e-only changes do not deploy the app surface.
+- CI verifies and deploys the app surface; docs-only, workflow-only, and e2e-only changes do not deploy it.
 
 ## Read More
 

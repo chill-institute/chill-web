@@ -58,8 +58,8 @@ vp config --hooks-dir .vite-hooks
 - Package versions live directly in `package.json`.
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
 - The app talks directly to the hosted API.
-- The root app serves `chill.institute`, `www.chill.institute`, and `staging.chill.institute`.
-- `binge.institute` and `www.binge.institute` redirect to `chill.institute`; there is no staging binge host.
+- The root app serves `chill.institute` and `staging.chill.institute`.
+- `www.chill.institute`, `binge.institute`, and `www.binge.institute` redirect to `chill.institute`; there is no staging binge host.
 - Localhost resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 - When generating or updating shadcn/base primitives, work from `./` so `components.json` resolves aliases correctly.

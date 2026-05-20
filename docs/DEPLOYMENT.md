@@ -9,6 +9,7 @@ Public deployment overview for `chill-web`
 - `https://chill.institute` for search, movies, and TV shows
 - `https://www.chill.institute` redirects to `https://chill.institute`
 - `https://binge.institute` redirects to `https://chill.institute`
+- `https://www.binge.institute` redirects to `https://chill.institute`
 
 The app calls the shared API at `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` is set for a local override.
 
@@ -31,7 +32,7 @@ Build output:
 - `Verify` runs root app checks
 - Pushes to `main` run `Main`
 - `Main` verifies, runs e2e, deploys the production web surface, and deploys the production redirect worker
-- Manual deploy workflows are maintainer-only fallbacks for staging, production web, or production redirect reruns
+- Manual deploy workflows are maintainer-only fallbacks for staging, production app, or production redirect reruns
 - PRs do not create public preview deployments
 
 ## Verification

@@ -100,5 +100,5 @@ Build output is `dist/`.
 Production hosting shape:
 
 - static assets on SST-managed Cloudflare Workers
-- `www.chill.institute` and `binge.institute` production domains handled by a redirect worker
+- `www.chill.institute`, `binge.institute`, and `www.binge.institute` handled by a production redirect worker
 - API on a separate `api.chill.institute` origin
