@@ -79,7 +79,7 @@ test.describe("tv shows home", () => {
 
     await expect(authenticatedPage.getByText("Aurora Protocol")).toBeVisible();
 
-    await authenticatedPage.getByRole("tab", { name: "tv shows" }).click();
+    await authenticatedPage.getByRole("link", { name: "tv shows" }).click();
 
     await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible();
     await expect(authenticatedPage.getByText("Aurora Protocol")).toBeHidden();
@@ -131,7 +131,7 @@ test.describe("tv shows home", () => {
     });
 
     await authenticatedPage.goto("/movies");
-    await authenticatedPage.getByRole("tab", { name: "tv shows" }).click();
+    await authenticatedPage.getByRole("link", { name: "tv shows" }).click();
 
     await expect(authenticatedPage.getByText("Velvet Terminal")).toBeVisible();
 
@@ -206,7 +206,7 @@ test.describe("tv shows home", () => {
     );
 
     await authenticatedPage.goto("/movies");
-    await authenticatedPage.getByRole("tab", { name: "tv shows" }).click();
+    await authenticatedPage.getByRole("link", { name: "tv shows" }).click();
 
     await authenticatedPage
       .locator('[data-slot="poster-card"]')

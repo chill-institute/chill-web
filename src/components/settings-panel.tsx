@@ -391,12 +391,12 @@ export function SettingsPanel() {
 
   const persistPatch = (patch: Partial<ChillSettings>) => {
     if (!configQuery.data) return;
-    saveMutation.mutate(applyChillSettingsPatch(configQuery.data, patch));
+    saveMutation.mutate((settings) => applyChillSettingsPatch(settings, patch));
   };
 
   const resetSettings = () => {
     if (!configQuery.data) return;
-    saveMutation.mutate(resetChillSettings(configQuery.data));
+    saveMutation.mutate(resetChillSettings);
   };
 
   if (!auth.isAuthenticated) {

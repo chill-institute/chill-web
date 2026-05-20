@@ -6,8 +6,9 @@ import {
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
+import type { ChillApi } from "@/api/api";
 import { createApi } from "@/lib/api";
-import { toCatalogAppSettings, type UserSettings } from "@/catalog/lib/types";
+import { toCatalogAppSettings, type Movie, type UserSettings } from "@/catalog/lib/types";
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
@@ -90,5 +91,65 @@ export function settingsQueryOptions(token: string) {
     },
     staleTime: FIVE_MINUTES,
     placeholderData: readCachedSettings(),
+  });
+}
+
+export function moviesQueryOptions(api: ChillApi, source: number | undefined) {
+  return queryOptions({
+    queryKey: ["movies", source],
+    queryFn: ({ signal }) => api.getMovies(signal),
+    staleTime: FIVE_MINUTES,
+    enabled: source !== undefined,
+  });
+}
+
+export function movieSearchQueryOptions(api: ChillApi, movie: Movie) {
+  const query = [movie.title, movie.year].filter(Boolean).join(" ").trim();
+
+  return queryOptions({
+    queryKey: ["movie-search", movie.id, query],
+    queryFn: ({ signal }) => api.search(query, undefined, signal),
+    staleTime: 60 * 1000,
+    enabled: query.length > 0,
+  });
+}
+
+export function tvShowsQueryOptions(api: ChillApi, source: number | undefined) {
+  return queryOptions({
+    queryKey: ["tv-shows", source],
+    queryFn: ({ signal }) => api.getTVShows(signal),
+    staleTime: FIVE_MINUTES,
+    enabled: source !== undefined,
+  });
+}
+
+export function tvShowDetailQueryOptions(api: ChillApi, imdbId: string) {
+  return queryOptions({
+    queryKey: ["tv-show-detail", imdbId],
+    queryFn: ({ signal }) => api.getTVShowDetail(imdbId, signal),
+    staleTime: FIVE_MINUTES,
+    enabled: imdbId.trim().length > 0,
+  });
+}
+
+export function tvShowSeasonQueryOptions(api: ChillApi, imdbId: string, seasonNumber: number) {
+  return queryOptions({
+    queryKey: ["tv-show-season", imdbId, seasonNumber],
+    queryFn: ({ signal }) => api.getTVShowSeason(imdbId, seasonNumber, signal),
+    staleTime: FIVE_MINUTES,
+    enabled: imdbId.trim().length > 0 && seasonNumber > 0,
+  });
+}
+
+export function tvShowSeasonDownloadsQueryOptions(
+  api: ChillApi,
+  imdbId: string,
+  seasonNumber: number,
+) {
+  return queryOptions({
+    queryKey: ["tv-show-season-downloads", imdbId, seasonNumber],
+    queryFn: ({ signal }) => api.getTVShowSeasonDownloads(imdbId, seasonNumber, signal),
+    staleTime: FIVE_MINUTES,
+    enabled: imdbId.trim().length > 0 && seasonNumber > 0,
   });
 }

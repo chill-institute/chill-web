@@ -54,7 +54,7 @@ function SearchPage() {
 
   function patchConfig(patch: Partial<ChillSettings>) {
     if (!configQuery.data) return;
-    saveConfigMutation.mutate(applyChillSettingsPatch(configQuery.data, patch));
+    saveConfigMutation.mutate((settings) => applyChillSettingsPatch(settings, patch));
   }
 
   const enabledIndexers = useMemo(() => {

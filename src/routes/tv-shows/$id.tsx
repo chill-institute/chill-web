@@ -39,12 +39,16 @@ export const Route = createFileRoute("/tv-shows/$id")({
 
 function TVShowDetailRoute() {
   const { id } = Route.useParams();
-  const { season } = Route.useSearch();
+  const { season, source } = Route.useSearch();
   const navigate = useNavigate();
 
   const configQuery = useSettingsQuery();
+  const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
+  const activeSource = source ?? appSettings?.tvShowsSource;
+  const sourceReady = source === undefined || appSettings?.tvShowsSource === source;
   const tvShowsQuery = useTVShowsQuery({
-    enabled: configQuery.status === "success",
+    enabled: configQuery.status === "success" && sourceReady,
+    source: activeSource,
   });
 
   const close = () => void navigate({ to: "/tv-shows", search: (prev) => prev });
@@ -59,7 +63,7 @@ function TVShowDetailRoute() {
   const fallbackShow =
     configQuery.status === "success" &&
     tvShowsQuery.status === "success" &&
-    tvShowsQuery.data.source === toCatalogAppSettings(configQuery.data).tvShowsSource
+    tvShowsQuery.data.source === activeSource
       ? tvShowsQuery.data.shows.find((show) => show.imdbId === id)
       : undefined;
 

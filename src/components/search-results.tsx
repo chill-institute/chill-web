@@ -3,6 +3,7 @@ import type { ReleaseInfo } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { CopyButton } from "@/ui/components/copy-button";
+import { useMediaQuery } from "@/ui/hooks/use-is-desktop";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { effectiveInfo } from "@/lib/release-info";
@@ -24,6 +25,8 @@ const columns = [
   { key: SortBy.SEEDERS, label: "seeders", align: "center" as const },
   { key: SortBy.UPLOADED_AT, label: "age", align: "center" as const },
 ];
+
+const LARGE_RESULTS_QUERY = "(min-width: 1024px)";
 
 function MetaLine({ info }: { info: ReleaseInfo }) {
   const parts = [
@@ -84,9 +87,11 @@ function TitleCell({
 }
 
 export function SearchResults({ results, sortBy, sortDirection, titleBehavior, onSort }: Props) {
-  return (
-    <>
-      <div className="mx-auto hidden w-full max-w-7xl lg:block">
+  const isLargeLayout = useMediaQuery(LARGE_RESULTS_QUERY);
+
+  if (isLargeLayout) {
+    return (
+      <div className="mx-auto w-full max-w-7xl">
         <table className="w-full min-w-full border-collapse">
           <thead className="border-border-strong border-b">
             <tr>
@@ -181,36 +186,38 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
           </tbody>
         </table>
       </div>
+    );
+  }
 
-      <ul className="m-0 list-none p-0 lg:hidden" aria-label="Search results">
-        {results.map((result) => {
-          return (
-            <li
-              key={result.id}
-              className="border-border-strong bg-surface mb-4 overflow-hidden rounded border"
-            >
-              <div className="px-6 py-5">
-                <TitleCell result={result} titleBehavior={titleBehavior} />
+  return (
+    <ul className="m-0 list-none p-0 lg:hidden" aria-label="Search results">
+      {results.map((result) => {
+        return (
+          <li
+            key={result.id}
+            className="border-border-strong bg-surface mb-4 overflow-hidden rounded border"
+          >
+            <div className="px-6 py-5">
+              <TitleCell result={result} titleBehavior={titleBehavior} />
 
-                <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 font-mono text-xs">
-                  <span className="text-fg-1">{result.source}</span>
-                  <span className="text-fg-4">·</span>
-                  <span className="tabular-nums">{formatBytes(result.size)}</span>
-                  <span className="text-fg-4">·</span>
-                  <span className="tabular-nums">{result.seeders} seeders</span>
-                  <span className="text-fg-4">·</span>
-                  <span className="tabular-nums">{formatAge(result.uploadedAt)}</span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <CopyButton value={result.link} />
-                  <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
-                </div>
+              <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 font-mono text-xs">
+                <span className="text-fg-1">{result.source}</span>
+                <span className="text-fg-4">·</span>
+                <span className="tabular-nums">{formatBytes(result.size)}</span>
+                <span className="text-fg-4">·</span>
+                <span className="tabular-nums">{result.seeders} seeders</span>
+                <span className="text-fg-4">·</span>
+                <span className="tabular-nums">{formatAge(result.uploadedAt)}</span>
               </div>
-            </li>
-          );
-        })}
-      </ul>
-    </>
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CopyButton value={result.link} />
+                <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

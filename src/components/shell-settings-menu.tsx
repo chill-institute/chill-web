@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Settings } from "lucide-react";
 
 import { SettingsPanel } from "@/components/settings-panel";
+import { IconButton } from "@/ui/components/icon-button";
 import { SettingsModal } from "@/ui/components/settings-modal";
 
 export function ShellSettingsMenu() {
@@ -9,14 +10,13 @@ export function ShellSettingsMenu() {
 
   return (
     <>
-      <button
-        type="button"
+      <IconButton
         onClick={() => setOpen(true)}
         aria-label="settings"
-        className="text-fg-3 hover-hover:hover:text-fg-1 hover-hover:hover:bg-hover focus-visible:ring-ring-focus focus-visible:ring-offset-surface inline-flex size-7 cursor-pointer items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        className="focus-visible:ring-offset-surface"
       >
-        <Settings className="size-3.5 shrink-0" aria-hidden="true" />
-      </button>
+        <Settings aria-hidden="true" />
+      </IconButton>
       <SettingsModal
         open={open}
         onOpenChange={setOpen}

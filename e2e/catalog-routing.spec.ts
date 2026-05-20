@@ -6,6 +6,13 @@ import {
   searchResponse,
   searchResult,
   tvShow,
+  tvShowDetail,
+  tvShowDetailResponse,
+  tvShowDownload,
+  tvShowEpisode,
+  tvShowSeason,
+  tvShowSeasonDownloadsResponse,
+  tvShowSeasonResponse,
   tvShowsResponse,
   tvShowsResponseForSource,
   userSettings,
@@ -71,9 +78,9 @@ test.describe("catalog routing", () => {
     await authenticatedPage.goto("/");
 
     expect(new URL(authenticatedPage.url()).pathname).toBe("/");
-    await expect(authenticatedPage.getByRole("tab", { name: "search" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    await expect(authenticatedPage.getByRole("link", { name: "search" })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
     await expect(authenticatedPage.getByText("Welcome to The Institute")).toBeVisible();
   });
@@ -86,9 +93,9 @@ test.describe("catalog routing", () => {
     });
 
     await authenticatedPage.goto("/tv-shows");
-    await expect(authenticatedPage.getByRole("tab", { name: "tv shows" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    await expect(authenticatedPage.getByRole("link", { name: "tv shows" })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
   });
 
@@ -145,6 +152,8 @@ test.describe("catalog routing", () => {
     mockRpc,
   }) => {
     let currentSource: MoviesSource = MoviesSource.IMDB_MOVIEMETER;
+    let saveCalls = 0;
+    let releaseFirstSave: (() => void) | undefined;
 
     await mockRpc({
       GetUserSettings: userSettings({
@@ -167,12 +176,18 @@ test.describe("catalog routing", () => {
     });
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCalls += 1;
       const body = route.request().postDataJSON() as {
         settings?: { catalog?: { moviesSource?: string | number } };
       };
       const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
       if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
         currentSource = MoviesSource.YTS;
+      }
+      if (saveCalls === 1) {
+        await new Promise<void>((resolve) => {
+          releaseFirstSave = resolve;
+        });
       }
       await route.fulfill({
         status: 200,
@@ -183,8 +198,12 @@ test.describe("catalog routing", () => {
 
     await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
 
+    await expect.poll(() => saveCalls).toBe(1);
+    releaseFirstSave?.();
     await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 3000 });
     await expect(authenticatedPage.getByText("Aurora Protocol")).toBeHidden();
+    await authenticatedPage.waitForTimeout(250);
+    expect(saveCalls).toBe(1);
   });
 
   test("deep linked movie source waits for real settings before saving", async ({
@@ -307,6 +326,55 @@ test.describe("catalog routing", () => {
     ).toBeVisible();
   });
 
+  test("movie detail source param waits for source-specific settings", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource: MoviesSource = MoviesSource.IMDB_MOVIEMETER;
+
+    await mockRpc({
+      GetUserSettings: userSettings({
+        moviesSource: MoviesSource.IMDB_MOVIEMETER,
+      }),
+      GetMovies: moviesResponseForSource(MoviesSource.IMDB_MOVIEMETER, [aurora]),
+      GetTVShows: tvShowsResponse([]),
+      Search: searchResponse("Night Courier 2011", auroraSearchResults),
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetMovies", async (route) => {
+      const response =
+        currentSource === MoviesSource.YTS
+          ? moviesResponseForSource(MoviesSource.YTS, [nightCourier])
+          : moviesResponseForSource(MoviesSource.IMDB_MOVIEMETER, [aurora]);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: { catalog?: { moviesSource?: string | number } };
+      };
+      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
+      if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
+        currentSource = MoviesSource.YTS;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({ moviesSource: currentSource })),
+      });
+    });
+
+    await authenticatedPage.goto(`/movies/${nightCourier.id}?source=${MoviesSource.YTS}`);
+
+    await expect(
+      authenticatedPage.getByRole("dialog", { name: /Night Courier details/i }),
+    ).toBeVisible({ timeout: 3000 });
+  });
+
   test("closing the modal pops back to /movies and keeps catalog visible", async ({
     authenticatedPage,
     mockRpc,
@@ -347,5 +415,84 @@ test.describe("catalog routing", () => {
     const url = new URL(authenticatedPage.url());
     expect(url.searchParams.get("source")).toBe(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
     expect(url.searchParams.get("season")).toBe("1");
+  });
+
+  test("tv detail source param waits for source-specific settings", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource = TVShowsSource.TV_SHOWS_SOURCE_NETFLIX;
+    const season = tvShowSeason({ seasonNumber: 1, name: "Season 1", episodeCount: 1 });
+    const episodes = [tvShowEpisode({ seasonNumber: 1, episodeNumber: 1, name: "Pilot" })];
+
+    await mockRpc({
+      GetUserSettings: userSettings({
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+      }),
+      GetMovies: moviesResponse([]),
+      GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, []),
+      GetTVShowDetail: tvShowDetailResponse(
+        tvShowDetail({
+          imdbId: harborWard.imdbId,
+          title: harborWard.title,
+          networks: harborWard.networks,
+        }),
+        [season],
+      ),
+      GetTVShowSeason: tvShowSeasonResponse(harborWard.imdbId, 1, season, episodes),
+      GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, [
+        {
+          episodeNumber: 1,
+          download: tvShowDownload({
+            title: "Harbor.Ward.S01E01.1080p.WEBRip.x265-GROUP",
+            seasonNumber: 1,
+            episodeNumber: 1,
+          }),
+          searchQuery: "Harbor Ward S01E01",
+        },
+      ]),
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
+      const response =
+        currentSource === TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX
+          ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, [harborWard])
+          : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, []);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as {
+        settings?: { catalog?: { tvShowsSource?: string | number } };
+      };
+      const nextSource = String(body.settings?.catalog?.tvShowsSource ?? "");
+      if (
+        nextSource.includes("HBO") ||
+        nextSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX)
+      ) {
+        currentSource = TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({ tvShowsSource: currentSource })),
+      });
+    });
+
+    await authenticatedPage.goto(
+      `/tv-shows/${harborWard.imdbId}?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}&season=1`,
+    );
+    await expect(authenticatedPage.getByRole("dialog", { name: "Harbor Ward" })).toBeVisible({
+      timeout: 3000,
+    });
+    await expect(authenticatedPage.getByText("Pilot")).toBeVisible();
+
+    await authenticatedPage.goto(`/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`);
+
+    await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible({ timeout: 3000 });
   });
 });

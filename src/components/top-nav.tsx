@@ -1,9 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { Film, Search, Tv } from "lucide-react";
 
-import { Tabs, TabsList, TabsTrigger } from "@/ui/components/ui/tabs";
+import { cn } from "@/ui/lib/cn";
+import { tabItemBaseClass, tabsContainerClass } from "@/ui/components/tabs";
 
 export type InstituteSection = "search" | "movies" | "tv-shows";
+
+const sections = [
+  { id: "search", label: "search", to: "/", icon: Search },
+  { id: "movies", label: "movies", to: "/movies", icon: Film },
+  { id: "tv-shows", label: "tv shows", to: "/tv-shows", icon: Tv },
+] as const;
 
 export function InstituteBrand() {
   return (
@@ -24,36 +31,26 @@ export function InstituteBrand() {
 
 export function InstituteTabs({ active }: { active: InstituteSection }) {
   return (
-    <Tabs value={active} className="min-w-0">
-      <TabsList className="justify-center">
-        <TabsTrigger
-          value="search"
-          className="h-9 px-2 text-sm sm:h-7 sm:px-2.5"
-          nativeButton={false}
-          render={<Link to="/" />}
-        >
-          <Search aria-hidden="true" />
-          search
-        </TabsTrigger>
-        <TabsTrigger
-          value="movies"
-          className="h-9 px-2 text-sm sm:h-7 sm:px-2.5"
-          nativeButton={false}
-          render={<Link to="/movies" search={{ source: undefined }} />}
-        >
-          <Film aria-hidden="true" />
-          movies
-        </TabsTrigger>
-        <TabsTrigger
-          value="tv-shows"
-          className="h-9 px-2 text-sm sm:h-7 sm:px-2.5"
-          nativeButton={false}
-          render={<Link to="/tv-shows" search={{ source: undefined }} />}
-        >
-          <Tv aria-hidden="true" />
-          tv shows
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+    <nav aria-label="Primary" className={cn(tabsContainerClass, "min-w-0 justify-center")}>
+      {sections.map(({ id, label, to, icon: Icon }) => {
+        const selected = active === id;
+        return (
+          <Link
+            key={id}
+            to={to}
+            search={id === "search" ? undefined : { source: undefined }}
+            aria-current={selected ? "page" : undefined}
+            className={cn(
+              tabItemBaseClass,
+              "h-9 px-2 text-sm sm:h-7 sm:px-2.5",
+              selected && "bg-hover text-fg-1 hover-hover:hover:bg-hover",
+            )}
+          >
+            <Icon aria-hidden="true" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

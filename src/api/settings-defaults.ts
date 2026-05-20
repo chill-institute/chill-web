@@ -5,9 +5,12 @@ import {
   MoviesSource,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
+  type SearchSettings,
   SearchSettingsSchema,
   SortBy,
   SortDirection,
+  type CatalogSettings,
+  type DownloadSettings,
   TVShowsSource,
   type UserSettings,
   UserSettingsSchema,
@@ -80,4 +83,93 @@ export function withUserSettingsDefaults(settings: UserSettings): UserSettings {
       withSearch.download?.folderId === undefined ? {} : { folderId: withSearch.download.folderId },
     ),
   });
+}
+
+function mergeSaveSearchResponse(
+  fallback: SearchSettings | undefined,
+  response: SearchSettings | undefined,
+): SearchSettings | undefined {
+  if (!response) return fallback;
+  return create(SearchSettingsSchema, {
+    codecFilters: response.codecFilters.length > 0 ? response.codecFilters : fallback?.codecFilters,
+    disabledIndexerIds:
+      response.disabledIndexerIds.length > 0
+        ? response.disabledIndexerIds
+        : fallback?.disabledIndexerIds,
+    filterNastyResults: response.filterNastyResults || fallback?.filterNastyResults,
+    filterResultsWithNoSeeders:
+      response.filterResultsWithNoSeeders || fallback?.filterResultsWithNoSeeders,
+    otherFilters: response.otherFilters.length > 0 ? response.otherFilters : fallback?.otherFilters,
+    rememberQuickFilters: response.rememberQuickFilters || fallback?.rememberQuickFilters,
+    resolutionFilters:
+      response.resolutionFilters.length > 0
+        ? response.resolutionFilters
+        : fallback?.resolutionFilters,
+    searchResultDisplayBehavior:
+      response.searchResultDisplayBehavior === SearchResultDisplayBehavior.UNSPECIFIED
+        ? fallback?.searchResultDisplayBehavior
+        : response.searchResultDisplayBehavior,
+    searchResultTitleBehavior:
+      response.searchResultTitleBehavior === SearchResultTitleBehavior.UNSPECIFIED
+        ? fallback?.searchResultTitleBehavior
+        : response.searchResultTitleBehavior,
+    sortBy: response.sortBy === SortBy.UNSPECIFIED ? fallback?.sortBy : response.sortBy,
+    sortDirection:
+      response.sortDirection === SortDirection.UNSPECIFIED
+        ? fallback?.sortDirection
+        : response.sortDirection,
+  });
+}
+
+function mergeSaveCatalogResponse(
+  fallback: CatalogSettings | undefined,
+  response: CatalogSettings | undefined,
+): CatalogSettings | undefined {
+  if (!response) return fallback;
+  return create(CatalogSettingsSchema, {
+    moviesSource:
+      response.moviesSource === MoviesSource.UNSPECIFIED
+        ? fallback?.moviesSource
+        : response.moviesSource,
+    tvShowsSource:
+      response.tvShowsSource === TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED
+        ? fallback?.tvShowsSource
+        : response.tvShowsSource,
+  });
+}
+
+function mergeSaveDownloadResponse(
+  fallback: DownloadSettings | undefined,
+  response: DownloadSettings | undefined,
+): DownloadSettings | undefined {
+  if (!response) return fallback;
+  return create(DownloadSettingsSchema, {
+    folderId: response.folderId ?? fallback?.folderId,
+  });
+}
+
+export function withSaveUserSettingsResponseDefaults({
+  fallback,
+  response,
+}: {
+  fallback: UserSettings;
+  response: UserSettings;
+}): UserSettings {
+  const fallbackWithDefaults = withUserSettingsDefaults(fallback);
+  const returnedSettings =
+    response.search !== undefined ||
+    response.catalog !== undefined ||
+    response.download !== undefined;
+  if (!returnedSettings) {
+    return fallbackWithDefaults;
+  }
+
+  return withUserSettingsDefaults(
+    create(UserSettingsSchema, {
+      ...fallbackWithDefaults,
+      search: mergeSaveSearchResponse(fallbackWithDefaults.search, response.search),
+      catalog: mergeSaveCatalogResponse(fallbackWithDefaults.catalog, response.catalog),
+      download: mergeSaveDownloadResponse(fallbackWithDefaults.download, response.download),
+    }),
+  );
 }

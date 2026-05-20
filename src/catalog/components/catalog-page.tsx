@@ -45,6 +45,10 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
+  const effectiveMoviesSource =
+    tab === "movies" && source !== undefined ? source : appSettings?.moviesSource;
+  const effectiveTVShowsSource =
+    tab === "tv-shows" && source !== undefined ? source : appSettings?.tvShowsSource;
 
   const isSourceParamOutOfSync =
     configQuery.status === "success" &&
@@ -56,8 +60,14 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
     !configQuery.isFetching &&
     !isSourceParamOutOfSync &&
     !saveConfigMutation.isPending;
-  const moviesQuery = useMoviesQuery({ enabled: shouldFetchCatalog });
-  const tvShowsQuery = useTVShowsQuery({ enabled: shouldFetchCatalog });
+  const moviesQuery = useMoviesQuery({
+    enabled: shouldFetchCatalog && tab === "movies",
+    source: effectiveMoviesSource,
+  });
+  const tvShowsQuery = useTVShowsQuery({
+    enabled: shouldFetchCatalog && tab === "tv-shows",
+    source: effectiveTVShowsSource,
+  });
 
   useEffect(() => {
     writeLastTab(tab);
@@ -67,19 +77,20 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
     if (
       configQuery.status !== "success" ||
       configQuery.isFetching ||
+      saveConfigMutation.isPending ||
       source === undefined ||
       !isSourceParamOutOfSync
     ) {
       return;
     }
     if (tab === "movies") {
-      saveConfigMutation.flush(
-        applyCatalogAppSettingsPatch(configQuery.data, { moviesSource: source }),
+      saveConfigMutation.flush((settings) =>
+        applyCatalogAppSettingsPatch(settings, { moviesSource: source }),
       );
       return;
     }
-    saveConfigMutation.flush(
-      applyCatalogAppSettingsPatch(configQuery.data, { tvShowsSource: source }),
+    saveConfigMutation.flush((settings) =>
+      applyCatalogAppSettingsPatch(settings, { tvShowsSource: source }),
     );
   }, [
     configQuery.data,
@@ -87,13 +98,14 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
     configQuery.status,
     isSourceParamOutOfSync,
     saveConfigMutation,
+    saveConfigMutation.isPending,
     source,
     tab,
   ]);
 
   function patchConfig(patch: Partial<CatalogAppSettings>) {
     if (!configQuery.data) return;
-    saveConfigMutation.mutate(applyCatalogAppSettingsPatch(configQuery.data, patch));
+    saveConfigMutation.mutate((settings) => applyCatalogAppSettingsPatch(settings, patch));
   }
 
   if (!auth.isAuthenticated) {
@@ -116,15 +128,13 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
     ))
     .with({ status: "success" }, (query) => {
       const config = toCatalogAppSettings(query.data);
-      const effectiveMoviesSource =
-        tab === "movies" && source !== undefined ? source : config.moviesSource;
-      const effectiveTVShowsSource =
-        tab === "tv-shows" && source !== undefined ? source : config.tvShowsSource;
+      const selectedMoviesSource = effectiveMoviesSource ?? config.moviesSource;
+      const selectedTVShowsSource = effectiveTVShowsSource ?? config.tvShowsSource;
 
       const sourceSelector =
         tab === "movies" ? (
           <MoviesSourceSelect
-            value={effectiveMoviesSource}
+            value={selectedMoviesSource}
             onChange={(moviesSource) => {
               patchConfig({ moviesSource });
               void navigate({
@@ -136,7 +146,7 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
           />
         ) : (
           <TVShowsSourceSelect
-            value={effectiveTVShowsSource}
+            value={selectedTVShowsSource}
             onChange={(tvShowsSource) => {
               patchConfig({ tvShowsSource });
               void navigate({
@@ -148,38 +158,39 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
           />
         );
 
-      const activeContent =
-        tab === "movies" ? (
-          <MoviesContent
-            query={moviesQuery}
-            source={effectiveMoviesSource}
-            onPickAnotherSource={() => {
-              const next = cycleSource(moviesSources, effectiveMoviesSource);
-              if (next === undefined) return;
-              patchConfig({ moviesSource: next });
-              void navigate({
-                to: "/movies",
-                search: (prev) => ({ ...prev, source: next }),
-                replace: true,
-              });
-            }}
-          />
-        ) : (
-          <TVShowsContent
-            query={tvShowsQuery}
-            source={effectiveTVShowsSource}
-            onPickAnotherSource={() => {
-              const next = cycleSource(tvShowsSources, effectiveTVShowsSource);
-              if (next === undefined) return;
-              patchConfig({ tvShowsSource: next });
-              void navigate({
-                to: "/tv-shows",
-                search: (prev) => ({ ...prev, source: next }),
-                replace: true,
-              });
-            }}
-          />
-        );
+      const activeContent = !shouldFetchCatalog ? (
+        <PosterGridSkeleton />
+      ) : tab === "movies" ? (
+        <MoviesContent
+          query={moviesQuery}
+          source={selectedMoviesSource}
+          onPickAnotherSource={() => {
+            const next = cycleSource(moviesSources, selectedMoviesSource);
+            if (next === undefined) return;
+            patchConfig({ moviesSource: next });
+            void navigate({
+              to: "/movies",
+              search: (prev) => ({ ...prev, source: next }),
+              replace: true,
+            });
+          }}
+        />
+      ) : (
+        <TVShowsContent
+          query={tvShowsQuery}
+          source={selectedTVShowsSource}
+          onPickAnotherSource={() => {
+            const next = cycleSource(tvShowsSources, selectedTVShowsSource);
+            if (next === undefined) return;
+            patchConfig({ tvShowsSource: next });
+            void navigate({
+              to: "/tv-shows",
+              search: (prev) => ({ ...prev, source: next }),
+              replace: true,
+            });
+          }}
+        />
+      );
 
       return (
         <HomeShell tab={tab}>

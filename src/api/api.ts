@@ -18,7 +18,10 @@ import {
 
 import { redirectToSignInOnAuthFailure } from "./auth-failure";
 import { withTimeoutSignal } from "./request-timeout";
-import { withUserSettingsDefaults } from "./settings-defaults";
+import {
+  withSaveUserSettingsResponseDefaults,
+  withUserSettingsDefaults,
+} from "./settings-defaults";
 
 const REQUEST_TIMEOUT_MS = 8000;
 const SEARCH_TIMEOUT_MS = 10000;
@@ -116,7 +119,8 @@ export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOp
       const response = await call("Save settings request", (s) =>
         userClient.saveUserSettings({ settings }, { headers, signal: s }),
       );
-      return applySettingsDefaults(response);
+      const withDefaults = withSaveUserSettingsResponseDefaults({ fallback: settings, response });
+      return normalizeSettings ? normalizeSettings(withDefaults) : withDefaults;
     },
 
     addTransfer: (url: string): Promise<AddTransferResponse> =>

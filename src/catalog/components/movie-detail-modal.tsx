@@ -13,10 +13,10 @@ import { Separator } from "@/ui/components/ui/separator";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { cn } from "@/ui/lib/cn";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
-import { useImageLoadedState } from "@/ui/hooks/use-image-loaded-state";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
+import { DetailBackdropImage, DetailPosterImage } from "@/catalog/components/detail-media";
 
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
@@ -168,56 +168,6 @@ function FilterSelect<T extends string>({
   );
 }
 
-function BackdropImage({ url }: { url?: string }) {
-  const img = useImageLoadedState();
-  if (!url) return <div className="absolute inset-0 bg-app" />;
-  return (
-    <>
-      <Skeleton
-        className={cn(
-          "absolute inset-0 h-full w-full rounded-none transition-opacity duration-base ease-out",
-          img.loaded ? "opacity-0" : "opacity-100",
-        )}
-      />
-      <img
-        ref={img.ref}
-        src={url}
-        alt=""
-        aria-hidden="true"
-        onLoad={img.onLoad}
-        className={cn(
-          "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-slow ease-out",
-          img.loaded ? "opacity-100" : "opacity-0",
-        )}
-      />
-    </>
-  );
-}
-
-function PosterImage({ url, alt }: { url: string; alt: string }) {
-  const img = useImageLoadedState();
-  return (
-    <div className="relative aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]">
-      <Skeleton
-        className={cn(
-          "absolute inset-0 h-full w-full rounded transition-opacity duration-base ease-out",
-          img.loaded ? "opacity-0" : "opacity-100",
-        )}
-      />
-      <img
-        ref={img.ref}
-        src={url}
-        alt={alt}
-        onLoad={img.onLoad}
-        className={cn(
-          "absolute inset-0 h-full w-full border-border-strong rounded border object-cover shadow-poster transition-opacity duration-slow ease-out",
-          img.loaded ? "opacity-100" : "opacity-0",
-        )}
-      />
-    </div>
-  );
-}
-
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   return (
     <div className="text-fg-1 max-w-[560px]">
@@ -365,13 +315,13 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   return (
     <div className={shellClassName}>
       <div className="relative flex h-[240px] shrink-0 items-end overflow-hidden sm:h-[280px]">
-        <BackdropImage key={movie.backdropUrl ?? "no-backdrop"} url={movie.backdropUrl} />
+        <DetailBackdropImage key={movie.backdropUrl ?? "no-backdrop"} url={movie.backdropUrl} />
         <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
         <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
         <div className="relative z-10 flex w-full items-end gap-4 px-4 pb-5 sm:gap-5 sm:px-7 sm:pb-6">
           {movie.posterUrl ? (
-            <PosterImage key={movie.posterUrl} url={movie.posterUrl} alt={movie.title} />
+            <DetailPosterImage key={movie.posterUrl} url={movie.posterUrl} alt={movie.title} />
           ) : (
             <Skeleton className="aspect-[2/3] w-[110px] shrink-0 rounded" />
           )}

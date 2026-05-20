@@ -1,14 +1,23 @@
-import { useEffect, useRef } from "react";
 import { create } from "@bufbuild/protobuf";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { useApi } from "@/auth/api-context";
 import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
-import { toChillSettings, type UserSettings } from "@/lib/types";
+import type { UserSettings } from "@/lib/types";
 import { readCachedSettings, writeCachedSettings } from "@/queries/options";
-
-const SAVE_DEBOUNCE_MS = 500;
+import {
+  applySettingsUpdate,
+  cacheSavedSettings,
+  downloadFolderChanged,
+  prepareSettingsSave,
+  settingsSaveIsCurrent,
+  stagedSettingsForSave,
+  USER_SETTINGS_MUTATION_SCOPE,
+  USER_SETTINGS_QUERY_KEY,
+  type SettingsSaveContext,
+  type SettingsUpdate,
+} from "@/queries/settings-mutation";
 
 export function hasCompleteSettingsDomains(settings: UserSettings) {
   return (
@@ -45,76 +54,38 @@ export function useSettingsQuery() {
 export function useSaveSettings() {
   const api = useApi();
   const queryClient = useQueryClient();
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const pendingRef = useRef<UserSettings | null>(null);
-  const previousRef = useRef<UserSettings | null>(null);
 
-  async function settingsForSave(next: UserSettings): Promise<UserSettings> {
-    if (hasCompleteSettingsDomains(next)) {
-      return next;
-    }
-
-    const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
+  async function settingsForSave(update: SettingsUpdate): Promise<UserSettings> {
+    const current = queryClient.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY);
     if (current && hasCompleteSettingsDomains(current)) {
-      return mergeSettingsDomains(current, next);
+      const next = stagedSettingsForSave(current, update);
+      return hasCompleteSettingsDomains(next) ? next : mergeSettingsDomains(current, next);
     }
 
-    return mergeSettingsDomains(await api.getUserSettings(), next);
+    const serverSettings = await api.getUserSettings();
+    const next = applySettingsUpdate(serverSettings, update);
+    return hasCompleteSettingsDomains(next) ? next : mergeSettingsDomains(serverSettings, next);
   }
 
-  const mutation = useMutation({
-    mutationFn: async (next: UserSettings) => api.saveUserSettings(await settingsForSave(next)),
-    onSuccess: (data, variables) => {
-      if (pendingRef.current !== variables) {
-        return;
-      }
-      queryClient.setQueryData(["user-settings"], data);
-      writeCachedSettings(data);
-      const prev = previousRef.current;
-      const prevSettings = prev ? toChillSettings(prev) : null;
-      const nextSettings = toChillSettings(data);
-      if (prevSettings && prevSettings.download.folderId !== nextSettings.download.folderId) {
+  return useMutation<UserSettings, Error, SettingsUpdate, SettingsSaveContext>({
+    mutationFn: async (update: SettingsUpdate) => {
+      const settings = await settingsForSave(update);
+      return api.saveUserSettings(settings);
+    },
+    scope: USER_SETTINGS_MUTATION_SCOPE,
+    onMutate: (update) => prepareSettingsSave({ queryClient, update }),
+    onSuccess: (saved, _variables, context) => {
+      cacheSavedSettings({ context, queryClient, settings: saved, writeCachedSettings });
+
+      if (downloadFolderChanged(context?.previousSettings, saved)) {
         void invalidateDownloadFolder(queryClient);
       }
     },
-    onError: () => {
-      void queryClient.invalidateQueries({ queryKey: ["user-settings"] });
-    },
-    onSettled: (_data, _error, variables) => {
-      if (pendingRef.current === variables) {
-        previousRef.current = null;
-        pendingRef.current = null;
+    onError: (_error, _variables, context) => {
+      if (!settingsSaveIsCurrent({ context, queryClient })) {
+        return;
       }
+      void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
     },
   });
-
-  const flushRef = useRef(mutation.mutate);
-  useEffect(() => {
-    flushRef.current = mutation.mutate;
-  });
-
-  useEffect(
-    () => () => {
-      if (pendingRef.current) {
-        flushRef.current(pendingRef.current);
-      }
-      clearTimeout(debounceRef.current);
-    },
-    [],
-  );
-
-  return {
-    ...mutation,
-    mutate: (next: UserSettings) => {
-      const current = queryClient.getQueryData<UserSettings>(["user-settings"]);
-      if (pendingRef.current === null && current) {
-        previousRef.current = current;
-      }
-      queryClient.setQueryData(["user-settings"], next);
-      writeCachedSettings(next);
-      pendingRef.current = next;
-      clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => mutation.mutate(next), SAVE_DEBOUNCE_MS);
-    },
-  };
 }

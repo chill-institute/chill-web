@@ -16,6 +16,7 @@ import {
 import {
   CATALOG_SETTINGS_FALLBACKS,
   SEARCH_SETTINGS_FALLBACKS,
+  withSaveUserSettingsResponseDefaults,
   withSearchSettingsDefaults,
   withUserSettingsDefaults,
 } from "./settings-defaults";
@@ -127,5 +128,71 @@ describe("withUserSettingsDefaults", () => {
     );
 
     expect(out.download?.folderId).toBe(42n);
+  });
+});
+
+describe("withSaveUserSettingsResponseDefaults", () => {
+  it("uses the saved request as fallback when the save response is empty", () => {
+    const fallback = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, {
+        filterNastyResults: true,
+        rememberQuickFilters: true,
+        sortBy: SortBy.SIZE,
+        sortDirection: SortDirection.DESC,
+      }),
+      catalog: create(CatalogSettingsSchema, { moviesSource: MoviesSource.YTS }),
+      download: create(DownloadSettingsSchema, { folderId: 42n }),
+    });
+
+    const out = withSaveUserSettingsResponseDefaults({
+      fallback,
+      response: create(UserSettingsSchema, {}),
+    });
+
+    expect(out.search?.sortBy).toBe(SortBy.SIZE);
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.download?.folderId).toBe(42n);
+  });
+
+  it("prefers returned domains while preserving missing domains from the saved request", () => {
+    const fallback = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, {
+        filterNastyResults: true,
+        rememberQuickFilters: true,
+        sortBy: SortBy.SIZE,
+        sortDirection: SortDirection.DESC,
+      }),
+      catalog: create(CatalogSettingsSchema, { moviesSource: MoviesSource.YTS }),
+      download: create(DownloadSettingsSchema, { folderId: 42n }),
+    });
+    const response = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, { sortBy: SortBy.TITLE }),
+    });
+
+    const out = withSaveUserSettingsResponseDefaults({ fallback, response });
+
+    expect(out.search?.sortBy).toBe(SortBy.TITLE);
+    expect(out.search?.filterNastyResults).toBe(true);
+    expect(out.search?.rememberQuickFilters).toBe(true);
+    expect(out.search?.sortDirection).toBe(SortDirection.DESC);
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.download?.folderId).toBe(42n);
+  });
+
+  it("preserves missing fields inside a returned catalog domain", () => {
+    const fallback = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, {
+        moviesSource: MoviesSource.IMDB_MOVIEMETER,
+        tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+      }),
+    });
+    const response = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { moviesSource: MoviesSource.YTS }),
+    });
+
+    const out = withSaveUserSettingsResponseDefaults({ fallback, response });
+
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.catalog?.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
   });
 });

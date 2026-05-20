@@ -12,9 +12,9 @@ import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { cn } from "@/ui/lib/cn";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
-import { useImageLoadedState } from "@/ui/hooks/use-image-loaded-state";
 import { formatBytes } from "@/ui/lib/format";
 import { type TVShow } from "@/catalog/lib/types";
+import { DetailBackdropImage, DetailPosterImage } from "@/catalog/components/detail-media";
 import {
   useTVShowDetailQuery,
   useTVShowSeasonDownloadsQuery,
@@ -56,56 +56,6 @@ function formatAirDate(value?: string) {
 
 function EpisodeActionSkeleton() {
   return <Skeleton className="size-8 shrink-0 rounded" />;
-}
-
-function BackdropImage({ url }: { url?: string }) {
-  const img = useImageLoadedState();
-  if (!url) return <div className="absolute inset-0 bg-app" />;
-  return (
-    <>
-      <Skeleton
-        className={cn(
-          "absolute inset-0 h-full w-full rounded-none transition-opacity duration-base ease-out",
-          img.loaded ? "opacity-0" : "opacity-100",
-        )}
-      />
-      <img
-        ref={img.ref}
-        src={url}
-        alt=""
-        aria-hidden="true"
-        onLoad={img.onLoad}
-        className={cn(
-          "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-slow ease-out",
-          img.loaded ? "opacity-100" : "opacity-0",
-        )}
-      />
-    </>
-  );
-}
-
-function PosterImage({ url, alt }: { url: string; alt: string }) {
-  const img = useImageLoadedState();
-  return (
-    <div className="relative aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]">
-      <Skeleton
-        className={cn(
-          "absolute inset-0 h-full w-full rounded transition-opacity duration-base ease-out",
-          img.loaded ? "opacity-0" : "opacity-100",
-        )}
-      />
-      <img
-        ref={img.ref}
-        src={url}
-        alt={alt}
-        onLoad={img.onLoad}
-        className={cn(
-          "absolute inset-0 h-full w-full border-border-strong rounded border object-cover shadow-poster transition-opacity duration-slow ease-out",
-          img.loaded ? "opacity-100" : "opacity-0",
-        )}
-      />
-    </div>
-  );
 }
 
 type DetailData = NonNullable<ReturnType<typeof useTVShowDetailQuery>["data"]>;
@@ -165,13 +115,17 @@ function TvShowDetailContent({
   return (
     <div className={shellClassName}>
       <div className="relative flex h-[240px] shrink-0 items-end overflow-hidden sm:h-[280px]">
-        <BackdropImage key={backdropUrl ?? "no-backdrop"} url={backdropUrl} />
+        <DetailBackdropImage key={backdropUrl ?? "no-backdrop"} url={backdropUrl} />
         <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
         <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
         <div className="relative z-10 flex w-full items-end gap-4 px-4 pb-5 sm:gap-5 sm:px-7 sm:pb-6">
           {posterUrl ? (
-            <PosterImage key={posterUrl} url={posterUrl} alt={show?.title ?? "TV show poster"} />
+            <DetailPosterImage
+              key={posterUrl}
+              url={posterUrl}
+              alt={show?.title ?? "TV show poster"}
+            />
           ) : (
             <Skeleton className="aspect-[2/3] w-[110px] shrink-0 rounded" />
           )}

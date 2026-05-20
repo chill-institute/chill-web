@@ -580,6 +580,8 @@ test.describe("settings", () => {
     let savedFilterNasty: boolean | undefined;
     let savedFilterNoSeeders: boolean | undefined;
     let saveCalls = 0;
+    let releaseFirstSave: (() => void) | undefined;
+    const savedSearches: NonNullable<RequestSettingsPayload["search"]>[] = [];
 
     await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
 
@@ -596,6 +598,14 @@ test.describe("settings", () => {
       const body = route.request().postDataJSON() as {
         settings?: RequestSettingsPayload;
       };
+      if (body.settings?.search) {
+        savedSearches.push(body.settings.search);
+      }
+      if (saveCalls === 1) {
+        await new Promise<void>((resolve) => {
+          releaseFirstSave = resolve;
+        });
+      }
       if (body.settings) {
         settingsState = body.settings as typeof settingsState;
         savedFilterNasty = body.settings.search?.filterNastyResults;
@@ -616,18 +626,20 @@ test.describe("settings", () => {
     await expect(nastyCheckbox).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
 
     await nastyCheckbox.click();
-    await expect.poll(() => saveCalls).toBeGreaterThan(0);
-    await expect.poll(() => savedFilterNasty).not.toBe(true);
+    await expect.poll(() => saveCalls).toBe(1);
 
     const noSeedersCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
       name: "Hide results with no seeders",
     });
     await expect(noSeedersCheckbox).toHaveAttribute("aria-checked", "false");
 
-    const prevCalls = saveCalls;
     await noSeedersCheckbox.click();
-    await expect.poll(() => saveCalls).toBeGreaterThan(prevCalls);
+    releaseFirstSave?.();
+    await expect.poll(() => saveCalls).toBe(2);
     await expect.poll(() => savedFilterNoSeeders).toBe(true);
+    await expect.poll(() => savedFilterNasty).not.toBe(true);
+    expect(savedSearches.at(-1)?.filterNastyResults).not.toBe(true);
+    expect(savedSearches.at(-1)?.filterResultsWithNoSeeders).toBe(true);
   });
 
   test("theme select changes document theme", async ({ authenticatedPage, mockRpc }) => {
