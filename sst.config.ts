@@ -179,13 +179,19 @@ async function configureZoneHardening() {
   const accountId = resolveAccountId();
   const outputs: Record<string, string> = {};
 
-  for (const zoneConfig of zoneHardening) {
-    const zoneId = await resolveZoneId(accountId, zoneConfig.name);
-    outputs[`${zoneConfig.prefix}ZoneId`] = zoneId;
+  const resolvedZones = await Promise.all(
+    zoneHardening.map(async (zoneConfig) => ({
+      prefix: zoneConfig.prefix,
+      zoneId: await resolveZoneId(accountId, zoneConfig.name),
+    })),
+  );
+
+  for (const zoneConfig of resolvedZones) {
+    outputs[`${zoneConfig.prefix}ZoneId`] = zoneConfig.zoneId;
 
     for (const setting of zoneSettings) {
       new cloudflare.ZoneSetting(`${zoneConfig.prefix}${setting.name}`, {
-        zoneId,
+        zoneId: zoneConfig.zoneId,
         settingId: setting.settingId,
         value: setting.value,
       });
@@ -217,10 +223,15 @@ addEventListener("fetch", (event) => {
 `.trim(),
   });
 
-  const routes: Record<string, string> = {};
-  for (const group of redirectRouteGroups) {
-    const zoneId = await resolveZoneId(accountId, group.zoneName);
+  const routeGroups = await Promise.all(
+    redirectRouteGroups.map(async (group) => ({
+      group,
+      zoneId: await resolveZoneId(accountId, group.zoneName),
+    })),
+  );
 
+  const routes: Record<string, string> = {};
+  for (const { group, zoneId } of routeGroups) {
     for (const domain of group.domains) {
       const name = domain.replace(/[^a-zA-Z0-9]/g, "");
       new cloudflare.WorkersRoute(
