@@ -8,7 +8,7 @@ function readEnvironment(name: string) {
 }
 
 const surfaces = {
-  chill: {
+  app: {
     domain: {
       staging: {
         name: readEnvironment("CHILL_STAGING_DOMAIN"),
@@ -28,7 +28,7 @@ const bingeRedirectDomains = [
 
 const zoneHardening = [
   {
-    name: surfaces.chill.domain.production.name,
+    name: surfaces.app.domain.production.name,
     prefix: "Chill",
   },
   {
@@ -117,12 +117,12 @@ declare const cloudflare: {
 };
 
 function resolveSurface(): Surface {
-  const surface = process.env.CHILL_WEB_APP;
-  if (surface === "chill" || surface === "redirects" || surface === "zones") {
+  const surface = process.env.WEB_DEPLOY_TARGET;
+  if (surface === "app" || surface === "redirects" || surface === "zones") {
     return surface;
   }
 
-  throw new Error("CHILL_WEB_APP must be set to chill, redirects, or zones");
+  throw new Error("WEB_DEPLOY_TARGET must be set to app, redirects, or zones");
 }
 
 function resolveStage(stage: string): Stage {
@@ -203,7 +203,7 @@ async function configureBingeRedirects(stage: Stage) {
 addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   url.protocol = "https:";
-  url.hostname = "${surfaces.chill.domain.production.name}";
+  url.hostname = "${surfaces.app.domain.production.name}";
   event.respondWith(Response.redirect(url.toString(), 301));
 });
 `.trim(),
@@ -223,7 +223,7 @@ addEventListener("fetch", (event) => {
         dependsOn: [redirectWorker],
       },
     );
-    routes[domain] = `https://${surfaces.chill.domain.production.name}`;
+    routes[domain] = `https://${surfaces.app.domain.production.name}`;
   }
 
   return routes;
@@ -234,14 +234,14 @@ export default $config({
     const surface = resolveSurface();
     const stage = resolveStage(input.stage);
     if (surface === "zones" && stage !== "staging") {
-      throw new Error("CHILL_WEB_APP=zones must use SST stage staging");
+      throw new Error("WEB_DEPLOY_TARGET=zones must use SST stage staging");
     }
     if (surface === "redirects" && stage !== "production") {
-      throw new Error("CHILL_WEB_APP=redirects must use SST stage production");
+      throw new Error("WEB_DEPLOY_TARGET=redirects must use SST stage production");
     }
 
     return {
-      name: `chill-web-${surface}`,
+      name: `chill-web-${surface === "app" ? "chill" : surface}`,
       home: "local",
       providers: {
         cloudflare: "6.15.0",
