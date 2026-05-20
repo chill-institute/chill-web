@@ -23,10 +23,10 @@ on:
         type: boolean
 
 env:
-  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
-  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
-  SST_STATE_FILE: ${{ vars.SST_STATE_FILE_STAGING || 'chill-web/staging/sst-local-state.tar.gz.age' }}
+  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH }}
+  SST_STATE_FILE: ${{ vars.SST_STATE_FILE_STAGING }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
   VITE_PLUS_VERSION: "0.1.21"
 
@@ -251,7 +251,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+      url: https://${{ vars.CHILL_STAGING_DOMAIN }}
     permissions:
       contents: read
     steps:
@@ -310,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+      url: https://${{ vars.CHILL_STAGING_DOMAIN }}
     permissions:
       contents: read
     steps:

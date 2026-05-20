@@ -1,15 +1,20 @@
-function readEnvironment(name: string, fallback: string) {
-  return process.env[name]?.trim() || fallback;
+function readEnvironment(name: string) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} is required`);
+  }
+
+  return value;
 }
 
 const surfaces = {
   chill: {
     domain: {
       staging: {
-        name: readEnvironment("CHILL_STAGING_DOMAIN", "staging.chill.institute"),
+        name: readEnvironment("CHILL_STAGING_DOMAIN"),
       },
       production: {
-        name: readEnvironment("CHILL_PRODUCTION_DOMAIN", "chill.institute"),
+        name: readEnvironment("CHILL_PRODUCTION_DOMAIN"),
       },
     },
     path: "dist",
@@ -17,8 +22,8 @@ const surfaces = {
 } as const;
 
 const bingeRedirectDomains = [
-  readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
-  readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN", "www.binge.institute"),
+  readEnvironment("BINGE_PRODUCTION_DOMAIN"),
+  readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN"),
 ] as const;
 
 const zoneHardening = [
@@ -27,7 +32,7 @@ const zoneHardening = [
     prefix: "Chill",
   },
   {
-    name: readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
+    name: readEnvironment("BINGE_PRODUCTION_DOMAIN"),
     prefix: "Binge",
   },
 ] as const;
@@ -187,10 +192,7 @@ async function configureBingeRedirects(stage: Stage) {
   }
 
   const accountId = resolveAccountId();
-  const zoneId = await resolveZoneId(
-    accountId,
-    readEnvironment("BINGE_PRODUCTION_DOMAIN", "binge.institute"),
-  );
+  const zoneId = await resolveZoneId(accountId, readEnvironment("BINGE_PRODUCTION_DOMAIN"));
   const scriptName = "chill-web-binge-redirect";
 
   const redirectWorker = new cloudflare.WorkersScript("BingeRedirectWorker", {

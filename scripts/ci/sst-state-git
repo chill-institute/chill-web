@@ -8,9 +8,16 @@ fi
 
 command="$1"
 state_repo="${SST_STATE_REPO:-}"
-state_branch="${SST_STATE_REPO_BRANCH:-main}"
-state_file="${SST_STATE_FILE:-chill-web/staging/sst-local-state.tar.gz.age}"
+state_branch="${SST_STATE_REPO_BRANCH:-}"
+state_file="${SST_STATE_FILE:-}"
 bootstrap_state="${SST_STATE_BOOTSTRAP:-false}"
+
+for required in SST_STATE_REPO SST_STATE_REPO_BRANCH SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY SST_STATE_FILE; do
+  if [ -z "${!required:-}" ]; then
+    echo "${required} is required" >&2
+    exit 1
+  fi
+done
 
 case "${state_file}" in
   ""|/*|*..*)
@@ -18,13 +25,6 @@ case "${state_file}" in
     exit 64
     ;;
 esac
-
-for required in SST_STATE_REPO SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY; do
-  if [ -z "${!required:-}" ]; then
-    echo "${required} is required" >&2
-    exit 1
-  fi
-done
 
 if ! command -v age >/dev/null 2>&1; then
   echo "age is required" >&2

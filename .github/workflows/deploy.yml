@@ -24,13 +24,11 @@ on:
         type: boolean
 
 env:
-  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
-  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN || 'www.binge.institute' }}
-  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
-  CHILL_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.CHILL_PRODUCTION_REDIRECT_DOMAIN || 'www.chill.institute' }}
-  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN || 'staging.chill.institute' }}
+  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
+  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
+  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
-  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH || 'main' }}
+  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
   VITE_PLUS_VERSION: "0.1.21"
 
@@ -116,11 +114,11 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ vars.CHILL_PRODUCTION_DOMAIN || 'chill.institute' }}
+      url: https://${{ vars.CHILL_PRODUCTION_DOMAIN }}
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION || 'chill-web/production/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -187,11 +185,11 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ vars.BINGE_PRODUCTION_DOMAIN || 'binge.institute' }}
+      url: https://${{ vars.BINGE_PRODUCTION_DOMAIN }}
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION || 'chill-web/production/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
