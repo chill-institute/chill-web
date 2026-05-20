@@ -30,8 +30,7 @@ The app keeps API, auth, UI, and catalog code local so there is no workspace pac
 - The app is a client-rendered React SPA.
 - The browser calls the hosted API directly.
 - Shared contract types come from `@chill-institute/contracts`.
-- `www.chill.institute`, `binge.institute`, and `www.binge.institute` redirect to `chill.institute`.
-- There is no staging binge host.
+- Hosted app and redirect domains are documented in [Deployment](./DEPLOYMENT.md).
 
 ## Boundaries
 
@@ -100,5 +99,5 @@ Build output is `dist/`.
 Production hosting shape:
 
 - static assets on SST-managed Cloudflare Workers
-- `www.chill.institute`, `binge.institute`, and `www.binge.institute` handled by a production redirect worker
+- production redirects handled by a small Cloudflare Worker
 - API on a separate `api.chill.institute` origin

@@ -7,7 +7,7 @@ Vite+ repo for the Institute web app at [chill.institute](https://chill.institut
 ## Product
 
 - `./` powers `https://chill.institute` with search, movie and TV browsing, detail pages, source pickers, RSS shortcuts, and send-to-put.io flows
-- `https://www.chill.institute`, `https://binge.institute`, and `https://www.binge.institute` redirect to `https://chill.institute`
+- legacy and `www` hosts redirect to `https://chill.institute`
 - the repo root owns app code, config, hooks, CI entrypoints, and dependencies
 
 ## Install

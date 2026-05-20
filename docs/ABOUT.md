@@ -3,7 +3,6 @@
 The Institute is a put.io companion app:
 
 - [chill.institute](https://chill.institute) is the search and browse experience for finding releases fast, comparing results, browsing movies and TV shows, and sending downloads to put.io without a bunch of ceremony
-- [binge.institute](https://binge.institute) and [www.binge.institute](https://www.binge.institute) redirect to chill.institute
 
 ## What it does
 
