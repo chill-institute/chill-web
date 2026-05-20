@@ -157,6 +157,7 @@ jobs:
         run: scripts/ci/sst-state-git restore
 
       - name: Refresh chill production SST state
+        if: ${{ !inputs.bootstrap_state }}
         env:
           CHILL_WEB_APP: chill
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -224,6 +225,7 @@ jobs:
         run: scripts/ci/sst-state-git restore
 
       - name: Refresh binge redirect SST state
+        if: ${{ !inputs.bootstrap_state }}
         env:
           CHILL_WEB_APP: redirects
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
