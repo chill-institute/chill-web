@@ -158,6 +158,11 @@ jobs:
           SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
         run: scripts/ci/sst-state-git restore
 
+      - name: Claim app production domain
+        env:
+          CLOUDFLARE_WORKERS_DOMAIN_HOSTNAME: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
+        run: scripts/ci/claim-cloudflare-workers-domain
+
       - name: Refresh app production SST state
         if: ${{ !inputs.bootstrap_state }}
         run: vp exec sst refresh --stage production --print-logs
@@ -217,11 +222,11 @@ jobs:
           SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
         run: scripts/ci/sst-state-git restore
 
-      - name: Refresh binge redirect SST state
+      - name: Refresh legacy redirect SST state
         if: ${{ !inputs.bootstrap_state }}
         run: vp exec sst refresh --stage production --print-logs
 
-      - name: Deploy binge redirects to SST
+      - name: Deploy legacy redirects to SST
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
@@ -260,10 +265,10 @@ jobs:
               echo "- App: ${APP_RESULT}"
             fi
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
-              echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
+              echo "- Legacy redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
             elif [ "${REDIRECTS_RESULT}" = "skipped" ]; then
-              echo "- Binge redirect: skipped"
+              echo "- Legacy redirect: skipped"
             else
-              echo "- Binge redirect: ${REDIRECTS_RESULT}"
+              echo "- Legacy redirect: ${REDIRECTS_RESULT}"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
