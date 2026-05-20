@@ -34,50 +34,7 @@ jobs:
           min-severity: medium
           version: v1.25.2
 
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      app: ${{ steps.filter.outputs.app }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Detect changed surfaces
-        id: filter
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
-        with:
-          filters: |
-            app:
-              - 'src/**'
-              - 'e2e/**'
-              - 'public/**'
-              - 'index.html'
-              - 'components.json'
-              - 'playwright.config.ts'
-              - '.node-version'
-              - '.gitignore'
-              - '.vite-hooks/**'
-              - '.githooks/**'
-              - '.github/actions/**'
-              - 'knip.json'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'sst.config.ts'
-              - 'tsconfig.json'
-              - 'vite.config.ts'
-      - name: Publish change summary
-        env:
-          APP_CHANGED: ${{ steps.filter.outputs.app }}
-        run: |
-          {
-            echo "## Changed web surface"
-            echo
-            echo "- App: \`${APP_CHANGED}\`"
-          } >> "${GITHUB_STEP_SUMMARY}"
-
   verify-app:
-    needs: changes
-    if: ${{ needs.changes.outputs.app == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository

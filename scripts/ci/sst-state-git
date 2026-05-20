@@ -10,7 +10,6 @@ command="$1"
 state_repo="${SST_STATE_REPO:-}"
 state_branch="${SST_STATE_REPO_BRANCH:-}"
 state_file="${SST_STATE_FILE:-}"
-bootstrap_state="${SST_STATE_BOOTSTRAP:-false}"
 
 for required in SST_STATE_REPO SST_STATE_REPO_BRANCH SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY SST_STATE_FILE; do
   if [ -z "${!required:-}" ]; then
@@ -60,12 +59,7 @@ encrypted_state="${repo_dir}/${state_file}"
 case "${command}" in
   restore)
     if [ ! -f "${encrypted_state}" ]; then
-      if [ "${bootstrap_state}" = "true" ]; then
-        echo "No encrypted SST state found at ${state_file}; bootstrap_state=true so starting with empty local state"
-        exit 0
-      fi
-
-      echo "No encrypted SST state found at ${state_file}; rerun with bootstrap_state=true only for the first deploy" >&2
+      echo "No encrypted SST state found at ${state_file}" >&2
       exit 1
     fi
 

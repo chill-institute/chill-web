@@ -26,10 +26,9 @@ Build output:
 ## GitHub Actions
 
 - Pull requests run `Verify`
-- `Verify` detects whether the web surface changed and runs root app checks
+- `Verify` runs root app checks
 - Pushes to `main` run `Main`
-- `Main` verifies, runs e2e, deploys the production web surface, and deploys the production binge redirect worker when redirect infrastructure changes
-- Docs-only, workflow-only, script-only, and e2e-only changes do not deploy the web surface
+- `Main` verifies, runs e2e, deploys the production web surface, and deploys the production binge redirect worker
 - Manual deploy workflows are maintainer-only fallbacks for staging, production web, or production redirect reruns
 - PRs do not create public preview deployments
 

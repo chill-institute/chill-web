@@ -16,12 +16,6 @@ on:
           - all
           - app
           - zones
-      bootstrap_state:
-        description: Allow the first deploy to create missing encrypted SST state
-        required: true
-        default: false
-        type: boolean
-
 env:
   BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
   BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
@@ -289,16 +283,8 @@ jobs:
       - name: Restore encrypted SST local state
         env:
           SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
-
-      - name: Claim app staging domain
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-          CLOUDFLARE_WORKERS_DOMAIN_HOSTNAME: ${{ vars.CHILL_STAGING_DOMAIN }}
-        run: scripts/ci/claim-cloudflare-workers-domain
 
       - name: Deploy app staging to SST
         env:
@@ -351,7 +337,6 @@ jobs:
       - name: Restore encrypted SST local state
         env:
           SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 

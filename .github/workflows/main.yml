@@ -40,83 +40,7 @@ jobs:
           min-severity: medium
           version: v1.25.2
 
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      app: ${{ steps.filter.outputs.app }}
-      deploy_app: ${{ steps.filter.outputs.deploy_app }}
-      deploy_redirects: ${{ steps.filter.outputs.deploy_redirects }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed surfaces
-        id: filter
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
-        with:
-          filters: |
-            app:
-              - 'src/**'
-              - 'e2e/**'
-              - 'public/**'
-              - 'index.html'
-              - 'components.json'
-              - 'playwright.config.ts'
-              - '.node-version'
-              - '.gitignore'
-              - '.vite-hooks/**'
-              - '.githooks/**'
-              - '.github/actions/**'
-              - 'knip.json'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'sst.config.ts'
-              - 'tsconfig.json'
-              - 'vite.config.ts'
-            deploy_app:
-              - 'src/**'
-              - 'e2e/**'
-              - 'public/**'
-              - 'index.html'
-              - 'components.json'
-              - 'playwright.config.ts'
-              - '!e2e/**'
-              - '.node-version'
-              - '.gitignore'
-              - '.vite-hooks/**'
-              - '.githooks/**'
-              - 'knip.json'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'sst.config.ts'
-              - 'tsconfig.json'
-              - 'vite.config.ts'
-            deploy_redirects:
-              - '.github/workflows/deploy.yml'
-              - '.github/workflows/main.yml'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'scripts/ci/**'
-              - 'sst.config.ts'
-      - name: Publish change summary
-        env:
-          APP_CHANGED: ${{ steps.filter.outputs.app }}
-          APP_DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy_app }}
-          REDIRECTS_CHANGED: ${{ steps.filter.outputs.deploy_redirects }}
-        run: |
-          {
-            echo "## Changed web surface"
-            echo
-            echo "- App: \`${APP_CHANGED}\`"
-            echo "- App deploy: \`${APP_DEPLOY_CHANGED}\`"
-            echo "- Binge redirects deploy: \`${REDIRECTS_CHANGED}\`"
-          } >> "${GITHUB_STEP_SUMMARY}"
-
   verify-app:
-    needs: changes
-    if: ${{ needs.changes.outputs.app == 'true' }}
     concurrency:
       group: web-main-verify-app-${{ github.ref }}
       cancel-in-progress: true
@@ -197,8 +121,8 @@ jobs:
           if-no-files-found: ignore
 
   deploy-app:
-    needs: [workflow-security, changes, verify-app, e2e]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_app == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' }}
+    needs: [workflow-security, verify-app, e2e]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -254,8 +178,8 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-redirects:
-    needs: [workflow-security, changes, deploy-app]
-    if: ${{ always() && vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_redirects == 'true' && needs.workflow-security.result == 'success' && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
+    needs: [workflow-security, deploy-app]
+    if: ${{ always() && vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.deploy-app.result == 'success' }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
@@ -305,7 +229,7 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-summary:
-    needs: [changes, deploy-app, deploy-redirects]
+    needs: [deploy-app, deploy-redirects]
     if: ${{ always() && (needs.deploy-app.result != 'skipped' || needs.deploy-redirects.result != 'skipped') }}
     runs-on: ubuntu-latest
     steps:
