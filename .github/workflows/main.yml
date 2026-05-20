@@ -111,7 +111,7 @@ jobs:
             echo
             echo "- App: \`${APP_CHANGED}\`"
             echo "- App deploy: \`${APP_DEPLOY_CHANGED}\`"
-            echo "- Binge redirects deploy: \`${REDIRECTS_CHANGED}\`"
+            echo "- Legacy redirects deploy: \`${REDIRECTS_CHANGED}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   verify-app:
@@ -298,7 +298,7 @@ jobs:
       - name: Restore encrypted SST local state
         run: scripts/ci/sst-state-git restore
 
-      - name: Deploy binge redirects to SST
+      - name: Deploy legacy redirects to SST
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
@@ -329,11 +329,11 @@ jobs:
               echo "- App: ${APP_RESULT}"
             fi
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
-              echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
+              echo "- Legacy redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
             elif [ "${REDIRECTS_RESULT}" = "skipped" ]; then
-              echo "- Binge redirect: skipped"
+              echo "- Legacy redirect: skipped"
             else
-              echo "- Binge redirect: ${REDIRECTS_RESULT}"
+              echo "- Legacy redirect: ${REDIRECTS_RESULT}"
             fi
             echo "- Flow: \`push Main workflow\`"
           } >> "${GITHUB_STEP_SUMMARY}"
