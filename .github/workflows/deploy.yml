@@ -163,10 +163,6 @@ jobs:
           CLOUDFLARE_WORKERS_DOMAIN_HOSTNAME: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
         run: scripts/ci/claim-cloudflare-workers-domain
 
-      - name: Refresh app production SST state
-        if: ${{ !inputs.bootstrap_state }}
-        run: vp exec sst refresh --stage production --print-logs
-
       - name: Deploy app production to SST
         run: vp exec sst deploy --stage production --print-logs
 
