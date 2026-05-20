@@ -21,6 +21,7 @@ env:
   BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
   BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
   CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
+  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
   SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
@@ -222,10 +223,8 @@ jobs:
         run: |
           app_url="${CHILL_PRODUCTION_DOMAIN}"
           app_redirect_url="www.${CHILL_PRODUCTION_DOMAIN}"
-          app_next_url="next.${CHILL_PRODUCTION_DOMAIN}"
           binge_url="${BINGE_PRODUCTION_DOMAIN}"
           binge_redirect_url="${BINGE_PRODUCTION_REDIRECT_DOMAIN}"
-          binge_next_url="next.${BINGE_PRODUCTION_DOMAIN}"
 
           {
             echo "## Manual deploy"
@@ -244,10 +243,8 @@ jobs:
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
               echo "- Redirects:"
               echo "  - [https://${app_redirect_url}](https://${app_redirect_url}) -> [https://${app_url}](https://${app_url})"
-              echo "  - [https://${app_next_url}](https://${app_next_url}) -> [https://${app_url}](https://${app_url})"
               echo "  - [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
               echo "  - [https://${binge_redirect_url}](https://${binge_redirect_url}) -> [https://${app_url}](https://${app_url})"
-              echo "  - [https://${binge_next_url}](https://${binge_next_url}) -> [https://${app_url}](https://${app_url})"
             elif [ "${REDIRECTS_RESULT}" = "skipped" ]; then
               echo "- Redirects: skipped"
             else

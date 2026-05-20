@@ -9,6 +9,9 @@ function readEnvironment(name: string) {
 
 const app = {
   domain: {
+    staging: {
+      name: readEnvironment("CHILL_STAGING_DOMAIN"),
+    },
     production: {
       name: readEnvironment("CHILL_PRODUCTION_DOMAIN"),
     },
@@ -19,33 +22,16 @@ const app = {
 const bingeProductionDomain = readEnvironment("BINGE_PRODUCTION_DOMAIN");
 const bingeProductionRedirectDomain = readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN");
 const appProductionRedirectDomain = `www.${app.domain.production.name}`;
-const appProductionNextDomain = `next.${app.domain.production.name}`;
-const bingeProductionNextDomain = `next.${bingeProductionDomain}`;
-
-const redirectDnsRecords = [
-  {
-    zoneName: app.domain.production.name,
-    domain: appProductionNextDomain,
-    target: app.domain.production.name,
-    resourceName: "ChillNextDnsRecord",
-  },
-  {
-    zoneName: bingeProductionDomain,
-    domain: bingeProductionNextDomain,
-    target: bingeProductionDomain,
-    resourceName: "BingeNextDnsRecord",
-  },
-] as const;
 
 const redirectRouteGroups = [
   {
     zoneName: app.domain.production.name,
-    domains: [appProductionRedirectDomain, appProductionNextDomain],
+    domains: [appProductionRedirectDomain],
     resourcePrefix: "ChillRedirect",
   },
   {
     zoneName: bingeProductionDomain,
-    domains: [bingeProductionDomain, bingeProductionRedirectDomain, bingeProductionNextDomain],
+    domains: [bingeProductionDomain, bingeProductionRedirectDomain],
     resourcePrefix: "BingeRedirect",
   },
 ] as const;
@@ -75,7 +61,7 @@ const zoneSettings = [
 ] as const;
 
 type DeployTarget = "app" | "redirects" | "zones";
-type Stage = "production";
+type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
     name: string;
@@ -94,15 +80,6 @@ type ZoneLookupResult = {
     id: string;
     name: string;
   }>;
-};
-type DnsRecordArgs = {
-  zoneId: string;
-  name: string;
-  type: "CNAME";
-  content: string;
-  ttl: number;
-  proxied: boolean;
-  comment?: string;
 };
 type WorkersScriptArgs = {
   accountId: string;
@@ -143,7 +120,6 @@ declare const cloudflare: {
     maxItems: number;
     name: string;
   }): Promise<ZoneLookupResult>;
-  DnsRecord: new (name: string, args: DnsRecordArgs) => unknown;
   ZoneSetting: new (name: string, args: ZoneSettingArgs) => unknown;
   WorkersScript: new (name: string, args: WorkersScriptArgs) => unknown;
   WorkersRoute: new (name: string, args: WorkersRouteArgs, opts?: ResourceOptions) => unknown;
@@ -159,11 +135,11 @@ function resolveDeployTarget(): DeployTarget {
 }
 
 function resolveStage(stage: string): Stage {
-  if (stage === "production") {
+  if (stage === "staging" || stage === "production") {
     return stage;
   }
 
-  throw new Error("SST stage must be production");
+  throw new Error("SST stage must be staging or production");
 }
 
 function resolveAccountId() {
@@ -191,7 +167,11 @@ async function resolveZoneId(accountId: string, name: string) {
   return zone.id;
 }
 
-function resolveStaticSiteDomain(): StaticSiteV2Args["domain"] {
+function resolveStaticSiteDomain(stage: Stage): StaticSiteV2Args["domain"] {
+  if (stage === "staging") {
+    return app.domain.staging;
+  }
+
   return app.domain.production;
 }
 
@@ -222,8 +202,6 @@ async function configureRedirects(stage: Stage) {
 
   const accountId = resolveAccountId();
   const scriptName = "chill-web-binge-redirect";
-  const dnsRecordDeps: Record<string, unknown> = {};
-  const dnsRecords: Record<string, string> = {};
 
   const redirectWorker = new cloudflare.WorkersScript("BingeRedirectWorker", {
     accountId,
@@ -239,21 +217,6 @@ addEventListener("fetch", (event) => {
 `.trim(),
   });
 
-  for (const record of redirectDnsRecords) {
-    const zoneId = await resolveZoneId(accountId, record.zoneName);
-    const dnsRecord = new cloudflare.DnsRecord(record.resourceName, {
-      zoneId,
-      name: record.domain,
-      type: "CNAME",
-      content: record.target,
-      ttl: 1,
-      proxied: true,
-      comment: "Managed by chill-web production redirects",
-    });
-    dnsRecordDeps[record.domain] = dnsRecord;
-    dnsRecords[record.domain] = record.target;
-  }
-
   const routes: Record<string, string> = {};
   for (const group of redirectRouteGroups) {
     const zoneId = await resolveZoneId(accountId, group.zoneName);
@@ -268,23 +231,23 @@ addEventListener("fetch", (event) => {
           script: scriptName,
         },
         {
-          dependsOn: [redirectWorker, dnsRecordDeps[domain]].filter(Boolean),
+          dependsOn: [redirectWorker],
         },
       );
       routes[domain] = `https://${app.domain.production.name}`;
     }
   }
 
-  return {
-    dnsRecords,
-    routes,
-  };
+  return routes;
 }
 
 export default $config({
   app(input) {
     const target = resolveDeployTarget();
     const stage = resolveStage(input.stage);
+    if (target === "zones" && stage !== "staging") {
+      throw new Error("WEB_DEPLOY_TARGET=zones must use SST stage staging");
+    }
     if (target === "redirects" && stage !== "production") {
       throw new Error("WEB_DEPLOY_TARGET=redirects must use SST stage production");
     }
@@ -324,7 +287,7 @@ export default $config({
 
     const site = new sst.cloudflare.StaticSiteV2("Web", {
       path: app.path,
-      domain: resolveStaticSiteDomain(),
+      domain: resolveStaticSiteDomain(stage),
       notFound: "single-page-application",
     });
 
