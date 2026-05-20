@@ -201,7 +201,7 @@ jobs:
     needs: [workflow-security, changes, verify-chill, e2e-chill]
     if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_chill == 'true' && needs.workflow-security.result == 'success' && needs.verify-chill.result == 'success' && needs.e2e-chill.result == 'success' }}
     concurrency:
-      group: web-deploy-production-chill
+      group: web-deploy-production
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
@@ -210,7 +210,7 @@ jobs:
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_CHILL || 'chill-web/production/chill/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION || 'chill-web/production/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -243,6 +243,7 @@ jobs:
       - name: Restore encrypted SST local state
         env:
           SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: "true"
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 
@@ -268,10 +269,10 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-redirects:
-    needs: [workflow-security, changes]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_redirects == 'true' && needs.workflow-security.result == 'success' }}
+    needs: [workflow-security, changes, deploy-chill]
+    if: ${{ always() && vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.changes.outputs.deploy_redirects == 'true' && needs.workflow-security.result == 'success' && (needs.deploy-chill.result == 'success' || needs.deploy-chill.result == 'skipped') }}
     concurrency:
-      group: web-deploy-production-redirects
+      group: web-deploy-production
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
@@ -280,7 +281,7 @@ jobs:
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_REDIRECTS || 'chill-web/production/redirects/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION || 'chill-web/production/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -307,6 +308,7 @@ jobs:
       - name: Restore encrypted SST local state
         env:
           SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_BOOTSTRAP: "true"
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 

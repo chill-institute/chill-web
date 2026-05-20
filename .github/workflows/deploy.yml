@@ -111,7 +111,7 @@ jobs:
     needs: [workflow-security, validate]
     if: ${{ needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'chill') }}
     concurrency:
-      group: web-deploy-production-chill
+      group: web-deploy-production
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
@@ -120,7 +120,7 @@ jobs:
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_CHILL || 'chill-web/production/chill/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION || 'chill-web/production/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -178,10 +178,10 @@ jobs:
         run: scripts/ci/sst-state-git save
 
   deploy-redirects:
-    needs: [workflow-security, validate]
-    if: ${{ needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'redirects') }}
+    needs: [workflow-security, validate, deploy-chill]
+    if: ${{ always() && needs.workflow-security.result == 'success' && (inputs.app == 'all' || inputs.app == 'redirects') && (needs.deploy-chill.result == 'success' || needs.deploy-chill.result == 'skipped') }}
     concurrency:
-      group: web-deploy-production-redirects
+      group: web-deploy-production
       cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
@@ -190,7 +190,7 @@ jobs:
     permissions:
       contents: read
     env:
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION_REDIRECTS || 'chill-web/production/redirects/sst-local-state.tar.gz.age' }}
+      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION || 'chill-web/production/sst-local-state.tar.gz.age' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
