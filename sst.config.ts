@@ -10,7 +10,6 @@ const surfaces = {
       },
       production: {
         name: readEnvironment("CHILL_PRODUCTION_DOMAIN", "chill.institute"),
-        redirects: [readEnvironment("CHILL_PRODUCTION_REDIRECT_DOMAIN", "www.chill.institute")],
       },
     },
     path: "dist",
