@@ -19,7 +19,7 @@ const app = {
   path: "dist",
 } as const;
 
-const legacyRedirectDomains = [
+const bingeRedirectDomains = [
   readEnvironment("BINGE_PRODUCTION_DOMAIN"),
   readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN"),
 ] as const;
@@ -183,7 +183,7 @@ async function configureZoneHardening() {
   return outputs;
 }
 
-async function configureLegacyRedirects(stage: Stage) {
+async function configureBingeRedirects(stage: Stage) {
   if (stage !== "production") {
     return {};
   }
@@ -207,7 +207,7 @@ addEventListener("fetch", (event) => {
   });
 
   const routes: Record<string, string> = {};
-  for (const domain of legacyRedirectDomains) {
+  for (const domain of bingeRedirectDomains) {
     const name = domain.replace(/[^a-zA-Z0-9]/g, "");
     new cloudflare.WorkersRoute(
       `BingeRedirect${name}`,
@@ -261,7 +261,7 @@ export default $config({
       };
     }
     if (target === "redirects") {
-      const redirects = await configureLegacyRedirects(stage);
+      const redirects = await configureBingeRedirects(stage);
 
       return {
         target,

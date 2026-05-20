@@ -218,11 +218,11 @@ jobs:
           SST_STATE_BOOTSTRAP: ${{ inputs.bootstrap_state }}
         run: scripts/ci/sst-state-git restore
 
-      - name: Refresh legacy redirect SST state
+      - name: Refresh binge redirect SST state
         if: ${{ !inputs.bootstrap_state }}
         run: vp exec sst refresh --stage production --print-logs
 
-      - name: Deploy legacy redirects to SST
+      - name: Deploy binge redirects to SST
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
@@ -261,10 +261,10 @@ jobs:
               echo "- App: ${APP_RESULT}"
             fi
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
-              echo "- Legacy redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
+              echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
             elif [ "${REDIRECTS_RESULT}" = "skipped" ]; then
-              echo "- Legacy redirect: skipped"
+              echo "- Binge redirect: skipped"
             else
-              echo "- Legacy redirect: ${REDIRECTS_RESULT}"
+              echo "- Binge redirect: ${REDIRECTS_RESULT}"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
