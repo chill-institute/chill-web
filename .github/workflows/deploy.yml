@@ -202,7 +202,7 @@ jobs:
       - name: Restore encrypted SST local state
         run: scripts/ci/sst-state-git restore
 
-      - name: Deploy binge redirects to SST
+      - name: Deploy redirects to SST
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
@@ -222,7 +222,9 @@ jobs:
           REDIRECTS_RESULT: ${{ needs.deploy-redirects.result }}
         run: |
           app_url="${CHILL_PRODUCTION_DOMAIN}"
+          app_redirect_url="www.${CHILL_PRODUCTION_DOMAIN}"
           binge_url="${BINGE_PRODUCTION_DOMAIN}"
+          binge_redirect_url="${BINGE_PRODUCTION_REDIRECT_DOMAIN}"
 
           {
             echo "## Manual deploy"
@@ -239,10 +241,13 @@ jobs:
               echo "- App: ${APP_RESULT}"
             fi
             if [ "${REDIRECTS_RESULT}" = "success" ]; then
-              echo "- Binge redirect: [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
+              echo "- Redirects:"
+              echo "  - [https://${app_redirect_url}](https://${app_redirect_url}) -> [https://${app_url}](https://${app_url})"
+              echo "  - [https://${binge_url}](https://${binge_url}) -> [https://${app_url}](https://${app_url})"
+              echo "  - [https://${binge_redirect_url}](https://${binge_redirect_url}) -> [https://${app_url}](https://${app_url})"
             elif [ "${REDIRECTS_RESULT}" = "skipped" ]; then
-              echo "- Binge redirect: skipped"
+              echo "- Redirects: skipped"
             else
-              echo "- Binge redirect: ${REDIRECTS_RESULT}"
+              echo "- Redirects: ${REDIRECTS_RESULT}"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"

@@ -19,20 +19,19 @@ const app = {
   path: "dist",
 } as const;
 
-const bingeRedirectDomains = [
-  readEnvironment("BINGE_PRODUCTION_DOMAIN"),
-  readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN"),
-] as const;
+const bingeProductionDomain = readEnvironment("BINGE_PRODUCTION_DOMAIN");
+const bingeProductionRedirectDomain = readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN");
+const appProductionRedirectDomain = `www.${app.domain.production.name}`;
 
 const redirectRouteGroups = [
   {
     zoneName: app.domain.production.name,
-    domains: [`www.${app.domain.production.name}`],
+    domains: [appProductionRedirectDomain],
     resourcePrefix: "ChillRedirect",
   },
   {
-    zoneName: readEnvironment("BINGE_PRODUCTION_DOMAIN"),
-    domains: bingeRedirectDomains,
+    zoneName: bingeProductionDomain,
+    domains: [bingeProductionDomain, bingeProductionRedirectDomain],
     resourcePrefix: "BingeRedirect",
   },
 ] as const;
@@ -43,7 +42,7 @@ const zoneHardening = [
     prefix: "Chill",
   },
   {
-    name: readEnvironment("BINGE_PRODUCTION_DOMAIN"),
+    name: bingeProductionDomain,
     prefix: "Binge",
   },
 ] as const;
