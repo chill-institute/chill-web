@@ -3,6 +3,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
 import { execSync } from "node:child_process";
+import { VitePWA } from "vite-plugin-pwa";
 
 function resolveRelease() {
   const explicit = process.env.VITE_PUBLIC_RELEASE?.trim();
@@ -50,6 +51,18 @@ export default defineConfig({
       autoCodeSplitting: true,
     }),
     tailwindcss(),
+    VitePWA({
+      injectRegister: "script-defer",
+      manifest: false,
+      registerType: "autoUpdate",
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        globPatterns: ["**/*.{css,html,ico,js,png,svg,woff2}"],
+        navigateFallback: "/index.html",
+        skipWaiting: true,
+      },
+    }),
     viteReact(),
   ],
   define: {

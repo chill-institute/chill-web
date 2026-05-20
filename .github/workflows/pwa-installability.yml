@@ -1,0 +1,297 @@
+name: PWA Installability
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_android_emulator:
+        description: Run the experimental Android Emulator install flow
+        required: true
+        default: true
+        type: boolean
+      chill_url:
+        description: Local preview URL for the Android home-screen install flow
+        required: true
+        default: http://127.0.0.1:58321/
+        type: string
+  schedule:
+    - cron: "0 8 * * 1"
+  pull_request:
+    paths:
+      - ".github/workflows/pwa-installability.yml"
+      - ".maestro/**"
+      - "e2e/pwa.spec.ts"
+      - "index.html"
+      - "public/apple-touch-icon.png"
+      - "public/favicon.ico"
+      - "public/logo*.png"
+      - "public/manifest.json"
+
+env:
+  CHILL_PWA_URL: ${{ inputs.chill_url || 'http://127.0.0.1:58321/' }}
+  MAESTRO_SHA256: "2d924bfd37cccabca438a727213648cbfe4f8bb711559ec8e9d199dc09a5ce52"
+  MAESTRO_VERSION: "2.5.1"
+  VITE_PLUS_VERSION: "0.1.21"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-pwa-installability-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metadata-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec playwright install chromium
+
+      - name: Build app
+        run: vp build
+
+      - name: Check PWA metadata
+        run: PLAYWRIGHT_PORT=58320 vp exec playwright test e2e/pwa.spec.ts
+
+  android-home-screen-experiment:
+    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.run_android_emulator) }}
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SYSTEM_IMAGE: "system-images;android-35;google_apis_playstore;x86_64"
+      MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+      MAESTRO_CLI_NO_ANALYTICS: "true"
+      MAESTRO_DISABLE_UPDATE_CHECK: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Build app for Android Emulator
+        run: vp build
+
+      - name: Start app preview
+        run: |
+          set -euo pipefail
+
+          mkdir -p android-preview-logs android-pwa-evidence
+          android_pwa_url="${CHILL_PWA_URL%/}/"
+          echo "ANDROID_PWA_URL=${android_pwa_url}" >> "${GITHUB_ENV}"
+          echo "android_pwa_url=${android_pwa_url}" | tee android-pwa-evidence/android-url.txt
+          nohup vp preview --host 127.0.0.1 --port 58321 > android-preview-logs/chill.log 2>&1 &
+          curl --fail --silent --show-error --retry 30 --retry-delay 1 --retry-all-errors "${android_pwa_url}" > /dev/null
+
+      - name: Set up Java for Android and Maestro
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Install Maestro
+        run: |
+          curl -fsSLo "${RUNNER_TEMP}/maestro.zip" "https://github.com/mobile-dev-inc/Maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip"
+          echo "${MAESTRO_SHA256}  ${RUNNER_TEMP}/maestro.zip" | shasum -a 256 --check
+          unzip -q "${RUNNER_TEMP}/maestro.zip" -d "${RUNNER_TEMP}/maestro"
+          echo "${RUNNER_TEMP}/maestro/maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Check Maestro
+        run: maestro --version
+
+      - name: Boot Android Emulator
+        run: |
+          set -euo pipefail
+
+          mkdir -p android-pwa-evidence
+          export ANDROID_AVD_HOME="${RUNNER_TEMP}/android-avd"
+          mkdir -p "${ANDROID_AVD_HOME}"
+
+          if [[ -e /dev/kvm ]]; then
+            sudo chown "${USER}" /dev/kvm || sudo chmod 666 /dev/kvm
+            stat /dev/kvm | tee android-pwa-evidence/kvm.txt
+          else
+            echo "No /dev/kvm device is available on this runner" | tee android-pwa-evidence/kvm.txt
+          fi
+
+          sdkmanager --install \
+            "platform-tools" \
+            "emulator" \
+            "platforms;android-35" \
+            "${ANDROID_SYSTEM_IMAGE}"
+
+          if ! echo "no" | avdmanager create avd --force --name chill-pwa --package "${ANDROID_SYSTEM_IMAGE}" --device "pixel_7"; then
+            echo "no" | avdmanager create avd --force --name chill-pwa --package "${ANDROID_SYSTEM_IMAGE}" --device "pixel"
+          fi
+          avdmanager list avd > android-pwa-evidence/avds.txt
+          mkdir -p "${HOME}/.android"
+          adb keygen "${HOME}/.android/adbkey" >/dev/null
+          export ADB_VENDOR_KEYS="${HOME}/.android/adbkey"
+
+          "${ANDROID_HOME}/emulator/emulator" -avd chill-pwa \
+            -no-window \
+            -gpu swiftshader_indirect \
+            -no-snapshot \
+            -noaudio \
+            -no-boot-anim \
+            -no-metrics \
+            > android-pwa-evidence/emulator.log 2>&1 &
+          echo "$!" > android-pwa-evidence/emulator.pid
+
+          adb_deadline=$((SECONDS + 180))
+          until adb get-state >/dev/null 2>&1; do
+            if (( SECONDS > adb_deadline )); then
+              echo "Android emulator did not appear in adb within 180 seconds" >&2
+              exit 1
+            fi
+            sleep 5
+          done
+
+          boot_deadline=$((SECONDS + 900))
+          until [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; do
+            if (( SECONDS > boot_deadline )); then
+              echo "Android emulator did not finish booting within 900 seconds" >&2
+              exit 1
+            fi
+            sleep 5
+          done
+          adb shell input keyevent 82 || true
+          adb reverse tcp:58321 tcp:58321
+          adb reverse --list | tee android-pwa-evidence/adb-reverse.txt
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+      - name: Run chill Android home-screen flow
+        run: |
+          set -euo pipefail
+
+          adb shell pm list packages | sort > android-pwa-evidence/packages-before.txt
+
+          maestro test \
+            --format=junit \
+            --output=maestro-report-android.xml \
+            --test-output-dir=maestro-output/android \
+            --debug-output=maestro-debug/android \
+            -e PWA_URL="${ANDROID_PWA_URL}" \
+            -e PWA_NAME="chill.institute" \
+            -e PWA_READY_TEXT="sign in with put.io" \
+            -e PWA_SLUG="chill-android" \
+            .maestro/android-pwa-add-to-home-screen.yaml 2>&1 | tee maestro-run-android.log
+
+          adb exec-out screencap -p > android-pwa-evidence/chill-android-post-maestro.png
+
+          for _ in {1..60}; do
+            adb shell pm list packages | sort > android-pwa-evidence/packages-after.txt
+            comm -13 android-pwa-evidence/packages-before.txt android-pwa-evidence/packages-after.txt > android-pwa-evidence/packages-added.txt || true
+            grep -E '^package:(org\.chromium|com\.google\.android\.apps\.chrome)\.webapk\.' android-pwa-evidence/packages-added.txt > android-pwa-evidence/webapk-packages.txt || true
+
+            if [[ ! -s android-pwa-evidence/webapk-packages.txt ]]; then
+              grep -E '^package:(org\.chromium|com\.google\.android\.apps\.chrome)\.webapk\.' android-pwa-evidence/packages-after.txt > android-pwa-evidence/webapk-packages.txt || true
+            fi
+
+            if [[ -s android-pwa-evidence/webapk-packages.txt ]]; then
+              break
+            fi
+
+            sleep 2
+          done
+
+          if [[ ! -s android-pwa-evidence/webapk-packages.txt ]]; then
+            adb shell dumpsys shortcut > android-pwa-evidence/shortcuts-after.txt || true
+            adb shell dumpsys package com.android.chrome > android-pwa-evidence/chrome-package-after.txt || true
+            adb shell uiautomator dump /sdcard/launcher-window.xml >/dev/null || true
+            adb pull /sdcard/launcher-window.xml android-pwa-evidence/launcher-window.xml >/dev/null || true
+
+            if [[ ! -s android-pwa-evidence/launcher-window.xml ]] || ! grep -Fq "chill.institute" android-pwa-evidence/launcher-window.xml; then
+              echo "Expected Chrome to install a WebAPK package or add a chill.institute launcher shortcut for ${ANDROID_PWA_URL}, but neither proof was found" >&2
+              exit 1
+            fi
+
+            echo "install_result=launcher_shortcut" > android-pwa-evidence/install-summary.txt
+            {
+              echo "### Android PWA home-screen evidence"
+              echo
+              echo '```'
+              cat android-pwa-evidence/install-summary.txt
+              echo "url=${ANDROID_PWA_URL}"
+              echo "webapk_package=not minted by this emulator"
+              echo "launcher_label=chill.institute"
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          package="$(head -n 1 android-pwa-evidence/webapk-packages.txt | sed 's/^package://')"
+          echo "webapk_package=${package}" > android-pwa-evidence/install-summary.txt
+          adb shell dumpsys package "${package}" > android-pwa-evidence/webapk-package.txt
+          adb shell monkey -p "${package}" 1
+          sleep 5
+          adb exec-out screencap -p > android-pwa-evidence/chill-webapk-launched.png
+          adb shell dumpsys activity activities > android-pwa-evidence/activity-after-launch.txt
+
+          if ! grep -q "${package}" android-pwa-evidence/activity-after-launch.txt; then
+            echo "Expected launched activity state to include ${package}" >&2
+            exit 1
+          fi
+
+          {
+            echo "### Android PWA home-screen evidence"
+            echo
+            echo '```'
+            echo "install_result=webapk"
+            cat android-pwa-evidence/install-summary.txt
+            cat android-pwa-evidence/webapk-packages.txt
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Stop Android Emulator
+        if: always()
+        run: |
+          if command -v adb >/dev/null 2>&1; then
+            adb emu kill || true
+          fi
+
+      - name: Upload Android PWA experiment artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-pwa-home-screen-experiment
+          path: |
+            android-preview-logs
+            android-pwa-evidence
+            maestro-run-android.log
+            maestro-report-android.xml
+            maestro-debug
+            maestro-output
+          if-no-files-found: ignore

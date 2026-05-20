@@ -1,0 +1,79 @@
+appId: com.android.chrome
+name: Add ${PWA_NAME} to Android home screen
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: Accept & continue
+    commands:
+      - tapOn: Accept & continue
+- runFlow:
+    when:
+      visible: Use without an account
+    commands:
+      - tapOn: Use without an account
+- runFlow:
+    when:
+      visible: No thanks
+    commands:
+      - tapOn: No thanks
+- runFlow:
+    when:
+      visible: Got it
+    commands:
+      - tapOn: Got it
+- openLink:
+    link: ${PWA_URL}
+- runFlow:
+    when:
+      visible: Got it
+    commands:
+      - tapOn: Got it
+- extendedWaitUntil:
+    visible: ${PWA_READY_TEXT}
+    timeout: 60000
+- takeScreenshot: ${PWA_SLUG}-chrome-loaded
+- tapOn: Customize and control Google Chrome
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${PWA_SLUG}-chrome-menu
+- runFlow:
+    when:
+      visible: Install app
+    commands:
+      - tapOn: Install app
+- runFlow:
+    when:
+      visible: Add to Home screen
+    commands:
+      - tapOn: Add to Home screen
+- extendedWaitUntil:
+    visible: Install
+    timeout: 30000
+- takeScreenshot: ${PWA_SLUG}-install-prompt
+- tapOn: Install
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: ${PWA_SLUG}-after-install-tap
+- runFlow:
+    when:
+      visible: Install app
+    commands:
+      - tapOn:
+          point: "82%,61%"
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: ${PWA_SLUG}-after-confirm-install
+- runFlow:
+    when:
+      visible: Add to home screen
+    commands:
+      - tapOn: Add to home screen
+      - waitForAnimationToEnd:
+          timeout: 10000
+      - takeScreenshot: ${PWA_SLUG}-after-add-to-home-screen
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: ${PWA_SLUG}-home-screen-after-install

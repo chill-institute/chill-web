@@ -25,4 +25,21 @@ test("is installable as a home-screen app", async ({ context, page }) => {
 
   const installability = await client.send("Page.getInstallabilityErrors");
   expect(installability.installabilityErrors).toEqual([]);
+
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          if (!("serviceWorker" in navigator)) {
+            return false;
+          }
+
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          return registrations.some((registration) =>
+            registration.active?.scriptURL.endsWith("/sw.js"),
+          );
+        }),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
 });
