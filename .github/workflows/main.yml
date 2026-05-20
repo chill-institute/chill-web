@@ -209,7 +209,12 @@ jobs:
     permissions:
       contents: read
     env:
+      CHILL_WEB_APP: chill
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+      SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
       SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
+      SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -240,24 +245,12 @@ jobs:
           sudo apt-get install -y age
 
       - name: Restore encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_BOOTSTRAP: "true"
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 
       - name: Deploy chill production to SST
-        env:
-          CHILL_WEB_APP: chill
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
-        if: always()
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git save
 
   deploy-redirects:
@@ -273,7 +266,12 @@ jobs:
     permissions:
       contents: read
     env:
+      CHILL_WEB_APP: redirects
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+      SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
       SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
+      SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -298,24 +296,12 @@ jobs:
           sudo apt-get install -y age
 
       - name: Restore encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_BOOTSTRAP: "true"
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git restore
 
       - name: Deploy binge redirects to SST
-        env:
-          CHILL_WEB_APP: redirects
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
         run: vp exec sst deploy --stage production --print-logs
 
       - name: Save encrypted SST local state
-        if: always()
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git save
 
   deploy-summary:
