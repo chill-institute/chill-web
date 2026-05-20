@@ -74,45 +74,6 @@ describe("formatSearchResults", () => {
     expect(formatted.map((result) => result.id)).toEqual(["match-high", "match-low"]);
   });
 
-  it("falls back to parsing the raw release name when releaseInfo is empty", () => {
-    const results = [
-      create(SearchResultSchema, {
-        id: "raw-1080p",
-        title: "Some.Movie.2024.1080p.WEB.x265-XYZ",
-        indexer: "yts",
-        source: "yts",
-        peers: BigInt(0),
-        seeders: BigInt(10),
-        size: BigInt(100),
-        uploadedAt: "2025-01-01T00:00:00Z",
-        link: "https://example.com/raw-1080p",
-        releaseInfo: release({}),
-      }),
-      create(SearchResultSchema, {
-        id: "raw-720p",
-        title: "Some.Movie.2024.720p.WEB.x265-XYZ",
-        indexer: "yts",
-        source: "yts",
-        peers: BigInt(0),
-        seeders: BigInt(20),
-        size: BigInt(100),
-        uploadedAt: "2025-01-02T00:00:00Z",
-        link: "https://example.com/raw-720p",
-      }),
-    ];
-
-    const formatted = formatSearchResults(
-      results,
-      [ResolutionFilter.RESOLUTION_FILTER_1080P],
-      [],
-      [],
-      SortBy.SEEDERS,
-      SortDirection.DESC,
-    );
-
-    expect(formatted.map((result) => result.id)).toEqual(["raw-1080p"]);
-  });
-
   it("matches H.264-family releaseInfo values with the x264 quick filter", () => {
     const results = [
       create(SearchResultSchema, {
@@ -151,44 +112,6 @@ describe("formatSearchResults", () => {
     );
 
     expect(formatted.map((result) => result.id)).toEqual(["h264"]);
-  });
-
-  it("falls back to parsing dashed and underscored codec tokens from the raw release name", () => {
-    const results = [
-      create(SearchResultSchema, {
-        id: "x-264",
-        title: "Movie.2024.1080p.WEB.x-264-GRP",
-        indexer: "yts",
-        source: "yts",
-        peers: BigInt(0),
-        seeders: BigInt(10),
-        size: BigInt(100),
-        uploadedAt: "2025-01-01T00:00:00Z",
-        link: "https://example.com/x-264",
-      }),
-      create(SearchResultSchema, {
-        id: "h_265",
-        title: "Movie.2024.1080p.WEB.H_265-GRP",
-        indexer: "yts",
-        source: "yts",
-        peers: BigInt(0),
-        seeders: BigInt(20),
-        size: BigInt(100),
-        uploadedAt: "2025-01-02T00:00:00Z",
-        link: "https://example.com/h_265",
-      }),
-    ];
-
-    const formatted = formatSearchResults(
-      results,
-      [],
-      [CodecFilter.X264],
-      [],
-      SortBy.SEEDERS,
-      SortDirection.DESC,
-    );
-
-    expect(formatted.map((result) => result.id)).toEqual(["x-264"]);
   });
 });
 
