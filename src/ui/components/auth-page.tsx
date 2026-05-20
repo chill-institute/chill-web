@@ -30,18 +30,20 @@ function AuthPage({
         )}
       >
         {showHead ? (
-          <div className="border-border-strong flex items-center gap-3.5 border-b px-7 py-6">
+          <div className="border-border-strong flex flex-col items-center justify-center gap-5 border-b px-7 py-6 text-center sm:gap-6">
             {hideBrand ? null : (
               <img
                 src={logoSrc}
-                width={44}
-                height={44}
+                width={64}
+                height={64}
                 alt=""
-                className="border-border-strong rounded border"
+                className="border-border-strong size-16 rounded border sm:size-20"
               />
             )}
-            <div className="min-w-0 flex-1">
-              {title ? <h1 className="m-0 truncate text-[1.625rem]">{title}</h1> : null}
+            <div className="min-w-0 w-full">
+              {title ? (
+                <h1 className="m-0 text-[1.625rem] leading-none sm:text-4xl">{title}</h1>
+              ) : null}
               {description ? (
                 <p className="text-fg-3 mt-1 font-serif text-sm italic">{description}</p>
               ) : null}

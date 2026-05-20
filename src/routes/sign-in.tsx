@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight, ExternalLink, Loader } from "lucide-react";
+import { ExternalLink, Loader } from "lucide-react";
 
 import { AuthPage } from "@/ui/components/auth-page";
 import { Button } from "@/ui/components/ui/button";
@@ -109,7 +109,7 @@ function SignInPage() {
         <p className="text-fg-2 m-0 text-sm leading-relaxed">{visibleError.message}</p>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {visibleError?.actionURL ? (
           <Button
             disabled={loading === "help"}
@@ -141,33 +141,6 @@ function SignInPage() {
                 : "sign in with put.io"}
           </span>
         </Button>
-      </div>
-
-      <div className="text-fg-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 font-mono text-2xs leading-relaxed">
-        <span>not affiliated with put.io</span>
-        <nav aria-label="external links" className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          {[
-            { label: "about", href: publicLinks.about },
-            { label: "github", href: publicLinks.github },
-          ].map((link, index) => (
-            <span key={link.href} className="inline-flex items-center gap-1">
-              {index > 0 ? (
-                <span aria-hidden="true" className="text-fg-4">
-                  ·
-                </span>
-              ) : null}
-              <a
-                href={link.href}
-                rel="noreferrer noopener"
-                target="_blank"
-                className="hover-hover:hover:text-fg-1 inline-flex items-center gap-0.5"
-              >
-                <span>{link.label}</span>
-                <ArrowUpRight className="size-3" strokeWidth={1.25} aria-hidden="true" />
-              </a>
-            </span>
-          ))}
-        </nav>
       </div>
     </AuthPage>
   );
