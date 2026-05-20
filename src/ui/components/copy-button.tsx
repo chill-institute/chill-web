@@ -35,11 +35,7 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
       data-slot="copy-button"
       variant={variant === "stamp" ? "default" : "ghost"}
       size={variant === "stamp" ? "default" : "icon-sm"}
-      className={cn(
-        "cursor-copy",
-        variant === "stamp" ? "min-w-8 px-2" : "[&_svg]:size-3.5",
-        className,
-      )}
+      className={cn("cursor-copy", variant === "stamp" && "min-w-8 px-2", className)}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(value);

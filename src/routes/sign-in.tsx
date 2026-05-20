@@ -84,7 +84,7 @@ function SignInPage() {
     return (
       <AuthPage title="redirecting">
         <div className="text-fg-2 flex items-center gap-2 text-sm">
-          <Loader className="motion-safe:animate-spin" />
+          <Loader className="motion-safe:animate-spin" data-icon="inline-start" />
           <span>taking you to the institute…</span>
         </div>
       </AuthPage>
@@ -118,7 +118,9 @@ function SignInPage() {
               window.location.href = visibleError.actionURL ?? publicLinks.about;
             }}
           >
-            {loading === "help" ? <Loader className="motion-safe:animate-spin" /> : null}
+            {loading === "help" ? (
+              <Loader className="motion-safe:animate-spin" data-icon="inline-start" />
+            ) : null}
             {visibleError.actionLabel ?? "learn more"}
           </Button>
         ) : null}
@@ -129,9 +131,9 @@ function SignInPage() {
           onClick={startSignIn}
         >
           {loading === "sign-in" ? (
-            <Loader className="motion-safe:animate-spin" />
+            <Loader className="motion-safe:animate-spin" data-icon="inline-start" />
           ) : (
-            <ExternalLink />
+            <ExternalLink data-icon="inline-start" />
           )}
           <span>
             {visibleError?.type === SESSION_EXPIRED_ERROR

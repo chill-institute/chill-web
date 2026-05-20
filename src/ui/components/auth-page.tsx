@@ -45,7 +45,7 @@ function AuthPage({
                 <h1 className="m-0 text-[1.625rem] leading-none sm:text-4xl">{title}</h1>
               ) : null}
               {description ? (
-                <p className="text-fg-3 mt-1 font-serif text-sm italic">{description}</p>
+                <p className="text-fg-3 mt-2 text-sm leading-[1.2]">{description}</p>
               ) : null}
             </div>
           </div>

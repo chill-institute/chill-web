@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 
 import { CheckboxField } from "@/ui/components/checkbox-field";
 import { Button } from "@/ui/components/ui/button";
+import { FieldLegend, FieldSet } from "@/ui/components/ui/field";
 import type { FilterState } from "@/hooks/use-search-filters";
 import {
   SortDirection,
@@ -33,8 +34,8 @@ export function SearchFilterBar({
 }: Props) {
   return (
     <div className="flex flex-col gap-4 lg:items-center lg:gap-6">
-      <fieldset className="m-0 flex flex-col items-start border-0 p-0 lg:items-center">
-        <legend className="sr-only">Quick filters</legend>
+      <FieldSet className="m-0 flex-col items-start gap-0 border-0 p-0 lg:items-center">
+        <FieldLegend className="sr-only">Quick filters</FieldLegend>
         <div id="quick-filters" className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <div className="flex flex-row gap-2">
             {resolutionFilters.map((filter) => {
@@ -104,10 +105,10 @@ export function SearchFilterBar({
             })}
           </div>
         </div>
-      </fieldset>
+      </FieldSet>
 
-      <fieldset className="m-0 border-0 p-0 lg:hidden">
-        <legend className="sr-only">Sort by</legend>
+      <FieldSet className="m-0 gap-0 border-0 p-0 lg:hidden">
+        <FieldLegend className="sr-only">Sort by</FieldLegend>
         <div id="sort-options" className="flex flex-wrap items-center gap-2">
           {sortByValues.map((option) => {
             const active = filters.sortBy === option;
@@ -123,16 +124,16 @@ export function SearchFilterBar({
                 <span>{sortByLabels[option].toLowerCase()}</span>
                 {active ? (
                   filters.sortDirection === SortDirection.ASC ? (
-                    <ArrowUp className="size-3.5" />
+                    <ArrowUp data-icon="inline-end" />
                   ) : (
-                    <ArrowDown className="size-3.5" />
+                    <ArrowDown data-icon="inline-end" />
                   )
                 ) : null}
               </Button>
             );
           })}
         </div>
-      </fieldset>
+      </FieldSet>
     </div>
   );
 }

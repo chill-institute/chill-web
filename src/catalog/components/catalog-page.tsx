@@ -33,6 +33,8 @@ import {
 
 type CatalogTab = "movies" | "tv-shows";
 
+const PRIORITY_POSTER_COUNT = 5;
+
 type CatalogPageProps = {
   tab: CatalogTab;
   source?: number;
@@ -273,6 +275,8 @@ function MoviesContent({ query, source, onPickAnotherSource }: MoviesContentProp
               style={staggerDelay(index)}
               title={movie.title}
               image={movie.posterUrl ?? null}
+              imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
+              imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
               rating={movie.rating != null ? movie.rating.toFixed(1) : null}
               year={movie.year != null ? String(movie.year) : null}
               render={<Link to="/movies/$id" params={{ id: movie.id }} search={(prev) => prev} />}
@@ -320,6 +324,8 @@ function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentPr
               style={staggerDelay(index)}
               title={show.title}
               image={show.posterUrl ?? null}
+              imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
+              imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
               rating={show.rating != null ? show.rating.toFixed(1) : null}
               year={show.year != null ? String(show.year) : null}
               render={
@@ -398,9 +404,7 @@ function EmptyState({ message, onTryAnother }: { message: string; onTryAnother?:
             className="border-border-strong rounded border"
           />
         </EmptyMedia>
-        <EmptyTitle className="text-fg-2 font-serif text-xl italic font-normal">
-          {message}
-        </EmptyTitle>
+        <EmptyTitle className="text-fg-2 font-serif text-xl font-normal">{message}</EmptyTitle>
       </EmptyHeader>
       {onTryAnother ? (
         <EmptyContent>

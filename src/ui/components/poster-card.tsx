@@ -1,7 +1,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { Star } from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ImgHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "../lib/cn";
 import { slotAttr } from "../lib/slot-attr";
@@ -9,6 +9,8 @@ import { slotAttr } from "../lib/slot-attr";
 type PosterCardProps = useRender.ComponentProps<"article"> & {
   title: string;
   image?: string | null;
+  imageFetchPriority?: ImgHTMLAttributes<HTMLImageElement>["fetchPriority"];
+  imageLoading?: ImgHTMLAttributes<HTMLImageElement>["loading"];
   rating?: string | null;
   year?: string | null;
   footer?: ReactNode;
@@ -19,6 +21,8 @@ type PosterCardProps = useRender.ComponentProps<"article"> & {
 function PosterCard({
   title,
   image,
+  imageFetchPriority = "auto",
+  imageLoading = "lazy",
   rating,
   year,
   footer,
@@ -48,6 +52,8 @@ function PosterCard({
                   src={image}
                   alt=""
                   decoding="async"
+                  fetchPriority={imageFetchPriority}
+                  loading={imageLoading}
                   className="absolute inset-0 size-full object-cover"
                 />
               ) : (

@@ -10,6 +10,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
 import { Button } from "./ui/button";
+import { Field, FieldLabel } from "./ui/field";
 import { Textarea } from "./ui/textarea";
 import { buildErrorReport, buildGitHubIssueURL, formatErrorReport } from "../lib/error-report";
 
@@ -96,8 +97,10 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
         </div>
       </div>
 
-      <label htmlFor={notesId} className="flex flex-col gap-2 text-sm">
-        <span className="font-medium">What were you doing?</span>
+      <Field>
+        <FieldLabel htmlFor={notesId} className="text-sm font-medium">
+          What were you doing?
+        </FieldLabel>
         <Textarea
           id={notesId}
           name="error-report-notes"
@@ -106,11 +109,11 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
         />
-      </label>
+      </Field>
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => window.location.reload()}>
-          <RefreshCw />
+          <RefreshCw data-icon="inline-start" />
           reload page
         </Button>
         <Button
@@ -124,11 +127,11 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
             scheduleCopyReset();
           }}
         >
-          {copyIcon}
+          <span data-icon="inline-start">{copyIcon}</span>
           {copyLabel}
         </Button>
         <Button render={<a href={issueURL} target="_blank" rel="noreferrer" />}>
-          <ExternalLink />
+          <ExternalLink data-icon="inline-start" />
           create GitHub issue
         </Button>
       </div>

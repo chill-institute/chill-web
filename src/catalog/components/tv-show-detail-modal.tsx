@@ -381,16 +381,17 @@ export function TvShowDetailModal({
   const show = detailQuery.data?.show ?? fallbackShow;
   const seasons = detailQuery.data?.seasons ?? EMPTY_SEASONS;
   const resolvedSeasonNumber = activeSeason ?? seasons[0]?.seasonNumber ?? 1;
+  const seasonReady = activeSeason !== undefined || seasons.length > 0;
 
   const seasonQuery = useTVShowSeasonQuery({
     imdbId,
     seasonNumber: resolvedSeasonNumber,
-    enabled: seasons.length > 0,
+    enabled: seasonReady,
   });
   const downloadsQuery = useTVShowSeasonDownloadsQuery({
     imdbId,
     seasonNumber: resolvedSeasonNumber,
-    enabled: seasons.length > 0,
+    enabled: seasonReady,
   });
 
   const downloadsByEpisode = useMemo(
