@@ -135,7 +135,7 @@ describe("normalizeQuery", () => {
   });
 
   it("returns the original query trimmed when not an IMDb URL", () => {
-    expect(normalizeQuery("  Aurora Protocol  ")).toBe("Aurora Protocol");
+    expect(normalizeQuery("  Synthetic Feature Alpha  ")).toBe("Synthetic Feature Alpha");
   });
 
   it("returns the original query when it is already an IMDb ID", () => {

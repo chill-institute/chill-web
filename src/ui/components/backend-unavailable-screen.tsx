@@ -42,6 +42,8 @@ function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
           reload page
         </Button>
         <Button
+          variant="outline"
+          nativeButton={false}
           render={<a href="https://status.chill.institute/" target="_blank" rel="noreferrer" />}
         >
           <ExternalLink />

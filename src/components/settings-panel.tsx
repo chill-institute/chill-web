@@ -94,7 +94,7 @@ function AccountSection({
 }) {
   return (
     <SettingsSection title="Signed in as">
-      <div className="border-border-strong flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30">
+      <div className="border-border-strong bg-surface flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30">
         <div className="flex min-w-0 items-center gap-2">
           <Avatar size="sm" className="size-7 shrink-0">
             {profileQuery.data?.avatarUrl ? (

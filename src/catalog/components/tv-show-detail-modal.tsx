@@ -232,12 +232,12 @@ function TvShowDetailContent({
                 if (Number.isFinite(next)) onSeasonChange(next);
               }}
             >
-              <TabsList className="border-border-soft bg-surface-2/60 mb-4 w-full overflow-x-auto rounded border p-1 sm:w-fit">
+              <TabsList className="mb-4 max-w-full overflow-x-auto">
                 {seasons.map((season) => (
                   <TabsTrigger
                     key={season.seasonNumber}
                     value={String(season.seasonNumber)}
-                    className="h-8 shrink-0 px-3 text-base data-[active]:shadow-press sm:h-7 sm:px-2.5 sm:text-sm"
+                    className="shrink-0"
                   >
                     {season.name || `season ${season.seasonNumber}`}
                   </TabsTrigger>

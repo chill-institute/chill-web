@@ -11,7 +11,7 @@ type SearchInfo = {
   hasPending: boolean;
 };
 
-function computeNextPhase(
+export function computeFastestPhase(
   current: FastestPhase,
   search: SearchInfo,
   resultsCount: number,
@@ -21,8 +21,8 @@ function computeNextPhase(
 
   if (current === "idle") {
     if (allDone && resultsCount === 0) return "empty";
-    if (search.nonEmptyResolvedCount >= threshold && resultsCount > 0) return "fastest";
     if (allDone && resultsCount > 0) return "all";
+    if (search.nonEmptyResolvedCount >= threshold && resultsCount > 0) return "fastest";
     return "idle";
   }
 
@@ -51,7 +51,7 @@ export function useFastestMode(
   const resultsCount = searchState.results.length;
   const nextPhase =
     isFastestMode && submittedQuery.length > 0
-      ? computeNextPhase(phase, searchState, resultsCount)
+      ? computeFastestPhase(phase, searchState, resultsCount)
       : phase;
   if (nextPhase !== phase) {
     setPhase(nextPhase);

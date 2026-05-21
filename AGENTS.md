@@ -35,12 +35,15 @@
 - `vp run verify`
 - `vp run smoke`
 - `vp run e2e`
+- `vp run visual`
+- `vp run visual:update`
 - `vp run knip`
 
 ## Conventions
 
 - Keep repo entrypoints in the root [package.json](./package.json); they should call `vp` underneath.
 - Prefer `vp` over direct `pnpm`, `vite`, `vitest`, or `playwright` invocations.
+- Keep visual regression tests under `e2e/visual/` and run them with `vp run visual`; ordinary `vp run e2e` intentionally ignores that folder.
 - Keep dependency versions in the root [package.json](./package.json).
 - Keep browser-side API resolution in `src/lib/env.ts`; the client takes the resolved `baseUrl` as input.
 - Keep shadcn config in `components.json`.

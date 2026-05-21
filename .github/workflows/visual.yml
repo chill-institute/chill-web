@@ -1,0 +1,66 @@
+name: Visual Regression
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/visual.yml"
+      - "e2e/support/**"
+      - "e2e/visual/**"
+      - "package.json"
+      - "playwright.visual.config.ts"
+      - "pnpm-lock.yaml"
+      - "public/**"
+      - "src/**"
+  workflow_dispatch:
+
+env:
+  VITE_PLUS_VERSION: "0.1.21"
+  VITE_PUBLIC_RELEASE: visual-test
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-visual-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ env.VITE_PLUS_VERSION }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec playwright install chromium
+
+      - name: Build app
+        run: vp build
+
+      - name: Run visual regression tests
+        run: vp run visual
+
+      - name: Upload visual artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visual-regression-artifacts
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore

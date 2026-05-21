@@ -2,23 +2,26 @@ import { test as base, type Page, type Route } from "@playwright/test";
 
 import { playwrightPort } from "./port";
 
-const port = playwrightPort(58300);
-
-const AUTH_STORAGE_STATE = {
-  cookies: [],
-  origins: [
-    {
-      origin: `http://localhost:${port}`,
-      localStorage: [{ name: "chill.auth_token", value: "test-token" }],
-    },
-  ],
-};
-
 type MockRpcMethods = Record<string, unknown>;
 
 type MockRpc = (methods: MockRpcMethods) => Promise<void>;
 
 const SERVICE_PATTERN = /chill\.v4\.UserService\//;
+
+function authStorageState(baseURL: string | undefined) {
+  const origin =
+    baseURL === undefined ? `http://localhost:${playwrightPort(58300)}` : new URL(baseURL).origin;
+
+  return {
+    cookies: [],
+    origins: [
+      {
+        origin,
+        localStorage: [{ name: "chill.auth_token", value: "test-token" }],
+      },
+    ],
+  };
+}
 
 function methodFromUrl(url: string): string | undefined {
   const match = url.match(/chill\.v4\.UserService\/(\w+)/);
@@ -66,10 +69,10 @@ export const test = base.extend<{
     await stubBackendHealth(page);
     await provide(page);
   },
-  authenticatedPage: async ({ browser, contextOptions }, provide) => {
+  authenticatedPage: async ({ browser, contextOptions, baseURL }, provide) => {
     const context = await browser.newContext({
       ...contextOptions,
-      storageState: AUTH_STORAGE_STATE,
+      storageState: authStorageState(baseURL),
     });
     const page = await context.newPage();
     await stubBackendHealth(page);

@@ -14,7 +14,7 @@ const buttonVariants = cva(
           "border-border-strong bg-fg-1 text-fg-inverse shadow-press hover-hover:hover:bg-fg-2 active:translate-x-px active:translate-y-px active:shadow-none active:duration-100",
         ghost:
           "text-fg-2 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 active:scale-[0.97] active:duration-100",
-        outline: "border-border-strong bg-transparent text-fg-1 hover-hover:hover:bg-hover",
+        outline: "border-border-strong bg-surface text-fg-1 hover-hover:hover:bg-hover",
         done: "border-border-soft bg-transparent text-success cursor-default",
         off: "border-border-soft bg-transparent text-fg-3 cursor-not-allowed",
         link: "text-fg-1 underline-offset-4 hover-hover:hover:underline",

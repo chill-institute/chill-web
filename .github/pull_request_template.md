@@ -6,6 +6,7 @@ Briefly describe the change.
 
 - [ ] `vp run verify`
 - [ ] `vp run e2e`
+- [ ] `vp run visual` when UI/layout/design snapshots should be checked
 
 ## Notes
 

@@ -70,6 +70,40 @@ test.describe("sign-in page", () => {
   });
 });
 
+test.describe("CLI token page", () => {
+  test("authenticated users can reveal and hide the token", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+
+    await authenticatedPage.goto("/auth/cli-token");
+
+    await expect(authenticatedPage.getByRole("heading", { name: "CLI token" })).toBeVisible();
+
+    const tokenInput = authenticatedPage.getByLabel("CLI auth token");
+    await expect(tokenInput).toHaveValue("test-token");
+    await expect(tokenInput).toHaveAttribute("type", "password");
+
+    await authenticatedPage.getByRole("button", { name: "show" }).click();
+    await expect(tokenInput).toHaveAttribute("type", "text");
+
+    await authenticatedPage.getByRole("button", { name: "hide" }).click();
+    await expect(tokenInput).toHaveAttribute("type", "password");
+  });
+
+  test("unauthenticated users are redirected to sign-in without storing auth-route callbacks", async ({
+    page,
+  }) => {
+    await page.goto("/auth/cli-token");
+
+    await page.waitForURL("**/sign-in**");
+    const url = new URL(page.url());
+    expect(url.pathname).toBe("/sign-in");
+    expect(url.searchParams.get("callbackUrl")).toBeNull();
+  });
+});
+
 test.describe("sign-out", () => {
   test("clears auth and redirects to sign-in", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({});

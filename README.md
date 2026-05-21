@@ -30,6 +30,7 @@ vp run dev
 ```bash
 vp run verify
 vp run e2e
+vp run visual
 ```
 
 ## Docs

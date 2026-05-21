@@ -34,6 +34,25 @@ vp run smoke
 vp run e2e
 ```
 
+Visual regression snapshots are a separate guardrail. They cover desktop and mobile
+rendering in light and dark mode under `e2e/visual/` and are intentionally
+excluded from ordinary `vp run e2e`. Run them for intentional layout, token, responsive, or
+component-state changes:
+
+```bash
+vp run visual
+```
+
+When the visual change is intended, update and review the committed baselines:
+
+```bash
+vp run visual:update
+```
+
+Screenshot baselines are partitioned by viewport and theme project only, and CI is
+the source of truth for the committed images. The visual workflow is path-gated
+to UI-affecting files so routine non-UI PRs do not pay for it.
+
 CI and deploy behavior is documented in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ## Git Hooks
@@ -63,6 +82,7 @@ vp config --hooks-dir .vite-hooks
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 - When generating or updating shadcn/base primitives, work from `./` so `components.json` resolves aliases correctly.
 - Playwright keeps traces, screenshots, and videos on failure. Check `playwright-report/` and `test-results/` after a failing run.
+- Keep ordinary e2e tests in `e2e/*.spec.ts`; keep screenshot guardrails in `e2e/visual/*.visual.spec.ts` so visual baselines do not slow or destabilize behavioral checks.
 - Deployment credentials and operational runbooks are maintainer-managed. Do not add secrets, local machine paths, or maintainer-only notes to this repo.
 
 ## Pull Requests
