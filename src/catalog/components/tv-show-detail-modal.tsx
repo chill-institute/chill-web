@@ -180,15 +180,15 @@ function TvShowDetailContent({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
         {detailQuery.status === "error" ? (
-          <UserErrorAlert className="mt-3.5" error={detailQuery.error} />
+          <UserErrorAlert className="mt-2.5" error={detailQuery.error} />
         ) : null}
 
         {show?.overview ? (
-          <p className="text-fg-2 mt-3.5 text-[0.9375rem]/6 sm:text-sm sm:leading-relaxed">
+          <p className="text-fg-2 mt-2.5 text-[0.9375rem]/6 sm:text-sm sm:leading-relaxed">
             {show.overview}
           </p>
         ) : detailQuery.isPending ? (
-          <div className="mt-3.5 flex flex-col gap-2">
+          <div className="mt-2.5 flex flex-col gap-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-[92%]" />
             <Skeleton className="h-4 w-[80%]" />
@@ -197,7 +197,7 @@ function TvShowDetailContent({
 
         <div
           className={cn(
-            "border-border-strong mt-4 border-t pt-4 transition-opacity duration-base ease-out",
+            "border-border-strong mt-3.5 border-t pt-3.5 transition-opacity duration-base ease-out",
             seasonRefreshing ? "opacity-75" : "opacity-100",
           )}
         >
