@@ -1,13 +1,11 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Search, Star, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { normalizeCodecFilterValue } from "@/api/release-info";
 import { Button } from "@/ui/components/ui/button";
 import { NativeSelect } from "@/ui/components/ui/native-select";
-import { ResponsiveModal } from "@/ui/components/responsive-modal";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { Badge } from "@/ui/components/ui/badge";
 import { Separator } from "@/ui/components/ui/separator";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { cn } from "@/ui/lib/cn";
@@ -17,13 +15,19 @@ import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
 import {
   DetailModalBody,
+  DetailModalShell,
+  DetailExternalLinkMeta,
+  DetailGenreBadges,
   DetailModalHeader,
   DetailModalHeaderText,
-} from "@/catalog/components/detail-modal-header";
+  DetailRatingMeta,
+  DetailResponsiveModal,
+  DetailYearMeta,
+  getDetailGenreTags,
+} from "@/catalog/components/detail-modal";
 
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
-const DETAIL_GENRE_LIMIT = 2;
 
 const UPLOADED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -45,21 +49,6 @@ const SORT_OPTIONS = ["seeders", "size", "age"] as const;
 type ResolutionFilterValue = (typeof RESOLUTION_FILTER_OPTIONS)[number];
 type CodecFilterValue = (typeof CODEC_FILTER_OPTIONS)[number];
 type SortValue = (typeof SORT_OPTIONS)[number];
-
-function buildMetadataTags(movie: Movie): string[] {
-  const seen = new Set<string>();
-  const tags: string[] = [];
-  for (const raw of movie.genres) {
-    if (tags.length >= DETAIL_GENRE_LIMIT) break;
-    const value = raw.trim();
-    if (!value) continue;
-    const key = value.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    tags.push(value);
-  }
-  return tags;
-}
 
 type ParsedResult = {
   result: SearchResult;
@@ -178,42 +167,13 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
       title={movie.title}
       metadata={
         <>
-          <span className="flex items-center gap-1">
-            <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
-            <span>{movie.rating ? movie.rating.toFixed(1) : "N/A"}</span>
-          </span>
-          {movie.year ? (
-            <>
-              <span className="text-fg-4">·</span>
-              <span className="text-fg-3">{movie.year}</span>
-            </>
-          ) : null}
-          {movie.externalUrl ? (
-            <>
-              <span className="text-fg-4">·</span>
-              <a
-                href={movie.externalUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
-              >
-                <span>IMDb</span>
-                <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-              </a>
-            </>
-          ) : null}
+          <DetailRatingMeta rating={movie.rating} />
+          <DetailYearMeta year={movie.year} />
+          <DetailExternalLinkMeta url={movie.externalUrl} />
         </>
       }
     >
-      {metadataTags.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {metadataTags.map((tag) => (
-            <Badge key={tag} variant="outline" className="border-border-faint bg-surface-2/50">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
+      <DetailGenreBadges genres={metadataTags} className="mt-2" />
     </DetailModalHeaderText>
   );
 }
@@ -271,7 +231,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
   const results = searchQuery.data?.results ?? EMPTY_RESULTS;
   const synopsis = movie.overview?.trim() || undefined;
-  const metadataTags = useMemo(() => buildMetadataTags(movie), [movie]);
+  const metadataTags = useMemo(() => getDetailGenreTags(movie.genres), [movie.genres]);
   const parsedResults = useMemo<ParsedResult[]>(
     () =>
       results.map((result) => ({
@@ -313,12 +273,8 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   }, [parsedResults, resolutionFilter, codecFilter, sortBy]);
   const hasOnlyUnavailableResults = visibleResults.length > 0 && sendableResultsCount === 0;
   const hasActiveFilters = resolutionFilter !== "all" || codecFilter !== "all";
-  const shellClassName = isDesktop
-    ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border p-0 shadow-modal flex flex-col"
-    : "h-full min-h-0 w-full overflow-hidden bg-surface text-fg-1 p-0 flex flex-col";
-
   return (
-    <div className={shellClassName}>
+    <DetailModalShell isDesktop={isDesktop}>
       <DetailModalHeader
         backdropUrl={movie.backdropUrl}
         posterUrl={movie.posterUrl}
@@ -329,7 +285,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         <MovieHeaderText movie={movie} metadataTags={metadataTags} />
       </DetailModalHeader>
 
-      <DetailModalBody dataAttribute={{ name: "data-movie-detail-scroll" }}>
+      <DetailModalBody movieScroll>
         {synopsis ? <MovieSynopsis key={synopsis}>{synopsis}</MovieSynopsis> : null}
 
         <Separator className="bg-border-faint" />
@@ -478,7 +434,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
           </>
         )}
       </DetailModalBody>
-    </div>
+    </DetailModalShell>
   );
 }
 
@@ -557,15 +513,12 @@ function EmptyResults({ title, body }: { title: string; body: string }) {
 export function MovieDetailModal({ movie, onClose }: Props) {
   const isDesktop = useIsDesktop();
   return (
-    <ResponsiveModal
-      open
-      onOpenChange={(open) => !open && onClose()}
+    <DetailResponsiveModal
       title={`${movie.title} details`}
       description={`Torrent results for ${movie.title} (${movie.year})`}
-      desktopContentClassName="fixed top-1/2 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
-      drawerContentClassName="!max-h-[92dvh] rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
+      onClose={onClose}
     >
       <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop={isDesktop} />
-    </ResponsiveModal>
+    </DetailResponsiveModal>
   );
 }

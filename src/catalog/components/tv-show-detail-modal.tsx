@@ -1,12 +1,10 @@
 import { useMemo } from "react";
-import { ArrowUpRight, CloudUpload, Loader2, Star } from "lucide-react";
+import { CloudUpload, Loader2 } from "lucide-react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { TVShowStatusBadge } from "@/catalog/components/tv-show-status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/ui/components/ui/tabs";
-import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
-import { ResponsiveModal } from "@/ui/components/responsive-modal";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { cn } from "@/ui/lib/cn";
@@ -15,10 +13,18 @@ import { formatBytes } from "@/ui/lib/format";
 import { type TVShow } from "@/catalog/lib/types";
 import {
   DetailModalBody,
+  DetailExternalLinkMeta,
+  DetailGenreBadges,
   DetailModalHeader,
   DetailModalHeaderSkeleton,
   DetailModalHeaderText,
-} from "@/catalog/components/detail-modal-header";
+  DetailMetadataSeparator,
+  DetailModalShell,
+  DetailRatingMeta,
+  DetailResponsiveModal,
+  DetailYearMeta,
+  getDetailGenreTags,
+} from "@/catalog/components/detail-modal";
 import {
   useTVShowDetailQuery,
   useTVShowSeasonDownloadsQuery,
@@ -29,7 +35,6 @@ const SEASON_TAB_SKELETON_SLOTS = Array.from({ length: 3 }, (_, i) => `season-ta
 const EPISODE_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `episode-skel-${i}`);
 const EMPTY_SEASONS: NonNullable<ReturnType<typeof useTVShowDetailQuery>["data"]>["seasons"] = [];
 const EMPTY_GENRES: string[] = [];
-const DETAIL_GENRE_LIMIT = 2;
 
 const AIR_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -102,14 +107,10 @@ function TvShowDetailContent({
   const seasonRefreshing =
     (seasonQuery.isFetching && seasonQuery.status === "success") ||
     (downloadsQuery.isFetching && downloadsQuery.status === "success");
-  const visibleGenres = genres.slice(0, DETAIL_GENRE_LIMIT);
-
-  const shellClassName = isDesktop
-    ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border border-solid p-0 shadow-modal flex flex-col"
-    : "h-full min-h-0 w-full overflow-hidden bg-surface text-fg-1 p-0 flex flex-col";
+  const visibleGenres = getDetailGenreTags(genres);
 
   return (
-    <div className={shellClassName}>
+    <DetailModalShell isDesktop={isDesktop}>
       <DetailModalHeader
         backdropUrl={backdropUrl}
         posterUrl={posterUrl}
@@ -123,34 +124,13 @@ function TvShowDetailContent({
             title={show.title}
             metadata={
               <>
-                <span className="flex items-center gap-1">
-                  <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
-                  <span>{show.rating ? show.rating.toFixed(1) : "N/A"}</span>
-                </span>
-                {show.year ? (
-                  <>
-                    <span className="text-fg-4">·</span>
-                    <span className="text-fg-3">{show.year}</span>
-                  </>
-                ) : null}
-                <span className="text-fg-4">·</span>
+                <DetailRatingMeta rating={show.rating} />
+                <DetailYearMeta year={show.year} />
+                <DetailMetadataSeparator />
                 <span className="text-fg-3">
                   {detailQuery.data?.show?.seasonCount ?? show.seasonCount} seasons
                 </span>
-                {show.externalUrl ? (
-                  <>
-                    <span className="text-fg-4">·</span>
-                    <a
-                      href={show.externalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
-                    >
-                      <span>IMDb</span>
-                      <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-                    </a>
-                  </>
-                ) : null}
+                <DetailExternalLinkMeta url={show.externalUrl} />
               </>
             }
           >
@@ -158,18 +138,8 @@ function TvShowDetailContent({
               <TVShowStatusBadge status={detailQuery.data?.show?.status ?? show.status} />
               {visibleGenres.length > 0 ? (
                 <>
-                  <span className="text-fg-4">·</span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {visibleGenres.map((genre) => (
-                      <Badge
-                        key={genre}
-                        variant="outline"
-                        className="border-border-faint bg-surface-2/50"
-                      >
-                        {genre}
-                      </Badge>
-                    ))}
-                  </div>
+                  <DetailMetadataSeparator />
+                  <DetailGenreBadges genres={visibleGenres} />
                 </>
               ) : null}
             </div>
@@ -339,7 +309,7 @@ function TvShowDetailContent({
           )}
         </div>
       </DetailModalBody>
-    </div>
+    </DetailModalShell>
   );
 }
 
@@ -406,15 +376,12 @@ export function TvShowDetailModal({
   );
 
   return (
-    <ResponsiveModal
-      open
-      onOpenChange={(open) => !open && onClose()}
+    <DetailResponsiveModal
       title={show?.title ?? "TV show details"}
       description="Browse TV show metadata, seasons, and episode download actions."
-      desktopContentClassName="fixed top-1/2 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
-      drawerContentClassName="!max-h-[92dvh] bg-surface shadow-drawer overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0"
+      onClose={onClose}
     >
       {content}
-    </ResponsiveModal>
+    </DetailResponsiveModal>
   );
 }
