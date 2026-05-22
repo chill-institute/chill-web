@@ -314,12 +314,12 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
   return (
     <div className={shellClassName}>
-      <div className="relative flex h-[240px] shrink-0 items-end overflow-hidden sm:h-[280px]">
+      <div className="relative flex h-[200px] shrink-0 items-end overflow-hidden sm:h-[220px]">
         <DetailBackdropImage key={movie.backdropUrl ?? "no-backdrop"} url={movie.backdropUrl} />
         <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
         <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
-        <div className="relative z-10 flex w-full items-end gap-4 px-4 pb-5 sm:gap-5 sm:px-7 sm:pb-6">
+        <div className="relative z-10 flex w-full items-end gap-3.5 px-4 pb-4 sm:gap-4 sm:px-6 sm:pb-5">
           {movie.posterUrl ? (
             <DetailPosterImage key={movie.posterUrl} url={movie.posterUrl} alt={movie.title} />
           ) : (
