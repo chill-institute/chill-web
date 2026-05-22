@@ -6,7 +6,6 @@ import { normalizeCodecFilterValue } from "@/api/release-info";
 import { Button } from "@/ui/components/ui/button";
 import { NativeSelect } from "@/ui/components/ui/native-select";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { Separator } from "@/ui/components/ui/separator";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { cn } from "@/ui/lib/cn";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
@@ -287,8 +286,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
       <DetailModalBody movieScroll>
         {synopsis ? <MovieSynopsis key={synopsis}>{synopsis}</MovieSynopsis> : null}
-
-        <Separator className="bg-border-faint" />
 
         {searchQuery.status === "pending" ? (
           <div className="border-border-soft bg-surface-2 overflow-hidden rounded border">
