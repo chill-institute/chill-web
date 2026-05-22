@@ -457,8 +457,10 @@ test.describe("search page", () => {
     await expect(firstFilter).toBeVisible();
     await expect(lastFilter).toBeVisible();
 
-    const firstBox = await firstFilter.boundingBox();
-    const lastBox = await lastFilter.boundingBox();
+    const [firstBox, lastBox] = await Promise.all([
+      firstFilter.boundingBox(),
+      lastFilter.boundingBox(),
+    ]);
     expect(firstBox).not.toBeNull();
     expect(lastBox).not.toBeNull();
     expect(Math.abs((firstBox?.y ?? 0) - (lastBox?.y ?? 0))).toBeLessThanOrEqual(2);
