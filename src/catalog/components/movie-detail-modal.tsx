@@ -4,7 +4,6 @@ import { ArrowUpRight, Search, Star, Users } from "lucide-react";
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { normalizeCodecFilterValue } from "@/api/release-info";
 import { Button } from "@/ui/components/ui/button";
-import { ModalCloseButton } from "@/ui/components/modal-close-button";
 import { NativeSelect } from "@/ui/components/ui/native-select";
 import { ResponsiveModal } from "@/ui/components/responsive-modal";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
@@ -16,7 +15,7 @@ import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
-import { DetailBackdropImage, DetailPosterImage } from "@/catalog/components/detail-media";
+import { DetailModalHeader, DetailModalHeaderText } from "@/catalog/components/detail-modal-header";
 
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
@@ -170,36 +169,38 @@ function FilterSelect<T extends string>({
 
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   return (
-    <div className="text-fg-1 max-w-[560px]">
-      <h2 id="movie-detail-title" className="m-0 text-2xl leading-[1.05] sm:text-3xl">
-        {movie.title}
-      </h2>
-      <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-base/6 sm:text-sm">
-        <span className="flex items-center gap-1">
-          <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
-          <span>{movie.rating ? movie.rating.toFixed(1) : "N/A"}</span>
-        </span>
-        {movie.year ? (
-          <>
-            <span className="text-fg-4">·</span>
-            <span className="text-fg-3">{movie.year}</span>
-          </>
-        ) : null}
-        {movie.externalUrl ? (
-          <>
-            <span className="text-fg-4">·</span>
-            <a
-              href={movie.externalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
-            >
-              <span>IMDb</span>
-              <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-            </a>
-          </>
-        ) : null}
-      </div>
+    <DetailModalHeaderText
+      titleId="movie-detail-title"
+      title={movie.title}
+      metadata={
+        <>
+          <span className="flex items-center gap-1">
+            <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
+            <span>{movie.rating ? movie.rating.toFixed(1) : "N/A"}</span>
+          </span>
+          {movie.year ? (
+            <>
+              <span className="text-fg-4">·</span>
+              <span className="text-fg-3">{movie.year}</span>
+            </>
+          ) : null}
+          {movie.externalUrl ? (
+            <>
+              <span className="text-fg-4">·</span>
+              <a
+                href={movie.externalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
+              >
+                <span>IMDb</span>
+                <ArrowUpRight className="text-xs" strokeWidth={1.25} />
+              </a>
+            </>
+          ) : null}
+        </>
+      }
+    >
       {metadataTags.length > 0 ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {metadataTags.map((tag) => (
@@ -209,7 +210,7 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
           ))}
         </div>
       ) : null}
-    </div>
+    </DetailModalHeaderText>
   );
 }
 
@@ -318,29 +319,15 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
   return (
     <div className={shellClassName}>
-      <div className="relative flex h-[200px] shrink-0 items-end overflow-hidden sm:h-[220px]">
-        <DetailBackdropImage key={movie.backdropUrl ?? "no-backdrop"} url={movie.backdropUrl} />
-        <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
-        <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
-
-        <div className="relative z-10 flex w-full items-end gap-3.5 px-4 pb-4 sm:gap-4 sm:px-6 sm:pb-5">
-          {movie.posterUrl ? (
-            <DetailPosterImage key={movie.posterUrl} url={movie.posterUrl} alt={movie.title} />
-          ) : (
-            <Skeleton className="aspect-[2/3] w-[110px] shrink-0 rounded" />
-          )}
-
-          <div className="min-w-0 flex-1">
-            <MovieHeaderText movie={movie} metadataTags={metadataTags} />
-          </div>
-        </div>
-
-        <ModalCloseButton
-          onClick={onClose}
-          aria-label="Close movie details"
-          className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3"
-        />
-      </div>
+      <DetailModalHeader
+        backdropUrl={movie.backdropUrl}
+        posterUrl={movie.posterUrl}
+        posterAlt={movie.title}
+        closeLabel="Close movie details"
+        onClose={onClose}
+      >
+        <MovieHeaderText movie={movie} metadataTags={metadataTags} />
+      </DetailModalHeader>
 
       <div data-movie-detail-scroll className={bodyClassName}>
         {synopsis ? <MovieSynopsis key={synopsis}>{synopsis}</MovieSynopsis> : null}

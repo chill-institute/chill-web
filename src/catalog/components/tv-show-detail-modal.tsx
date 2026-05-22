@@ -6,7 +6,6 @@ import { TVShowStatusBadge } from "@/catalog/components/tv-show-status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/ui/components/ui/tabs";
 import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
-import { ModalCloseButton } from "@/ui/components/modal-close-button";
 import { ResponsiveModal } from "@/ui/components/responsive-modal";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { Skeleton } from "@/ui/components/ui/skeleton";
@@ -14,7 +13,11 @@ import { cn } from "@/ui/lib/cn";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { formatBytes } from "@/ui/lib/format";
 import { type TVShow } from "@/catalog/lib/types";
-import { DetailBackdropImage, DetailPosterImage } from "@/catalog/components/detail-media";
+import {
+  DetailModalHeader,
+  DetailModalHeaderSkeleton,
+  DetailModalHeaderText,
+} from "@/catalog/components/detail-modal-header";
 import {
   useTVShowDetailQuery,
   useTVShowSeasonDownloadsQuery,
@@ -100,106 +103,80 @@ function TvShowDetailContent({
     (downloadsQuery.isFetching && downloadsQuery.status === "success");
   const visibleGenres = genres.slice(0, DETAIL_GENRE_LIMIT);
 
-  const closeButton = (
-    <ModalCloseButton
-      onClick={onClose}
-      aria-label="Close TV show details"
-      className="absolute top-3 right-3"
-    />
-  );
-
   const shellClassName = isDesktop
     ? "h-full min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border border-solid p-0 shadow-modal flex flex-col"
     : "h-full min-h-0 w-full overflow-hidden bg-surface text-fg-1 p-0 flex flex-col";
 
   return (
     <div className={shellClassName}>
-      <div className="relative flex h-[240px] shrink-0 items-end overflow-hidden sm:h-[280px]">
-        <DetailBackdropImage key={backdropUrl ?? "no-backdrop"} url={backdropUrl} />
-        <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
-        <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
-
-        <div className="relative z-10 flex w-full items-end gap-4 px-4 pb-5 sm:gap-5 sm:px-7 sm:pb-6">
-          {posterUrl ? (
-            <DetailPosterImage
-              key={posterUrl}
-              url={posterUrl}
-              alt={show?.title ?? "TV show poster"}
-            />
-          ) : (
-            <Skeleton className="aspect-[2/3] w-[110px] shrink-0 rounded" />
-          )}
-
-          <div className="min-w-0 flex-1">
-            {show ? (
-              <div className="text-fg-1 max-w-[520px]">
-                <h2 id="tv-show-detail-title" className="m-0 text-3xl sm:text-5xl">
-                  {show.title}
-                </h2>
-                <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-base/6 sm:text-sm">
-                  <span className="flex items-center gap-1">
-                    <Star
-                      className="size-3.5 fill-rating-amber text-rating-amber"
-                      strokeWidth={0}
-                    />
-                    <span>{show.rating ? show.rating.toFixed(1) : "N/A"}</span>
-                  </span>
-                  {show.year ? (
-                    <>
-                      <span className="text-fg-4">·</span>
-                      <span className="text-fg-3">{show.year}</span>
-                    </>
-                  ) : null}
+      <DetailModalHeader
+        backdropUrl={backdropUrl}
+        posterUrl={posterUrl}
+        posterAlt={show?.title ?? "TV show poster"}
+        closeLabel="Close TV show details"
+        onClose={onClose}
+      >
+        {show ? (
+          <DetailModalHeaderText
+            titleId="tv-show-detail-title"
+            title={show.title}
+            metadata={
+              <>
+                <span className="flex items-center gap-1">
+                  <Star className="size-3.5 fill-rating-amber text-rating-amber" strokeWidth={0} />
+                  <span>{show.rating ? show.rating.toFixed(1) : "N/A"}</span>
+                </span>
+                {show.year ? (
+                  <>
+                    <span className="text-fg-4">·</span>
+                    <span className="text-fg-3">{show.year}</span>
+                  </>
+                ) : null}
+                <span className="text-fg-4">·</span>
+                <span className="text-fg-3">
+                  {detailQuery.data?.show?.seasonCount ?? show.seasonCount} seasons
+                </span>
+                {show.externalUrl ? (
+                  <>
+                    <span className="text-fg-4">·</span>
+                    <a
+                      href={show.externalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
+                    >
+                      <span>IMDb</span>
+                      <ArrowUpRight className="text-xs" strokeWidth={1.25} />
+                    </a>
+                  </>
+                ) : null}
+              </>
+            }
+          >
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <TVShowStatusBadge status={detailQuery.data?.show?.status ?? show.status} />
+              {visibleGenres.length > 0 ? (
+                <>
                   <span className="text-fg-4">·</span>
-                  <span className="text-fg-3">
-                    {detailQuery.data?.show?.seasonCount ?? show.seasonCount} seasons
-                  </span>
-                  {show.externalUrl ? (
-                    <>
-                      <span className="text-fg-4">·</span>
-                      <a
-                        href={show.externalUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
+                  <div className="flex flex-wrap items-center gap-2">
+                    {visibleGenres.map((genre) => (
+                      <Badge
+                        key={genre}
+                        variant="outline"
+                        className="border-border-faint bg-surface-2/50"
                       >
-                        <span>IMDb</span>
-                        <ArrowUpRight className="text-xs" strokeWidth={1.25} />
-                      </a>
-                    </>
-                  ) : null}
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <TVShowStatusBadge status={detailQuery.data?.show?.status ?? show.status} />
-                  {visibleGenres.length > 0 ? (
-                    <>
-                      <span className="text-fg-4">·</span>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {visibleGenres.map((genre) => (
-                          <Badge
-                            key={genre}
-                            variant="outline"
-                            className="border-border-faint bg-surface-2/50"
-                          >
-                            {genre}
-                          </Badge>
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-8 w-56" />
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-6 w-52" />
-              </div>
-            )}
-          </div>
-        </div>
-        {closeButton}
-      </div>
+                        {genre}
+                      </Badge>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </DetailModalHeaderText>
+        ) : (
+          <DetailModalHeaderSkeleton />
+        )}
+      </DetailModalHeader>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
         {detailQuery.status === "error" ? (
