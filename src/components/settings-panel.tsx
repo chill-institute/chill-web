@@ -342,7 +342,7 @@ function SearchResultTitleBehaviorSection({
 
 function SettingsFooter() {
   return (
-    <div className="flex flex-col items-center gap-3 text-center font-mono text-2xs sm:flex-row sm:justify-between sm:gap-3 sm:text-left">
+    <div className="flex flex-col items-center gap-3 text-center text-2xs sm:flex-row sm:justify-between sm:gap-3 sm:text-left">
       <nav
         aria-label="contact"
         className="text-fg-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start"

@@ -203,7 +203,7 @@ Run the shadcn CLI from the directory that owns the target `components.json`, in
 
 ## Typography
 
-Metric is the UI and body font. Family is the serif display font for app names, headings, table narration, and movie or show titles. Family only uses regular weight.
+Metric is the UI and body font. Family is the serif display font for app names, headings, table narration, and movie or show titles. Family only uses regular weight. Do not use monospace fonts in product UI, including metadata, keyboard hints, token fields, footers, and empty-state details.
 
 Form controls use body typography. Inputs, textareas, and native selects should stay `0.875rem` across mobile and desktop; do not enlarge them on mobile unless a specific product surface intentionally opts out.
 

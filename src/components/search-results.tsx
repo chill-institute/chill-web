@@ -38,7 +38,7 @@ function MetaLine({ info }: { info: ReleaseInfo }) {
   ].filter((part): part is { key: string; text: string } => part !== null);
   if (parts.length === 0) return null;
   return (
-    <div className="text-fg-4 mt-1 block font-mono text-2xs leading-[1.4]">
+    <div className="text-fg-4 mt-1 block text-2xs leading-[1.4]">
       {parts.map((part, index) => (
         <span key={part.key}>
           {index > 0 ? <span className="mx-1 opacity-60">·</span> : null}
@@ -200,7 +200,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
             <div className="px-6 py-5">
               <TitleCell result={result} titleBehavior={titleBehavior} />
 
-              <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 font-mono text-xs">
+              <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 text-xs">
                 <span className="text-fg-1">{result.source}</span>
                 <span className="text-fg-4">·</span>
                 <span className="tabular-nums">{formatBytes(result.size)}</span>

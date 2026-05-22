@@ -30,10 +30,7 @@ function InstituteFooter({
   return (
     <footer
       data-slot="institute-footer"
-      className={cn(
-        "border-border-strong text-fg-3 mt-auto w-full border-t font-mono text-2xs",
-        className,
-      )}
+      className={cn("border-border-strong text-fg-3 mt-auto w-full border-t text-2xs", className)}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2.5 px-4 py-4 text-center sm:flex-row sm:flex-wrap sm:text-left sm:items-center sm:gap-x-6 sm:gap-y-2 sm:px-5 sm:py-6">
         <p className="m-0">

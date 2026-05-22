@@ -49,7 +49,7 @@ function CliTokenPage() {
               readOnly
               type={revealed ? "text" : "password"}
               value={auth.authToken}
-              className="flex-1 font-mono"
+              className="flex-1"
               aria-label="CLI auth token"
             />
             <Button

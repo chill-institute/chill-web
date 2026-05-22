@@ -425,7 +425,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                           <div className="break-words text-sm font-medium text-fg-1">
                             {result.title}
                           </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs text-fg-3">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-fg-3">
                             <span className="text-fg-2">
                               {result.indexer || result.source || "unknown"}
                             </span>

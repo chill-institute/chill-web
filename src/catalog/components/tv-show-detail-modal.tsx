@@ -330,12 +330,12 @@ function TvShowDetailContent({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm text-fg-1">
-                        <span className="mr-1.5 font-mono text-2xs tabular-nums text-fg-3">
+                        <span className="mr-1.5 text-2xs tabular-nums text-fg-3">
                           E{paddedEpisode}
                         </span>{" "}
                         {episode.name || `episode ${episode.episodeNumber}`}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2 font-mono text-2xs text-fg-3">
+                      <div className="mt-0.5 flex flex-wrap gap-x-2 text-2xs text-fg-3">
                         <span>{formatAirDate(episode.airDate)}</span>
                         {episode.runtime ? <span>· {episode.runtime}m</span> : null}
                         {episode.rating ? <span>· ★ {episode.rating.toFixed(1)}</span> : null}
