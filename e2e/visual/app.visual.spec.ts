@@ -16,6 +16,10 @@ import {
   moviesResponse,
   searchResponse,
   searchResult,
+  tvShow,
+  tvShowDetail,
+  tvShowDetailResponse,
+  tvShowSeason,
   tvShowsResponse,
   userFile,
   userSettings,
@@ -61,6 +65,23 @@ const movies = [
   }),
 ];
 
+const tvShows = [
+  tvShow({
+    imdbId: "tt9000003",
+    title: "Synthetic Show Gamma",
+    year: 2025,
+    rating: 8.5,
+    posterUrl: "/test/poster.svg",
+  }),
+];
+
+function errorResponse(message = "Service temporarily unavailable. Please try again shortly.") {
+  return {
+    code: "unavailable",
+    message,
+  };
+}
+
 function defaultMethods(overrides?: Record<string, unknown>) {
   return {
     GetUserSettings: userSettings({
@@ -94,6 +115,13 @@ test("sign-in page", async ({ page }) => {
   await expect(page).toHaveScreenshot("sign-in-page.png", visualOptions);
 });
 
+test("sign-in session expired", async ({ page }) => {
+  await freezeVisualClock(page);
+  await page.goto("/sign-in?error=SessionExpired&callbackUrl=/movies");
+  await expect(page.getByText("your session expired. sign in again to keep going.")).toBeVisible();
+  await expect(page).toHaveScreenshot("sign-in-session-expired.png", visualOptions);
+});
+
 test("movies catalog", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(defaultMethods());
@@ -103,6 +131,25 @@ test("movies catalog", async ({ authenticatedPage, mockRpc }) => {
   await expect(authenticatedPage.getByText("Synthetic Feature Alpha")).toBeVisible();
   await expect(authenticatedPage.getByText("Synthetic Feature Beta")).toBeVisible();
   await expect(authenticatedPage).toHaveScreenshot("movies-catalog.png", visualOptions);
+});
+
+test("movies catalog error", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods());
+  await authenticatedPage.route("**/chill.v4.UserService/GetMovies", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify(errorResponse()),
+    });
+  });
+
+  await authenticatedPage.goto("/movies");
+
+  await expect(
+    authenticatedPage.getByText("Service temporarily unavailable. Please try again shortly."),
+  ).toBeVisible({ timeout: 5000 });
+  await expect(authenticatedPage).toHaveScreenshot("movies-catalog-error.png", visualOptions);
 });
 
 test("movie detail modal", async ({ authenticatedPage, mockRpc }, testInfo) => {
@@ -139,6 +186,69 @@ test("movie detail modal", async ({ authenticatedPage, mockRpc }, testInfo) => {
   ).toBeVisible();
   await expect(dialog).toHaveScreenshot(
     "movie-detail-modal.png",
+    testInfo.project.name.startsWith("mobile") ? mobileDrawerVisualOptions : visualOptions,
+  );
+});
+
+test("movie detail modal search error", async ({ authenticatedPage, mockRpc }, testInfo) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods());
+  await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify(errorResponse()),
+    });
+  });
+
+  await authenticatedPage.goto("/movies");
+  await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
+
+  const dialog = authenticatedPage.getByRole("dialog", { name: "Synthetic Feature Alpha details" });
+  await expect(
+    dialog.getByText("Service temporarily unavailable. Please try again shortly."),
+  ).toBeVisible({ timeout: 5000 });
+  await expect(dialog).toHaveScreenshot(
+    "movie-detail-modal-search-error.png",
+    testInfo.project.name.startsWith("mobile") ? mobileDrawerVisualOptions : visualOptions,
+  );
+});
+
+test("tv show detail modal error", async ({ authenticatedPage, mockRpc }, testInfo) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(
+    defaultMethods({
+      GetTVShows: tvShowsResponse(tvShows),
+      GetTVShowDetail: tvShowDetailResponse(
+        tvShowDetail({
+          imdbId: tvShows[0].imdbId,
+          title: tvShows[0].title,
+          year: tvShows[0].year,
+          posterUrl: tvShows[0].posterUrl,
+          rating: tvShows[0].rating,
+          genres: ["Drama", "Mystery"],
+        }),
+        [tvShowSeason({ seasonNumber: 1, name: "Season 1" })],
+      ),
+    }),
+  );
+  await authenticatedPage.route("**/chill.v4.UserService/GetTVShowSeason", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify(errorResponse()),
+    });
+  });
+
+  await authenticatedPage.goto("/tv-shows");
+  await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
+
+  const dialog = authenticatedPage.getByRole("dialog", { name: "Synthetic Show Gamma" });
+  await expect(
+    dialog.getByText("Service temporarily unavailable. Please try again shortly."),
+  ).toBeVisible({ timeout: 5000 });
+  await expect(dialog).toHaveScreenshot(
+    "tv-show-detail-modal-error.png",
     testInfo.project.name.startsWith("mobile") ? mobileDrawerVisualOptions : visualOptions,
   );
 });
@@ -192,4 +302,25 @@ test("settings modal", async ({ authenticatedPage, mockRpc }) => {
   await expect(authenticatedPage.getByText("visual", { exact: true })).toBeVisible();
   await expect(authenticatedPage.getByText("Search settings")).toBeVisible();
   await expect(authenticatedPage).toHaveScreenshot("settings-modal.png", visualOptions);
+});
+
+test("settings provider error", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods());
+  await authenticatedPage.route("**/chill.v4.UserService/GetDownloadFolder", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify(errorResponse()),
+    });
+  });
+
+  await authenticatedPage.goto("/movies");
+  await authenticatedPage.getByRole("button", { name: "settings" }).click();
+
+  await expect(authenticatedPage.locator('[data-page="settings"]')).toBeVisible();
+  await expect(
+    authenticatedPage.getByText("Service temporarily unavailable. Please try again shortly."),
+  ).toBeVisible({ timeout: 5000 });
+  await expect(authenticatedPage).toHaveScreenshot("settings-provider-error.png", visualOptions);
 });
