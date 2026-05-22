@@ -4,13 +4,9 @@
 
 Vite+ repo for the Institute web app at [chill.institute](https://chill.institute).
 
-## Product
+This repo owns the client app, UI system, e2e tests, Cloudflare Workers frontend deployment, and browser-facing integration with the hosted API.
 
-- `./` powers `https://chill.institute` with search, movie and TV browsing, detail pages, source pickers, RSS shortcuts, and send-to-put.io flows
-- legacy and `www` hosts redirect to `https://chill.institute`
-- the repo root owns app code, config, hooks, CI entrypoints, and dependencies
-
-## Install
+## Quick Start
 
 Install dependencies and verify the repo:
 
@@ -19,7 +15,7 @@ vp install
 vp run ready
 ```
 
-## Run Locally
+Start the app locally:
 
 ```bash
 vp run dev
@@ -35,12 +31,12 @@ vp run visual
 
 ## Docs
 
-- [About the Institute](./docs/ABOUT.md)
-- [Design system](./DESIGN.md)
-- [Architecture](./docs/ARCHITECTURE.md)
-- [Deployment](./docs/DEPLOYMENT.md)
-- [Security](./SECURITY.md)
-- [Contributing](./CONTRIBUTING.md)
+- [About the Institute](./docs/ABOUT.md): product framing and surfaces
+- [Design system](./DESIGN.md): visual tokens, primitives, and UI rules
+- [Architecture](./docs/ARCHITECTURE.md): app boundaries and route/data shape
+- [Deployment](./docs/DEPLOYMENT.md): Cloudflare Workers hosting and CI deploy rules
+- [Security](./SECURITY.md): reporting and browser-side security notes
+- [Contributing](./CONTRIBUTING.md): local setup and PR expectations
 
 ## Contributing
 

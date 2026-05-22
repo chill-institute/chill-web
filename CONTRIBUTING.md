@@ -57,7 +57,7 @@ CI and deploy behavior is documented in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.m
 
 ## Git Hooks
 
-`vp install` runs the repo's `prepare` script, which configures Vite+ hooks from `.vite-hooks/`
+`vp install` runs the repo's `prepare` script, which configures Vite+ hooks from `.vite-hooks/` hook directory.
 
 The repo also ships matching `.githooks/` shims so older local clones that still have `core.hooksPath=.githooks` keep enforcing the same checks.
 
@@ -71,10 +71,10 @@ vp config --hooks-dir .vite-hooks
 ## Development Notes
 
 - This repo contains one client-rendered SPA at the repository root.
-- Runtime code, assets, and tests live in `src/`, `public/`, and `e2e/`.
+- Runtime code, assets, and tests live in `src/`, `public/`, and `e2e/`
 - Root config lives in `package.json`, `vite.config.ts`, `tsconfig.json`, `components.json`, hooks, and CI workflows.
-- Root [DESIGN.md](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and UI primitives live in `src/ui/`.
-- Package versions live directly in `package.json`.
+- Root [DESIGN.md](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and UI primitives live in `src/ui/`
+- Package versions live directly in `package.json`
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
 - The app talks directly to the hosted API.
 - The root app serves production and staging; redirects are documented in [Deployment](./docs/DEPLOYMENT.md).
