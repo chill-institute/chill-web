@@ -14,6 +14,7 @@ import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { formatBytes } from "@/ui/lib/format";
 import { type TVShow } from "@/catalog/lib/types";
 import {
+  DetailModalBody,
   DetailModalHeader,
   DetailModalHeaderSkeleton,
   DetailModalHeaderText,
@@ -104,7 +105,7 @@ function TvShowDetailContent({
   const visibleGenres = genres.slice(0, DETAIL_GENRE_LIMIT);
 
   const shellClassName = isDesktop
-    ? "h-full min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border border-solid p-0 shadow-modal flex flex-col"
+    ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border border-solid p-0 shadow-modal flex flex-col"
     : "h-full min-h-0 w-full overflow-hidden bg-surface text-fg-1 p-0 flex flex-col";
 
   return (
@@ -178,17 +179,15 @@ function TvShowDetailContent({
         )}
       </DetailModalHeader>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
-        {detailQuery.status === "error" ? (
-          <UserErrorAlert className="mt-2.5" error={detailQuery.error} />
-        ) : null}
+      <DetailModalBody>
+        {detailQuery.status === "error" ? <UserErrorAlert error={detailQuery.error} /> : null}
 
         {show?.overview ? (
-          <p className="text-fg-2 mt-2.5 text-[0.9375rem]/6 sm:text-sm sm:leading-relaxed">
+          <p className="m-0 text-[0.9375rem]/6 text-fg-2 sm:text-sm sm:leading-relaxed">
             {show.overview}
           </p>
         ) : detailQuery.isPending ? (
-          <div className="mt-2.5 flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-[92%]" />
             <Skeleton className="h-4 w-[80%]" />
@@ -197,7 +196,7 @@ function TvShowDetailContent({
 
         <div
           className={cn(
-            "border-border-strong mt-3.5 border-t pt-3.5 transition-opacity duration-base ease-out",
+            "border-border-strong border-t pt-3.5 transition-opacity duration-base ease-out",
             seasonRefreshing ? "opacity-75" : "opacity-100",
           )}
         >
@@ -339,7 +338,7 @@ function TvShowDetailContent({
             </div>
           )}
         </div>
-      </div>
+      </DetailModalBody>
     </div>
   );
 }
@@ -412,7 +411,7 @@ export function TvShowDetailModal({
       onOpenChange={(open) => !open && onClose()}
       title={show?.title ?? "TV show details"}
       description="Browse TV show metadata, seasons, and episode download actions."
-      desktopContentClassName="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
+      desktopContentClassName="fixed top-1/2 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
       drawerContentClassName="!max-h-[92dvh] bg-surface shadow-drawer overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0"
     >
       {content}

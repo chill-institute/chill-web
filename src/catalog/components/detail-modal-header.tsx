@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { ModalCloseButton } from "@/ui/components/modal-close-button";
 import { Skeleton } from "@/ui/components/ui/skeleton";
+import { cn } from "@/ui/lib/cn";
 import { DetailBackdropImage, DetailPosterImage } from "@/catalog/components/detail-media";
 
 type DetailModalHeaderProps = {
@@ -76,6 +77,27 @@ export function DetailModalHeaderSkeleton() {
       <Skeleton className="h-8 w-56" />
       <Skeleton className="h-4 w-40" />
       <Skeleton className="h-6 w-52" />
+    </div>
+  );
+}
+
+export function DetailModalBody({
+  children,
+  dataAttribute,
+}: {
+  children: ReactNode;
+  dataAttribute?: { name: "data-movie-detail-scroll" };
+}) {
+  const dataProps = dataAttribute ? { [dataAttribute.name]: true } : {};
+  return (
+    <div
+      {...dataProps}
+      className={cn(
+        "flex min-h-0 flex-col gap-3.5 overflow-y-auto px-4 pt-2.5 pb-6 sm:px-6",
+        "max-h-[calc(min(calc(100dvh-48px),760px)-220px)]",
+      )}
+    >
+      {children}
     </div>
   );
 }

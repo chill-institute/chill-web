@@ -15,7 +15,11 @@ import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
-import { DetailModalHeader, DetailModalHeaderText } from "@/catalog/components/detail-modal-header";
+import {
+  DetailModalBody,
+  DetailModalHeader,
+  DetailModalHeaderText,
+} from "@/catalog/components/detail-modal-header";
 
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
@@ -312,10 +316,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const shellClassName = isDesktop
     ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border p-0 shadow-modal flex flex-col"
     : "h-full min-h-0 w-full overflow-hidden bg-surface text-fg-1 p-0 flex flex-col";
-  const bodyClassName = cn(
-    "flex min-h-0 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6",
-    isDesktop ? "max-h-[calc(min(calc(100dvh-48px),760px)-220px)]" : "flex-1",
-  );
 
   return (
     <div className={shellClassName}>
@@ -329,7 +329,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         <MovieHeaderText movie={movie} metadataTags={metadataTags} />
       </DetailModalHeader>
 
-      <div data-movie-detail-scroll className={bodyClassName}>
+      <DetailModalBody dataAttribute={{ name: "data-movie-detail-scroll" }}>
         {synopsis ? <MovieSynopsis key={synopsis}>{synopsis}</MovieSynopsis> : null}
 
         <Separator className="bg-border-faint" />
@@ -477,7 +477,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             )}
           </>
         )}
-      </div>
+      </DetailModalBody>
     </div>
   );
 }
