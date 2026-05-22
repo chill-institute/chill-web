@@ -1,0 +1,73 @@
+import { defineConfig, devices } from "@playwright/test";
+
+import { playwrightPort } from "./e2e/support/port";
+
+delete process.env.NO_COLOR;
+
+const port = playwrightPort(58320);
+const baseURL = `http://localhost:${port}`;
+const desktopViewport = { width: 1920, height: 1080 };
+const mobileDevice = devices["iPhone XR"];
+
+export default defineConfig({
+  testDir: "./e2e/a11y",
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI
+    ? [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]]
+    : "list",
+  use: {
+    baseURL,
+    browserName: "chromium",
+    colorScheme: "light",
+    screenshot: "only-on-failure",
+    trace: "retain-on-failure",
+    video: "off",
+  },
+  projects: [
+    {
+      name: "desktop",
+      use: {
+        viewport: desktopViewport,
+        deviceScaleFactor: 1,
+        isMobile: false,
+        hasTouch: false,
+      },
+    },
+    {
+      name: "desktop-dark",
+      use: {
+        viewport: desktopViewport,
+        deviceScaleFactor: 1,
+        isMobile: false,
+        hasTouch: false,
+        colorScheme: "dark",
+      },
+    },
+    {
+      name: "mobile",
+      use: {
+        ...mobileDevice,
+        browserName: "chromium",
+      },
+    },
+    {
+      name: "mobile-dark",
+      use: {
+        ...mobileDevice,
+        browserName: "chromium",
+        colorScheme: "dark",
+      },
+    },
+  ],
+  webServer: {
+    command: process.env.CI
+      ? `vp preview --host 0.0.0.0 --port ${port}`
+      : `vp build && vp preview --host 0.0.0.0 --port ${port}`,
+    url: baseURL,
+    reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
+    stdout: "pipe",
+    stderr: "pipe",
+  },
+});
