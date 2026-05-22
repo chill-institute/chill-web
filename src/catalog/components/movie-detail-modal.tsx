@@ -309,8 +309,12 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const hasOnlyUnavailableResults = visibleResults.length > 0 && sendableResultsCount === 0;
   const hasActiveFilters = resolutionFilter !== "all" || codecFilter !== "all";
   const shellClassName = isDesktop
-    ? "h-full min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border p-0 shadow-modal flex flex-col"
+    ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border-border-strong bg-surface text-fg-1 border p-0 shadow-modal flex flex-col"
     : "h-full min-h-0 w-full overflow-hidden bg-surface text-fg-1 p-0 flex flex-col";
+  const bodyClassName = cn(
+    "flex min-h-0 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6",
+    isDesktop ? "max-h-[calc(min(calc(100dvh-48px),760px)-220px)]" : "flex-1",
+  );
 
   return (
     <div className={shellClassName}>
@@ -338,10 +342,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         />
       </div>
 
-      <div
-        data-movie-detail-scroll
-        className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-5 pb-6 sm:px-6"
-      >
+      <div data-movie-detail-scroll className={bodyClassName}>
         {synopsis ? <MovieSynopsis key={synopsis}>{synopsis}</MovieSynopsis> : null}
 
         <Separator className="bg-border-faint" />
@@ -574,7 +575,7 @@ export function MovieDetailModal({ movie, onClose }: Props) {
       onOpenChange={(open) => !open && onClose()}
       title={`${movie.title} details`}
       description={`Torrent results for ${movie.title} (${movie.year})`}
-      desktopContentClassName="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
+      desktopContentClassName="fixed top-1/2 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 shadow-none"
       drawerContentClassName="!max-h-[92dvh] rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
     >
       <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop={isDesktop} />
