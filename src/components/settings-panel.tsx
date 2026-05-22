@@ -111,7 +111,7 @@ function AccountSection({
         <div className="flex shrink-0 items-center gap-3">
           <button
             type="button"
-            className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-app cursor-pointer rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="text-fg-3 hover-hover:hover:text-fg-1 focus-visible:ring-ring-focus focus-visible:ring-offset-app inline-flex min-h-6 cursor-pointer items-center rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             onClick={onReset}
           >
             reset settings
@@ -119,7 +119,7 @@ function AccountSection({
           <Link
             to="/sign-out"
             search={{ error: undefined }}
-            className="text-error-text hover-hover:hover:text-error-text/80 focus-visible:ring-ring-focus focus-visible:ring-offset-app rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="text-error-text hover-hover:hover:text-error-text/80 focus-visible:ring-ring-focus focus-visible:ring-offset-app inline-flex min-h-6 items-center rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             sign out
           </Link>
@@ -198,7 +198,7 @@ function DownloadFolderSection({
               <button
                 aria-expanded={open}
                 aria-haspopup="dialog"
-                className="text-fg-3 hover-hover:hover:text-fg-1 shrink-0 cursor-pointer text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+                className="text-fg-3 hover-hover:hover:text-fg-1 inline-flex min-h-6 shrink-0 cursor-pointer items-center text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
                 type="button"
               >
                 {dq.data.folder ? "change" : "choose"}
@@ -355,7 +355,7 @@ function SettingsFooter() {
               </span>
             ) : null}
             <a
-              className="hover-hover:hover:text-fg-1 inline-flex items-center gap-0.5"
+              className="hover-hover:hover:text-fg-1 inline-flex min-h-6 min-w-6 items-center gap-0.5"
               href={url}
               rel="noreferrer noopener"
               target="_blank"
@@ -366,7 +366,7 @@ function SettingsFooter() {
           </span>
         ))}
       </nav>
-      <span className="text-fg-4 shrink-0 text-center sm:text-left">
+      <span className="text-fg-3 shrink-0 text-center sm:text-left">
         release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}
       </span>
     </div>

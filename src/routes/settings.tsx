@@ -19,6 +19,7 @@ function SettingsPage() {
   return (
     <SearchShell>
       <section data-page="settings">
+        <h1 className="sr-only">Settings</h1>
         <SettingsPanel />
       </section>
     </SearchShell>

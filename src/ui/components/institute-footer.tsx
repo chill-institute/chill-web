@@ -54,7 +54,7 @@ function InstituteFooter({
                   href={link.href}
                   rel="noreferrer noopener"
                   target="_blank"
-                  className="hover-hover:hover:text-fg-1 inline-flex items-center gap-0.5"
+                  className="hover-hover:hover:text-fg-1 inline-flex min-h-6 min-w-6 items-center gap-0.5"
                 >
                   <span>{link.label}</span>
                   <ArrowUpRight className="size-3" strokeWidth={1.25} aria-hidden="true" />

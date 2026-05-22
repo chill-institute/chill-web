@@ -168,7 +168,7 @@ export function DetailExternalLinkMeta({ url, label = "IMDb" }: { url?: string; 
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="text-fg-2 hover:text-fg-1 inline-flex items-center gap-0.5 transition-colors"
+        className="text-fg-2 hover:text-fg-1 inline-flex min-h-6 items-center gap-0.5 transition-colors"
       >
         <span>{label}</span>
         <ArrowUpRight className="text-xs" strokeWidth={1.25} />

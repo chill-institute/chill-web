@@ -114,6 +114,7 @@ export function ShellSearchForm({
               required
               type="text"
               name="q"
+              aria-label={label ? undefined : "Search query"}
               value={value}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}

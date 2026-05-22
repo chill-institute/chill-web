@@ -32,20 +32,22 @@ export function SearchShell({
         tabs={<InstituteTabs active="search" />}
         right={<ShellSettingsMenu />}
       />
-      <div className="border-border-strong bg-surface border-b py-4">
-        <ResponsiveBox>
-          <div className="mx-auto w-full max-w-lg">
-            <ShellSearchForm initialQuery={searchParamQ} />
-          </div>
-        </ResponsiveBox>
-      </div>
-      <div className="my-6 flex-1">
-        {contentWidth === "wide" ? (
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-5">{children}</div>
-        ) : (
-          <ResponsiveBox>{children}</ResponsiveBox>
-        )}
-      </div>
+      <main className="flex-1">
+        <div className="border-border-strong bg-surface border-b py-4">
+          <ResponsiveBox>
+            <div className="mx-auto w-full max-w-lg">
+              <ShellSearchForm initialQuery={searchParamQ} />
+            </div>
+          </ResponsiveBox>
+        </div>
+        <div className="my-6">
+          {contentWidth === "wide" ? (
+            <div className="mx-auto w-full max-w-7xl px-4 sm:px-5">{children}</div>
+          ) : (
+            <ResponsiveBox>{children}</ResponsiveBox>
+          )}
+        </div>
+      </main>
       <InstituteFooter />
     </div>
   );

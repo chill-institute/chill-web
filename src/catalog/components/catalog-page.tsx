@@ -231,9 +231,9 @@ function HomeShell({ tab, children }: { tab: CatalogTab; children: React.ReactNo
 function PageHeading({ tab, controls }: { tab: CatalogTab; controls?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2 pt-5 pb-3.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pt-7">
-      <h2 className="m-0 text-2xl leading-none sm:text-3xl">
+      <h1 className="m-0 text-2xl leading-none sm:text-3xl">
         {tab === "movies" ? "movies" : "tv shows"}
-      </h2>
+      </h1>
       {controls ? <div className="w-full sm:ml-auto sm:w-auto">{controls}</div> : null}
     </div>
   );

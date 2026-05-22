@@ -38,7 +38,7 @@ function MetaLine({ info }: { info: ReleaseInfo }) {
   ].filter((part): part is { key: string; text: string } => part !== null);
   if (parts.length === 0) return null;
   return (
-    <div className="text-fg-4 mt-1 block text-2xs leading-[1.4]">
+    <div className="text-fg-3 mt-1 block text-2xs leading-[1.4]">
       {parts.map((part, index) => (
         <span key={part.key}>
           {index > 0 ? <span className="mx-1 opacity-60">·</span> : null}
@@ -116,7 +116,10 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
                   >
                     <button
                       type="button"
-                      className={cn("w-full cursor-pointer", isTitle ? "text-left" : "text-center")}
+                      className={cn(
+                        "min-h-6 w-full cursor-pointer",
+                        isTitle ? "text-left" : "text-center",
+                      )}
                       onClick={() => onSort(column.key)}
                     >
                       <span
@@ -148,6 +151,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
                 aria-label="send to put.io"
                 className="pb-1 text-center text-sm font-normal whitespace-nowrap"
               >
+                <span className="sr-only">send to put.io</span>
                 <span aria-hidden="true">🤠</span>
               </th>
             </tr>

@@ -14,7 +14,11 @@ const sections = [
 
 export function InstituteBrand() {
   return (
-    <Link to="/" className="flex min-w-0 items-center gap-2" aria-label="chill.institute home">
+    <Link
+      to="/"
+      className="flex min-h-6 min-w-0 items-center gap-2"
+      aria-label="chill.institute home"
+    >
       <img
         src="/logo.png"
         width={22}
