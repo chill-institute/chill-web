@@ -128,9 +128,7 @@ export function DetailModalHeaderText({
       <h2 id={titleId} className="m-0 text-2xl leading-[1.05] sm:text-3xl">
         {title}
       </h2>
-      <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-base/6 sm:text-sm">
-        {metadata}
-      </div>
+      <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm/5">{metadata}</div>
       {children}
     </div>
   );
@@ -171,7 +169,7 @@ export function DetailExternalLinkMeta({ url, label = "IMDb" }: { url?: string; 
         className="text-fg-2 hover:text-fg-1 inline-flex min-h-6 items-center gap-0.5 transition-colors"
       >
         <span>{label}</span>
-        <ArrowUpRight className="text-xs" strokeWidth={1.25} />
+        <ArrowUpRight className="size-3 shrink-0" strokeWidth={1.25} />
       </a>
     </>
   );

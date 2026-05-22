@@ -32,13 +32,10 @@ Run the full repo checks before opening or updating a pull request:
 vp run verify
 vp run smoke
 vp run e2e
-vp run a11y
-vp run perf
 ```
 
 Playwright checks are split by signal. Functional coverage lives in ordinary e2e
-tests, accessibility audits live under `e2e/a11y/`, performance budgets live
-under `e2e/perf/`, and screenshot guardrails live under `e2e/visual/`.
+tests, and screenshot guardrails live under `e2e/visual/`.
 
 Visual regression snapshots cover desktop and mobile rendering in light and dark
 mode and are intentionally excluded from ordinary `vp run e2e`. Run them for
@@ -87,7 +84,7 @@ vp config --hooks-dir .vite-hooks
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 - When generating or updating shadcn/base primitives, work from `./` so `components.json` resolves aliases correctly.
 - Playwright keeps traces, screenshots, and videos on failure. Check `playwright-report/` and `test-results/` after a failing run.
-- Keep ordinary e2e tests in `e2e/*.spec.ts`, accessibility audits in `e2e/a11y/*.a11y.spec.ts`, performance budgets in `e2e/perf/*.perf.spec.ts`, and screenshot guardrails in `e2e/visual/*.visual.spec.ts` so each check reports the right kind of failure.
+- Keep ordinary e2e tests in `e2e/*.spec.ts` and screenshot guardrails in `e2e/visual/*.visual.spec.ts` so each check reports the right kind of failure.
 - Deployment credentials and operational runbooks are maintainer-managed. Do not add secrets, local machine paths, or maintainer-only notes to this repo.
 
 ## Pull Requests

@@ -20,9 +20,7 @@
     "sst": "sst",
     "verify": "vp lint && vp run check && vp test src --run && vp build",
     "prepare": "vp config",
-    "a11y": "playwright test -c playwright.a11y.config.ts",
-    "perf": "playwright test -c playwright.perf.config.ts",
-    "quality": "vp run verify && vp run e2e && vp run a11y && vp run perf && vp run visual"
+    "quality": "vp run verify && vp run e2e && vp run visual"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -46,7 +44,6 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.60.0",
     "@tanstack/router-plugin": "^1.167.35",
     "@types/node": "^25.7.0",

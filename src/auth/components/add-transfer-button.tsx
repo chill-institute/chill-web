@@ -78,6 +78,7 @@ export function AddTransferButton({
       type="button"
       className={className}
       disabled={status === "pending"}
+      focusableWhenDisabled={status === "pending"}
       onClick={sendOrOpenTransfer}
       aria-label={accessibleLabel}
       aria-live="polite"

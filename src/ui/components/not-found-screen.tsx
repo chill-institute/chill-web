@@ -2,7 +2,7 @@ import { Compass } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { StatusPanel } from "./status-panel";
-import { Button } from "./ui/button";
+import { buttonVariants } from "./ui/button";
 
 type NotFoundScreenProps = {
   homeHref?: string;
@@ -25,9 +25,9 @@ function NotFoundScreen({ homeHref = "/", homeLabel = "go home", children }: Not
           </div>
           {children}
           <div>
-            <Button variant="primary" render={<a href={homeHref} />}>
+            <a className={buttonVariants({ variant: "primary" })} href={homeHref}>
               {homeLabel}
-            </Button>
+            </a>
           </div>
         </div>
       </div>

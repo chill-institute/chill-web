@@ -16,7 +16,7 @@ function NativeSelect({ className, wrapperClassName, children, ...props }: Nativ
       <select
         data-slot="native-select"
         className={cn(
-          "h-9 w-full appearance-none rounded border border-border-strong bg-surface py-1.5 pr-8 pl-2.5 text-sm text-fg-1 outline-none focus-visible:border-ring-focus focus-visible:ring-3 focus-visible:ring-ring-focus/50 disabled:cursor-not-allowed disabled:bg-surface-2/50 disabled:opacity-50 aria-invalid:border-error-text aria-invalid:ring-3 aria-invalid:ring-error-text/20 dark:bg-surface-2/30 dark:disabled:bg-surface-2/80 dark:aria-invalid:border-error-border dark:aria-invalid:ring-error-text/40 dark:focus-visible:border-fg-3 dark:focus-visible:ring-ring-focus/50",
+          "h-9 w-full appearance-none rounded border border-border-strong bg-surface py-1.5 pr-8 pl-2.5 text-base text-fg-1 outline-none focus-visible:border-ring-focus focus-visible:ring-3 focus-visible:ring-ring-focus/50 disabled:cursor-not-allowed disabled:bg-surface-2/50 disabled:opacity-50 aria-invalid:border-error-text aria-invalid:ring-3 aria-invalid:ring-error-text/20 sm:text-sm dark:bg-surface-2/30 dark:disabled:bg-surface-2/80 dark:aria-invalid:border-error-border dark:aria-invalid:ring-error-text/40 dark:focus-visible:border-fg-3 dark:focus-visible:ring-ring-focus/50",
           className,
         )}
         {...props}

@@ -1,7 +1,7 @@
 import { ExternalLink, RefreshCw, ServerCrash } from "lucide-react";
 
 import { StatusPanel } from "./status-panel";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 
 type BackendUnavailableScreenProps = {
   onRetry?: () => Promise<unknown> | void;
@@ -41,14 +41,15 @@ function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
           <RefreshCw />
           reload page
         </Button>
-        <Button
-          variant="outline"
-          nativeButton={false}
-          render={<a href="https://status.chill.institute/" target="_blank" rel="noreferrer" />}
+        <a
+          className={buttonVariants({ variant: "outline" })}
+          href="https://status.chill.institute/"
+          target="_blank"
+          rel="noreferrer"
         >
-          <ExternalLink />
+          <ExternalLink data-icon="inline-start" />
           view status page
-        </Button>
+        </a>
       </div>
     </StatusPanel>
   );

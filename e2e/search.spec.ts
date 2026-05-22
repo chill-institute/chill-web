@@ -430,6 +430,45 @@ test.describe("search page", () => {
     await expect(rows.first()).toContainText("x265 HEVC");
   });
 
+  test("mobile quick filters and metadata stay compact", async ({ authenticatedPage, mockRpc }) => {
+    const results = [
+      searchResult({
+        id: "r1",
+        title: "Marvel Films (2008 to 2021) Iron Man Thor Avengers - Mp4 1080p",
+        seeders: 43n,
+        size: 68182605824n,
+        source: "Torrents.csv",
+        indexer: "torrents-csv",
+      }),
+    ];
+
+    await authenticatedPage.setViewportSize({ width: 393, height: 852 });
+    await mockRpc(
+      allModeMethods({
+        Search: searchResponse("thor", results),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=thor");
+
+    const filterBar = authenticatedPage.locator("#quick-filters");
+    const firstFilter = filterBar.getByText("720p", { exact: true });
+    const lastFilter = filterBar.getByText("HDR", { exact: true });
+    await expect(firstFilter).toBeVisible();
+    await expect(lastFilter).toBeVisible();
+
+    const firstBox = await firstFilter.boundingBox();
+    const lastBox = await lastFilter.boundingBox();
+    expect(firstBox).not.toBeNull();
+    expect(lastBox).not.toBeNull();
+    expect(Math.abs((firstBox?.y ?? 0) - (lastBox?.y ?? 0))).toBeLessThanOrEqual(2);
+
+    const metadata = authenticatedPage.locator("ul[aria-label='Search results'] li").first();
+    await expect(metadata).toContainText("Torrents.csv");
+    await expect(metadata).toContainText("43 seeders");
+    await expect(metadata).not.toContainText("·");
+  });
+
   test("applies remembered quick filters and saved sort on first load", async ({
     authenticatedPage,
     mockRpc,

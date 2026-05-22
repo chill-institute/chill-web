@@ -1,12 +1,10 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
-import type { ReleaseInfo } from "@chill-institute/contracts/chill/v4/api_pb";
+import { ArrowDown, ArrowUp, CalendarDays, HardDrive, Users } from "lucide-react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { CopyButton } from "@/ui/components/copy-button";
 import { useMediaQuery } from "@/ui/hooks/use-is-desktop";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
-import { effectiveInfo } from "@/lib/release-info";
 import type { ChillSettings, SearchResult } from "@/lib/types";
 import { SearchResultTitleBehavior, SortBy, SortDirection } from "@/lib/types";
 
@@ -27,27 +25,6 @@ const columns = [
 ];
 
 const LARGE_RESULTS_QUERY = "(min-width: 1024px)";
-
-function MetaLine({ info }: { info: ReleaseInfo }) {
-  const parts = [
-    info.resolution ? { key: "resolution", text: info.resolution.toLowerCase() } : null,
-    info.codec ? { key: "codec", text: info.codec } : null,
-    info.hdr ? { key: "hdr", text: info.hdr } : null,
-    info.audio ? { key: "audio", text: info.audio } : null,
-    info.group ? { key: "group", text: info.group } : null,
-  ].filter((part): part is { key: string; text: string } => part !== null);
-  if (parts.length === 0) return null;
-  return (
-    <div className="text-fg-3 mt-1 block text-2xs leading-[1.4]">
-      {parts.map((part, index) => (
-        <span key={part.key}>
-          {index > 0 ? <span className="mx-1 opacity-60">·</span> : null}
-          <span>{part.text}</span>
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function TitleCell({
   result,
@@ -78,12 +55,7 @@ function TitleCell({
     </span>
   );
 
-  return (
-    <div>
-      {titleSpan}
-      <MetaLine info={effectiveInfo(result)} />
-    </div>
-  );
+  return <div>{titleSpan}</div>;
 }
 
 export function SearchResults({ results, sortBy, sortDirection, titleBehavior, onSort }: Props) {
@@ -161,25 +133,25 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
             {results.map((result) => {
               return (
                 <tr key={result.id} className="border-border-faint border-b last:border-b-0">
-                  <td className="py-3.5 pr-2 pl-0 align-middle">
+                  <td className="py-2.5 pr-2 pl-0 align-middle">
                     <TitleCell result={result} titleBehavior={titleBehavior} />
                   </td>
-                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
                     {result.source}
                   </td>
-                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
                     {formatBytes(result.size)}
                   </td>
-                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
                     {result.seeders}
                   </td>
-                  <td className="px-2 py-3.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
                     {formatAge(result.uploadedAt)}
                   </td>
-                  <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+                  <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
                     <CopyButton variant="icon" value={result.link} />
                   </td>
-                  <td className="w-[130px] py-3.5 pr-0 pl-1 align-middle whitespace-nowrap">
+                  <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
                     <AddTransferButton className="w-full" url={result.link}>
                       send to put.io
                     </AddTransferButton>
@@ -204,14 +176,20 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
             <div className="px-6 py-5">
               <TitleCell result={result} titleBehavior={titleBehavior} />
 
-              <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 text-xs">
+              <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-y py-2.5 text-xs">
                 <span className="text-fg-1">{result.source}</span>
-                <span className="text-fg-4">·</span>
-                <span className="tabular-nums">{formatBytes(result.size)}</span>
-                <span className="text-fg-4">·</span>
-                <span className="tabular-nums">{result.seeders} seeders</span>
-                <span className="text-fg-4">·</span>
-                <span className="tabular-nums">{formatAge(result.uploadedAt)}</span>
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <HardDrive className="size-3" />
+                  {formatBytes(result.size)}
+                </span>
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <Users className="size-3" />
+                  {result.seeders} seeders
+                </span>
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <CalendarDays className="size-3" />
+                  {formatAge(result.uploadedAt)}
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">

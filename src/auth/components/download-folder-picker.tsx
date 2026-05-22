@@ -167,10 +167,12 @@ function PickerBody({
         {canNavigateBack ? (
           <button
             aria-label="Go back to parent folder"
+            data-touch-target
             className="text-fg-2 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 inline-flex size-[22px] shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
             onClick={navigateBack}
             type="button"
           >
+            <span aria-hidden="true" className="touch-target" />
             <ChevronLeft className="size-3" strokeWidth={1.75} />
           </button>
         ) : (
@@ -187,9 +189,11 @@ function PickerBody({
 
         <PopoverClose
           aria-label="Close"
+          data-touch-target
           className="text-fg-3 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
           onClick={onClose}
         >
+          <span aria-hidden="true" className="touch-target" />
           <X className="size-3" strokeWidth={1.75} />
         </PopoverClose>
       </div>
@@ -247,7 +251,7 @@ function Breadcrumb({ onJump, path }: { onJump: (index: number) => void; path: F
     <nav
       aria-label="folder path"
       className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-xs"
-      style={{ flex: "1 1 auto", fontSize: 12, minWidth: 0, overflow: "hidden" }}
+      style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden" }}
     >
       {displayed.map((item, displayedIndex) => {
         const isLast = displayedIndex === displayed.length - 1;
@@ -267,6 +271,7 @@ function Breadcrumb({ onJump, path }: { onJump: (index: number) => void; path: F
             {item.type === "ellipsis" ? (
               <button
                 aria-label="show parent folders"
+                data-touch-target
                 className="text-fg-3 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 rounded px-1 py-0.5 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
                 onClick={() => onJump(item.index)}
                 title={path
@@ -275,10 +280,12 @@ function Breadcrumb({ onJump, path }: { onJump: (index: number) => void; path: F
                   .join(" / ")}
                 type="button"
               >
+                <span aria-hidden="true" className="touch-target" />
                 ...
               </button>
             ) : (
               <button
+                data-touch-target={!isLast ? "" : undefined}
                 className={cn(
                   "min-w-0 rounded px-1 py-0.5 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app",
                   isLast && "w-full text-left",
@@ -299,6 +306,7 @@ function Breadcrumb({ onJump, path }: { onJump: (index: number) => void; path: F
                 title={item.crumb.name}
                 type="button"
               >
+                {!isLast ? <span aria-hidden="true" className="touch-target" /> : null}
                 {isLast ? <MidTrunc text={item.crumb.name} /> : item.crumb.name}
               </button>
             )}
@@ -357,6 +365,7 @@ function FolderList({
             {folders.map((folder) => (
               <button
                 aria-label={`Open folder ${folder.name}`}
+                data-touch-target
                 className="hover-hover:hover:bg-hover active:bg-active grid w-full min-w-0 max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[7px] overflow-hidden rounded px-[7px] py-[5px] text-left text-sm leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
                 key={String(folder.id)}
                 onClick={() => onOpen(folder)}
@@ -372,6 +381,7 @@ function FolderList({
                 title={folder.name}
                 type="button"
               >
+                <span aria-hidden="true" className="touch-target" />
                 <Folder className="text-fg-2 size-3 shrink-0" strokeWidth={1.5} />
                 <span
                   className="min-w-0 overflow-hidden text-fg-1"
@@ -435,10 +445,7 @@ function FolderMessage({
       <div className="text-fg-1 font-medium" style={{ fontSize: 14, lineHeight: 1.2 }}>
         {title}
       </div>
-      <p
-        className="text-fg-3 m-0"
-        style={{ fontSize: 12, lineHeight: 1.35, marginBottom: action ? 8 : 0, maxWidth: 224 }}
-      >
+      <p className="text-fg-3 m-0 text-xs" style={{ marginBottom: action ? 8 : 0, maxWidth: 224 }}>
         {description}
       </p>
       {action}

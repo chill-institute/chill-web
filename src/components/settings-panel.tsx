@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Folder } from "lucide-react";
+import { Folder } from "lucide-react";
 import { match } from "ts-pattern";
 
 import { useAuth } from "@/auth/auth";
@@ -13,13 +13,13 @@ import { CheckboxGroup } from "@/ui/components/ui/checkbox-group";
 import { NativeSelect } from "@/ui/components/ui/native-select";
 import { SettingsSection } from "@/ui/components/settings-section";
 import { Skeleton } from "@/ui/components/ui/skeleton";
+import { InstituteExternalLinks } from "@/ui/components/institute-footer";
 import { combineQueries } from "@/queries/combine";
 import { useSettingsQuery, useSaveSettings } from "@/queries/settings";
 import { useDownloadFolderQuery } from "@/auth/queries/download-folder";
 import { useIndexersQuery } from "@/queries/indexers";
 import { useProfileQuery } from "@/auth/queries/profile";
 import { isThemePreference, useTheme } from "@/ui/hooks/use-theme";
-import { publicLinks } from "@/ui/lib/public-links";
 import {
   applyChillSettingsPatch,
   resetChillSettings,
@@ -30,14 +30,6 @@ import {
   toChillSettings,
   type ChillSettings,
 } from "@/lib/types";
-
-const LINKS = [
-  { title: "about", url: publicLinks.about },
-  { title: "github", url: publicLinks.github },
-  { title: "x", url: publicLinks.x },
-  { title: "email", url: publicLinks.email },
-  { title: "reddit", url: publicLinks.reddit },
-];
 
 type PersistPatch = (patch: Partial<ChillSettings>) => void;
 type ProfileQuery = ReturnType<typeof useProfileQuery>;
@@ -342,30 +334,8 @@ function SearchResultTitleBehaviorSection({
 
 function SettingsFooter() {
   return (
-    <div className="flex flex-col items-center gap-3 text-center text-2xs sm:flex-row sm:justify-between sm:gap-3 sm:text-left">
-      <nav
-        aria-label="contact"
-        className="text-fg-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start"
-      >
-        {LINKS.map(({ title, url }, index) => (
-          <span key={url} className="inline-flex items-center gap-1">
-            {index > 0 ? (
-              <span aria-hidden="true" className="text-fg-4">
-                ·
-              </span>
-            ) : null}
-            <a
-              className="hover-hover:hover:text-fg-1 inline-flex min-h-6 min-w-6 items-center gap-0.5"
-              href={url}
-              rel="noreferrer noopener"
-              target="_blank"
-            >
-              <span>{title}</span>
-              <ArrowUpRight className="size-3" strokeWidth={1.25} />
-            </a>
-          </span>
-        ))}
-      </nav>
+    <div className="flex flex-col items-center gap-3 text-center text-xs sm:flex-row sm:justify-between sm:gap-3 sm:text-left">
+      <InstituteExternalLinks ariaLabel="contact" className="text-fg-3" />
       <span className="text-fg-3 shrink-0 text-center sm:text-left">
         release: {import.meta.env.VITE_PUBLIC_RELEASE ?? "dev"}
       </span>

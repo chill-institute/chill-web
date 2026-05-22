@@ -8,6 +8,12 @@ type FooterLink = {
   href: string;
 };
 
+type InstituteExternalLinksProps = {
+  ariaLabel?: string;
+  links?: ReadonlyArray<FooterLink>;
+  className?: string;
+};
+
 type InstituteFooterProps = {
   appName?: string;
   links?: ReadonlyArray<FooterLink>;
@@ -22,6 +28,43 @@ const DEFAULT_FOOTER_LINKS: ReadonlyArray<FooterLink> = [
   { label: "reddit", href: publicLinks.reddit },
 ];
 
+function InstituteExternalLinks({
+  ariaLabel = "external links",
+  links = DEFAULT_FOOTER_LINKS,
+  className,
+}: InstituteExternalLinksProps) {
+  if (links.length === 0) return null;
+
+  return (
+    <nav
+      aria-label={ariaLabel}
+      className={cn(
+        "flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 sm:justify-start",
+        className,
+      )}
+    >
+      {links.map((link, index) => (
+        <span key={link.href} className="inline-flex items-center gap-2">
+          <a
+            href={link.href}
+            rel="noreferrer noopener"
+            target="_blank"
+            className="hover-hover:hover:text-fg-1 inline-flex min-h-6 min-w-6 items-center gap-0.5 font-normal"
+          >
+            <span>{link.label}</span>
+            <ArrowUpRight className="size-3" strokeWidth={1.25} aria-hidden="true" />
+          </a>
+          {index < links.length - 1 ? (
+            <span aria-hidden="true" className="text-fg-4">
+              ·
+            </span>
+          ) : null}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
 function InstituteFooter({
   appName = "chill.institute",
   links = DEFAULT_FOOTER_LINKS,
@@ -30,42 +73,20 @@ function InstituteFooter({
   return (
     <footer
       data-slot="institute-footer"
-      className={cn("border-border-strong text-fg-3 mt-auto w-full border-t text-2xs", className)}
+      className={cn("border-border-strong text-fg-3 mt-auto w-full border-t text-xs", className)}
     >
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2.5 px-4 py-4 text-center sm:flex-row sm:flex-wrap sm:text-left sm:items-center sm:gap-x-6 sm:gap-y-2 sm:px-5 sm:py-6">
-        <p className="m-0">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2.5 px-4 py-3 text-center sm:flex-row sm:flex-wrap sm:text-left sm:items-center sm:gap-x-6 sm:gap-y-2 sm:px-5 sm:py-4">
+        <p className="m-0 inline-flex flex-wrap items-center justify-center gap-2">
           <span className="text-fg-2">{appName}</span>
-          <span aria-hidden="true"> · </span>
-          not affiliated with put.io
+          <span aria-hidden="true" className="text-fg-4">
+            ·
+          </span>
+          <span>not affiliated with put.io</span>
         </p>
-        {links.length > 0 ? (
-          <nav
-            aria-label="external links"
-            className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:justify-start"
-          >
-            {links.map((link, index) => (
-              <span key={link.href} className="inline-flex items-center gap-1">
-                {index > 0 ? (
-                  <span aria-hidden="true" className="text-fg-4">
-                    ·
-                  </span>
-                ) : null}
-                <a
-                  href={link.href}
-                  rel="noreferrer noopener"
-                  target="_blank"
-                  className="hover-hover:hover:text-fg-1 inline-flex min-h-6 min-w-6 items-center gap-0.5"
-                >
-                  <span>{link.label}</span>
-                  <ArrowUpRight className="size-3" strokeWidth={1.25} aria-hidden="true" />
-                </a>
-              </span>
-            ))}
-          </nav>
-        ) : null}
+        <InstituteExternalLinks links={links} />
       </div>
     </footer>
   );
 }
 
-export { InstituteFooter };
+export { InstituteExternalLinks, InstituteFooter };

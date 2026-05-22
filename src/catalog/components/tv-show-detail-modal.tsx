@@ -152,21 +152,9 @@ function TvShowDetailContent({
       <DetailModalBody>
         {detailQuery.status === "error" ? <UserErrorAlert error={detailQuery.error} /> : null}
 
-        {show?.overview ? (
-          <p className="m-0 text-[0.9375rem]/6 text-fg-2 sm:text-sm sm:leading-relaxed">
-            {show.overview}
-          </p>
-        ) : detailQuery.isPending ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-[92%]" />
-            <Skeleton className="h-4 w-[80%]" />
-          </div>
-        ) : null}
-
         <div
           className={cn(
-            "border-border-strong border-t pt-3.5 transition-opacity duration-base ease-out",
+            "transition-opacity duration-base ease-out",
             seasonRefreshing ? "opacity-75" : "opacity-100",
           )}
         >
@@ -201,7 +189,7 @@ function TvShowDetailContent({
           {selectedSeason ? (
             <div className="border-border-soft bg-surface-2 mb-4 flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">
+                <div className="text-sm font-normal">
                   {selectedSeason.name || `Season ${selectedSeason.seasonNumber}`}
                 </div>
                 <div className="mt-1 text-xs text-fg-3">
@@ -275,10 +263,10 @@ function TvShowDetailContent({
                     className="border-border-faint flex items-center gap-3 border-t px-3 py-2.5 first:border-t-0"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm text-fg-1">
+                      <div className="truncate text-sm font-normal text-fg-1">
                         {episode.name || `episode ${episode.episodeNumber}`}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2 text-2xs text-fg-3">
+                      <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-fg-4">
                         <span className="tabular-nums">E{paddedEpisode}</span>
                         <span>· {formatAirDate(episode.airDate)}</span>
                         {episode.runtime ? <span>· {episode.runtime}m</span> : null}

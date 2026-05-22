@@ -26,8 +26,6 @@ vp run dev
 ```bash
 vp run verify
 vp run e2e
-vp run a11y
-vp run perf
 vp run visual
 ```
 

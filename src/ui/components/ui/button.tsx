@@ -21,7 +21,7 @@ const buttonVariants = cva(
       },
       size: {
         default: "px-2 py-1.5 [min-height:var(--control-h)]",
-        sm: "px-2 text-xs [min-height:var(--control-h-sm)]",
+        sm: "px-2 text-sm [min-height:var(--control-h-sm)]",
         hero: "px-3.5 py-1.5 text-[0.9375rem] [min-height:var(--control-h-md)]",
         icon: "size-8 px-0",
         "icon-sm": "size-7 px-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -39,6 +39,7 @@ const PRESS_TRANSITION =
   "motion-safe:transition-[transform,background-color,border-color,color,box-shadow] motion-safe:duration-fast motion-safe:ease-out";
 
 function Button({
+  children,
   className,
   variant = "default",
   size = "default",
@@ -50,11 +51,15 @@ function Button({
   return (
     <ButtonPrimitive
       type={buttonType}
+      data-touch-target=""
       data-slot="button"
       className={cn(buttonVariants({ variant, size }), PRESS_TRANSITION, className)}
       {...props}
-    />
+    >
+      <span aria-hidden="true" className="touch-target" />
+      {children}
+    </ButtonPrimitive>
   );
 }
 
-export { Button };
+export { Button, buttonVariants };

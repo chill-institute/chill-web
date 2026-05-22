@@ -25,6 +25,10 @@ type Props = {
   onSort: (sortBy: ChillSettings["sortBy"]) => void;
 };
 
+const quickFilterCheckboxClassName = "size-3.5 after:-inset-x-1.5 [&_svg]:size-2.5";
+const quickFilterFieldClassName = "gap-1";
+const quickFilterLabelClassName = "leading-4";
+
 export function SearchFilterBar({
   filters,
   onResolutionChange,
@@ -34,10 +38,13 @@ export function SearchFilterBar({
 }: Props) {
   return (
     <div className="flex flex-col gap-4 lg:items-center lg:gap-6">
-      <FieldSet className="m-0 flex-col items-start gap-0 border-0 p-0 lg:items-center">
+      <FieldSet className="m-0 flex-col items-center gap-0 border-0 p-0">
         <FieldLegend className="sr-only">Quick filters</FieldLegend>
-        <div id="quick-filters" className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <div className="flex flex-row gap-2">
+        <div
+          id="quick-filters"
+          className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2"
+        >
+          <div className="flex flex-row gap-1.5">
             {resolutionFilters.map((filter) => {
               const checked = filters.resolution.includes(filter);
               return (
@@ -45,6 +52,9 @@ export function SearchFilterBar({
                   key={filter}
                   id={`res-${String(filter)}`}
                   size="sm"
+                  className={quickFilterCheckboxClassName}
+                  fieldClassName={quickFilterFieldClassName}
+                  labelClassName={quickFilterLabelClassName}
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked
@@ -59,9 +69,9 @@ export function SearchFilterBar({
             })}
           </div>
 
-          <span aria-hidden="true" className="bg-border-hairline h-4 w-px" />
+          <span aria-hidden="true" className="bg-border-hairline h-3.5 w-px" />
 
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row gap-1.5">
             {codecFilters.map((filter) => {
               const checked = filters.codec.includes(filter);
               return (
@@ -69,6 +79,9 @@ export function SearchFilterBar({
                   key={filter}
                   id={`codec-${String(filter)}`}
                   size="sm"
+                  className={quickFilterCheckboxClassName}
+                  fieldClassName={quickFilterFieldClassName}
+                  labelClassName={quickFilterLabelClassName}
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked
@@ -83,9 +96,9 @@ export function SearchFilterBar({
             })}
           </div>
 
-          <span aria-hidden="true" className="bg-border-hairline h-4 w-px" />
+          <span aria-hidden="true" className="bg-border-hairline h-3.5 w-px" />
 
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row gap-1.5">
             {otherFilters.map((filter) => {
               const checked = filters.other.includes(filter);
               return (
@@ -93,6 +106,9 @@ export function SearchFilterBar({
                   key={filter}
                   id={`other-${String(filter)}`}
                   size="sm"
+                  className={quickFilterCheckboxClassName}
+                  fieldClassName={quickFilterFieldClassName}
+                  labelClassName={quickFilterLabelClassName}
                   checked={checked}
                   onCheckedChange={(isChecked) => {
                     const next = isChecked ? [filter] : [];
@@ -109,7 +125,7 @@ export function SearchFilterBar({
 
       <FieldSet className="m-0 gap-0 border-0 p-0 lg:hidden">
         <FieldLegend className="sr-only">Sort by</FieldLegend>
-        <div id="sort-options" className="flex flex-wrap items-center gap-2">
+        <div id="sort-options" className="flex flex-wrap items-center justify-center gap-2">
           {sortByValues.map((option) => {
             const active = filters.sortBy === option;
             return (
@@ -124,9 +140,9 @@ export function SearchFilterBar({
                 <span>{sortByLabels[option].toLowerCase()}</span>
                 {active ? (
                   filters.sortDirection === SortDirection.ASC ? (
-                    <ArrowUp data-icon="inline-end" />
+                    <ArrowUp data-icon="inline-end" className="size-3" />
                   ) : (
-                    <ArrowDown data-icon="inline-end" />
+                    <ArrowDown data-icon="inline-end" className="size-3" />
                   )
                 ) : null}
               </Button>

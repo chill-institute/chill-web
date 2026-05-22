@@ -1,5 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CalendarDays, Film, HardDrive, Monitor, Search, Users } from "lucide-react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { normalizeCodecFilterValue } from "@/api/release-info";
@@ -177,51 +177,6 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
   );
 }
 
-function MovieSynopsis({ children }: { children: string }) {
-  const paragraphRef = useRef<HTMLParagraphElement>(null);
-  const [expanded, setExpanded] = useState(false);
-  const [canCollapse, setCanCollapse] = useState(false);
-
-  useLayoutEffect(() => {
-    const paragraph = paragraphRef.current;
-    if (!paragraph || expanded) return;
-
-    const measure = () => {
-      setCanCollapse(paragraph.scrollHeight > paragraph.clientHeight + 1);
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(paragraph);
-    return () => observer.disconnect();
-  }, [children, expanded]);
-
-  return (
-    <div className="flex flex-col items-start gap-1.5">
-      <p
-        ref={paragraphRef}
-        className={cn(
-          "m-0 text-[0.9375rem]/6 text-pretty text-fg-2 sm:text-sm sm:leading-relaxed",
-          !expanded && "line-clamp-3",
-        )}
-      >
-        {children}
-      </p>
-      {canCollapse ? (
-        <Button
-          variant="link"
-          size="sm"
-          className="h-auto min-h-0 p-0 text-sm text-fg-4 hover:text-fg-2 sm:text-xs"
-          onClick={() => setExpanded((value) => !value)}
-          aria-expanded={expanded}
-        >
-          {expanded ? "show less" : "read more"}
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
 function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: boolean }) {
   const [resolutionFilter, setResolutionFilter] = useState<ResolutionFilterValue>("all");
   const [codecFilter, setCodecFilter] = useState<CodecFilterValue>("all");
@@ -229,7 +184,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const searchQuery = useMovieSearchQuery({ movie, enabled: true });
 
   const results = searchQuery.data?.results ?? EMPTY_RESULTS;
-  const synopsis = movie.overview?.trim() || undefined;
   const metadataTags = useMemo(() => getDetailGenreTags(movie.genres), [movie.genres]);
   const parsedResults = useMemo<ParsedResult[]>(
     () =>
@@ -285,8 +239,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
       </DetailModalHeader>
 
       <DetailModalBody movieScroll>
-        {synopsis ? <MovieSynopsis key={synopsis}>{synopsis}</MovieSynopsis> : null}
-
         {searchQuery.status === "pending" ? (
           <div className="border-border-soft bg-surface-2 overflow-hidden rounded border">
             {RESULT_SKELETON_SLOTS.map((slot) => (
@@ -363,45 +315,43 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                         )}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="break-words text-sm font-medium text-fg-1">
-                            {result.title}
-                          </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-fg-3">
-                            <span className="text-fg-2">
+                          <div className="break-words text-sm text-fg-1">{result.title}</div>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-4">
+                            <span className="text-fg-3">
                               {result.indexer || result.source || "unknown"}
                             </span>
                             {resolution ? (
-                              <>
-                                <span>·</span>
-                                <span>{resolution}</span>
-                              </>
+                              <span className="inline-flex items-center gap-1 tabular-nums">
+                                <Monitor className="size-3" />
+                                {resolution}
+                              </span>
                             ) : null}
                             {codec ? (
-                              <>
-                                <span>·</span>
-                                <span>{codec}</span>
-                              </>
+                              <span className="inline-flex items-center gap-1">
+                                <Film className="size-3" />
+                                {codec}
+                              </span>
                             ) : null}
                             {sizeLabel ? (
-                              <>
-                                <span>·</span>
-                                <span className="tabular-nums">{sizeLabel}</span>
-                              </>
+                              <span className="inline-flex items-center gap-1 tabular-nums">
+                                <HardDrive className="size-3" />
+                                {sizeLabel}
+                              </span>
                             ) : null}
                             {seederLabel ? (
-                              <>
-                                <span>·</span>
-                                <span className="inline-flex items-center gap-1 tabular-nums">
-                                  <Users className="size-3" />
-                                  {seederLabel}
-                                </span>
-                              </>
+                              <span className="inline-flex items-center gap-1 tabular-nums">
+                                <Users className="size-3" />
+                                {seederLabel}
+                              </span>
                             ) : null}
                             {ageLabel ? (
-                              <>
-                                <span>·</span>
-                                <span title={uploadedAtLabel}>{ageLabel}</span>
-                              </>
+                              <span
+                                className="inline-flex items-center gap-1 tabular-nums"
+                                title={uploadedAtLabel}
+                              >
+                                <CalendarDays className="size-3" />
+                                {ageLabel}
+                              </span>
                             ) : null}
                           </div>
                         </div>

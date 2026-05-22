@@ -9,7 +9,7 @@ import {
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { Field, FieldLabel } from "./ui/field";
 import { Textarea } from "./ui/textarea";
 import { buildErrorReport, buildGitHubIssueURL, formatErrorReport } from "../lib/error-report";
@@ -130,10 +130,10 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
           <span data-icon="inline-start">{copyIcon}</span>
           {copyLabel}
         </Button>
-        <Button render={<a href={issueURL} target="_blank" rel="noreferrer" />}>
+        <a className={buttonVariants()} href={issueURL} target="_blank" rel="noreferrer">
           <ExternalLink data-icon="inline-start" />
           create GitHub issue
-        </Button>
+        </a>
       </div>
 
       <details className="border-border-soft bg-surface-2 rounded border p-3 text-sm">

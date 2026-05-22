@@ -9,8 +9,6 @@ function SearchResultCardLoading() {
     <div className="border-border-strong bg-surface my-4 overflow-hidden rounded border">
       <div className="px-6 py-5">
         <Skeleton className="h-4 w-full" />
-        <Skeleton className="mt-2 h-4 w-3/4" />
-        <Skeleton className="mt-2 h-3 w-2/5" />
         <div className="border-border-strong my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5">
           {metaSkeletonSlots.map((slot) => (
             <Skeleton key={slot} className="h-3 w-14" />
@@ -58,26 +56,25 @@ function SearchResultTableHeaderLoading() {
 function SearchResultRowLoading() {
   return (
     <tr className="border-border-faint border-b last:border-b-0">
-      <td className="py-3.5 pr-2 pl-0 align-middle">
+      <td className="py-2.5 pr-2 pl-0 align-middle">
         <Skeleton className="h-4 w-full max-w-xl" />
-        <Skeleton className="mt-1.5 h-3 w-48" />
       </td>
-      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
         <Skeleton className="mx-auto h-4 w-12" />
       </td>
-      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
         <Skeleton className="mx-auto h-4 w-14" />
       </td>
-      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
         <Skeleton className="mx-auto h-4 w-10" />
       </td>
-      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
         <Skeleton className="mx-auto h-4 w-14" />
       </td>
-      <td className="px-2 py-3.5 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
         <Skeleton className="mx-auto size-7 rounded" />
       </td>
-      <td className="w-[130px] py-3.5 pr-0 pl-1 align-middle whitespace-nowrap">
+      <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
         <Skeleton className="h-7 w-[130px] rounded" />
       </td>
     </tr>
@@ -86,21 +83,27 @@ function SearchResultRowLoading() {
 
 export function FilterBarLoading() {
   return (
-    <div className="flex flex-col gap-6 lg:items-center">
-      <div className="flex flex-col items-start lg:items-center">
-        <div className="flex flex-row items-center gap-x-3">
-          <div className="flex flex-row gap-x-2">
+    <div className="flex flex-col gap-4 lg:items-center lg:gap-6">
+      <div className="flex flex-col items-center">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          <div className="flex flex-row gap-2">
+            <Skeleton className="size-4 rounded" />
             <Skeleton className="h-5 w-10" />
+            <Skeleton className="size-4 rounded" />
             <Skeleton className="h-5 w-12" />
+            <Skeleton className="size-4 rounded" />
             <Skeleton className="h-5 w-10" />
           </div>
           <div className="bg-border-hairline h-4 w-px" />
-          <div className="flex flex-row gap-x-2">
+          <div className="flex flex-row gap-2">
+            <Skeleton className="size-4 rounded" />
             <Skeleton className="h-5 w-10" />
+            <Skeleton className="size-4 rounded" />
             <Skeleton className="h-5 w-10" />
           </div>
           <div className="bg-border-hairline h-4 w-px" />
-          <div className="flex flex-row gap-x-2">
+          <div className="flex flex-row gap-2">
+            <Skeleton className="size-4 rounded" />
             <Skeleton className="h-5 w-10" />
           </div>
         </div>
