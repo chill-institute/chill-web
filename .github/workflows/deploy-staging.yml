@@ -25,7 +25,6 @@ env:
   SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH }}
   SST_STATE_FILE: ${{ vars.SST_STATE_FILE_STAGING }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
-  VITE_PLUS_VERSION: "0.1.21"
 
 permissions:
   contents: read
@@ -166,10 +165,18 @@ jobs:
         with:
           ref: ${{ needs.validate.outputs.sha }}
 
+      - name: Read Vite+ version
+        id: vite_plus
+        run: |
+          set -euo pipefail
+
+          version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
         with:
-          version: ${{ env.VITE_PLUS_VERSION }}
+          version: ${{ steps.vite_plus.outputs.version }}
           node-version-file: ".node-version"
           cache: true
           run-install: false
@@ -186,13 +193,6 @@ jobs:
           vp run test
           vp run build
 
-      - name: Upload app build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: app-dist
-          path: dist
-          if-no-files-found: error
-
   e2e:
     needs: [validate, verify-app]
     if: ${{ needs.verify-app.result == 'success' }}
@@ -206,16 +206,18 @@ jobs:
         with:
           ref: ${{ needs.validate.outputs.sha }}
 
-      - name: Download app build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: app-dist
-          path: dist
+      - name: Read Vite+ version
+        id: vite_plus
+        run: |
+          set -euo pipefail
+
+          version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
         with:
-          version: ${{ env.VITE_PLUS_VERSION }}
+          version: ${{ steps.vite_plus.outputs.version }}
           node-version-file: ".node-version"
           cache: true
           run-install: false
@@ -228,6 +230,9 @@ jobs:
 
       - name: Install Playwright browser
         run: vp exec playwright install chromium
+
+      - name: Build app
+        run: vp run build
 
       - name: Run end-to-end tests
         run: vp run e2e
@@ -254,17 +259,21 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Download app build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: app-dist
-          path: dist
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - name: Read Vite+ version
+        id: vite_plus
+        run: |
+          set -euo pipefail
+
+          version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
         with:
-          version: ${{ env.VITE_PLUS_VERSION }}
+          version: ${{ steps.vite_plus.outputs.version }}
           node-version-file: ".node-version"
           cache: false
           run-install: false
@@ -274,6 +283,9 @@ jobs:
 
       - name: Install dependencies
         run: vp install
+
+      - name: Build staging bundle
+        run: vp run build
 
       - name: Install age
         run: |
@@ -315,10 +327,18 @@ jobs:
         with:
           ref: ${{ needs.validate.outputs.sha }}
 
+      - name: Read Vite+ version
+        id: vite_plus
+        run: |
+          set -euo pipefail
+
+          version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
         with:
-          version: ${{ env.VITE_PLUS_VERSION }}
+          version: ${{ steps.vite_plus.outputs.version }}
           node-version-file: ".node-version"
           cache: false
           run-install: false
@@ -354,35 +374,15 @@ jobs:
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git save
 
-  deploy-summary:
+  smoke-staging:
     needs: [validate, deploy-app, deploy-zones]
-    if: ${{ always() && (needs.deploy-app.result != 'skipped' || needs.deploy-zones.result != 'skipped') }}
+    if: ${{ needs.deploy-app.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Publish summary
-        env:
-          REF: ${{ needs.validate.outputs.ref }}
-          SHA: ${{ needs.validate.outputs.sha }}
-          APP_RESULT: ${{ needs.deploy-app.result }}
-          ZONES_RESULT: ${{ needs.deploy-zones.result }}
-        run: |
-          {
-            echo "## Staging deploy"
-            echo
-            echo "- Ref: \`${REF}\`"
-            echo "- SHA: \`${SHA}\`"
-            if [ "${ZONES_RESULT}" = "success" ]; then
-              echo "- Zones: HTTPS redirects managed"
-            elif [ "${ZONES_RESULT}" = "skipped" ]; then
-              echo "- Zones: skipped"
-            else
-              echo "- Zones: ${ZONES_RESULT}"
-            fi
-            if [ "${APP_RESULT}" = "success" ]; then
-              echo "- App: [https://${CHILL_STAGING_DOMAIN}](https://${CHILL_STAGING_DOMAIN})"
-            elif [ "${APP_RESULT}" = "skipped" ]; then
-              echo "- App: skipped"
-            else
-              echo "- App: ${APP_RESULT}"
-            fi
-          } >> "${GITHUB_STEP_SUMMARY}"
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Smoke staging URL
+        run: scripts/ci/smoke-web-hosts staging

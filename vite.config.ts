@@ -42,6 +42,9 @@ export default defineConfig({
       typeCheck: true,
     },
   },
+  test: {
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+  },
   resolve: {
     tsconfigPaths: true,
   },

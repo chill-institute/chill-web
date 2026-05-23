@@ -14,7 +14,6 @@ on:
   workflow_dispatch:
 
 env:
-  VITE_PLUS_VERSION: "0.1.21"
   VITE_PUBLIC_RELEASE: visual-test
 
 permissions:
@@ -33,18 +32,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
+        uses: ./.github/actions/setup-vite-plus
 
       - name: Install Playwright browser
         run: vp exec playwright install chromium

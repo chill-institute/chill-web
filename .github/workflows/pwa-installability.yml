@@ -30,7 +30,6 @@ env:
   CHILL_PWA_URL: ${{ inputs.chill_url || 'http://127.0.0.1:58321/' }}
   MAESTRO_SHA256: "2d924bfd37cccabca438a727213648cbfe4f8bb711559ec8e9d199dc09a5ce52"
   MAESTRO_VERSION: "2.5.1"
-  VITE_PLUS_VERSION: "0.1.21"
 
 permissions:
   contents: read
@@ -47,18 +46,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
+        uses: ./.github/actions/setup-vite-plus
 
       - name: Install Playwright browser
         run: vp exec playwright install chromium
@@ -83,18 +71,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ env.VITE_PLUS_VERSION }}
-          node-version-file: ".node-version"
-          cache: true
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
+        uses: ./.github/actions/setup-vite-plus
 
       - name: Build app for Android Emulator
         run: vp build
@@ -238,17 +215,12 @@ jobs:
               exit 1
             fi
 
-            echo "install_result=launcher_shortcut" > android-pwa-evidence/install-summary.txt
             {
-              echo "### Android PWA home-screen evidence"
-              echo
-              echo '```'
-              cat android-pwa-evidence/install-summary.txt
+              echo "install_result=launcher_shortcut"
               echo "url=${ANDROID_PWA_URL}"
               echo "webapk_package=not minted by this emulator"
               echo "launcher_label=chill.institute"
-              echo '```'
-            } >> "${GITHUB_STEP_SUMMARY}"
+            } > android-pwa-evidence/install-summary.txt
             exit 0
           fi
 
@@ -264,16 +236,6 @@ jobs:
             echo "Expected launched activity state to include ${package}" >&2
             exit 1
           fi
-
-          {
-            echo "### Android PWA home-screen evidence"
-            echo
-            echo '```'
-            echo "install_result=webapk"
-            cat android-pwa-evidence/install-summary.txt
-            cat android-pwa-evidence/webapk-packages.txt
-            echo '```'
-          } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Stop Android Emulator
         if: always()

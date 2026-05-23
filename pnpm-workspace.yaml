@@ -1,0 +1,6 @@
+packages:
+  - "."
+
+peerDependencyRules:
+  allowedVersions:
+    vite: "0.1.22"

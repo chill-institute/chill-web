@@ -26,7 +26,7 @@ Build output:
 - Pull requests run `Verify`
 - `Verify` runs root app checks and functional e2e
 - Pushes to `main` run `Main`
-- `Main` verifies, runs functional e2e, deploys the production web surface, and deploys the production redirect worker
+- `Main` verifies, runs functional e2e, builds and deploys the production web surface, deploys the production redirect worker, and smoke-checks the live hosts from a read-only job
 - Manual deploy workflows are maintainer-only fallbacks for staging, production app, or production redirect reruns
 - PRs do not create public preview deployments
 

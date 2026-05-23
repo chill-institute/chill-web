@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: scripts/ci/smoke-web-hosts <staging|production|production-app|production-redirects>" >&2
+  exit 64
+fi
+
+environment="$1"
+
+smoke_production_app() {
+  curl -fsS --retry 3 --retry-delay 2 "https://${CHILL_PRODUCTION_DOMAIN}/" >/dev/null
+}
+
+smoke_production_redirects() {
+  for host in "www.${CHILL_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_DOMAIN}" "${BINGE_PRODUCTION_REDIRECT_DOMAIN}"; do
+    final_url="$(curl -fsSL --retry 3 --retry-delay 2 -o /dev/null -w '%{url_effective}' "https://${host}/")"
+    case "${final_url}" in
+      "https://${CHILL_PRODUCTION_DOMAIN}/"*) ;;
+      *)
+        echo "Expected https://${host}/ to resolve to https://${CHILL_PRODUCTION_DOMAIN}/, got ${final_url}" >&2
+        exit 1
+        ;;
+    esac
+  done
+}
+
+case "${environment}" in
+  staging)
+    curl -fsS --retry 3 --retry-delay 2 "https://${CHILL_STAGING_DOMAIN}/" >/dev/null
+    ;;
+
+  production)
+    smoke_production_app
+    smoke_production_redirects
+    ;;
+
+  production-app)
+    smoke_production_app
+    ;;
+
+  production-redirects)
+    smoke_production_redirects
+    ;;
+
+  *)
+    echo "unsupported environment: ${environment}" >&2
+    exit 64
+    ;;
+esac

@@ -3,22 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp fmt && vp lint && vp test src --run && vp build",
+    "ready": "vp check && vp test && vp build",
     "dev": "vp dev --host 0.0.0.0 --port 58300",
     "build": "vp build",
     "preview": "vp preview --host 0.0.0.0 --port 58300",
-    "test": "vp test src --run",
+    "test": "vp test",
     "check": "vp check && vp exec knip --no-config-hints",
-    "smoke": "playwright test e2e/smoke.spec.ts",
-    "e2e": "playwright test",
-    "visual": "playwright test -c playwright.visual.config.ts",
-    "visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",
+    "smoke": "vp exec playwright test e2e/smoke.spec.ts",
+    "e2e": "vp exec playwright test",
+    "visual": "vp exec playwright test -c playwright.visual.config.ts",
+    "visual:update": "vp exec playwright test -c playwright.visual.config.ts --update-snapshots",
     "format": "vp fmt --write",
     "format:check": "vp fmt --check",
     "lint": "vp lint",
     "knip": "vp exec knip --no-config-hints",
     "sst": "sst",
-    "verify": "vp lint && vp run check && vp test src --run && vp build",
+    "verify": "vp run check && vp test && vp build",
     "prepare": "vp config",
     "quality": "vp run verify && vp run e2e && vp run visual"
   },
@@ -53,12 +53,12 @@
     "knip": "^6.13.1",
     "sst": "^4.14.1",
     "typescript": "^6.0.3",
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.1.21",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.1.22",
     "vite-plugin-pwa": "^1.3.0",
-    "vite-plus": "0.1.21"
+    "vite-plus": "0.1.22"
   },
   "engines": {
     "node": ">=24.14.0"
   },
-  "packageManager": "pnpm@11.0.3"
+  "packageManager": "pnpm@11.2.2"
 }
