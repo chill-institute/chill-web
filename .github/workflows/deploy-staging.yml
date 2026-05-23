@@ -384,5 +384,32 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Read Vite+ version
+        id: vite_plus
+        run: |
+          set -euo pipefail
+
+          version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
+        with:
+          version: ${{ steps.vite_plus.outputs.version }}
+          node-version-file: ".node-version"
+          cache: true
+          run-install: false
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Install Playwright browser
+        run: vp exec playwright install chromium
+
       - name: Smoke staging URL
-        run: scripts/ci/smoke-web-hosts staging
+        env:
+          LIVE_WEB_SMOKE_TARGET: staging
+        run: vp exec playwright test e2e/live-hosts.spec.ts

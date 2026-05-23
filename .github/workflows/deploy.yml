@@ -213,10 +213,20 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up Vite+
+        uses: ./.github/actions/setup-vite-plus
+
+      - name: Install Playwright browser
+        run: vp exec playwright install chromium
+
       - name: Smoke production app URL
         if: ${{ needs.deploy-app.result == 'success' }}
-        run: scripts/ci/smoke-web-hosts production-app
+        env:
+          LIVE_WEB_SMOKE_TARGET: production-app
+        run: vp exec playwright test e2e/live-hosts.spec.ts
 
       - name: Smoke production redirect URLs
         if: ${{ needs.deploy-redirects.result == 'success' }}
-        run: scripts/ci/smoke-web-hosts production-redirects
+        env:
+          LIVE_WEB_SMOKE_TARGET: production-redirects
+        run: vp exec playwright test e2e/live-hosts.spec.ts
