@@ -1,0 +1,59 @@
+import { lazy, Suspense } from "react";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+
+import { useTVShowsQuery } from "@/catalog/queries/tv-shows";
+import { useSettingsQuery } from "@/catalog/queries/settings";
+import { toCatalogAppSettings } from "@/catalog/lib/types";
+
+const routeApi = getRouteApi("/tv-shows/$id");
+
+const TvShowDetailModal = lazy(() =>
+  import("@/catalog/components/tv-show-detail-modal").then((m) => ({
+    default: m.TvShowDetailModal,
+  })),
+);
+
+function TVShowDetailRoute() {
+  const { id } = routeApi.useParams();
+  const { season, source } = routeApi.useSearch();
+  const navigate = useNavigate();
+
+  const configQuery = useSettingsQuery();
+  const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
+  const activeSource = source ?? appSettings?.tvShowsSource;
+  const sourceReady = source === undefined || appSettings?.tvShowsSource === source;
+  const tvShowsQuery = useTVShowsQuery({
+    enabled: configQuery.status === "success" && sourceReady,
+    source: activeSource,
+  });
+
+  const close = () => void navigate({ to: "/tv-shows", search: (prev) => prev });
+  const setSeason = (next: number) =>
+    void navigate({
+      to: "/tv-shows/$id",
+      params: { id },
+      search: (prev) => ({ ...prev, season: next }),
+      replace: true,
+    });
+
+  const fallbackShow =
+    configQuery.status === "success" &&
+    tvShowsQuery.status === "success" &&
+    tvShowsQuery.data.source === activeSource
+      ? tvShowsQuery.data.shows.find((show) => show.imdbId === id)
+      : undefined;
+
+  return (
+    <Suspense fallback={null}>
+      <TvShowDetailModal
+        imdbId={id}
+        fallbackShow={fallbackShow}
+        activeSeason={season}
+        onSeasonChange={setSeason}
+        onClose={close}
+      />
+    </Suspense>
+  );
+}
+
+export { TVShowDetailRoute };

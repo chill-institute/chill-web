@@ -160,18 +160,19 @@ function FilterSelect<T extends string>({
 }
 
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
+  const metadata = useMemo(
+    () => (
+      <>
+        <DetailRatingMeta rating={movie.rating} />
+        <DetailYearMeta year={movie.year} />
+        <DetailExternalLinkMeta url={movie.externalUrl} />
+      </>
+    ),
+    [movie.externalUrl, movie.rating, movie.year],
+  );
+
   return (
-    <DetailModalHeaderText
-      titleId="movie-detail-title"
-      title={movie.title}
-      metadata={
-        <>
-          <DetailRatingMeta rating={movie.rating} />
-          <DetailYearMeta year={movie.year} />
-          <DetailExternalLinkMeta url={movie.externalUrl} />
-        </>
-      }
-    >
+    <DetailModalHeaderText titleId="movie-detail-title" title={movie.title} metadata={metadata}>
       <DetailGenreBadges genres={metadataTags} className="mt-2" />
     </DetailModalHeaderText>
   );

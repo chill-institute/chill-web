@@ -108,6 +108,21 @@ function TvShowDetailContent({
     (seasonQuery.isFetching && seasonQuery.status === "success") ||
     (downloadsQuery.isFetching && downloadsQuery.status === "success");
   const visibleGenres = getDetailGenreTags(genres);
+  const headerMetadata = useMemo(
+    () =>
+      show ? (
+        <>
+          <DetailRatingMeta rating={show.rating} />
+          <DetailYearMeta year={show.year} />
+          <DetailMetadataSeparator />
+          <span className="text-fg-3">
+            {detailQuery.data?.show?.seasonCount ?? show.seasonCount} seasons
+          </span>
+          <DetailExternalLinkMeta url={show.externalUrl} />
+        </>
+      ) : null,
+    [detailQuery.data?.show?.seasonCount, show],
+  );
 
   return (
     <DetailModalShell isDesktop={isDesktop}>
@@ -122,17 +137,7 @@ function TvShowDetailContent({
           <DetailModalHeaderText
             titleId="tv-show-detail-title"
             title={show.title}
-            metadata={
-              <>
-                <DetailRatingMeta rating={show.rating} />
-                <DetailYearMeta year={show.year} />
-                <DetailMetadataSeparator />
-                <span className="text-fg-3">
-                  {detailQuery.data?.show?.seasonCount ?? show.seasonCount} seasons
-                </span>
-                <DetailExternalLinkMeta url={show.externalUrl} />
-              </>
-            }
+            metadata={headerMetadata}
           >
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <TVShowStatusBadge status={detailQuery.data?.show?.status ?? show.status} />
@@ -344,32 +349,28 @@ export function TvShowDetailModal({
   const posterUrl = show?.posterUrl;
   const genres = detailQuery.data?.show?.genres ?? EMPTY_GENRES;
 
-  const content = (
-    <TvShowDetailContent
-      isDesktop={isDesktop}
-      show={show}
-      genres={genres}
-      backdropUrl={backdropUrl}
-      posterUrl={posterUrl}
-      detailQuery={detailQuery}
-      downloadsQuery={downloadsQuery}
-      seasonQuery={seasonQuery}
-      seasons={seasons}
-      resolvedSeasonNumber={resolvedSeasonNumber}
-      selectedSeason={selectedSeason}
-      downloadsByEpisode={downloadsByEpisode}
-      onClose={onClose}
-      onSeasonChange={onSeasonChange}
-    />
-  );
-
   return (
     <DetailResponsiveModal
       title={show?.title ?? "TV show details"}
       description="Browse TV show metadata, seasons, and episode download actions."
       onClose={onClose}
     >
-      {content}
+      <TvShowDetailContent
+        isDesktop={isDesktop}
+        show={show}
+        genres={genres}
+        backdropUrl={backdropUrl}
+        posterUrl={posterUrl}
+        detailQuery={detailQuery}
+        downloadsQuery={downloadsQuery}
+        seasonQuery={seasonQuery}
+        seasons={seasons}
+        resolvedSeasonNumber={resolvedSeasonNumber}
+        selectedSeason={selectedSeason}
+        downloadsByEpisode={downloadsByEpisode}
+        onClose={onClose}
+        onSeasonChange={onSeasonChange}
+      />
     </DetailResponsiveModal>
   );
 }

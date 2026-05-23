@@ -4,14 +4,14 @@ import { InstituteBrand, InstituteTabs } from "@/components/top-nav";
 import { InstituteFooter } from "@/ui/components/institute-footer";
 import { StickyHeader } from "@/ui/components/sticky-header";
 
+const headerBrand = <InstituteBrand />;
+const headerTabs = <InstituteTabs active="search" />;
+const headerRight = <ShellSettingsMenu />;
+
 export function HomeShell() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <StickyHeader
-        brand={<InstituteBrand />}
-        tabs={<InstituteTabs active="search" />}
-        right={<ShellSettingsMenu />}
-      />
+      <StickyHeader brand={headerBrand} tabs={headerTabs} right={headerRight} />
       <header className="mx-auto max-w-md px-4 pt-9 pb-7 sm:pt-10 sm:pb-8">
         <h1 className="m-0 text-center text-2xl leading-[1.08] sm:text-4xl">
           Welcome to The Institute

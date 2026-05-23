@@ -19,6 +19,12 @@ test.describe("shell search form", () => {
     await authenticatedPage.keyboard.press("Escape");
     await expect(searchInput).not.toBeFocused();
 
+    await authenticatedPage.getByRole("button", { name: "Focus search input" }).click();
+    await expect(searchInput).toBeFocused();
+
+    await authenticatedPage.keyboard.press("Escape");
+    await expect(searchInput).not.toBeFocused();
+
     await authenticatedPage.keyboard.press("/");
     await expect(searchInput).toBeFocused();
 

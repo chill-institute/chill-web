@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { match } from "ts-pattern";
 
@@ -23,8 +23,6 @@ import { useSaveSettings, useSettingsQuery } from "@/catalog/queries/settings";
 import { useTVShowsQuery } from "@/catalog/queries/tv-shows";
 import {
   moviesSources,
-  parseMoviesSource,
-  parseTVShowsSource,
   tvShowsSources,
   applyCatalogAppSettingsPatch,
   toCatalogAppSettings,
@@ -75,36 +73,6 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
     writeLastTab(tab);
   }, [tab]);
 
-  useEffect(() => {
-    if (
-      configQuery.status !== "success" ||
-      configQuery.isFetching ||
-      saveConfigMutation.isPending ||
-      source === undefined ||
-      !isSourceParamOutOfSync
-    ) {
-      return;
-    }
-    if (tab === "movies") {
-      saveConfigMutation.flush((settings) =>
-        applyCatalogAppSettingsPatch(settings, { moviesSource: source }),
-      );
-      return;
-    }
-    saveConfigMutation.flush((settings) =>
-      applyCatalogAppSettingsPatch(settings, { tvShowsSource: source }),
-    );
-  }, [
-    configQuery.data,
-    configQuery.isFetching,
-    configQuery.status,
-    isSourceParamOutOfSync,
-    saveConfigMutation,
-    saveConfigMutation.isPending,
-    source,
-    tab,
-  ]);
-
   function patchConfig(patch: Partial<CatalogAppSettings>) {
     if (!configQuery.data) return;
     saveConfigMutation.mutate((settings) => applyCatalogAppSettingsPatch(settings, patch));
@@ -117,7 +85,9 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
   return match(configQuery)
     .with({ status: "pending" }, () => (
       <HomeShell tab={tab}>
-        <PageHeading tab={tab} controls={<SortRowSkeleton />} />
+        <PageHeading tab={tab}>
+          <SortRowSkeleton />
+        </PageHeading>
         <PosterGridSkeleton />
       </HomeShell>
     ))
@@ -196,10 +166,9 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
 
       return (
         <HomeShell tab={tab}>
-          <PageHeading
-            tab={tab}
-            controls={<SortRow className="mb-0 sm:justify-end lg:mb-0">{sourceSelector}</SortRow>}
-          />
+          <PageHeading tab={tab}>
+            <SortRow className="mb-0 sm:justify-end lg:mb-0">{sourceSelector}</SortRow>
+          </PageHeading>
 
           {activeContent}
 
@@ -212,29 +181,27 @@ export function CatalogPage({ tab, source }: CatalogPageProps) {
     .exhaustive();
 }
 
-export { parseMoviesSource, parseTVShowsSource };
-
 function HomeShell({ tab, children }: { tab: CatalogTab; children: React.ReactNode }) {
+  const brand = useMemo(() => <InstituteBrand />, []);
+  const tabs = useMemo(() => <InstituteTabs active={tab} />, [tab]);
+  const right = useMemo(() => <ShellSettingsMenu />, []);
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <StickyHeader
-        brand={<InstituteBrand />}
-        tabs={<InstituteTabs active={tab} />}
-        right={<ShellSettingsMenu />}
-      />
+      <StickyHeader brand={brand} tabs={tabs} right={right} />
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-5">{children}</main>
       <InstituteFooter />
     </div>
   );
 }
 
-function PageHeading({ tab, controls }: { tab: CatalogTab; controls?: React.ReactNode }) {
+function PageHeading({ tab, children }: { tab: CatalogTab; children?: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 pt-5 pb-3.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pt-7">
       <h1 className="m-0 text-2xl leading-none sm:text-3xl">
         {tab === "movies" ? "movies" : "tv shows"}
       </h1>
-      {controls ? <div className="w-full sm:ml-auto sm:w-auto">{controls}</div> : null}
+      {children ? <div className="w-full sm:ml-auto sm:w-auto">{children}</div> : null}
     </div>
   );
 }

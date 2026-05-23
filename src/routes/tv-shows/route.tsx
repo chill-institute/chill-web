@@ -2,8 +2,10 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 import { readStoredToken } from "@/auth/auth";
 
-import { CatalogPage, parseTVShowsSource } from "@/catalog/components/catalog-page";
+import { CatalogPage } from "@/catalog/components/catalog-page";
+import { parseTVShowsSource } from "@/catalog/lib/types";
 import { settingsQueryOptions } from "@/catalog/queries/options";
+import { syncCatalogSourceFromSearch } from "@/catalog/queries/source-sync";
 
 type Search = {
   source?: number;
@@ -16,9 +18,11 @@ export const Route = createFileRoute("/tv-shows")({
         ? (parseTVShowsSource(String(search.source)) ?? undefined)
         : undefined,
   }),
-  loader: ({ context: { queryClient } }) => {
+  loaderDeps: ({ search }) => ({ source: search.source }),
+  loader: async ({ context: { queryClient }, deps: { source } }) => {
     const token = readStoredToken();
     if (!token) return;
+    await syncCatalogSourceFromSearch({ queryClient, source, tab: "tv-shows", token });
     void queryClient.prefetchQuery(settingsQueryOptions(token));
   },
   component: TVShowsLayout,

@@ -8,6 +8,10 @@ import { InstituteBrand, InstituteTabs } from "@/components/top-nav";
 import { InstituteFooter } from "@/ui/components/institute-footer";
 import { StickyHeader } from "@/ui/components/sticky-header";
 
+const headerBrand = <InstituteBrand />;
+const headerTabs = <InstituteTabs active="search" />;
+const headerRight = <ShellSettingsMenu />;
+
 export function SearchShell({
   children,
   contentWidth = "default",
@@ -27,11 +31,7 @@ export function SearchShell({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <StickyHeader
-        brand={<InstituteBrand />}
-        tabs={<InstituteTabs active="search" />}
-        right={<ShellSettingsMenu />}
-      />
+      <StickyHeader brand={headerBrand} tabs={headerTabs} right={headerRight} />
       <main className="flex-1">
         <div className="border-border-strong bg-surface border-b py-4">
           <ResponsiveBox>

@@ -15,7 +15,7 @@ import {
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-export { MoviesSource, TVShowsSource, TVShowStatus };
+export { TVShowStatus };
 
 export type { Movie, SearchResult, TVShow, UserSettings };
 

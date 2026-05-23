@@ -9,7 +9,7 @@ import {
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { hasCompleteSettingsDomains, mergeSettingsDomains } from "./settings";
+import { hasCompleteSettingsDomains, mergeSettingsDomains } from "./settings-mutation";
 
 describe("settings save payloads", () => {
   it("detects complete settings domains", () => {

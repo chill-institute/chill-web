@@ -2,8 +2,10 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 import { readStoredToken } from "@/auth/auth";
 
-import { CatalogPage, parseMoviesSource } from "@/catalog/components/catalog-page";
+import { CatalogPage } from "@/catalog/components/catalog-page";
+import { parseMoviesSource } from "@/catalog/lib/types";
 import { settingsQueryOptions } from "@/catalog/queries/options";
+import { syncCatalogSourceFromSearch } from "@/catalog/queries/source-sync";
 
 type Search = {
   source?: number;
@@ -16,9 +18,11 @@ export const Route = createFileRoute("/movies")({
         ? (parseMoviesSource(String(search.source)) ?? undefined)
         : undefined,
   }),
-  loader: ({ context: { queryClient } }) => {
+  loaderDeps: ({ search }) => ({ source: search.source }),
+  loader: async ({ context: { queryClient }, deps: { source } }) => {
     const token = readStoredToken();
     if (!token) return;
+    await syncCatalogSourceFromSearch({ queryClient, source, tab: "movies", token });
     void queryClient.prefetchQuery(settingsQueryOptions(token));
   },
   component: MoviesLayout,

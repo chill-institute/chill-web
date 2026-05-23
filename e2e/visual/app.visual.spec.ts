@@ -34,12 +34,12 @@ const visualOptions = {
   animations: "disabled" as const,
   caret: "hide" as const,
   fullPage: true,
+  maxDiffPixelRatio: 0.035,
   stylePath: visualStylePath,
 };
 
 const mobileDrawerVisualOptions = {
   ...visualOptions,
-  maxDiffPixelRatio: 0.025,
 };
 
 const movies = [

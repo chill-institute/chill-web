@@ -7,7 +7,7 @@ import {
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { hasCompleteSettingsDomains, mergeSettingsDomains } from "./settings";
+import { hasCompleteSettingsDomains, mergeSettingsDomains } from "@/queries/settings-mutation";
 
 describe("settings domain helpers", () => {
   it("detects complete canonical settings", () => {

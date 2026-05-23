@@ -77,7 +77,18 @@ export function ShellSearchForm({
     return (
       <InputGroupAddon align="inline-end">
         <Tooltip>
-          <TooltipTrigger render={<kbd className="kbd cursor-default">/</kbd>} />
+          <TooltipTrigger
+            render={
+              <button
+                aria-label="Focus search input"
+                className="kbd cursor-default"
+                onClick={() => inputRef.current?.focus()}
+                type="button"
+              >
+                /
+              </button>
+            }
+          />
           <TooltipContent>
             <p>Press / to focus, esc to cancel</p>
           </TooltipContent>

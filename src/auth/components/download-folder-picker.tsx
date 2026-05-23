@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Check,
@@ -85,6 +85,7 @@ export function DownloadFolderPicker({
           }}
         >
           <PickerBody
+            key={open ? "open" : "closed"}
             initialFolder={initialFolder ?? null}
             open={open}
             onSave={(id) => {
@@ -122,28 +123,6 @@ function PickerBody({
     enabled: open,
   });
 
-  useEffect(() => {
-    if (!open) {
-      setPath(initialPath(initialFolder));
-    }
-  }, [initialFolder, open]);
-
-  useEffect(() => {
-    const parent = folderQuery.data?.parent;
-    if (!parent) return;
-
-    setPath((currentPath) => {
-      const last = currentPath[currentPath.length - 1];
-      if (!last || last.id !== parent.id || last.name === parent.name) {
-        return currentPath;
-      }
-      if (last.id === ROOT_FOLDER_ID) {
-        return currentPath;
-      }
-      return [...currentPath.slice(0, -1), { id: parent.id, name: parent.name }];
-    });
-  }, [folderQuery.data?.parent]);
-
   const folders = useMemo(
     () =>
       (folderQuery.data?.files ?? []).filter(
@@ -176,12 +155,13 @@ function PickerBody({
             <ChevronLeft className="size-3" strokeWidth={1.75} />
           </button>
         ) : (
-          <span
-            aria-label="At Your Files root"
-            className="text-fg-3 inline-flex size-[22px] shrink-0 items-center justify-center"
-            role="img"
-          >
-            <House className="size-3" strokeWidth={1.75} />
+          <span className="text-fg-3 inline-flex size-[22px] shrink-0 items-center justify-center">
+            <House
+              aria-label="At Your Files root"
+              className="size-3"
+              role="img"
+              strokeWidth={1.75}
+            />
           </span>
         )}
 

@@ -1,64 +1,12 @@
-import { createRootRouteWithContext, type ErrorComponentProps } from "@tanstack/react-router";
+import { createRootRouteWithContext } from "@tanstack/react-router";
 
 import type { RouterContext } from "@/router";
-import { AppErrorBoundary } from "@/ui/components/app-error-boundary";
-import { AppErrorFallback } from "@/ui/components/app-error-fallback";
-import { AppShell } from "@/components/app-shell";
-import { BackendUnavailableScreen } from "@/ui/components/backend-unavailable-screen";
-import { NotFoundScreen } from "@/ui/components/not-found-screen";
-import { AuthProvider } from "@/auth/auth";
-import { ChillApiProvider } from "@/lib/api";
-import { BackendHealthProvider, useBackendUnavailable } from "@/hooks/use-backend-unavailable";
-import { Toaster } from "@/ui/components/ui/toaster";
-import { TooltipProvider } from "@/ui/components/ui/tooltip";
+import { Root } from "@/routes/-root";
+import { RootError } from "@/routes/-root-error";
+import { RootNotFound } from "@/routes/-root-not-found";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: Root,
   errorComponent: RootError,
   notFoundComponent: RootNotFound,
 });
-
-function Root() {
-  return (
-    <AppErrorBoundary app="chill.institute/web" release={import.meta.env.VITE_PUBLIC_RELEASE}>
-      <AuthProvider>
-        <ChillApiProvider>
-          <TooltipProvider>
-            <BackendHealthProvider>
-              <RootContent />
-            </BackendHealthProvider>
-          </TooltipProvider>
-        </ChillApiProvider>
-      </AuthProvider>
-    </AppErrorBoundary>
-  );
-}
-
-function RootContent() {
-  const { isBackendUnavailable, retry } = useBackendUnavailable();
-
-  if (isBackendUnavailable) {
-    return <BackendUnavailableScreen onRetry={retry} />;
-  }
-
-  return (
-    <>
-      <AppShell />
-      <Toaster />
-    </>
-  );
-}
-
-function RootError({ error }: ErrorComponentProps) {
-  return (
-    <AppErrorFallback
-      app="chill.institute/web"
-      release={import.meta.env.VITE_PUBLIC_RELEASE}
-      error={error}
-    />
-  );
-}
-
-function RootNotFound() {
-  return <NotFoundScreen />;
-}

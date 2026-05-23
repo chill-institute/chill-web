@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type FastestPhase = "idle" | "fastest" | "all" | "empty";
@@ -38,69 +38,38 @@ export function useFastestMode(
   submittedQuery: string,
   searchState: SearchInfo,
 ) {
-  const [phase, setPhase] = useState<FastestPhase>("idle");
-  const [lastQuery, setLastQuery] = useState(submittedQuery);
-  const toastIdRef = useRef<string | number | undefined>(undefined);
-  const lastToastPendingRef = useRef<number | undefined>(undefined);
-
-  if (submittedQuery !== lastQuery) {
-    setLastQuery(submittedQuery);
-    setPhase("idle");
-  }
-
+  const [showAllQuery, setShowAllQuery] = useState<string | null>(null);
   const resultsCount = searchState.results.length;
-  const nextPhase =
+  const automaticPhase =
     isFastestMode && submittedQuery.length > 0
-      ? computeFastestPhase(phase, searchState, resultsCount)
-      : phase;
-  if (nextPhase !== phase) {
-    setPhase(nextPhase);
-  }
+      ? computeFastestPhase("idle", searchState, resultsCount)
+      : "idle";
+  const phase =
+    showAllQuery === submittedQuery && automaticPhase === "fastest" ? "all" : automaticPhase;
 
   useEffect(() => {
-    if (nextPhase !== "fastest") {
-      if (toastIdRef.current !== undefined) {
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = undefined;
-        lastToastPendingRef.current = undefined;
-      }
+    if (phase !== "fastest") {
       return;
     }
 
-    if (lastToastPendingRef.current === searchState.pendingCount && toastIdRef.current) {
-      return;
-    }
-    lastToastPendingRef.current = searchState.pendingCount;
-    toastIdRef.current = toast.loading(
+    const toastId = toast.loading(
       `Fetching more from ${searchState.pendingCount} indexer${
         searchState.pendingCount > 1 ? "s" : ""
       }`,
       {
-        id: toastIdRef.current,
         duration: Number.POSITIVE_INFINITY,
         position: "bottom-center",
         action: {
           label: "Update",
-          onClick: () => {
-            setPhase("all");
-            if (toastIdRef.current !== undefined) {
-              toast.dismiss(toastIdRef.current);
-              toastIdRef.current = undefined;
-              lastToastPendingRef.current = undefined;
-            }
-          },
+          onClick: () => setShowAllQuery(submittedQuery),
         },
       },
     );
-  }, [nextPhase, searchState.pendingCount]);
 
-  useEffect(() => {
     return () => {
-      if (toastIdRef.current !== undefined) {
-        toast.dismiss(toastIdRef.current);
-      }
+      toast.dismiss(toastId);
     };
-  }, []);
+  }, [phase, searchState.pendingCount, submittedQuery]);
 
   return phase;
 }
