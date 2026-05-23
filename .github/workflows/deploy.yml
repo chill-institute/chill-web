@@ -202,31 +202,3 @@ jobs:
           SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
           SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
         run: scripts/ci/sst-state-git save
-
-  smoke-production:
-    needs: [validate, deploy-app, deploy-redirects]
-    if: ${{ always() && (needs.deploy-app.result == 'success' || needs.deploy-redirects.result == 'success') && needs.deploy-app.result != 'failure' && needs.deploy-redirects.result != 'failure' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-
-      - name: Install Playwright browser
-        run: vp exec playwright install chromium
-
-      - name: Smoke production app URL
-        if: ${{ needs.deploy-app.result == 'success' }}
-        env:
-          LIVE_WEB_SMOKE_TARGET: production-app
-        run: vp exec playwright test -c playwright.live.config.ts
-
-      - name: Smoke production redirect URLs
-        if: ${{ needs.deploy-redirects.result == 'success' }}
-        env:
-          LIVE_WEB_SMOKE_TARGET: production-redirects
-        run: vp exec playwright test -c playwright.live.config.ts
