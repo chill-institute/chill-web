@@ -2,7 +2,7 @@
 
 ![chill.institute web](https://chill.institute/banner.png)
 
-Vite+ repo for The Institute web app at [chill.institute](https://chill.institute).
+Vite+ repo for The Institute web app at [chill.institute](https://chill.institute)
 
 This repo owns the client app, UI system, e2e tests, Cloudflare Workers frontend deployment, and browser-facing integration with the hosted API.
 
@@ -25,6 +25,7 @@ vp run dev
 
 ```bash
 vp run verify
+vp run smoke
 vp run e2e
 vp run visual
 ```
@@ -45,4 +46,4 @@ Please read the [contributing guide](./CONTRIBUTING.md).
 
 ## License
 
-Licensed under the [MIT License](./LICENSE).
+Licensed under the [MIT License](./LICENSE)

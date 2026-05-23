@@ -16,6 +16,10 @@ Briefly describe the problem.
 2.
 3.
 
+## Evidence
+
+Add screenshots, a screen recording, or the copied crash report when available.
+
 ## Expected
 
 What should have happened?
@@ -28,4 +32,10 @@ What happened instead?
 
 - URL:
 - Browser:
+- Device:
 - Commit / release:
+
+## Search Context
+
+If this is about missing or surprising search results, include the exact title,
+season, episode, filters, and sorting you used.

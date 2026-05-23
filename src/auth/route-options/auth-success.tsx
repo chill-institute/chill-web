@@ -4,7 +4,7 @@ import { Loader } from "lucide-react";
 import { AuthPage } from "@/ui/components/auth-page";
 import { UNKNOWN_AUTH_ERROR } from "@/api/auth-errors";
 
-import { consumeCallbackToken } from "../auth";
+import { authCallbackHref, consumeCallbackToken } from "../auth";
 
 function AuthSuccessFallback() {
   return (
@@ -21,7 +21,7 @@ export const authSuccessRouteOptions = {
   beforeLoad: () => {
     const redirectPath = consumeCallbackToken();
     if (redirectPath) {
-      throw redirect({ to: redirectPath });
+      throw redirect({ href: authCallbackHref(redirectPath) });
     }
     throw redirect({
       to: "/sign-in",

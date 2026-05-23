@@ -7,6 +7,7 @@ import { Button } from "@/ui/components/ui/button";
 import { ACCESS_DENIED_ERROR, SESSION_EXPIRED_ERROR, UNKNOWN_AUTH_ERROR } from "@/api/auth-errors";
 import { useGetPutioStartURL } from "@/auth/api-context";
 import {
+  authCallbackHref,
   clearPendingAuthRedirectSearch,
   normalizeCallbackPath,
   prepareAuthSuccessURL,
@@ -75,9 +76,7 @@ function SignInPage() {
 
   useEffect(() => {
     if (!auth.isAuthenticated) return;
-    const callback = search.callbackUrl?.trim();
-    const normalized = callback ? normalizeCallbackPath(callback) : null;
-    void navigate({ href: normalized ?? "/", replace: true });
+    void navigate({ href: authCallbackHref(search.callbackUrl), replace: true });
   }, [auth.isAuthenticated, navigate, search.callbackUrl]);
 
   if (auth.isAuthenticated) {

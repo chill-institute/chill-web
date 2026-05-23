@@ -4,7 +4,7 @@
 
 Spread the word. 🤠
 
-For the web clients themselves, please read the [contributing guide](../CONTRIBUTING.md).
+For the web client itself, please read the [contributing guide](../CONTRIBUTING.md).
 
 If you want to support the broader ecosystem, consider supporting the open-source tools you rely on most. 😉
 
@@ -25,6 +25,8 @@ Please include enough detail to reproduce or investigate the issue. Vague report
 For search results, include the exact title, season, episode, and filters you used. The Institute can improve how results are searched, sorted, and displayed, but it does not own the indexed content. If a release does not exist on the connected sources, the app cannot create it.
 
 For crashes, use the crash page actions. Either open the prefilled GitHub issue or copy the crash report and send it with your message. The report includes the route, browser, release, and error details needed to debug the failure.
+
+For non-crash bugs, use the [bug report template](../.github/ISSUE_TEMPLATE/bug_report.md) or include the same details in your message.
 
 For weird behavior that does not crash, include screenshots, a screen recording, or clear reproduction steps. The most useful format is what you did, what you expected, what happened instead, and whether it happens every time.
 

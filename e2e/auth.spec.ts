@@ -68,6 +68,41 @@ test.describe("sign-in page", () => {
     await authenticatedPage.waitForURL("**/");
     expect(new URL(authenticatedPage.url()).pathname).toBe("/");
   });
+
+  test("authenticated user returns to a callback route with search params", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+    await authenticatedPage.goto("/sign-in?callbackUrl=%2Fsearch%3Fq%3Daurora");
+
+    await authenticatedPage.waitForURL("**/search?q=aurora");
+    const url = new URL(authenticatedPage.url());
+    expect(url.pathname).toBe("/search");
+    expect(url.searchParams.get("q")).toBe("aurora");
+  });
+
+  test("auth success returns to a stored search callback without router URL errors", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+    await authenticatedPage.goto("/");
+    await authenticatedPage.evaluate(() => {
+      window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");
+      window.sessionStorage.setItem("chill.auth_callback", "/search?q=aurora");
+    });
+
+    await authenticatedPage.goto("/auth/success?nonce=good-nonce#auth_token=oauth-token");
+
+    await authenticatedPage.waitForURL("**/search?q=aurora");
+    const url = new URL(authenticatedPage.url());
+    expect(url.pathname).toBe("/search");
+    expect(url.searchParams.get("q")).toBe("aurora");
+    await expect
+      .poll(() => authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")))
+      .toBe("oauth-token");
+  });
 });
 
 test.describe("CLI token page", () => {

@@ -156,7 +156,7 @@ export function useAuth() {
   return context;
 }
 
-export function normalizeCallbackPath(raw: null | string): null | string {
+export function normalizeCallbackPath(raw: null | string | undefined): null | string {
   const trimmed = raw?.trim() ?? "";
   if (trimmed.length === 0) {
     return null;
@@ -178,6 +178,10 @@ export function normalizeCallbackPath(raw: null | string): null | string {
   } catch {
     return null;
   }
+}
+
+export function authCallbackHref(raw: null | string | undefined): string {
+  return normalizeCallbackPath(raw) ?? "/";
 }
 
 export function readCurrentCallbackPath(): null | string {

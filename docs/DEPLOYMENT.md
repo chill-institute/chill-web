@@ -9,7 +9,7 @@ Public deployment overview for `chill-web`
 - app: `chill.institute`, `staging.chill.institute`
 - redirects to `chill.institute`: `www.chill.institute`, `binge.institute`, `www.binge.institute`
 
-The app calls the shared API at `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` is set for a local override.
+The app calls the shared API at `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` is set for a local override
 
 Build output:
 

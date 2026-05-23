@@ -35,10 +35,10 @@ vp run e2e
 ```
 
 Playwright checks are split by signal. Functional coverage lives in ordinary e2e
-tests, and screenshot guardrails live under `e2e/visual/`.
+tests, and screenshot guardrails live under `e2e/visual/`
 
 Visual regression snapshots cover desktop and mobile rendering in light and dark
-mode and are intentionally excluded from ordinary `vp run e2e`. Run them for
+mode. They are intentionally excluded from ordinary `vp run e2e`; run them for
 intentional layout, token, responsive, or component-state changes:
 
 ```bash
@@ -55,7 +55,7 @@ Screenshot baselines are partitioned by viewport and theme project only, and CI 
 the source of truth for the committed images. The visual workflow is path-gated
 to UI-affecting files so routine non-UI PRs do not pay for it.
 
-CI and deploy behavior is documented in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+CI and deploy behavior is documented in [Deployment](./docs/DEPLOYMENT.md)
 
 ## Git Hooks
 
@@ -74,17 +74,17 @@ vp config --hooks-dir .vite-hooks
 
 - This repo contains one client-rendered SPA at the repository root.
 - Runtime code, assets, and tests live in `src/`, `public/`, and `e2e/`
-- Root config lives in `package.json`, `vite.config.ts`, `tsconfig.json`, `components.json`, hooks, and CI workflows.
-- Root [DESIGN.md](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and UI primitives live in `src/ui/`
+- Root config lives in `package.json`, `vite.config.ts`, `tsconfig.json`, `components.json`, hooks, and CI workflows
+- [Design system](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and UI primitives live in `src/ui/`
 - Package versions live directly in `package.json`
 - Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
 - The app talks directly to the hosted API.
 - The root app serves production and staging; redirects are documented in [Deployment](./docs/DEPLOYMENT.md).
-- Localhost resolves to `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` overrides it.
+- Localhost resolves to `https://api.chill.institute` unless you set `VITE_PUBLIC_API_BASE_URL`
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
 - When generating or updating shadcn/base primitives, work from `./` so `components.json` resolves aliases correctly.
-- Playwright keeps traces, screenshots, and videos on failure. Check `playwright-report/` and `test-results/` after a failing run.
-- Keep ordinary e2e tests in `e2e/*.spec.ts` and screenshot guardrails in `e2e/visual/*.visual.spec.ts` so each check reports the right kind of failure.
+- Playwright keeps traces, screenshots, and videos on failure. Check `playwright-report/` and `test-results/` after a failing run
+- Keep ordinary e2e tests in `e2e/*.spec.ts` and screenshot guardrails in `e2e/visual/*.visual.spec.ts` so each check reports the right kind of failure
 - Deployment credentials and operational runbooks are maintainer-managed. Do not add secrets, local machine paths, or maintainer-only notes to this repo.
 
 ## Pull Requests

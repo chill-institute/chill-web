@@ -29,7 +29,7 @@ The app keeps API, auth, UI, and catalog code local so there is no workspace pac
 
 - The app is a client-rendered React SPA.
 - The browser calls the hosted API directly.
-- Shared contract types come from `@chill-institute/contracts`.
+- Shared contract types come from `@chill-institute/contracts`
 - Hosted app and redirect domains are documented in [Deployment](./DEPLOYMENT.md).
 
 ## Boundaries
@@ -94,7 +94,7 @@ Hosted environments resolve the API from the current hostname:
 
 ## Deployment
 
-Build output is `dist/`.
+Build output is `dist/`
 
 Production hosting shape:
 

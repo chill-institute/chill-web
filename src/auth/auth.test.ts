@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
+  authCallbackHref,
   clearPendingAuthRedirectSearch,
   clearStoredAuthState,
   consumeCallbackToken,
@@ -71,6 +72,28 @@ describe("normalizeCallbackPath", () => {
     expect(normalizeCallbackPath("/sign-in")).toBeNull();
     expect(normalizeCallbackPath("/sign-out")).toBeNull();
     expect(normalizeCallbackPath("/auth/success")).toBeNull();
+  });
+});
+
+describe("authCallbackHref", () => {
+  it("preserves any same-origin callback href for TanStack Router", () => {
+    withWindowLocation("https://app.test/sign-in");
+
+    expect(authCallbackHref("/search?q=aurora#top")).toBe("/search?q=aurora#top");
+    expect(authCallbackHref("/movies/The%20Perfect%20Neighbor-2025?source=3")).toBe(
+      "/movies/The%20Perfect%20Neighbor-2025?source=3",
+    );
+    expect(authCallbackHref("/tv-shows/tt17220216?season=2&source=3")).toBe(
+      "/tv-shows/tt17220216?season=2&source=3",
+    );
+    expect(authCallbackHref("/movies/?source=3")).toBe("/movies/?source=3");
+  });
+
+  it("falls back home for rejected callback hrefs", () => {
+    withWindowLocation("https://app.test/sign-in");
+
+    expect(authCallbackHref("https://example.com/search")).toBe("/");
+    expect(authCallbackHref("/sign-in")).toBe("/");
   });
 });
 
