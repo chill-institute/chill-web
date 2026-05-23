@@ -45,6 +45,13 @@ describe("isBackendUnavailableError", () => {
     expect(isBackendUnavailableError(new Error("Failed to fetch"))).toBe(true);
   });
 
+  it("treats html api responses as backend downtime", () => {
+    expect(isBackendUnavailableError(new Error('"text/html" is not a valid JSON object'))).toBe(
+      true,
+    );
+    expect(isBackendUnavailableError(new Error("unsupported content type text/html"))).toBe(true);
+  });
+
   it("treats put.io provider outages as recoverable downtime", () => {
     expect(isBackendUnavailableError(new Error("putio provider unavailable"))).toBe(true);
   });

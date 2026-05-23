@@ -87,10 +87,8 @@ Key modules:
 | -------------------------- | ------------------------------------------ |
 | `VITE_PUBLIC_API_BASE_URL` | optional local override for the public API |
 
-Hosted environments resolve the API from the current hostname:
-
-- `localhost`, `127.0.0.1`, and `*.chill.institute` use the production API by default
-- `api.chill.institute` can use the current origin for API-local debug flows
+Hosted environments use `https://api.chill.institute` by default. Set
+`VITE_PUBLIC_API_BASE_URL` to point a local or preview build at a different API.
 
 ## Deployment
 

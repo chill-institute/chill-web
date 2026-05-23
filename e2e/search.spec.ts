@@ -148,6 +148,30 @@ test.describe("search page", () => {
     });
   });
 
+  test("html search responses stay in the search error surface", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(defaultMethods());
+    await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<!doctype html><title>chill.institute</title>",
+      });
+    });
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+
+    await expect(
+      authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
+    ).toBeHidden();
+    await expect(
+      authenticatedPage.getByText("Service temporarily unavailable. Please try again shortly."),
+    ).toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.getByRole("alert")).toHaveCSS("max-width", "672px");
+  });
+
   test("sends x-request-id header on rpc requests", async ({ authenticatedPage, mockRpc }) => {
     let capturedRequestID = "";
 

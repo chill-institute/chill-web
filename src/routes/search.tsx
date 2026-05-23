@@ -138,7 +138,7 @@ function SearchPage() {
       ) : null,
     )
     .with({ status: "error" }, (q) => (
-      <div className="mx-auto mt-6 w-full max-w-7xl">
+      <div className="mx-auto mt-6 w-full max-w-2xl">
         <UserErrorAlert error={q.error} />
       </div>
     ))
@@ -208,10 +208,16 @@ function SearchPage() {
           {renderContent}
 
           {searchState.firstError ? (
-            <UserErrorAlert className="mt-4" error={searchState.firstError} />
+            <UserErrorAlert
+              className="mx-auto mt-4 w-full max-w-2xl"
+              error={searchState.firstError}
+            />
           ) : null}
           {saveConfigMutation.error ? (
-            <UserErrorAlert className="mt-4" error={saveConfigMutation.error} />
+            <UserErrorAlert
+              className="mx-auto mt-4 w-full max-w-2xl"
+              error={saveConfigMutation.error}
+            />
           ) : null}
         </section>
       );

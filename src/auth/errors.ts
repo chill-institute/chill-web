@@ -40,6 +40,9 @@ function messageIncludesBackendFailure(message: string) {
     message.includes("gateway timeout") ||
     message.includes("upstream connect error") ||
     message.includes("service unavailable") ||
+    message.includes("unsupported content type") ||
+    message.includes("not a valid json object") ||
+    message.includes("unexpected token '<'") ||
     message.includes("timed out") ||
     message.includes("timeout")
   );
