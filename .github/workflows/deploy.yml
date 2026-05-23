@@ -51,6 +51,8 @@ jobs:
           version: v1.25.2
 
   validate:
+    needs: workflow-security
+    if: ${{ needs.workflow-security.result == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       ref: ${{ steps.validate.outputs.ref }}

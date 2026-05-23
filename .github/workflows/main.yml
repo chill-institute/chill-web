@@ -40,6 +40,8 @@ jobs:
           version: v1.25.2
 
   verify-app:
+    needs: workflow-security
+    if: ${{ needs.workflow-security.result == 'success' }}
     concurrency:
       group: web-main-verify-app-${{ github.ref }}
       cancel-in-progress: true
