@@ -5,6 +5,7 @@
     "src/**/*.test.tsx",
     "e2e/**/*.ts",
     "e2e/visual/**/*.css",
+    "playwright.live.config.ts",
     "playwright.visual.config.ts"
   ]
 }

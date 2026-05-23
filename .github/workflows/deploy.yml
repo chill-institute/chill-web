@@ -223,10 +223,10 @@ jobs:
         if: ${{ needs.deploy-app.result == 'success' }}
         env:
           LIVE_WEB_SMOKE_TARGET: production-app
-        run: vp exec playwright test e2e/live-hosts.spec.ts
+        run: vp exec playwright test -c playwright.live.config.ts
 
       - name: Smoke production redirect URLs
         if: ${{ needs.deploy-redirects.result == 'success' }}
         env:
           LIVE_WEB_SMOKE_TARGET: production-redirects
-        run: vp exec playwright test e2e/live-hosts.spec.ts
+        run: vp exec playwright test -c playwright.live.config.ts

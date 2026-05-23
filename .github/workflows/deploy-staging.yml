@@ -412,4 +412,4 @@ jobs:
       - name: Smoke staging URL
         env:
           LIVE_WEB_SMOKE_TARGET: staging
-        run: vp exec playwright test e2e/live-hosts.spec.ts
+        run: vp exec playwright test -c playwright.live.config.ts

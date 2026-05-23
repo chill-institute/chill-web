@@ -199,4 +199,4 @@ jobs:
       - name: Smoke production URLs
         env:
           LIVE_WEB_SMOKE_TARGET: production
-        run: vp exec playwright test e2e/live-hosts.spec.ts
+        run: vp exec playwright test -c playwright.live.config.ts
