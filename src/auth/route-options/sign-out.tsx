@@ -5,24 +5,10 @@ import { Loader } from "lucide-react";
 import { AuthPage } from "@/ui/components/auth-page";
 
 import { useAuth } from "../auth";
-
-type SignOutSearch = {
-  error?: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function validateSignOutSearch(search: unknown): SignOutSearch {
-  if (!isRecord(search)) return {};
-  return {
-    error: typeof search.error === "string" ? search.error : undefined,
-  };
-}
+import { signOutSearchSchema, validateSignOutSearch } from "@/routes/-search-params";
 
 export const signOutRouteOptions = {
-  validateSearch: validateSignOutSearch,
+  validateSearch: signOutSearchSchema,
   component: SignOutPage,
 };
 

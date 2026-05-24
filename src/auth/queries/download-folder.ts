@@ -1,15 +1,16 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 
 import { useApi } from "../api-context";
-
-const DOWNLOAD_FOLDER_QUERY_KEY = ["download-folder"] as const;
+import { useAuth } from "../auth";
+import { DOWNLOAD_FOLDER_QUERY_KEY, downloadFolderQueryOptions } from "./options";
 
 export function useDownloadFolderQuery() {
   const api = useApi();
+  const auth = useAuth();
+
   return useQuery({
-    queryKey: DOWNLOAD_FOLDER_QUERY_KEY,
-    queryFn: ({ signal }) => api.getDownloadFolder(signal),
-    staleTime: 5 * 60 * 1000,
+    ...downloadFolderQueryOptions(api),
+    enabled: auth.isAuthenticated,
   });
 }
 

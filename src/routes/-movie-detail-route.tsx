@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { getRouteApi, notFound, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 
 import { useMoviesQuery } from "@/catalog/queries/movies";
 import { useSettingsQuery } from "@/catalog/queries/settings";
 import { toCatalogAppSettings } from "@/catalog/lib/types";
+import { NotFoundScreen } from "@/ui/components/not-found-screen";
 
 const routeApi = getRouteApi("/movies/$id");
 
@@ -31,7 +32,16 @@ function MovieDetailRoute() {
   if (moviesQuery.data.source !== activeSource) return null;
 
   const movie = moviesQuery.data.movies.find((m) => m.id === id);
-  if (!movie) throw notFound();
+  if (!movie) {
+    return (
+      <div className="fixed inset-0 z-40 overflow-y-auto bg-app">
+        <NotFoundScreen
+          homeHref={source === undefined ? "/movies" : `/movies?source=${source}`}
+          homeLabel="back to movies"
+        />
+      </div>
+    );
+  }
 
   return (
     <Suspense fallback={null}>

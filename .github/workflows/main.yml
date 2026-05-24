@@ -5,38 +5,15 @@ on:
     branches:
       - main
 
-env:
-  BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
-  BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
-  CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
-  CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
-  SST_PRODUCTION_AUTO_DEPLOY_ENABLED: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED }}
-  SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
-  SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
-
 permissions:
   contents: read
 
 jobs:
   workflow-security:
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/_workflow-security.yml
     permissions:
       actions: read
       contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Scan GitHub Actions security
-        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
-        with:
-          advanced-security: false
-          annotations: true
-          min-confidence: medium
-          min-severity: medium
-          version: v1.25.2
 
   verify-app:
     needs: workflow-security
@@ -44,16 +21,9 @@ jobs:
     concurrency:
       group: web-main-verify-app-${{ github.ref }}
       cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-
-      - name: Verify app
-        run: vp run verify
+    uses: ./.github/workflows/_verify-app.yml
+    with:
+      ref: ${{ github.sha }}
 
   e2e:
     needs: verify-app
@@ -61,32 +31,9 @@ jobs:
     concurrency:
       group: web-main-e2e-${{ github.ref }}
       cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-
-      - name: Install Playwright browser
-        run: vp exec playwright install chromium
-
-      - name: Build app
-        run: vp run build
-
-      - name: Run end-to-end tests
-        run: vp run e2e
-
-      - name: Upload Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-artifacts
-          path: |
-            playwright-report
-            test-results
-          if-no-files-found: ignore
+    uses: ./.github/workflows/_e2e.yml
+    with:
+      ref: ${{ github.sha }}
 
   deploy-app:
     needs: [workflow-security, verify-app, e2e]
@@ -94,40 +41,17 @@ jobs:
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://${{ vars.CHILL_PRODUCTION_DOMAIN }}
-    permissions:
-      contents: read
-    env:
-      BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
-      BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
-      CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
-      CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
-      WEB_DEPLOY_TARGET: app
-      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+    uses: ./.github/workflows/_deploy-app.yml
+    with:
+      environment-name: production
+      environment-url: https://${{ vars.CHILL_PRODUCTION_DOMAIN }}
+      ref: ${{ github.sha }}
+      sst-state-file: ${{ vars.SST_STATE_FILE_PRODUCTION }}
+    secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
-      SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
       SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
       SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
-      VITE_PUBLIC_SENTRY_DSN: ${{ vars.VITE_PUBLIC_SENTRY_DSN }}
-      VITE_PUBLIC_SENTRY_ENVIRONMENT: production
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.sha }}
-
-      - name: Build and deploy app
-        uses: ./.github/actions/build-and-deploy-app
-        with:
-          environment-name: production
 
   deploy-redirects:
     needs: [workflow-security, deploy-app]
@@ -135,41 +59,15 @@ jobs:
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://${{ vars.BINGE_PRODUCTION_DOMAIN }}
-    permissions:
-      contents: read
-    env:
-      WEB_DEPLOY_TARGET: redirects
-      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-        with:
-          cache: false
-
-      - name: Install age
-        run: scripts/ci/install-age
-
-      - name: Restore encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git restore
-
-      - name: Deploy redirects to SST
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: vp exec sst deploy --stage production --print-logs
-
-      - name: Save encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git save
+    uses: ./.github/workflows/_deploy-sst-target.yml
+    with:
+      environment-name: production
+      environment-url: https://${{ vars.BINGE_PRODUCTION_DOMAIN }}
+      ref: ${{ github.sha }}
+      sst-stage: production
+      sst-state-file: ${{ vars.SST_STATE_FILE_PRODUCTION }}
+      web-deploy-target: redirects
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+      SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}

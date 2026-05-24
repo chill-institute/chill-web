@@ -182,7 +182,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const [resolutionFilter, setResolutionFilter] = useState<ResolutionFilterValue>("all");
   const [codecFilter, setCodecFilter] = useState<CodecFilterValue>("all");
   const [sortBy, setSortBy] = useState<SortValue>("seeders");
-  const searchQuery = useMovieSearchQuery({ movie, enabled: true });
+  const searchQuery = useMovieSearchQuery({ movie });
 
   const results = searchQuery.data?.results ?? EMPTY_RESULTS;
   const metadataTags = useMemo(() => getDetailGenreTags(movie.genres), [movie.genres]);

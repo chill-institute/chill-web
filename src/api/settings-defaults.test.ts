@@ -1,4 +1,4 @@
-import { create } from "@bufbuild/protobuf";
+import { create, isFieldSet } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vite-plus/test";
 import {
   CatalogSettingsSchema,
@@ -177,6 +177,37 @@ describe("withSaveUserSettingsResponseDefaults", () => {
     expect(out.search?.sortDirection).toBe(SortDirection.DESC);
     expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
     expect(out.download?.folderId).toBe(42n);
+  });
+
+  it("preserves saved false booleans when the response omits implicit bool fields", () => {
+    const fallback = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, {
+        filterNastyResults: false,
+        filterResultsWithNoSeeders: false,
+        rememberQuickFilters: false,
+      }),
+    });
+    const response = create(UserSettingsSchema, {
+      search: create(SearchSettingsSchema, { sortBy: SortBy.TITLE }),
+    });
+
+    const out = withSaveUserSettingsResponseDefaults({ fallback, response });
+
+    expect(out.search?.filterNastyResults).toBe(false);
+    expect(out.search?.filterResultsWithNoSeeders).toBe(false);
+    expect(out.search?.rememberQuickFilters).toBe(false);
+  });
+
+  it("documents that save response booleans use implicit proto presence", () => {
+    const field = SearchSettingsSchema.field.filterNastyResults;
+
+    expect(isFieldSet(create(SearchSettingsSchema, {}), field)).toBe(false);
+    expect(isFieldSet(create(SearchSettingsSchema, { filterNastyResults: false }), field)).toBe(
+      false,
+    );
+    expect(isFieldSet(create(SearchSettingsSchema, { filterNastyResults: true }), field)).toBe(
+      true,
+    );
   });
 
   it("preserves missing fields inside a returned catalog domain", () => {

@@ -314,7 +314,7 @@ export function TvShowDetailModal({
   onClose,
 }: Props) {
   const isDesktop = useIsDesktop();
-  const detailQuery = useTVShowDetailQuery({ imdbId, enabled: true });
+  const detailQuery = useTVShowDetailQuery({ imdbId });
   const show = detailQuery.data?.show ?? fallbackShow;
   const seasons = detailQuery.data?.seasons ?? EMPTY_SEASONS;
   const resolvedSeasonNumber = activeSeason ?? seasons[0]?.seasonNumber ?? 1;

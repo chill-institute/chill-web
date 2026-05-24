@@ -6,7 +6,7 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "border-border-soft bg-surface text-fg-1",
-        destructive: "border-error-border bg-error-bg text-error-text",
+        destructive: "border-error-border bg-surface text-error-text",
       },
     },
     defaultVariants: {

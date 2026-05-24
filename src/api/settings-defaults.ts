@@ -1,4 +1,4 @@
-import { create } from "@bufbuild/protobuf";
+import { create, isFieldSet } from "@bufbuild/protobuf";
 import {
   CatalogSettingsSchema,
   DownloadSettingsSchema,
@@ -96,11 +96,25 @@ function mergeSaveSearchResponse(
       response.disabledIndexerIds.length > 0
         ? response.disabledIndexerIds
         : fallback?.disabledIndexerIds,
-    filterNastyResults: response.filterNastyResults || fallback?.filterNastyResults,
-    filterResultsWithNoSeeders:
-      response.filterResultsWithNoSeeders || fallback?.filterResultsWithNoSeeders,
+    filterNastyResults: mergeImplicitBool(
+      fallback?.filterNastyResults,
+      response,
+      SearchSettingsSchema.field.filterNastyResults,
+      response.filterNastyResults,
+    ),
+    filterResultsWithNoSeeders: mergeImplicitBool(
+      fallback?.filterResultsWithNoSeeders,
+      response,
+      SearchSettingsSchema.field.filterResultsWithNoSeeders,
+      response.filterResultsWithNoSeeders,
+    ),
     otherFilters: response.otherFilters.length > 0 ? response.otherFilters : fallback?.otherFilters,
-    rememberQuickFilters: response.rememberQuickFilters || fallback?.rememberQuickFilters,
+    rememberQuickFilters: mergeImplicitBool(
+      fallback?.rememberQuickFilters,
+      response,
+      SearchSettingsSchema.field.rememberQuickFilters,
+      response.rememberQuickFilters,
+    ),
     resolutionFilters:
       response.resolutionFilters.length > 0
         ? response.resolutionFilters
@@ -119,6 +133,15 @@ function mergeSaveSearchResponse(
         ? fallback?.sortDirection
         : response.sortDirection,
   });
+}
+
+function mergeImplicitBool(
+  fallback: boolean | undefined,
+  response: SearchSettings,
+  field: (typeof SearchSettingsSchema.field)["filterNastyResults"],
+  value: boolean,
+): boolean | undefined {
+  return isFieldSet(response, field) ? value : fallback;
 }
 
 function mergeSaveCatalogResponse(

@@ -12,63 +12,15 @@ concurrency:
 
 jobs:
   workflow-security:
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/_workflow-security.yml
     permissions:
       actions: read
       contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Scan GitHub Actions security
-        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
-        with:
-          advanced-security: false
-          annotations: true
-          min-confidence: medium
-          min-severity: medium
-          version: v1.25.2
 
   verify-app:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-
-      - name: Verify app
-        run: vp run verify
+    uses: ./.github/workflows/_verify-app.yml
 
   e2e:
     needs: verify-app
     if: ${{ github.actor != 'dependabot[bot]' && needs.verify-app.result == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-
-      - name: Install Playwright browser
-        run: vp exec playwright install chromium
-
-      - name: Build app
-        run: vp run build
-
-      - name: Run end-to-end tests
-        run: vp run e2e
-
-      - name: Upload Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-artifacts
-          path: |
-            playwright-report
-            test-results
-          if-no-files-found: ignore
+    uses: ./.github/workflows/_e2e.yml

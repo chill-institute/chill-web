@@ -1,17 +1,19 @@
 import { useQueries } from "@tanstack/react-query";
 
 import { useApi } from "@/auth/api-context";
+import { useAuth } from "@/auth/auth";
 import { isIgnorableAbortError } from "@/auth/errors";
 import type { SearchResult, UserIndexer } from "@/lib/types";
 
 export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) {
   const api = useApi();
+  const auth = useAuth();
 
   return useQueries({
     queries: enabledIndexers.map((indexer) => ({
       queryKey: ["search", query, indexer.id],
       queryFn: ({ signal }: { signal: AbortSignal }) => api.search(query, indexer.id, signal),
-      enabled: query.length > 0,
+      enabled: auth.isAuthenticated && query.length > 0,
     })),
     combine: (queries) => {
       const pendingCount = queries.filter((q) => q.isLoading).length;

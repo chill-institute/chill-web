@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
+import { Code, ConnectError } from "@connectrpc/connect";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 
-import { useTVShowsQuery } from "@/catalog/queries/tv-shows";
+import { useTVShowDetailQuery, useTVShowsQuery } from "@/catalog/queries/tv-shows";
 import { useSettingsQuery } from "@/catalog/queries/settings";
 import { toCatalogAppSettings } from "@/catalog/lib/types";
+import { NotFoundScreen } from "@/ui/components/not-found-screen";
 
 const routeApi = getRouteApi("/tv-shows/$id");
 
@@ -26,6 +28,7 @@ function TVShowDetailRoute() {
     enabled: configQuery.status === "success" && sourceReady,
     source: activeSource,
   });
+  const detailQuery = useTVShowDetailQuery({ imdbId: id });
 
   const close = () => void navigate({ to: "/tv-shows", search: (prev) => prev });
   const setSeason = (next: number) =>
@@ -42,6 +45,20 @@ function TVShowDetailRoute() {
     tvShowsQuery.data.source === activeSource
       ? tvShowsQuery.data.shows.find((show) => show.imdbId === id)
       : undefined;
+
+  if (
+    (detailQuery.status === "success" && !detailQuery.data.show) ||
+    (detailQuery.error instanceof ConnectError && detailQuery.error.code === Code.NotFound)
+  ) {
+    return (
+      <div className="fixed inset-0 z-40 overflow-y-auto bg-app">
+        <NotFoundScreen
+          homeHref={source === undefined ? "/tv-shows" : `/tv-shows?source=${source}`}
+          homeLabel="back to tv shows"
+        />
+      </div>
+    );
+  }
 
   return (
     <Suspense fallback={null}>

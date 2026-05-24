@@ -1,18 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/auth/api-context";
-import { readCachedIndexers, writeCachedIndexers } from "@/queries/options";
+import { useAuth } from "@/auth/auth";
+import { indexersQueryOptionsForApi } from "@/queries/options";
 
 export function useIndexersQuery() {
   const api = useApi();
+  const auth = useAuth();
+
   return useQuery({
-    queryKey: ["indexers"],
-    queryFn: async ({ signal }) => {
-      const indexers = await api.getIndexers(signal);
-      writeCachedIndexers(indexers);
-      return indexers;
-    },
-    staleTime: 5 * 60 * 1000,
-    placeholderData: readCachedIndexers(),
+    ...indexersQueryOptionsForApi(api),
+    enabled: auth.isAuthenticated,
   });
 }

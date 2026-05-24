@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   filterCrashReportingIntegrations,
+  isExpectedRouteNotFound,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
 } from "./sentry";
@@ -48,6 +49,15 @@ describe("keepAppBreadcrumbOnly", () => {
         },
       }),
     ).toBeNull();
+  });
+});
+
+describe("isExpectedRouteNotFound", () => {
+  it("recognizes TanStack Router not-found control flow objects", () => {
+    expect(isExpectedRouteNotFound({ isNotFound: true })).toBe(true);
+    expect(isExpectedRouteNotFound({ isNotFound: false })).toBe(false);
+    expect(isExpectedRouteNotFound(new Error("boom"))).toBe(false);
+    expect(isExpectedRouteNotFound(null)).toBe(false);
   });
 });
 

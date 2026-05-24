@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "@/auth/api-context";
+import { useAuth } from "@/auth/auth";
 import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
 import type { UserSettings } from "@/lib/types";
-import { readCachedSettings, writeCachedSettings } from "@/queries/options";
+import { settingsQueryOptionsForApi, writeCachedSettings } from "@/queries/options";
 import {
   downloadFolderChanged,
   prepareSettingsSave,
@@ -17,16 +18,11 @@ import {
 
 export function useSettingsQuery() {
   const api = useApi();
+  const auth = useAuth();
 
   return useQuery({
-    queryKey: ["user-settings"],
-    queryFn: async ({ signal }) => {
-      const settings = await api.getUserSettings(signal);
-      writeCachedSettings(settings);
-      return settings;
-    },
-    staleTime: 5 * 60 * 1000,
-    placeholderData: readCachedSettings(),
+    ...settingsQueryOptionsForApi(api),
+    enabled: auth.isAuthenticated,
   });
 }
 

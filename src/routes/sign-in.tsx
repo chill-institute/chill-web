@@ -14,21 +14,10 @@ import {
   useAuth,
 } from "@/auth/auth";
 import { publicLinks } from "@/ui/lib/public-links";
-
-type SignInSearch = {
-  callbackUrl?: string;
-  error?: string;
-};
-
-function validateSignInSearch(search: Record<string, unknown>): SignInSearch {
-  return {
-    ...(typeof search.callbackUrl === "string" ? { callbackUrl: search.callbackUrl } : {}),
-    ...(typeof search.error === "string" ? { error: search.error } : {}),
-  };
-}
+import { signInSearchSchema } from "@/routes/-search-params";
 
 export const Route = createFileRoute("/sign-in")({
-  validateSearch: validateSignInSearch,
+  validateSearch: signInSearchSchema,
   component: SignInPage,
 });
 

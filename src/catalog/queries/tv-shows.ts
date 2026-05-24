@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/auth/api-context";
+import { useAuth } from "@/auth/auth";
 import {
   tvShowDetailQueryOptions,
   tvShowSeasonDownloadsQueryOptions,
@@ -9,55 +10,73 @@ import {
 } from "@/catalog/queries/options";
 
 export function useTVShowsQuery({
-  enabled,
+  enabled = true,
   source,
 }: {
-  enabled: boolean;
+  enabled?: boolean;
   source: number | undefined;
 }) {
   const api = useApi();
+  const auth = useAuth();
+  const options = tvShowsQueryOptions(api, source);
+
   return useQuery({
-    ...tvShowsQueryOptions(api, source),
-    enabled: enabled && source !== undefined,
+    ...options,
+    enabled: auth.isAuthenticated && enabled && options.enabled,
   });
 }
 
-export function useTVShowDetailQuery({ imdbId, enabled }: { imdbId: string; enabled: boolean }) {
+export function useTVShowDetailQuery({
+  imdbId,
+  enabled = true,
+}: {
+  imdbId: string;
+  enabled?: boolean;
+}) {
   const api = useApi();
+  const auth = useAuth();
+  const options = tvShowDetailQueryOptions(api, imdbId);
+
   return useQuery({
-    ...tvShowDetailQueryOptions(api, imdbId),
-    enabled: enabled && imdbId.trim().length > 0,
+    ...options,
+    enabled: auth.isAuthenticated && enabled && options.enabled,
   });
 }
 
 export function useTVShowSeasonQuery({
   imdbId,
   seasonNumber,
-  enabled,
+  enabled = true,
 }: {
   imdbId: string;
   seasonNumber: number;
-  enabled: boolean;
+  enabled?: boolean;
 }) {
   const api = useApi();
+  const auth = useAuth();
+  const options = tvShowSeasonQueryOptions(api, imdbId, seasonNumber);
+
   return useQuery({
-    ...tvShowSeasonQueryOptions(api, imdbId, seasonNumber),
-    enabled: enabled && imdbId.trim().length > 0 && seasonNumber > 0,
+    ...options,
+    enabled: auth.isAuthenticated && enabled && options.enabled,
   });
 }
 
 export function useTVShowSeasonDownloadsQuery({
   imdbId,
   seasonNumber,
-  enabled,
+  enabled = true,
 }: {
   imdbId: string;
   seasonNumber: number;
-  enabled: boolean;
+  enabled?: boolean;
 }) {
   const api = useApi();
+  const auth = useAuth();
+  const options = tvShowSeasonDownloadsQueryOptions(api, imdbId, seasonNumber);
+
   return useQuery({
-    ...tvShowSeasonDownloadsQueryOptions(api, imdbId, seasonNumber),
-    enabled: enabled && imdbId.trim().length > 0 && seasonNumber > 0,
+    ...options,
+    enabled: auth.isAuthenticated && enabled && options.enabled,
   });
 }

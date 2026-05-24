@@ -4,9 +4,10 @@ import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import type { ChillApi } from "@/api/api";
 import type { UserSettings } from "@/lib/types";
+import { USER_SETTINGS_QUERY_KEY } from "@/queries/keys";
 
-export const USER_SETTINGS_QUERY_KEY = ["user-settings"] as const;
 export const USER_SETTINGS_MUTATION_SCOPE = { id: "user-settings" } as const;
+export { USER_SETTINGS_QUERY_KEY };
 
 export type SettingsSaveContext = {
   previousSettings?: UserSettings;

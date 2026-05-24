@@ -1,5 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { queryOptions } from "@tanstack/react-query";
+import * as v from "valibot";
 import {
   CatalogSettingsSchema,
   DownloadSettingsSchema,
@@ -8,82 +9,68 @@ import {
 
 import type { ChillApi } from "@/api/api";
 import { createApi } from "@/lib/api";
+import { readStorageValue, writeStorageValue } from "@/lib/storage-codec";
+import { USER_SETTINGS_QUERY_KEY } from "@/queries/keys";
 import { toCatalogAppSettings, type Movie, type UserSettings } from "@/catalog/lib/types";
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
 const SETTINGS_STORAGE_KEY = "chill.catalog.settings.v1";
 
-function warnCacheFailure(message: string, error: unknown) {
-  console.warn(`[chill] ${message}`, error);
-}
+export const MOVIES_QUERY_KEY = ["movies"] as const;
+export const TV_SHOWS_QUERY_KEY = ["tv-shows"] as const;
+const MOVIE_SEARCH_QUERY_KEY = ["movie-search"] as const;
+const TV_SHOW_DETAIL_QUERY_KEY = ["tv-show-detail"] as const;
+const TV_SHOW_SEASON_QUERY_KEY = ["tv-show-season"] as const;
+const TV_SHOW_SEASON_DOWNLOADS_QUERY_KEY = ["tv-show-season-downloads"] as const;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isValidCachedSettings(value: unknown): value is UserSettings {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    isRecord(value.catalog) &&
-    isRecord(value.download) &&
-    typeof value.catalog.moviesSource === "number" &&
-    typeof value.catalog.tvShowsSource === "number"
-  );
-}
-
-function parseCachedSettings(raw: string): unknown {
-  return JSON.parse(raw, (_, v) =>
-    typeof v === "string" && /^\d+n$/.test(v) ? BigInt(v.slice(0, -1)) : v,
-  );
-}
+const cachedCatalogSettingsSchema = v.looseObject({
+  catalog: v.looseObject({
+    moviesSource: v.number(),
+    tvShowsSource: v.number(),
+  }),
+  download: v.looseObject({
+    folderId: v.optional(v.bigint()),
+  }),
+});
 
 export function readCachedSettings(): UserSettings | undefined {
-  try {
-    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (raw) {
-      const parsed = parseCachedSettings(raw);
-      if (!isValidCachedSettings(parsed)) {
-        console.warn("[chill] Ignoring cached settings with an unexpected shape");
-        return undefined;
-      }
-      return create(UserSettingsSchema, {
+  return readStorageValue({
+    key: SETTINGS_STORAGE_KEY,
+    schema: cachedCatalogSettingsSchema,
+    failureMessage: "Failed to read cached settings",
+    invalidMessage: "Ignoring cached settings with an unexpected shape",
+    createValue: (parsed) =>
+      create(UserSettingsSchema, {
         catalog: create(CatalogSettingsSchema, parsed.catalog),
         download: create(DownloadSettingsSchema, parsed.download),
-      });
-    }
-  } catch (error) {
-    warnCacheFailure("Failed to read cached settings", error);
-    return undefined;
-  }
+      }),
+  });
 }
 
 export function writeCachedSettings(settings: UserSettings) {
-  try {
-    const appSettings = toCatalogAppSettings(settings);
-    const { download, ...catalogSettings } = appSettings;
-    localStorage.setItem(
-      SETTINGS_STORAGE_KEY,
-      JSON.stringify(
-        {
-          catalog: create(CatalogSettingsSchema, catalogSettings),
-          download: create(DownloadSettingsSchema, download),
-        },
-        (_, v) => (typeof v === "bigint" ? `${v}n` : v),
-      ),
-    );
-  } catch (error) {
-    warnCacheFailure("Failed to write cached settings", error);
-  }
+  writeStorageValue({
+    key: SETTINGS_STORAGE_KEY,
+    value: settings,
+    failureMessage: "Failed to write cached settings",
+    createStoredValue: (nextSettings) => {
+      const appSettings = toCatalogAppSettings(nextSettings);
+      const { download, ...catalogSettings } = appSettings;
+      return {
+        catalog: create(CatalogSettingsSchema, catalogSettings),
+        download: create(DownloadSettingsSchema, download),
+      };
+    },
+  });
 }
 
 export function settingsQueryOptions(token: string) {
-  const api = createApi(token);
+  return settingsQueryOptionsForApi(createApi(token));
+}
+
+export function settingsQueryOptionsForApi(api: ChillApi) {
   return queryOptions({
-    queryKey: ["user-settings"],
+    queryKey: USER_SETTINGS_QUERY_KEY,
     queryFn: async ({ signal }) => {
       const settings = await api.getUserSettings(signal);
       writeCachedSettings(settings);
@@ -96,7 +83,7 @@ export function settingsQueryOptions(token: string) {
 
 export function moviesQueryOptions(api: ChillApi, source: number | undefined) {
   return queryOptions({
-    queryKey: ["movies", source],
+    queryKey: [...MOVIES_QUERY_KEY, source] as const,
     queryFn: ({ signal }) => api.getMovies(signal),
     staleTime: FIVE_MINUTES,
     enabled: source !== undefined,
@@ -107,7 +94,7 @@ export function movieSearchQueryOptions(api: ChillApi, movie: Movie) {
   const query = [movie.title, movie.year].filter(Boolean).join(" ").trim();
 
   return queryOptions({
-    queryKey: ["movie-search", movie.id, query],
+    queryKey: [...MOVIE_SEARCH_QUERY_KEY, movie.id, query] as const,
     queryFn: ({ signal }) => api.search(query, undefined, signal),
     staleTime: 60 * 1000,
     enabled: query.length > 0,
@@ -116,7 +103,7 @@ export function movieSearchQueryOptions(api: ChillApi, movie: Movie) {
 
 export function tvShowsQueryOptions(api: ChillApi, source: number | undefined) {
   return queryOptions({
-    queryKey: ["tv-shows", source],
+    queryKey: [...TV_SHOWS_QUERY_KEY, source] as const,
     queryFn: ({ signal }) => api.getTVShows(signal),
     staleTime: FIVE_MINUTES,
     enabled: source !== undefined,
@@ -125,7 +112,7 @@ export function tvShowsQueryOptions(api: ChillApi, source: number | undefined) {
 
 export function tvShowDetailQueryOptions(api: ChillApi, imdbId: string) {
   return queryOptions({
-    queryKey: ["tv-show-detail", imdbId],
+    queryKey: [...TV_SHOW_DETAIL_QUERY_KEY, imdbId] as const,
     queryFn: ({ signal }) => api.getTVShowDetail(imdbId, signal),
     staleTime: FIVE_MINUTES,
     enabled: imdbId.trim().length > 0,
@@ -134,7 +121,7 @@ export function tvShowDetailQueryOptions(api: ChillApi, imdbId: string) {
 
 export function tvShowSeasonQueryOptions(api: ChillApi, imdbId: string, seasonNumber: number) {
   return queryOptions({
-    queryKey: ["tv-show-season", imdbId, seasonNumber],
+    queryKey: [...TV_SHOW_SEASON_QUERY_KEY, imdbId, seasonNumber] as const,
     queryFn: ({ signal }) => api.getTVShowSeason(imdbId, seasonNumber, signal),
     staleTime: FIVE_MINUTES,
     enabled: imdbId.trim().length > 0 && seasonNumber > 0,
@@ -147,7 +134,7 @@ export function tvShowSeasonDownloadsQueryOptions(
   seasonNumber: number,
 ) {
   return queryOptions({
-    queryKey: ["tv-show-season-downloads", imdbId, seasonNumber],
+    queryKey: [...TV_SHOW_SEASON_DOWNLOADS_QUERY_KEY, imdbId, seasonNumber] as const,
     queryFn: ({ signal }) => api.getTVShowSeasonDownloads(imdbId, seasonNumber, signal),
     staleTime: FIVE_MINUTES,
     enabled: imdbId.trim().length > 0 && seasonNumber > 0,

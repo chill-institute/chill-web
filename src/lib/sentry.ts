@@ -33,6 +33,15 @@ function getSentryEventId(error: unknown) {
   return undefined;
 }
 
+function isExpectedRouteNotFound(error: unknown) {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "isNotFound" in error &&
+    error.isNotFound === true
+  );
+}
+
 function keepAppBreadcrumbOnly(breadcrumb: Breadcrumb) {
   return breadcrumb.category === "app" ? breadcrumb : null;
 }
@@ -87,9 +96,13 @@ function createSentryReactErrorHandler() {
     return () => {};
   }
 
-  return Sentry.reactErrorHandler((error: unknown, _info: ErrorInfo, eventId: string) => {
+  return (error: unknown, info: ErrorInfo) => {
+    if (isExpectedRouteNotFound(error)) return;
+
+    const eventId = Sentry.captureReactException(error, info);
+
     rememberSentryEventId(error, eventId);
-  });
+  };
 }
 
 function captureAppException(
@@ -104,6 +117,8 @@ function captureAppException(
     routePath?: string;
   } = {},
 ) {
+  if (isExpectedRouteNotFound(error)) return undefined;
+
   const existing = getSentryEventId(error);
   if (existing) return existing;
 
@@ -137,6 +152,7 @@ export {
   filterCrashReportingIntegrations,
   getSentryEventId,
   initSentry,
+  isExpectedRouteNotFound,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
 };

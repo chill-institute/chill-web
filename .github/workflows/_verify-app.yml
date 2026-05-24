@@ -1,0 +1,27 @@
+name: Verify App
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to verify.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up Vite+
+        uses: ./.github/actions/setup-vite-plus
+
+      - name: Verify app
+        run: vp run verify

@@ -30,7 +30,7 @@ function resolveRelease() {
 
 function resolvePublicSentryDsn() {
   if (process.env.VITE_PUBLIC_SENTRY_ENVIRONMENT) {
-    return process.env.VITE_PUBLIC_SENTRY_DSN ?? "";
+    return process.env.VITE_PUBLIC_SENTRY_DSN?.trim() ?? "";
   }
 
   return "";
@@ -43,7 +43,30 @@ const sentryProject = process.env.SENTRY_PROJECT?.trim();
 const sentryEnvironment = process.env.VITE_PUBLIC_SENTRY_ENVIRONMENT?.trim();
 const publicSentryDsn = resolvePublicSentryDsn();
 
+function assertSentryDeployConfig() {
+  if (process.env.CI !== "true" || !sentryEnvironment) {
+    return;
+  }
+
+  const missing = [
+    ["SENTRY_AUTH_TOKEN", sentryAuthToken],
+    ["SENTRY_ORG", sentryOrg],
+    ["SENTRY_PROJECT", sentryProject],
+    ["VITE_PUBLIC_SENTRY_DSN", publicSentryDsn],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Sentry is enabled for ${sentryEnvironment}, but required deploy config is missing: ${missing.join(", ")}`,
+    );
+  }
+}
+
 function createSentrySourceMapPlugin() {
+  assertSentryDeployConfig();
+
   if (!sentryAuthToken || !sentryOrg || !sentryProject) {
     return undefined;
   }

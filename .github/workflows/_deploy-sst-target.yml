@@ -1,0 +1,84 @@
+name: Deploy SST Target
+
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        description: GitHub Environment name to deploy through.
+        required: true
+        type: string
+      environment-url:
+        description: Deployment URL for the GitHub Environment.
+        required: true
+        type: string
+      ref:
+        description: Git ref to deploy.
+        required: true
+        type: string
+      sst-stage:
+        description: SST stage to deploy.
+        required: true
+        type: string
+      sst-state-file:
+        description: Encrypted SST state file for this environment.
+        required: true
+        type: string
+      web-deploy-target:
+        description: SST deploy target.
+        required: true
+        type: string
+    secrets:
+      CLOUDFLARE_API_TOKEN:
+        required: true
+      SST_STATE_AGE_IDENTITY:
+        required: true
+      SST_STATE_REPO_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-sst-target:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment-name }}
+      url: ${{ inputs.environment-url }}
+    env:
+      BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
+      BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
+      CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
+      CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
+      WEB_DEPLOY_TARGET: ${{ inputs.web-deploy-target }}
+      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
+      SST_STATE_FILE: ${{ inputs.sst-state-file }}
+      SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
+      SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+      SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Vite+
+        uses: ./.github/actions/setup-vite-plus
+        with:
+          cache: false
+
+      - name: Install age
+        run: scripts/ci/install-age
+
+      - name: Restore encrypted SST local state
+        run: scripts/ci/sst-state-git restore
+
+      - name: Deploy SST target
+        run: vp exec sst deploy --stage "${SST_STAGE}" --print-logs
+        env:
+          SST_STAGE: ${{ inputs.sst-stage }}
+
+      - name: Save encrypted SST local state
+        if: always()
+        run: scripts/ci/sst-state-git save

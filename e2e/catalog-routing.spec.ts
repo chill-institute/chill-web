@@ -375,6 +375,27 @@ test.describe("catalog routing", () => {
     ).toBeVisible({ timeout: 3000 });
   });
 
+  test("unknown movie detail renders not found", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse([aurora]),
+      GetTVShows: tvShowsResponse([]),
+    });
+
+    await authenticatedPage.goto("/movies/missing-movie");
+
+    await expect(authenticatedPage.getByRole("heading", { name: "page not found" })).toBeVisible({
+      timeout: 3000,
+    });
+    await expect(authenticatedPage.getByRole("link", { name: "back to movies" })).toHaveAttribute(
+      "href",
+      "/movies",
+    );
+    await expect(
+      authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
+    ).toHaveCount(0);
+  });
+
   test("closing the modal pops back to /movies and keeps catalog visible", async ({
     authenticatedPage,
     mockRpc,
@@ -415,6 +436,59 @@ test.describe("catalog routing", () => {
     const url = new URL(authenticatedPage.url());
     expect(url.searchParams.get("source")).toBe(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
     expect(url.searchParams.get("season")).toBe("1");
+  });
+
+  test("unknown tv detail renders not found", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse([]),
+      GetTVShows: tvShowsResponse([]),
+    });
+
+    await authenticatedPage.goto("/tv-shows/tt-missing-show");
+
+    await expect(authenticatedPage.getByRole("heading", { name: "page not found" })).toBeVisible({
+      timeout: 3000,
+    });
+    await expect(authenticatedPage.getByRole("link", { name: "back to tv shows" })).toHaveAttribute(
+      "href",
+      "/tv-shows",
+    );
+    await expect(
+      authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
+    ).toHaveCount(0);
+  });
+
+  test("tv detail can load when the browse list is stale", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const season = tvShowSeason({ seasonNumber: 1, name: "Season 1", episodeCount: 1 });
+    const episodes = [tvShowEpisode({ seasonNumber: 1, episodeNumber: 1, name: "Pilot" })];
+
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse([]),
+      GetTVShows: tvShowsResponse([]),
+      GetTVShowDetail: tvShowDetailResponse(
+        tvShowDetail({
+          imdbId: harborWard.imdbId,
+          title: harborWard.title,
+          networks: harborWard.networks,
+        }),
+        [season],
+      ),
+      GetTVShowSeason: tvShowSeasonResponse(harborWard.imdbId, 1, season, episodes),
+      GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
+    });
+
+    await authenticatedPage.goto(`/tv-shows/${harborWard.imdbId}`);
+
+    await expect(authenticatedPage.getByRole("dialog", { name: "Harbor Ward" })).toBeVisible({
+      timeout: 3000,
+    });
+    await expect(authenticatedPage.getByText("Pilot")).toBeVisible();
+    await expect(authenticatedPage.getByRole("heading", { name: "page not found" })).toHaveCount(0);
   });
 
   test("tv detail source param waits for source-specific settings", async ({

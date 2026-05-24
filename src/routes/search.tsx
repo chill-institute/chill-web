@@ -25,10 +25,10 @@ import { useSearchQueries } from "@/queries/search";
 import { settingsQueryOptions, indexersQueryOptions } from "@/queries/options";
 import { useFastestMode } from "@/hooks/use-fastest-mode";
 import { useSearchFilters } from "@/hooks/use-search-filters";
+import { searchRouteSearchSchema } from "@/routes/-search-params";
 
 export const Route = createFileRoute("/search")({
-  validateSearch: (search: Record<string, unknown>): { q?: string } =>
-    typeof search.q === "string" ? { q: search.q } : {},
+  validateSearch: searchRouteSearchSchema,
   loader: ({ context: { queryClient } }) => {
     const token = readStoredToken();
     if (!token) return;

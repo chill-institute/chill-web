@@ -3,21 +3,12 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { readStoredToken } from "@/auth/auth";
 
 import { CatalogPage } from "@/catalog/components/catalog-page";
-import { parseTVShowsSource } from "@/catalog/lib/types";
 import { settingsQueryOptions } from "@/catalog/queries/options";
 import { syncCatalogSourceFromSearch } from "@/catalog/queries/source-sync";
-
-type Search = {
-  source?: number;
-};
+import { tvShowsCatalogSearchSchema } from "@/routes/-search-params";
 
 export const Route = createFileRoute("/tv-shows")({
-  validateSearch: (search: Record<string, unknown>): Search => ({
-    source:
-      typeof search.source === "number" || typeof search.source === "string"
-        ? (parseTVShowsSource(String(search.source)) ?? undefined)
-        : undefined,
-  }),
+  validateSearch: tvShowsCatalogSearchSchema,
   loaderDeps: ({ search }) => ({ source: search.source }),
   loader: async ({ context: { queryClient }, deps: { source } }) => {
     const token = readStoredToken();
