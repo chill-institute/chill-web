@@ -88,6 +88,7 @@ function createSentrySourceMapPlugin() {
 
 const sentrySourceMapPlugin = createSentrySourceMapPlugin();
 const uploadSentrySourceMaps = Boolean(sentrySourceMapPlugin);
+const pwaPrecachePatterns = ["index.html", "registerSW.js", "assets/**/*"];
 
 export default defineConfig({
   build: {
@@ -122,7 +123,7 @@ export default defineConfig({
       manifest: false,
       workbox: {
         cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{css,html,ico,js,png,svg,woff2}"],
+        globPatterns: pwaPrecachePatterns,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/assets\//],
       },

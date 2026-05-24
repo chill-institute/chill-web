@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { FullscreenCenter } from "./fullscreen-center";
+import { instituteLogoUrl } from "../lib/brand-assets";
 import { cn } from "../lib/cn";
 
 type AuthPageProps = {
@@ -16,7 +17,7 @@ function AuthPage({
   title,
   description,
   hideBrand = false,
-  logoSrc = "/logo.png",
+  logoSrc = instituteLogoUrl,
   className,
   children,
 }: AuthPageProps) {

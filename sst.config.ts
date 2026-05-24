@@ -69,6 +69,12 @@ type StaticSiteV2Args = {
   };
   notFound: "single-page-application";
   path: string;
+  transform?: {
+    server?: (args: StaticSiteWorkerArgs) => void;
+  };
+};
+type StaticSiteWorkerArgs = {
+  handler?: string;
 };
 type ZoneSettingArgs = {
   settingId: string;
@@ -300,6 +306,11 @@ export default $config({
       path: app.path,
       domain: resolveStaticSiteDomain(stage),
       notFound: "single-page-application",
+      transform: {
+        server(args) {
+          args.handler = "src/workers/static-assets.ts";
+        },
+      },
     });
 
     return {

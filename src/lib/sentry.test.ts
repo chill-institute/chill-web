@@ -6,6 +6,7 @@ import {
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
 } from "./sentry";
+import { handleVitePreloadError } from "./runtime-errors";
 
 describe("filterCrashReportingIntegrations", () => {
   it("removes default integrations that emit non-crash telemetry", () => {
@@ -112,5 +113,41 @@ describe("sanitizeSentryEvent", () => {
     });
 
     expect(event).toBeNull();
+  });
+
+  it("drops expected dynamic import errors when storage is unavailable during recovery", () => {
+    const replace = vi.fn();
+
+    vi.stubGlobal("window", {
+      location: {
+        href: "https://chill.institute/movies",
+        replace,
+      },
+      sessionStorage: {
+        getItem() {
+          throw new Error("storage blocked");
+        },
+        setItem() {
+          throw new Error("storage blocked");
+        },
+      },
+    });
+
+    handleVitePreloadError();
+
+    expect(replace).toHaveBeenCalledOnce();
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
+              type: "TypeError",
+              value: "Failed to fetch dynamically imported module",
+            },
+          ],
+        },
+      }),
+    ).toBeNull();
   });
 });

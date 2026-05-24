@@ -16,6 +16,7 @@ import { InstituteFooter } from "@/ui/components/institute-footer";
 import { SortRow } from "@/ui/components/sort-row";
 import { SignInRedirect } from "@/auth/components/sign-in-redirect";
 import { useAuth } from "@/auth/auth";
+import { instituteLogoUrl } from "@/ui/lib/brand-assets";
 
 import { writeLastTab } from "@/catalog/hooks/use-last-tab";
 import { useMoviesQuery } from "@/catalog/queries/movies";
@@ -364,7 +365,7 @@ function EmptyState({ message, onTryAnother }: { message: string; onTryAnother?:
       <EmptyHeader>
         <EmptyMedia className="mb-1">
           <img
-            src="/logo.png"
+            src={instituteLogoUrl}
             width={48}
             height={48}
             alt=""

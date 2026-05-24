@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Film, Search, Tv } from "lucide-react";
 
-import { cn } from "@/ui/lib/cn";
 import { tabItemBaseClass, tabsContainerClass } from "@/ui/components/tabs";
+import { instituteLogoUrl } from "@/ui/lib/brand-assets";
+import { cn } from "@/ui/lib/cn";
 
 export type InstituteSection = "search" | "movies" | "tv-shows";
 
@@ -20,7 +21,7 @@ export function InstituteBrand() {
       aria-label="chill.institute home"
     >
       <img
-        src="/logo.png"
+        src={instituteLogoUrl}
         width={22}
         height={22}
         alt=""

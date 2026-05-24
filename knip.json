@@ -3,6 +3,7 @@
   "entry": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "src/workers/static-assets.ts",
     "e2e/**/*.ts",
     "e2e/visual/**/*.css",
     "playwright.visual.config.ts"

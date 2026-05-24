@@ -21,6 +21,14 @@ variables. Uploaded source maps are deleted from `dist/` before deployment.
 Build output:
 
 - `dist/`
+- `/assets/*` responses are fingerprinted build artifacts. They are served with
+  immutable browser caching, and the static-asset worker converts SPA HTML
+  fallbacks on `/assets/*` into real `404` responses so stale chunk URLs trigger
+  the runtime preload recovery path instead of loading `index.html` as
+  JavaScript.
+- The service worker precaches the app shell and generated assets. Public fonts,
+  social images, docs imagery, test fixtures, icons, and seasonal logos stay out
+  of the install cache.
 
 ## Routing
 

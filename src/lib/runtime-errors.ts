@@ -1,5 +1,6 @@
 const assetSkewReloadKey = "chill.asset-skew-reload.v1";
 const assetSkewReloadParam = "__chill_reload";
+let assetSkewReloadPendingInMemory = false;
 
 function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -66,13 +67,14 @@ function reloadOnceForAssetSkew() {
   if (getSessionStorageItem(assetSkewReloadKey)) return false;
 
   setSessionStorageItem(assetSkewReloadKey, "1");
+  assetSkewReloadPendingInMemory = true;
   url.searchParams.set(assetSkewReloadParam, String(Date.now()));
   window.location.replace(url);
   return true;
 }
 
 function isAssetSkewReloadPending() {
-  return Boolean(getSessionStorageItem(assetSkewReloadKey));
+  return assetSkewReloadPendingInMemory || Boolean(getSessionStorageItem(assetSkewReloadKey));
 }
 
 function resetAssetSkewReloadGuardAfterReload() {
@@ -80,6 +82,7 @@ function resetAssetSkewReloadGuardAfterReload() {
   if (!url.searchParams.has(assetSkewReloadParam)) return;
 
   removeSessionStorageItem(assetSkewReloadKey);
+  assetSkewReloadPendingInMemory = false;
   url.searchParams.delete(assetSkewReloadParam);
   window.history.replaceState(window.history.state, "", url);
 }
