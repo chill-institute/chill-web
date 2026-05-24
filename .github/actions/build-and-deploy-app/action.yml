@@ -12,7 +12,7 @@ runs:
     - name: Set up Vite+
       uses: ./.github/actions/setup-vite-plus
       with:
-        cache: false
+        cache: "false"
 
     - name: Stamp deployed release
       shell: bash
