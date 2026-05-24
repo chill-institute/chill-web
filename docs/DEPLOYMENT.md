@@ -35,7 +35,7 @@ Build output:
 - Pushes to `main` run `Main`
 - `Main` verifies, runs functional e2e, builds and deploys the production web surface, and deploys the production redirect worker
 - Manual deploy workflows are maintainer-only fallbacks for staging, production app, or production redirect reruns
-- App deploy jobs call the shared `Build and Deploy App` workflow for bundle build, Sentry source maps, SST state restore/save, and SST app deploy
+- App deploy jobs call the shared `Build and Deploy App` action for bundle build, Sentry source maps, SST state restore/save, and SST app deploy
 - PRs do not create public preview deployments
 - Live host monitoring and rollback are maintainer-operated outside GitHub Actions
 

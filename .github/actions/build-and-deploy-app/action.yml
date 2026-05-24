@@ -1,0 +1,42 @@
+name: Build and Deploy App
+description: Build the app bundle, upload source maps, restore SST state, and deploy.
+
+inputs:
+  environment-name:
+    description: GitHub Environment name and SST stage to deploy through.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Vite+
+      uses: ./.github/actions/setup-vite-plus
+      with:
+        cache: false
+
+    - name: Stamp deployed release
+      shell: bash
+      run: echo "VITE_PUBLIC_RELEASE=$(git rev-parse --short HEAD)" >> "${GITHUB_ENV}"
+
+    - name: Build app bundle
+      shell: bash
+      run: vp run build
+
+    - name: Install age
+      shell: bash
+      run: scripts/ci/install-age
+
+    - name: Restore encrypted SST local state
+      shell: bash
+      run: scripts/ci/sst-state-git restore
+
+    - name: Deploy app to SST
+      shell: bash
+      env:
+        SST_STAGE: ${{ inputs.environment-name }}
+      run: vp exec sst deploy --stage "${SST_STAGE}" --print-logs
+
+    - name: Save encrypted SST local state
+      if: always()
+      shell: bash
+      run: scripts/ci/sst-state-git save
