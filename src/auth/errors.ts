@@ -1,5 +1,7 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 
+import { isAbortLikeError } from "@/lib/runtime-errors";
+
 export type LocalizedErrorRecoveryAction =
   | {
       readonly kind: "retry";
@@ -52,16 +54,7 @@ export function isIgnorableAbortError(error: unknown) {
   if (error instanceof ConnectError) {
     return error.code === Code.Canceled;
   }
-  if (error instanceof DOMException) {
-    return error.name === "AbortError";
-  }
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    return (
-      message.includes("aborted") || message.includes("canceled") || message.includes("cancelled")
-    );
-  }
-  return false;
+  return isAbortLikeError(error);
 }
 
 export function isPutioProviderUnavailableError(error: unknown) {

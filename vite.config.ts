@@ -124,6 +124,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{css,html,ico,js,png,svg,woff2}"],
         navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/assets\//],
       },
     }),
     viteReact(),
