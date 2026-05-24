@@ -99,7 +99,6 @@ jobs:
       environment-name: production
       environment-url: https://${{ vars.CHILL_PRODUCTION_DOMAIN }}
       ref: ${{ github.sha }}
-    secrets: inherit
 
   deploy-redirects:
     needs: [workflow-security, deploy-app]

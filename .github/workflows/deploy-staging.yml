@@ -254,7 +254,6 @@ jobs:
       environment-name: staging
       environment-url: https://${{ vars.CHILL_STAGING_DOMAIN }}
       ref: ${{ needs.validate.outputs.sha }}
-    secrets: inherit
 
   deploy-zones:
     needs: [workflow-security, validate]
