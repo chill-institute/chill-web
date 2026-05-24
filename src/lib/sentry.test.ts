@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
   filterCrashReportingIntegrations,
@@ -62,6 +62,10 @@ describe("isExpectedRouteNotFound", () => {
 });
 
 describe("sanitizeSentryEvent", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("removes user and request details before sending browser crash events", () => {
     const event = sanitizeSentryEvent({
       type: undefined,
@@ -82,7 +86,31 @@ describe("sanitizeSentryEvent", () => {
       },
     });
 
+    expect(event).not.toBeNull();
+    if (!event) throw new Error("expected sanitized event");
     expect(event.user).toBeUndefined();
     expect(event.request).toBeUndefined();
+  });
+
+  it("drops expected dynamic import errors after scheduling an asset-skew reload", () => {
+    vi.stubGlobal("window", {
+      sessionStorage: {
+        getItem: (key: string) => (key === "chill.asset-skew-reload.v1" ? "1" : null),
+      },
+    });
+
+    const event = sanitizeSentryEvent({
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "TypeError",
+            value: "Failed to fetch dynamically imported module",
+          },
+        ],
+      },
+    });
+
+    expect(event).toBeNull();
   });
 });

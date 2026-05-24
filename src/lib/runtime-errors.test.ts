@@ -68,23 +68,10 @@ describe("setupRuntimeErrorHandlers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("prevents Vite preload errors only when scheduling the one-shot reload", () => {
-    let firstPrevented = false;
-    let secondPrevented = false;
+  it("schedules the one-shot Vite preload recovery reload", () => {
+    handleVitePreloadError();
+    handleVitePreloadError();
 
-    handleVitePreloadError({
-      preventDefault() {
-        firstPrevented = true;
-      },
-    });
-    handleVitePreloadError({
-      preventDefault() {
-        secondPrevented = true;
-      },
-    });
-
-    expect(firstPrevented).toBe(true);
-    expect(secondPrevented).toBe(false);
     expect(replaceSpy).toHaveBeenCalledTimes(1);
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/movies\?__chill_reload=\d+$/,
@@ -113,15 +100,8 @@ describe("setupRuntimeErrorHandlers", () => {
         },
       },
     });
-    let defaultPrevented = false;
+    handleVitePreloadError();
 
-    handleVitePreloadError({
-      preventDefault() {
-        defaultPrevented = true;
-      },
-    });
-
-    expect(defaultPrevented).toBe(true);
     expect(replaceSpy).toHaveBeenCalledTimes(1);
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/search\?__chill_reload=\d+$/,
@@ -130,15 +110,9 @@ describe("setupRuntimeErrorHandlers", () => {
 
   it("lets preload errors surface when the URL already carries the reload marker", () => {
     stubWindow("https://chill.institute/search?__chill_reload=123");
-    let defaultPrevented = false;
 
-    handleVitePreloadError({
-      preventDefault() {
-        defaultPrevented = true;
-      },
-    });
+    handleVitePreloadError();
 
-    expect(defaultPrevented).toBe(false);
     expect(replaceSpy).not.toHaveBeenCalled();
   });
 

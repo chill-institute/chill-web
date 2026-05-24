@@ -71,6 +71,10 @@ function reloadOnceForAssetSkew() {
   return true;
 }
 
+function isAssetSkewReloadPending() {
+  return Boolean(getSessionStorageItem(assetSkewReloadKey));
+}
+
 function resetAssetSkewReloadGuardAfterReload() {
   const url = new URL(window.location.href);
   if (!url.searchParams.has(assetSkewReloadParam)) return;
@@ -93,19 +97,18 @@ function handleUnhandledRejection(event: {
 
 function setupRuntimeErrorHandlers() {
   resetAssetSkewReloadGuardAfterReload();
-  window.addEventListener("vite:preloadError", (event) => handleVitePreloadError(event));
+  window.addEventListener("vite:preloadError", () => handleVitePreloadError());
   window.addEventListener("unhandledrejection", handleUnhandledRejection);
 }
 
-function handleVitePreloadError(event: Pick<Event, "preventDefault">) {
-  if (reloadOnceForAssetSkew()) {
-    event.preventDefault();
-  }
+function handleVitePreloadError() {
+  reloadOnceForAssetSkew();
 }
 
 export {
   handleVitePreloadError,
   handleUnhandledRejection,
+  isAssetSkewReloadPending,
   isAbortLikeError,
   isServiceWorkerRegistrationError,
   resetAssetSkewReloadGuardAfterReload,
