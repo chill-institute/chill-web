@@ -1,5 +1,6 @@
 import type { ElementType, ReactNode } from "react";
 
+import { FullscreenCenter } from "./fullscreen-center";
 import { cn } from "../lib/cn";
 
 type StatusPanelProps = {
@@ -10,17 +11,17 @@ type StatusPanelProps = {
 
 function StatusPanel({ children, className, as: Root = "main" }: StatusPanelProps) {
   return (
-    <Root className="min-h-dvh px-4 py-8 md:py-12">
+    <FullscreenCenter as={Root} contentClassName="max-w-3xl">
       <div
         data-slot="status-panel"
         className={cn(
-          "border-border-soft bg-surface mx-auto flex w-full max-w-3xl flex-col gap-6 rounded-xl border p-6 shadow-sm",
+          "border-border-soft bg-surface flex w-full flex-col gap-6 rounded-xl border p-6 shadow-sm",
           className,
         )}
       >
         {children}
       </div>
-    </Root>
+    </FullscreenCenter>
   );
 }
 

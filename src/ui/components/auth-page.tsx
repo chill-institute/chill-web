@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { FullscreenCenter } from "./fullscreen-center";
 import { cn } from "../lib/cn";
 
 type AuthPageProps = {
@@ -21,11 +22,11 @@ function AuthPage({
 }: AuthPageProps) {
   const showHead = !hideBrand || title || description;
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-8 md:px-8">
+    <FullscreenCenter as="div" contentClassName="max-w-[480px]">
       <div
         data-slot="auth-page"
         className={cn(
-          "border-border-strong bg-surface shadow-press w-full max-w-[480px] overflow-hidden rounded-xl border",
+          "border-border-strong bg-surface shadow-press w-full overflow-hidden rounded-xl border",
           className,
         )}
       >
@@ -52,7 +53,7 @@ function AuthPage({
         ) : null}
         <div className="flex flex-col gap-4 px-7 py-6">{children}</div>
       </div>
-    </div>
+    </FullscreenCenter>
   );
 }
 

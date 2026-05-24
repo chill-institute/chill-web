@@ -26,13 +26,12 @@ function CliTokenPage() {
   }
 
   return (
-    <AuthPage
-      title="CLI token"
-      description="Use this token when you need to authenticate a CLI session on another machine or for an agent that cannot use the localhost callback flow."
-    >
-      <div className="border-warn-border bg-warn-bg text-warn-text flex items-center gap-3 rounded border px-4 py-3 text-sm leading-[1.25]">
-        <ShieldAlert className="size-4 shrink-0" />
-        <p>
+    <AuthPage title="CLI token" description="Use this to sign in from the CLI.">
+      <div className="border-warn-border bg-warn-bg text-warn-text flex items-start gap-3 rounded border px-4 py-3 text-sm leading-[1.25]">
+        <span className="flex h-[1.25em] shrink-0 items-center">
+          <ShieldAlert className="size-4" />
+        </span>
+        <p className="m-0">
           Treat this token like a password. Anyone with it can act as your account until you sign
           out or replace the token.
         </p>

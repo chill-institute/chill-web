@@ -122,6 +122,52 @@ test("sign-in session expired", async ({ page }) => {
   await expect(page).toHaveScreenshot("sign-in-session-expired.png", visualOptions);
 });
 
+test("cli token page", async ({ authenticatedPage }) => {
+  await freezeVisualClock(authenticatedPage);
+  await authenticatedPage.goto("/auth/cli-token");
+  await expect(authenticatedPage.getByRole("heading", { name: "CLI token" })).toBeVisible();
+  await expect(authenticatedPage.getByLabel("CLI auth token")).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("cli-token-page.png", visualOptions);
+});
+
+test("backend unavailable screen", async ({ page }) => {
+  await freezeVisualClock(page);
+  await page.unroute("**/healthz");
+  await page.route("**/healthz", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ status: "unavailable" }),
+    });
+  });
+
+  await page.goto("/movies");
+
+  await expect(
+    page.getByRole("heading", { name: "The Institute is having a moment…" }),
+  ).toBeVisible();
+  await expect(page).toHaveScreenshot("backend-unavailable-screen.png", visualOptions);
+});
+
+test("app error fallback", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc({ GetUserSettings: userSettings() });
+
+  await authenticatedPage.goto("/debug/crash");
+
+  await expect(
+    authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
+  ).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("app-error-fallback.png", visualOptions);
+});
+
+test("not found screen", async ({ page }) => {
+  await freezeVisualClock(page);
+  await page.goto("/definitely-not-here");
+  await expect(page.getByRole("heading", { name: "page not found" })).toBeVisible();
+  await expect(page).toHaveScreenshot("not-found-screen.png", visualOptions);
+});
+
 test("movies catalog", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(defaultMethods());

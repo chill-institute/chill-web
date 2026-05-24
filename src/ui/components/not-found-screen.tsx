@@ -25,7 +25,7 @@ function NotFoundScreen({ homeHref = "/", homeLabel = "go home", children }: Not
           </div>
           {children}
           <div>
-            <a className={buttonVariants({ variant: "primary" })} href={homeHref}>
+            <a className={buttonVariants({ variant: "outline" })} href={homeHref}>
               {homeLabel}
             </a>
           </div>
