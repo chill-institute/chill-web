@@ -9,10 +9,26 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Read Vite+ version
+      id: vite_plus
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+        echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
     - name: Set up Vite+
-      uses: ./.github/actions/setup-vite-plus
+      uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
       with:
+        version: ${{ steps.vite_plus.outputs.version }}
+        node-version-file: ".node-version"
         cache: "false"
+        run-install: "true"
+
+    - name: Load Vite+ environment
+      shell: bash
+      run: vp env
 
     - name: Stamp deployed release
       shell: bash
