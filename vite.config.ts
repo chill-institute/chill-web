@@ -57,13 +57,10 @@ export default defineConfig({
     VitePWA({
       injectRegister: "script-defer",
       manifest: false,
-      registerType: "autoUpdate",
       workbox: {
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
         globPatterns: ["**/*.{css,html,ico,js,png,svg,woff2}"],
         navigateFallback: "/index.html",
-        skipWaiting: true,
       },
     }),
     viteReact(),
