@@ -1,9 +1,12 @@
+import "./telemetry";
+
 import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import { getRouter } from "./router";
+import { createSentryReactErrorHandler } from "./lib/sentry";
 import { queryClient } from "./query-client";
 import "./styles.css";
 
@@ -21,7 +24,11 @@ if (!container) {
   throw new Error("Missing #app container");
 }
 
-createRoot(container).render(
+createRoot(container, {
+  onCaughtError: createSentryReactErrorHandler(),
+  onRecoverableError: createSentryReactErrorHandler(),
+  onUncaughtError: createSentryReactErrorHandler(),
+}).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} context={{ queryClient }} />

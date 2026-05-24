@@ -11,6 +11,13 @@ Public deployment overview for `chill-web`
 
 The app calls the shared API at `https://api.chill.institute` unless `VITE_PUBLIC_API_BASE_URL` is set for a local override
 
+Browser crash reporting is enabled only when `VITE_PUBLIC_SENTRY_DSN` is set at
+build time. Production and staging deploy jobs pass the public DSN through GitHub
+environment variables and stamp `VITE_PUBLIC_SENTRY_ENVIRONMENT` accordingly.
+Deploy builds upload hidden source maps when the GitHub environment provides
+`SENTRY_AUTH_TOKEN` as a secret plus `SENTRY_ORG` and `SENTRY_PROJECT` as
+variables. Uploaded source maps are deleted from `dist/` before deployment.
+
 Build output:
 
 - `dist/`
@@ -28,6 +35,7 @@ Build output:
 - Pushes to `main` run `Main`
 - `Main` verifies, runs functional e2e, builds and deploys the production web surface, and deploys the production redirect worker
 - Manual deploy workflows are maintainer-only fallbacks for staging, production app, or production redirect reruns
+- App deploy jobs call the shared `Build and Deploy App` workflow for bundle build, Sentry source maps, SST state restore/save, and SST app deploy
 - PRs do not create public preview deployments
 - Live host monitoring and rollback are maintainer-operated outside GitHub Actions
 

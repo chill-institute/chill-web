@@ -8,10 +8,10 @@ fi
 
 command="$1"
 state_repo="${SST_STATE_REPO:-}"
-state_branch="${SST_STATE_REPO_BRANCH:-}"
+state_branch="${SST_STATE_REPO_BRANCH:-main}"
 state_file="${SST_STATE_FILE:-}"
 
-for required in SST_STATE_REPO SST_STATE_REPO_BRANCH SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY SST_STATE_FILE; do
+for required in SST_STATE_REPO SST_STATE_REPO_TOKEN SST_STATE_AGE_IDENTITY SST_STATE_FILE; do
   if [ -z "${!required:-}" ]; then
     echo "${required} is required" >&2
     exit 1

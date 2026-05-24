@@ -15,7 +15,9 @@ The Institute is a put.io companion app:
 ## Privacy
 
 - the app stores your auth token in the browser so it can talk to the API on your behalf
-- the web app does not send telemetry, and crash reports stay local unless you explicitly copy them or open a prefilled GitHub issue
+- the web app does not use product analytics, session replay, or behavior tracking
+- if crash reporting is configured, unexpected crashes are sent to Sentry with route paths, browser/runtime details, release, and stack trace; auth tokens, cookies, request bodies, user IDs, request URLs, and search query strings are not intentionally sent
+- if crash reporting is not configured, the crash report stays local unless you copy it yourself
 - some operational diagnostics exist on the server side to keep the service healthy
 
 ## Contact

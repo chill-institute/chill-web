@@ -1,0 +1,82 @@
+name: Build and Deploy App
+
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        description: GitHub Environment name to deploy through.
+        required: true
+        type: string
+      environment-url:
+        description: Public URL shown on the GitHub deployment.
+        required: true
+        type: string
+      ref:
+        description: Commit SHA or branch to check out.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy-app:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment-name }}
+      url: ${{ inputs.environment-url }}
+    permissions:
+      contents: read
+    env:
+      BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
+      BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
+      CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
+      CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
+      WEB_DEPLOY_TARGET: app
+      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
+      SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
+      SST_STATE_FILE: ${{ inputs.environment-name == 'production' && vars.SST_STATE_FILE_PRODUCTION || vars.SST_STATE_FILE_STAGING }}
+      SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      VITE_PUBLIC_SENTRY_DSN: ${{ vars.VITE_PUBLIC_SENTRY_DSN }}
+      VITE_PUBLIC_SENTRY_ENVIRONMENT: ${{ inputs.environment-name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Vite+
+        uses: ./.github/actions/setup-vite-plus
+        with:
+          cache: false
+
+      - name: Stamp deployed release
+        run: echo "VITE_PUBLIC_RELEASE=$(git rev-parse --short HEAD)" >> "${GITHUB_ENV}"
+
+      - name: Build app bundle
+        run: vp run build
+
+      - name: Install age
+        run: scripts/ci/install-age
+
+      - name: Restore encrypted SST local state
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git restore
+
+      - name: Deploy app to SST
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SST_STAGE: ${{ inputs.environment-name }}
+        run: vp exec sst deploy --stage "${SST_STAGE}" --print-logs
+
+      - name: Save encrypted SST local state
+        if: always()
+        env:
+          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
+          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
+        run: scripts/ci/sst-state-git save

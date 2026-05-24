@@ -1,24 +1,17 @@
-import {
-  ClipboardCheck,
-  ClipboardX,
-  Copy,
-  ExternalLink,
-  RefreshCw,
-  TriangleAlert,
-} from "lucide-react";
+import { ClipboardCheck, ClipboardX, Copy, RefreshCw, TriangleAlert } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
-import { Button, buttonVariants } from "./ui/button";
+import { Button } from "./ui/button";
 import { Field, FieldLabel } from "./ui/field";
 import { Textarea } from "./ui/textarea";
-import { buildErrorReport, buildGitHubIssueURL, formatErrorReport } from "../lib/error-report";
+import { buildErrorReport, formatErrorReport } from "../lib/error-report";
 
 type AppErrorFallbackProps = {
-  app: string;
   error: unknown;
   componentStack?: string;
   release?: string;
+  sentryEventId?: string;
 };
 
 function getClientReportContext(release?: string) {
@@ -33,7 +26,12 @@ function getClientReportContext(release?: string) {
   };
 }
 
-function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallbackProps) {
+function AppErrorFallback({
+  error,
+  componentStack,
+  release,
+  sentryEventId,
+}: AppErrorFallbackProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [notes, setNotes] = useState("");
   const notesId = useId();
@@ -54,16 +52,15 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
   const report = useMemo(
     () =>
       buildErrorReport(error, {
-        app,
         ...getClientReportContext(release),
         componentStack,
         notes,
+        sentryEventId,
       }),
-    [app, componentStack, error, notes, release],
+    [componentStack, error, notes, release, sentryEventId],
   );
 
   const reportText = useMemo(() => formatErrorReport(report), [report]);
-  const issueURL = useMemo(() => buildGitHubIssueURL(report), [report]);
 
   const copyLabel =
     copyState === "copied" ? "copied" : copyState === "error" ? "copy failed" : "copy report";
@@ -80,7 +77,9 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl leading-7">Something went wrong.</h1>
           <p className="text-fg-2 text-sm">
-            The app hit a crash. Nothing is sent anywhere unless you choose to copy the report.
+            {sentryEventId
+              ? "The app hit a crash and sent a private crash report."
+              : "The app hit a crash. Crash reporting is not configured for this build."}
           </p>
         </div>
       </div>
@@ -95,6 +94,11 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
         <div>
           <strong>Release:</strong> {report.release}
         </div>
+        {sentryEventId ? (
+          <div>
+            <strong>Sentry event:</strong> {sentryEventId}
+          </div>
+        ) : null}
       </div>
 
       <Field>
@@ -130,10 +134,6 @@ function AppErrorFallback({ app, error, componentStack, release }: AppErrorFallb
           <span data-icon="inline-start">{copyIcon}</span>
           {copyLabel}
         </Button>
-        <a className={buttonVariants()} href={issueURL} target="_blank" rel="noreferrer">
-          <ExternalLink data-icon="inline-start" />
-          create GitHub issue
-        </a>
       </div>
 
       <details className="border-border-soft bg-surface-2 rounded border p-3 text-sm">

@@ -1,9 +1,10 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
+import { captureAppException, getSentryEventId } from "@/lib/sentry";
+
 import { AppErrorFallback } from "./app-error-fallback";
 
 type AppErrorBoundaryProps = {
-  app: string;
   release?: string;
   children: ReactNode;
 };
@@ -11,25 +12,36 @@ type AppErrorBoundaryProps = {
 type AppErrorBoundaryState = {
   componentStack?: string;
   error: unknown;
+  sentryEventId?: string;
 };
 
 class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
   state: AppErrorBoundaryState = {
     componentStack: undefined,
     error: null,
+    sentryEventId: undefined,
   };
 
   static getDerivedStateFromError(error: unknown): AppErrorBoundaryState {
     return {
       componentStack: undefined,
       error,
+      sentryEventId: getSentryEventId(error),
     };
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
+    const componentStack = info.componentStack || undefined;
     this.setState({
-      componentStack: info.componentStack || undefined,
+      componentStack,
       error,
+      sentryEventId:
+        getSentryEventId(error) ??
+        captureAppException(error, {
+          componentStack,
+          release: this.props.release,
+          routePath: window.location.pathname,
+        }),
     });
   }
 
@@ -37,6 +49,7 @@ class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundary
     this.setState({
       componentStack: undefined,
       error: null,
+      sentryEventId: undefined,
     });
   };
 
@@ -44,10 +57,10 @@ class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundary
     if (this.state.error) {
       return (
         <AppErrorFallback
-          app={this.props.app}
           release={this.props.release}
           error={this.state.error}
           componentStack={this.state.componentStack}
+          sentryEventId={this.state.sentryEventId}
         />
       );
     }

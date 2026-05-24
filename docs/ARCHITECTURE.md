@@ -71,6 +71,7 @@ Key modules:
 
 | Module                | Responsibility                                     |
 | --------------------- | -------------------------------------------------- |
+| `src/telemetry.ts`    | optional Sentry crash-reporting initialization     |
 | `src/main.tsx`        | browser entrypoint and provider mounting           |
 | `src/router.tsx`      | create the app router and router context           |
 | `src/query-client.ts` | TanStack Query client configuration                |
@@ -83,12 +84,27 @@ Key modules:
 
 ## Environment
 
-| Variable                   | Purpose                                    |
-| -------------------------- | ------------------------------------------ |
-| `VITE_PUBLIC_API_BASE_URL` | optional local override for the public API |
+| Variable                         | Purpose                                                    |
+| -------------------------------- | ---------------------------------------------------------- |
+| `VITE_PUBLIC_API_BASE_URL`       | optional local override for the public API                 |
+| `VITE_PUBLIC_SENTRY_DSN`         | optional browser crash-reporting DSN                       |
+| `VITE_PUBLIC_SENTRY_ENVIRONMENT` | optional Sentry environment label                          |
+| `SENTRY_AUTH_TOKEN`              | build-time secret used by CI to upload Sentry source maps  |
+| `SENTRY_ORG`                     | build-time Sentry organization slug for source map uploads |
+| `SENTRY_PROJECT`                 | build-time Sentry project slug for source map uploads      |
 
 Hosted environments use `https://api.chill.institute` by default. Set
 `VITE_PUBLIC_API_BASE_URL` to point a local or preview build at a different API.
+
+Sentry is disabled when `VITE_PUBLIC_SENTRY_DSN` is unset. Browser crash events
+are configured without product analytics, tracing, session replay, default PII,
+or default browser breadcrumbs. The app records only route-path breadcrumbs that
+exclude query strings and request data; event request data is removed before
+sending.
+
+Production and staging builds upload hidden source maps only when
+`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all available. The
+generated `.map` files are deleted from `dist/` after upload.
 
 ## Deployment
 

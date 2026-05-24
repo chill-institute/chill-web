@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { buildErrorReport, buildGitHubIssueURL, formatErrorReport } from "./error-report";
+import { APP_NAME } from "@/lib/app-info";
+
+import { buildErrorReport, formatErrorReport } from "./error-report";
 
 describe("buildErrorReport", () => {
   it("normalizes error objects into a copyable report", () => {
@@ -8,17 +10,17 @@ describe("buildErrorReport", () => {
     error.name = "ExplosionError";
 
     const report = buildErrorReport(error, {
-      app: "chill.institute/web",
       componentStack: "\n    at AppShell",
       notes: "  I opened settings.  ",
       occurredAt: "2026-03-15T01:23:45.000Z",
       release: "test-release",
       routePath: "/settings",
+      sentryEventId: "event-123",
       userAgent: "Unit Test Browser",
     });
 
     expect(report).toEqual({
-      app: "chill.institute/web",
+      app: APP_NAME,
       componentStack: "at AppShell",
       error: {
         message: "kaboom",
@@ -29,21 +31,22 @@ describe("buildErrorReport", () => {
       occurredAt: "2026-03-15T01:23:45.000Z",
       release: "test-release",
       routePath: "/settings",
+      sentryEventId: "event-123",
       userAgent: "Unit Test Browser",
     });
   });
 
   it("falls back gracefully for non-Error values", () => {
     const report = buildErrorReport("oops", {
-      app: "chill.institute/web",
       occurredAt: "2026-03-15T01:23:45.000Z",
       release: "test-release",
       routePath: "search",
+      sentryEventId: undefined,
       userAgent: "Unit Test Browser",
     });
 
     expect(report).toEqual({
-      app: "chill.institute/web",
+      app: APP_NAME,
       componentStack: undefined,
       error: {
         message: "oops",
@@ -54,6 +57,7 @@ describe("buildErrorReport", () => {
       occurredAt: "2026-03-15T01:23:45.000Z",
       release: "test-release",
       routePath: "/",
+      sentryEventId: undefined,
       userAgent: "Unit Test Browser",
     });
   });
@@ -63,7 +67,6 @@ describe("formatErrorReport", () => {
   it("renders stable pretty JSON", () => {
     const output = formatErrorReport(
       buildErrorReport(new Error("kaboom"), {
-        app: "chill.institute/web",
         occurredAt: "2026-03-15T01:23:45.000Z",
         release: "test-release",
         routePath: "/",
@@ -71,32 +74,8 @@ describe("formatErrorReport", () => {
       }),
     );
 
-    expect(output).toContain('"app": "chill.institute/web"');
+    expect(output).toContain('"app": "chill-web"');
     expect(output).toContain('"routePath": "/"');
     expect(output).toContain('"release": "test-release"');
-  });
-});
-
-describe("buildGitHubIssueURL", () => {
-  it("prefills the bug template with the report details", () => {
-    const report = buildErrorReport(new Error("kaboom"), {
-      app: "chill.institute/web",
-      notes: "Open home page\nOpen settings",
-      occurredAt: "2026-03-15T01:23:45.000Z",
-      release: "test-release",
-      routePath: "/settings",
-      userAgent: "Unit Test Browser",
-    });
-
-    const url = new URL(buildGitHubIssueURL(report));
-
-    expect(url.origin + url.pathname).toBe(
-      "https://github.com/chill-institute/chill-web/issues/new",
-    );
-    expect(url.searchParams.get("template")).toBe("bug_report.md");
-    expect(url.searchParams.get("title")).toContain("[bug] Crash on /settings");
-    expect(url.searchParams.get("body")).toContain("## Crash report");
-    expect(url.searchParams.get("body")).toContain("1. Open home page");
-    expect(url.searchParams.get("body")).toContain('"release": "test-release"');
   });
 });

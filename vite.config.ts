@@ -1,4 +1,5 @@
 import { defineConfig } from "vite-plus";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -27,9 +28,48 @@ function resolveRelease() {
   }
 }
 
+function resolvePublicSentryDsn() {
+  if (process.env.VITE_PUBLIC_SENTRY_ENVIRONMENT) {
+    return process.env.VITE_PUBLIC_SENTRY_DSN ?? "";
+  }
+
+  return "";
+}
+
 const release = resolveRelease();
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN?.trim();
+const sentryOrg = process.env.SENTRY_ORG?.trim();
+const sentryProject = process.env.SENTRY_PROJECT?.trim();
+const sentryEnvironment = process.env.VITE_PUBLIC_SENTRY_ENVIRONMENT?.trim();
+const publicSentryDsn = resolvePublicSentryDsn();
+
+function createSentrySourceMapPlugin() {
+  if (!sentryAuthToken || !sentryOrg || !sentryProject) {
+    return undefined;
+  }
+
+  return sentryVitePlugin({
+    org: sentryOrg,
+    project: sentryProject,
+    authToken: sentryAuthToken,
+    telemetry: false,
+    release: {
+      name: release,
+      deploy: sentryEnvironment ? { env: sentryEnvironment } : undefined,
+    },
+    sourcemaps: {
+      filesToDeleteAfterUpload: ["dist/**/*.map"],
+    },
+  });
+}
+
+const sentrySourceMapPlugin = createSentrySourceMapPlugin();
+const uploadSentrySourceMaps = Boolean(sentrySourceMapPlugin);
 
 export default defineConfig({
+  build: {
+    sourcemap: uploadSentrySourceMaps ? "hidden" : false,
+  },
   staged: {
     "*": "vp check --fix",
   },
@@ -64,8 +104,10 @@ export default defineConfig({
       },
     }),
     viteReact(),
+    ...(sentrySourceMapPlugin ? [sentrySourceMapPlugin] : []),
   ],
   define: {
     "import.meta.env.VITE_PUBLIC_RELEASE": JSON.stringify(release),
+    "import.meta.env.VITE_PUBLIC_SENTRY_DSN": JSON.stringify(publicSentryDsn),
   },
 });

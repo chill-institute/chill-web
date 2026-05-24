@@ -12,7 +12,6 @@ env:
   CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
   SST_PRODUCTION_AUTO_DEPLOY_ENABLED: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
-  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
 
 permissions:
@@ -95,47 +94,12 @@ jobs:
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://${{ vars.CHILL_PRODUCTION_DOMAIN }}
-    permissions:
-      contents: read
-    env:
-      WEB_DEPLOY_TARGET: app
-      CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-      SST_STATE_FILE: ${{ vars.SST_STATE_FILE_PRODUCTION }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Vite+
-        uses: ./.github/actions/setup-vite-plus
-        with:
-          cache: false
-
-      - name: Build production bundle
-        run: vp run build
-
-      - name: Install age
-        run: scripts/ci/install-age
-
-      - name: Restore encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git restore
-
-      - name: Deploy app production to SST
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: vp exec sst deploy --stage production --print-logs
-
-      - name: Save encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git save
+    uses: ./.github/workflows/build-and-deploy-app.yml
+    with:
+      environment-name: production
+      environment-url: https://${{ vars.CHILL_PRODUCTION_DOMAIN }}
+      ref: ${{ github.sha }}
+    secrets: inherit
 
   deploy-redirects:
     needs: [workflow-security, deploy-app]

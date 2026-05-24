@@ -22,7 +22,6 @@ env:
   CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
   CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
   SST_STATE_REPO: ${{ vars.SST_STATE_REPO }}
-  SST_STATE_REPO_BRANCH: ${{ vars.SST_STATE_REPO_BRANCH }}
   SST_STATE_FILE: ${{ vars.SST_STATE_FILE_STAGING }}
   SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
 
@@ -250,67 +249,12 @@ jobs:
   deploy-app:
     needs: [validate, verify-app, e2e, deploy-zones]
     if: ${{ always() && needs.validate.outputs.app == 'true' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://${{ vars.CHILL_STAGING_DOMAIN }}
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ needs.validate.outputs.sha }}
-
-      - name: Read Vite+ version
-        id: vite_plus
-        run: |
-          set -euo pipefail
-
-          version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
-          echo "version=${version}" >> "${GITHUB_OUTPUT}"
-
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1.10.0
-        with:
-          version: ${{ steps.vite_plus.outputs.version }}
-          node-version-file: ".node-version"
-          cache: false
-          run-install: false
-
-      - name: Load Vite+ environment
-        run: vp env
-
-      - name: Install dependencies
-        run: vp install
-
-      - name: Build staging bundle
-        run: vp run build
-
-      - name: Install age
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y age
-
-      - name: Restore encrypted SST local state
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git restore
-
-      - name: Deploy app staging to SST
-        env:
-          WEB_DEPLOY_TARGET: app
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DEFAULT_ACCOUNT_ID: ${{ vars.CLOUDFLARE_DEFAULT_ACCOUNT_ID }}
-        run: vp exec sst deploy --stage staging --print-logs
-
-      - name: Save encrypted SST local state
-        if: always()
-        env:
-          SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-          SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-        run: scripts/ci/sst-state-git save
+    uses: ./.github/workflows/build-and-deploy-app.yml
+    with:
+      environment-name: staging
+      environment-url: https://${{ vars.CHILL_STAGING_DOMAIN }}
+      ref: ${{ needs.validate.outputs.sha }}
+    secrets: inherit
 
   deploy-zones:
     needs: [workflow-security, validate]

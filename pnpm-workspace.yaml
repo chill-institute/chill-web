@@ -1,6 +1,9 @@
 packages:
   - "."
 
+allowBuilds:
+  "@sentry/cli": true
+
 peerDependencyRules:
   allowedVersions:
     vite: "0.1.22"

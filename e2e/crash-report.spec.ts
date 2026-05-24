@@ -27,8 +27,11 @@ test.describe("crash report fallback", () => {
       authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
     ).toBeVisible();
     await expect(
-      authenticatedPage.getByText("Nothing is sent anywhere unless you choose to copy the report."),
+      authenticatedPage.getByText(
+        "The app hit a crash. Crash reporting is not configured for this build.",
+      ),
     ).toBeVisible();
+    await expect(authenticatedPage.getByText("Sentry event:")).toHaveCount(0);
 
     await authenticatedPage.getByLabel("What were you doing?").fill("I opened the home page.");
     await authenticatedPage.getByRole("button", { name: "copy report" }).click();
@@ -44,7 +47,7 @@ test.describe("crash report fallback", () => {
     expect(copiedReport).toContain('"notes": "I opened the home page."');
   });
 
-  test("local crash fallback prefills a GitHub bug report", async ({
+  test("local crash fallback does not suggest public GitHub issues", async ({
     authenticatedPage,
     mockRpc,
   }) => {
@@ -54,20 +57,12 @@ test.describe("crash report fallback", () => {
 
     await authenticatedPage.goto("/debug/crash");
 
-    const issueLink = authenticatedPage.getByRole("link", { name: "create GitHub issue" });
-    await expect(issueLink).toBeVisible();
-
-    const href = await issueLink.getAttribute("href");
-    expect(href).toBeTruthy();
-
-    const url = new URL(href!);
-    expect(url.origin + url.pathname).toBe(
-      "https://github.com/chill-institute/chill-web/issues/new",
+    await expect(authenticatedPage.getByRole("link", { name: "create GitHub issue" })).toHaveCount(
+      0,
     );
-    expect(url.searchParams.get("template")).toBe("bug_report.md");
-    expect(url.searchParams.get("title")).toContain("[bug] Crash on /debug/crash");
-    expect(url.searchParams.get("body")).toContain("## Crash report");
-    expect(url.searchParams.get("body")).toContain(
+    await expect(authenticatedPage.getByRole("button", { name: "copy report" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("button", { name: "reload page" })).toBeVisible();
+    await expect(authenticatedPage.getByText("Message:").locator("xpath=..")).toContainText(
       "Intentional debug crash for the local error fallback.",
     );
   });

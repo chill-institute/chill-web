@@ -24,7 +24,7 @@ Please include enough detail to reproduce or investigate the issue. Vague report
 
 For search results, include the exact title, season, episode, and filters you used. The Institute can improve how results are searched, sorted, and displayed, but it does not own the indexed content. If a release does not exist on the connected sources, the app cannot create it.
 
-For crashes, use the crash page actions. Either open the prefilled GitHub issue or copy the crash report and send it with your message. The report includes the route, browser, release, and error details needed to debug the failure.
+For crashes, include the Sentry event ID shown on the crash page when one is available. If the page says crash reporting is not configured, copy the local crash report and send it with your message. The report includes the route, browser, release, and error details needed to debug the failure.
 
 For non-crash bugs, use the [bug report template](../.github/ISSUE_TEMPLATE/bug_report.md) or include the same details in your message.
 
