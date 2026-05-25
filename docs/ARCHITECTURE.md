@@ -100,7 +100,8 @@ Sentry is disabled when `VITE_PUBLIC_SENTRY_DSN` is unset. Browser crash events
 are configured without product analytics, tracing, session replay, default PII,
 or default browser breadcrumbs. The app records only route-path breadcrumbs that
 exclude query strings and request data; event request data is removed before
-sending.
+sending. Known noisy browser and extension crash messages are filtered
+client-side before they reach Sentry.
 
 Production and staging builds upload hidden source maps only when
 `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all available. The

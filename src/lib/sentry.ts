@@ -7,6 +7,9 @@ import { isAssetSkewReloadPending } from "./runtime-errors";
 
 const sentryEventIds = new WeakMap<object, string>();
 const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession"]);
+const ignoredBrowserCrashMessages = [
+  /^Invalid call to runtime\.sendMessage\(\)\. Tab not found\.$/,
+];
 
 type AppBreadcrumbData = Record<string, boolean | number | string | null | undefined>;
 
@@ -72,6 +75,7 @@ function initSentry() {
     sendClientReports: false,
     enableLogs: false,
     enableMetrics: false,
+    ignoreErrors: ignoredBrowserCrashMessages,
     maxBreadcrumbs: 20,
     integrations: filterCrashReportingIntegrations,
     initialScope: {
