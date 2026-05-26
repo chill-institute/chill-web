@@ -9,10 +9,10 @@ import {
 
 import {
   readCachedIndexers,
-  readCachedSettings,
+  readCachedSearchSettings as readCachedSettings,
   writeCachedIndexers,
   writeCachedSettings,
-} from "./options";
+} from "@/queries/settings-cache";
 
 const storage = new Map<string, string>();
 

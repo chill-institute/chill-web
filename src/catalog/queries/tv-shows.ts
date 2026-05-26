@@ -18,12 +18,7 @@ export function useTVShowsQuery({
 }) {
   const api = useApi();
   const auth = useAuth();
-  const options = tvShowsQueryOptions(api, source);
-
-  return useQuery({
-    ...options,
-    enabled: auth.isAuthenticated && enabled && options.enabled,
-  });
+  return useQuery(tvShowsQueryOptions(api, source, auth.isAuthenticated && enabled));
 }
 
 export function useTVShowDetailQuery({
@@ -35,12 +30,7 @@ export function useTVShowDetailQuery({
 }) {
   const api = useApi();
   const auth = useAuth();
-  const options = tvShowDetailQueryOptions(api, imdbId);
-
-  return useQuery({
-    ...options,
-    enabled: auth.isAuthenticated && enabled && options.enabled,
-  });
+  return useQuery(tvShowDetailQueryOptions(api, imdbId, auth.isAuthenticated && enabled));
 }
 
 export function useTVShowSeasonQuery({
@@ -54,12 +44,9 @@ export function useTVShowSeasonQuery({
 }) {
   const api = useApi();
   const auth = useAuth();
-  const options = tvShowSeasonQueryOptions(api, imdbId, seasonNumber);
-
-  return useQuery({
-    ...options,
-    enabled: auth.isAuthenticated && enabled && options.enabled,
-  });
+  return useQuery(
+    tvShowSeasonQueryOptions(api, imdbId, seasonNumber, auth.isAuthenticated && enabled),
+  );
 }
 
 export function useTVShowSeasonDownloadsQuery({
@@ -73,10 +60,7 @@ export function useTVShowSeasonDownloadsQuery({
 }) {
   const api = useApi();
   const auth = useAuth();
-  const options = tvShowSeasonDownloadsQueryOptions(api, imdbId, seasonNumber);
-
-  return useQuery({
-    ...options,
-    enabled: auth.isAuthenticated && enabled && options.enabled,
-  });
+  return useQuery(
+    tvShowSeasonDownloadsQueryOptions(api, imdbId, seasonNumber, auth.isAuthenticated && enabled),
+  );
 }

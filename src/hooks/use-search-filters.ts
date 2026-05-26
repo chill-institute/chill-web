@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ChillSettings } from "@/lib/types";
 import { SortBy, SortDirection } from "@/lib/types";
@@ -11,31 +11,11 @@ export type FilterState = {
   sortDirection: ChillSettings["sortDirection"];
 };
 
-export type Action =
-  | { type: "SET_RESOLUTION"; value: FilterState["resolution"] }
-  | { type: "SET_CODEC"; value: FilterState["codec"] }
-  | { type: "SET_OTHER"; value: FilterState["other"] }
-  | { type: "SET_SORT"; value: FilterState["sortBy"] }
-  | { type: "TOGGLE_SORT_DIR" };
-
-function applyAction(state: FilterState, action: Action): FilterState {
-  switch (action.type) {
-    case "SET_RESOLUTION":
-      return { ...state, resolution: action.value };
-    case "SET_CODEC":
-      return { ...state, codec: action.value };
-    case "SET_OTHER":
-      return { ...state, other: action.value };
-    case "SET_SORT":
-      return { ...state, sortBy: action.value };
-    case "TOGGLE_SORT_DIR":
-      return {
-        ...state,
-        sortDirection:
-          state.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC,
-      };
-  }
-}
+type DirtyQuickFilters = {
+  resolution: boolean;
+  codec: boolean;
+  other: boolean;
+};
 
 const initialState: FilterState = {
   resolution: [],
@@ -43,6 +23,12 @@ const initialState: FilterState = {
   other: [],
   sortBy: SortBy.SEEDERS,
   sortDirection: SortDirection.DESC,
+};
+
+const cleanQuickFilters: DirtyQuickFilters = {
+  resolution: false,
+  codec: false,
+  other: false,
 };
 
 function toFilterState(settingsData: ChillSettings | undefined): FilterState {
@@ -59,18 +45,65 @@ function toFilterState(settingsData: ChillSettings | undefined): FilterState {
   };
 }
 
+export function syncFilterStateWithSettings(
+  state: FilterState,
+  settingsData: ChillSettings | undefined,
+  dirtyQuickFilters: DirtyQuickFilters,
+): FilterState {
+  const next = toFilterState(settingsData);
+  return {
+    ...next,
+    resolution: dirtyQuickFilters.resolution ? state.resolution : next.resolution,
+    codec: dirtyQuickFilters.codec ? state.codec : next.codec,
+    other: dirtyQuickFilters.other ? state.other : next.other,
+  };
+}
+
 export function useSearchFilters(settingsData: ChillSettings | undefined) {
   const [filters, setFilters] = useState<FilterState>(() => toFilterState(settingsData));
-  const [lastSeenSettings, setLastSeenSettings] = useState(settingsData);
+  const dirtyQuickFiltersRef = useRef<DirtyQuickFilters>(cleanQuickFilters);
 
-  if (settingsData !== lastSeenSettings) {
-    setLastSeenSettings(settingsData);
-    setFilters(toFilterState(settingsData));
+  useEffect(() => {
+    setFilters((prev) =>
+      syncFilterStateWithSettings(prev, settingsData, dirtyQuickFiltersRef.current),
+    );
+  }, [settingsData]);
+
+  function setResolution(resolution: FilterState["resolution"]): void {
+    dirtyQuickFiltersRef.current = {
+      ...dirtyQuickFiltersRef.current,
+      resolution: true,
+    };
+    setFilters((prev) => ({ ...prev, resolution }));
   }
 
-  function dispatch(action: Action): void {
-    setFilters((prev) => applyAction(prev, action));
+  function setCodec(codec: FilterState["codec"]): void {
+    dirtyQuickFiltersRef.current = {
+      ...dirtyQuickFiltersRef.current,
+      codec: true,
+    };
+    setFilters((prev) => ({ ...prev, codec }));
   }
 
-  return { filters, dispatch };
+  function setOther(other: FilterState["other"]): void {
+    dirtyQuickFiltersRef.current = {
+      ...dirtyQuickFiltersRef.current,
+      other: true,
+    };
+    setFilters((prev) => ({ ...prev, other }));
+  }
+
+  function setSortBy(sortBy: FilterState["sortBy"]): void {
+    setFilters((prev) => ({ ...prev, sortBy }));
+  }
+
+  function toggleSortDirection(): void {
+    setFilters((prev) => ({
+      ...prev,
+      sortDirection:
+        prev.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC,
+    }));
+  }
+
+  return { filters, setCodec, setOther, setResolution, setSortBy, toggleSortDirection };
 }

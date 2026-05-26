@@ -36,31 +36,19 @@ const PRIORITY_POSTER_COUNT = 5;
 
 type CatalogPageProps = {
   tab: CatalogTab;
-  source?: number;
 };
 
-export function CatalogPage({ tab, source }: CatalogPageProps) {
+export function CatalogPage({ tab }: CatalogPageProps) {
   const auth = useAuth();
   const navigate = useNavigate();
 
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
-  const effectiveMoviesSource =
-    tab === "movies" && source !== undefined ? source : appSettings?.moviesSource;
-  const effectiveTVShowsSource =
-    tab === "tv-shows" && source !== undefined ? source : appSettings?.tvShowsSource;
-
-  const isSourceParamOutOfSync =
-    configQuery.status === "success" &&
-    source !== undefined &&
-    ((tab === "movies" && appSettings?.moviesSource !== source) ||
-      (tab === "tv-shows" && appSettings?.tvShowsSource !== source));
+  const effectiveMoviesSource = appSettings?.moviesSource;
+  const effectiveTVShowsSource = appSettings?.tvShowsSource;
   const shouldFetchCatalog =
-    configQuery.status === "success" &&
-    !configQuery.isFetching &&
-    !isSourceParamOutOfSync &&
-    !saveConfigMutation.isPending;
+    configQuery.status === "success" && !configQuery.isFetching && !saveConfigMutation.isPending;
   const moviesQuery = useMoviesQuery({
     enabled: shouldFetchCatalog && tab === "movies",
     source: effectiveMoviesSource,

@@ -13,81 +13,62 @@ const emptySearch = {
 describe("computeFastestPhase", () => {
   it("stays idle while fastest mode has pending indexers and no quorum", () => {
     expect(
-      computeFastestPhase(
-        "idle",
-        {
-          ...emptySearch,
-          totalCount: 4,
-          nonEmptyResolvedCount: 1,
-          pendingCount: 3,
-          hasPending: true,
-        },
-        1,
-      ),
+      computeFastestPhase({
+        ...emptySearch,
+        results: [{ length: 1 }],
+        totalCount: 4,
+        nonEmptyResolvedCount: 1,
+        pendingCount: 3,
+        hasPending: true,
+      }),
     ).toBe("idle");
   });
 
   it("shows fastest results once enough indexers return useful rows", () => {
     expect(
-      computeFastestPhase(
-        "idle",
-        {
-          ...emptySearch,
-          results: [{ length: 1 }],
-          totalCount: 4,
-          nonEmptyResolvedCount: 2,
-          pendingCount: 2,
-          hasPending: true,
-        },
-        2,
-      ),
+      computeFastestPhase({
+        ...emptySearch,
+        results: [{ length: 1 }, { length: 1 }],
+        totalCount: 4,
+        nonEmptyResolvedCount: 2,
+        pendingCount: 2,
+        hasPending: true,
+      }),
     ).toBe("fastest");
   });
 
   it("moves from fastest to all when every indexer resolves", () => {
     expect(
-      computeFastestPhase(
-        "fastest",
-        {
-          ...emptySearch,
-          results: [{ length: 1 }],
-          totalCount: 3,
-          nonEmptyResolvedCount: 2,
-          pendingCount: 0,
-          hasPending: false,
-        },
-        2,
-      ),
+      computeFastestPhase({
+        ...emptySearch,
+        results: [{ length: 1 }, { length: 1 }],
+        totalCount: 3,
+        nonEmptyResolvedCount: 2,
+        pendingCount: 0,
+        hasPending: false,
+      }),
     ).toBe("all");
   });
 
   it("distinguishes all-done empty results from all-done populated results", () => {
     expect(
-      computeFastestPhase(
-        "idle",
-        {
-          ...emptySearch,
-          totalCount: 2,
-          pendingCount: 0,
-          hasPending: false,
-        },
-        0,
-      ),
+      computeFastestPhase({
+        ...emptySearch,
+        totalCount: 2,
+        pendingCount: 0,
+        hasPending: false,
+      }),
     ).toBe("empty");
 
     expect(
-      computeFastestPhase(
-        "idle",
-        {
-          ...emptySearch,
-          results: [{ length: 1 }],
-          totalCount: 2,
-          nonEmptyResolvedCount: 1,
-          pendingCount: 0,
-          hasPending: false,
-        },
-        1,
-      ),
+      computeFastestPhase({
+        ...emptySearch,
+        results: [{ length: 1 }],
+        totalCount: 2,
+        nonEmptyResolvedCount: 1,
+        pendingCount: 0,
+        hasPending: false,
+      }),
     ).toBe("all");
   });
 });

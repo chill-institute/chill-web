@@ -20,10 +20,9 @@ export const Route = createFileRoute("/movies")({
 });
 
 function MoviesLayout() {
-  const { source } = Route.useSearch();
   return (
     <>
-      <CatalogPage tab="movies" source={source} />
+      <CatalogPage tab="movies" />
       <Outlet />
     </>
   );

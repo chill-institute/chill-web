@@ -11,26 +11,15 @@ type SearchInfo = {
   hasPending: boolean;
 };
 
-export function computeFastestPhase(
-  current: FastestPhase,
-  search: SearchInfo,
-  resultsCount: number,
-): FastestPhase {
+export function computeFastestPhase(search: SearchInfo): FastestPhase {
   const allDone = search.totalCount > 0 && !search.hasPending;
   const threshold = Math.min(Math.ceil(search.totalCount / 2), 3);
+  const resultsCount = search.results.length;
 
-  if (current === "idle") {
-    if (allDone && resultsCount === 0) return "empty";
-    if (allDone && resultsCount > 0) return "all";
-    if (search.nonEmptyResolvedCount >= threshold && resultsCount > 0) return "fastest";
-    return "idle";
-  }
-
-  if (current === "fastest" && allDone) {
-    return "all";
-  }
-
-  return current;
+  if (allDone && resultsCount === 0) return "empty";
+  if (allDone && resultsCount > 0) return "all";
+  if (search.nonEmptyResolvedCount >= threshold && resultsCount > 0) return "fastest";
+  return "idle";
 }
 
 export function useFastestMode(
@@ -39,11 +28,8 @@ export function useFastestMode(
   searchState: SearchInfo,
 ) {
   const [showAllQuery, setShowAllQuery] = useState<string | null>(null);
-  const resultsCount = searchState.results.length;
   const automaticPhase =
-    isFastestMode && submittedQuery.length > 0
-      ? computeFastestPhase("idle", searchState, resultsCount)
-      : "idle";
+    isFastestMode && submittedQuery.length > 0 ? computeFastestPhase(searchState) : "idle";
   const phase =
     showAllQuery === submittedQuery && automaticPhase === "fastest" ? "all" : automaticPhase;
 

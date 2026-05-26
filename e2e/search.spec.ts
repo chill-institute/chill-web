@@ -421,6 +421,78 @@ test.describe("search page", () => {
     await expect(rows.nth(1)).toContainText("Beta Movie");
   });
 
+  test("changing sort keeps active quick filters applied", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const results = [
+      searchResult({
+        id: "r1",
+        title: "Alpha Movie 2160p",
+        seeders: 10n,
+        size: 3221225472n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+      searchResult({
+        id: "r2",
+        title: "Beta Movie 1080p",
+        seeders: 500n,
+        size: 1073741824n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+      searchResult({
+        id: "r3",
+        title: "Gamma Movie 2160p",
+        seeders: 100n,
+        size: 2147483648n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+    ];
+
+    await mockRpc(
+      allModeMethods({
+        Search: searchResponse("movie", results),
+      }),
+    );
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          userSettings({
+            searchResultDisplayBehavior: SearchResultDisplayBehavior.ALL,
+            sortBy: SortBy.SIZE,
+            sortDirection: SortDirection.DESC,
+          }),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(3);
+
+    await quickFilters.getByRole("checkbox", { name: "2160p" }).click();
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeChecked();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Gamma Movie 2160p");
+    await expect(rows.nth(1)).toContainText("Alpha Movie 2160p");
+
+    await authenticatedPage.locator("table thead button").filter({ hasText: "size" }).click();
+
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeChecked();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Alpha Movie 2160p");
+    await expect(rows.nth(1)).toContainText("Gamma Movie 2160p");
+    await expect(authenticatedPage.getByRole("row", { name: /Beta Movie 1080p/ })).toHaveCount(0);
+  });
+
   test("codec filter narrows results", async ({ authenticatedPage, mockRpc }) => {
     const results = [
       searchResult({

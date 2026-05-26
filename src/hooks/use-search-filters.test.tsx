@@ -10,7 +10,7 @@ import {
 import { describe, expect, it } from "vite-plus/test";
 import { renderToString } from "react-dom/server";
 
-import { useSearchFilters } from "./use-search-filters";
+import { syncFilterStateWithSettings, useSearchFilters } from "./use-search-filters";
 
 function SearchFiltersHarness({ settings }: { settings: Parameters<typeof useSearchFilters>[0] }) {
   const { filters } = useSearchFilters(settings);
@@ -49,5 +49,85 @@ describe("useSearchFilters", () => {
         sortDirection: SortDirection.ASC,
       }),
     );
+  });
+
+  it("keeps local quick filters when saved sort settings change", () => {
+    const state = {
+      resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+      codec: [],
+      other: [],
+      sortBy: SortBy.SEEDERS,
+      sortDirection: SortDirection.DESC,
+    };
+    const settings = {
+      ...create(SearchSettingsSchema, {
+        codecFilters: [],
+        disabledIndexerIds: [],
+        filterNastyResults: true,
+        filterResultsWithNoSeeders: false,
+        otherFilters: [],
+        rememberQuickFilters: false,
+        resolutionFilters: [],
+        searchResultDisplayBehavior: 2,
+        searchResultTitleBehavior: 2,
+        sortBy: SortBy.SIZE,
+        sortDirection: SortDirection.ASC,
+      }),
+      download: {},
+    };
+
+    expect(
+      syncFilterStateWithSettings(state, settings, {
+        resolution: true,
+        codec: false,
+        other: false,
+      }),
+    ).toEqual({
+      resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+      codec: [],
+      other: [],
+      sortBy: SortBy.SIZE,
+      sortDirection: SortDirection.ASC,
+    });
+  });
+
+  it("syncs untouched quick filters from newly loaded settings", () => {
+    const state = {
+      resolution: [],
+      codec: [],
+      other: [],
+      sortBy: SortBy.SEEDERS,
+      sortDirection: SortDirection.DESC,
+    };
+    const settings = {
+      ...create(SearchSettingsSchema, {
+        codecFilters: [CodecFilter.X265],
+        disabledIndexerIds: [],
+        filterNastyResults: true,
+        filterResultsWithNoSeeders: false,
+        otherFilters: [OtherFilter.HDR],
+        rememberQuickFilters: true,
+        resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+        searchResultDisplayBehavior: 2,
+        searchResultTitleBehavior: 2,
+        sortBy: SortBy.SIZE,
+        sortDirection: SortDirection.ASC,
+      }),
+      download: {},
+    };
+
+    expect(
+      syncFilterStateWithSettings(state, settings, {
+        resolution: false,
+        codec: false,
+        other: false,
+      }),
+    ).toEqual({
+      resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+      codec: [CodecFilter.X265],
+      other: [OtherFilter.HDR],
+      sortBy: SortBy.SIZE,
+      sortDirection: SortDirection.ASC,
+    });
   });
 });

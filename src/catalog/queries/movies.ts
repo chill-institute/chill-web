@@ -14,12 +14,7 @@ export function useMoviesQuery({
 }) {
   const api = useApi();
   const auth = useAuth();
-  const options = moviesQueryOptions(api, source);
-
-  return useQuery({
-    ...options,
-    enabled: auth.isAuthenticated && enabled && options.enabled,
-  });
+  return useQuery(moviesQueryOptions(api, source, auth.isAuthenticated && enabled));
 }
 
 export function useMovieSearchQuery({
@@ -31,10 +26,5 @@ export function useMovieSearchQuery({
 }) {
   const api = useApi();
   const auth = useAuth();
-  const options = movieSearchQueryOptions(api, movie);
-
-  return useQuery({
-    ...options,
-    enabled: auth.isAuthenticated && enabled && options.enabled,
-  });
+  return useQuery(movieSearchQueryOptions(api, movie, auth.isAuthenticated && enabled));
 }

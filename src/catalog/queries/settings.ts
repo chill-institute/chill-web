@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/auth";
 import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
 import type { UserSettings } from "@/catalog/lib/types";
 import { resetChangedCatalogSourceQueries } from "@/catalog/queries/cache";
-import { settingsQueryOptionsForApi, writeCachedSettings } from "@/catalog/queries/options";
+import { readCachedCatalogSettings, writeCachedSettings } from "@/queries/settings-cache";
 import {
   downloadFolderChanged,
   prepareSettingsSave,
@@ -16,13 +16,17 @@ import {
   type SettingsSaveContext,
   type SettingsUpdate,
 } from "@/queries/settings-mutation";
+import { userSettingsQueryOptions } from "@/queries/user-settings-options";
 
 export function useSettingsQuery() {
   const api = useApi();
   const auth = useAuth();
 
   return useQuery({
-    ...settingsQueryOptionsForApi(api),
+    ...userSettingsQueryOptions(api, {
+      read: readCachedCatalogSettings,
+      write: writeCachedSettings,
+    }),
     enabled: auth.isAuthenticated,
   });
 }

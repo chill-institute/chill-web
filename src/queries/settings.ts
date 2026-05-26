@@ -4,7 +4,7 @@ import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
 import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
 import type { UserSettings } from "@/lib/types";
-import { settingsQueryOptionsForApi, writeCachedSettings } from "@/queries/options";
+import { readCachedSearchSettings, writeCachedSettings } from "@/queries/settings-cache";
 import {
   downloadFolderChanged,
   prepareSettingsSave,
@@ -15,13 +15,17 @@ import {
   type SettingsSaveContext,
   type SettingsUpdate,
 } from "@/queries/settings-mutation";
+import { userSettingsQueryOptions } from "@/queries/user-settings-options";
 
 export function useSettingsQuery() {
   const api = useApi();
   const auth = useAuth();
 
   return useQuery({
-    ...settingsQueryOptionsForApi(api),
+    ...userSettingsQueryOptions(api, {
+      read: readCachedSearchSettings,
+      write: writeCachedSettings,
+    }),
     enabled: auth.isAuthenticated,
   });
 }

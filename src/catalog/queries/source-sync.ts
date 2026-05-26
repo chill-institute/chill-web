@@ -9,7 +9,8 @@ import {
   type CatalogAppSettings,
 } from "@/catalog/lib/types";
 import { resetChangedCatalogSourceQueries } from "@/catalog/queries/cache";
-import { settingsQueryOptions, writeCachedSettings } from "@/catalog/queries/options";
+import { settingsQueryOptions } from "@/catalog/queries/options";
+import { writeCachedSettings } from "@/queries/settings-cache";
 
 type CatalogSourceTab = "movies" | "tv-shows";
 

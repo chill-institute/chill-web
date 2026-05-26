@@ -4,7 +4,6 @@ import { useLocation } from "@tanstack/react-router";
 import { AppErrorBoundary } from "@/ui/components/app-error-boundary";
 import { AuthProvider } from "@/auth/auth";
 import { ChillApiProvider } from "@/lib/api";
-import { BackendHealthProvider } from "@/hooks/use-backend-unavailable";
 import { TooltipProvider } from "@/ui/components/ui/tooltip";
 import { RootContent } from "@/routes/-root-content";
 import { addAppBreadcrumb } from "@/lib/sentry";
@@ -26,9 +25,7 @@ function Root() {
       <AuthProvider>
         <ChillApiProvider>
           <TooltipProvider>
-            <BackendHealthProvider>
-              <RootContent />
-            </BackendHealthProvider>
+            <RootContent />
           </TooltipProvider>
         </ChillApiProvider>
       </AuthProvider>

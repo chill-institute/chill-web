@@ -19,13 +19,15 @@ import type { ChillApi } from "@/api/api";
 import {
   movieSearchQueryOptions,
   moviesQueryOptions,
-  readCachedSettings,
   tvShowDetailQueryOptions,
   tvShowSeasonDownloadsQueryOptions,
   tvShowSeasonQueryOptions,
   tvShowsQueryOptions,
-  writeCachedSettings,
 } from "./options";
+import {
+  readCachedCatalogSettings as readCachedSettings,
+  writeCachedSettings,
+} from "@/queries/settings-cache";
 
 const storage = new Map<string, string>();
 
