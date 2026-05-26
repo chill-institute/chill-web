@@ -43,7 +43,8 @@
     "tailwindcss": "^4.3.0",
     "ts-pattern": "^5.9.0",
     "valibot": "^1.4.0",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "workbox-window": "^7.4.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

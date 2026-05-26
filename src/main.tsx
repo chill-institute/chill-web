@@ -4,11 +4,14 @@ import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { registerSW } from "virtual:pwa-register";
 
 import { getRouter } from "./router";
 import { createSentryReactErrorHandler } from "./lib/sentry";
 import { queryClient } from "./query-client";
 import "./styles.css";
+
+registerSW({ immediate: true });
 
 const router = getRouter();
 

@@ -88,7 +88,7 @@ function createSentrySourceMapPlugin() {
 
 const sentrySourceMapPlugin = createSentrySourceMapPlugin();
 const uploadSentrySourceMaps = Boolean(sentrySourceMapPlugin);
-const pwaPrecachePatterns = ["index.html", "registerSW.js", "assets/**/*"];
+const pwaPrecachePatterns = ["index.html", "assets/**/*"];
 
 export default defineConfig({
   build: {
@@ -119,7 +119,7 @@ export default defineConfig({
     }),
     tailwindcss(),
     VitePWA({
-      injectRegister: "script-defer",
+      registerType: "autoUpdate",
       manifest: false,
       workbox: {
         cleanupOutdatedCaches: true,

@@ -55,7 +55,7 @@ test("keeps the service worker precache focused on the app shell", async ({ page
   const source = await serviceWorker.text();
 
   expect(source).toContain('url:"index.html"');
-  expect(source).toContain('url:"registerSW.js"');
+  expect(source).not.toContain("registerSW.js");
   expect(shellLogoPath).toMatch(/^\/assets\/.+\.png$/);
   expect(source).toContain(`url:"${shellLogoPath.slice(1)}"`);
   expect(source).toContain('url:"assets/');
