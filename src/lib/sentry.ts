@@ -13,10 +13,19 @@ function isSentryConfigured() {
   return Boolean(import.meta.env.VITE_PUBLIC_SENTRY_DSN);
 }
 
-function filterCrashReportingIntegrations<T extends { name: string }>(integrations: T[]) {
-  return integrations.filter(
-    (integration) => !disabledDefaultIntegrationNames.has(integration.name),
-  );
+function configureCrashReportingIntegrations<T extends { name: string }>(integrations: T[]) {
+  return integrations
+    .map((integration) => {
+      if (integration.name === "GlobalHandlers") {
+        return Sentry.globalHandlersIntegration({
+          onerror: true,
+          onunhandledrejection: false,
+        });
+      }
+
+      return integration;
+    })
+    .filter((integration) => !disabledDefaultIntegrationNames.has(integration.name));
 }
 
 function rememberSentryEventId(error: unknown, eventId: string) {
@@ -63,7 +72,7 @@ function initSentry() {
     enableLogs: false,
     enableMetrics: false,
     maxBreadcrumbs: 20,
-    integrations: filterCrashReportingIntegrations,
+    integrations: configureCrashReportingIntegrations,
     initialScope: {
       tags: {
         app: APP_NAME,
@@ -136,7 +145,7 @@ export {
   addAppBreadcrumb,
   captureAppException,
   createSentryReactErrorHandler,
-  filterCrashReportingIntegrations,
+  configureCrashReportingIntegrations,
   getSentryEventId,
   initSentry,
   keepAppBreadcrumbOnly,

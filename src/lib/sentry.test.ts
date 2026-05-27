@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  filterCrashReportingIntegrations,
+  configureCrashReportingIntegrations,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
 } from "./sentry";
 
-describe("filterCrashReportingIntegrations", () => {
-  it("removes default integrations that emit non-crash telemetry", () => {
-    const integrations = filterCrashReportingIntegrations([
-      { name: "GlobalHandlers" },
+describe("configureCrashReportingIntegrations", () => {
+  it("keeps global errors while disabling global unhandled rejections", () => {
+    const defaultGlobalHandlers = { name: "GlobalHandlers" };
+    const integrations = configureCrashReportingIntegrations([
+      defaultGlobalHandlers,
       { name: "Breadcrumbs" },
       { name: "BrowserSession" },
       { name: "Dedupe" },
@@ -19,6 +20,7 @@ describe("filterCrashReportingIntegrations", () => {
       "GlobalHandlers",
       "Dedupe",
     ]);
+    expect(integrations).not.toContain(defaultGlobalHandlers);
   });
 });
 
