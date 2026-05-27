@@ -3,13 +3,9 @@ import type { Breadcrumb, ErrorEvent } from "@sentry/react";
 import type { ErrorInfo } from "react";
 
 import { APP_NAME } from "./app-info";
-import { isAssetSkewReloadPending } from "./runtime-errors";
 
 const sentryEventIds = new WeakMap<object, string>();
 const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession"]);
-const ignoredBrowserCrashMessages = [
-  /^Invalid call to runtime\.sendMessage\(\)\. Tab not found\.$/,
-];
 
 type AppBreadcrumbData = Record<string, boolean | number | string | null | undefined>;
 
@@ -35,15 +31,6 @@ function getSentryEventId(error: unknown) {
   }
 
   return undefined;
-}
-
-function isExpectedRouteNotFound(error: unknown) {
-  return (
-    error !== null &&
-    typeof error === "object" &&
-    "isNotFound" in error &&
-    error.isNotFound === true
-  );
 }
 
 function keepAppBreadcrumbOnly(breadcrumb: Breadcrumb) {
@@ -75,7 +62,6 @@ function initSentry() {
     sendClientReports: false,
     enableLogs: false,
     enableMetrics: false,
-    ignoreErrors: ignoredBrowserCrashMessages,
     maxBreadcrumbs: 20,
     integrations: filterCrashReportingIntegrations,
     initialScope: {
@@ -88,25 +74,7 @@ function initSentry() {
   });
 }
 
-function isAssetSkewReloadEvent(event: ErrorEvent) {
-  const values = event.exception?.values ?? [];
-
-  return values.some((value) => {
-    const message = `${value.type ?? ""} ${value.value ?? ""}`.toLowerCase();
-    return (
-      message.includes("failed to fetch dynamically imported module") ||
-      message.includes("importing a module script failed") ||
-      message.includes("error loading dynamically imported module") ||
-      message.includes("unable to preload")
-    );
-  });
-}
-
 function sanitizeSentryEvent(event: ErrorEvent): ErrorEvent | null {
-  if (isAssetSkewReloadPending() && isAssetSkewReloadEvent(event)) {
-    return null;
-  }
-
   return {
     ...event,
     user: undefined,
@@ -120,8 +88,6 @@ function createSentryReactErrorHandler() {
   }
 
   return (error: unknown, info: ErrorInfo) => {
-    if (isExpectedRouteNotFound(error)) return;
-
     const eventId = Sentry.captureReactException(error, info);
 
     rememberSentryEventId(error, eventId);
@@ -140,8 +106,6 @@ function captureAppException(
     routePath?: string;
   } = {},
 ) {
-  if (isExpectedRouteNotFound(error)) return undefined;
-
   const existing = getSentryEventId(error);
   if (existing) return existing;
 
@@ -175,7 +139,6 @@ export {
   filterCrashReportingIntegrations,
   getSentryEventId,
   initSentry,
-  isExpectedRouteNotFound,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
 };

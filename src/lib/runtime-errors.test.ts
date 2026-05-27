@@ -2,9 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 
 import {
   handleVitePreloadError,
-  handleUnhandledRejection,
   isAbortLikeError,
-  isServiceWorkerRegistrationError,
   resetAssetSkewReloadGuardAfterReload,
 } from "./runtime-errors";
 
@@ -16,21 +14,6 @@ describe("isAbortLikeError", () => {
     expect(isAbortLikeError(new Error("Request canceled"))).toBe(true);
     expect(isAbortLikeError("operation cancelled")).toBe(true);
     expect(isAbortLikeError(new Error("provider unavailable"))).toBe(false);
-  });
-});
-
-describe("isServiceWorkerRegistrationError", () => {
-  it("recognizes generated service worker registration failures", () => {
-    const rejected = new Error("Rejected");
-    rejected.stack = "Error: Rejected\n    at /registerSW.js:1:98\n    at serviceWorker.register";
-
-    expect(isServiceWorkerRegistrationError(rejected)).toBe(true);
-    expect(
-      isServiceWorkerRegistrationError(
-        new TypeError("Script https://chill.institute/sw.js load failed"),
-      ),
-    ).toBe(true);
-    expect(isServiceWorkerRegistrationError(new Error("Rejected"))).toBe(false);
   });
 });
 
@@ -69,13 +52,18 @@ describe("setupRuntimeErrorHandlers", () => {
   });
 
   it("schedules the one-shot Vite preload recovery reload", () => {
-    handleVitePreloadError();
-    handleVitePreloadError();
+    const firstEvent = { preventDefault: vi.fn() };
+    const secondEvent = { preventDefault: vi.fn() };
+
+    handleVitePreloadError(firstEvent);
+    handleVitePreloadError(secondEvent);
 
     expect(replaceSpy).toHaveBeenCalledTimes(1);
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/movies\?__chill_reload=\d+$/,
     );
+    expect(firstEvent.preventDefault).toHaveBeenCalledTimes(1);
+    expect(secondEvent.preventDefault).not.toHaveBeenCalled();
   });
 
   it("still schedules the one-shot preload recovery when session storage is unavailable", () => {
@@ -110,10 +98,12 @@ describe("setupRuntimeErrorHandlers", () => {
 
   it("lets preload errors surface when the URL already carries the reload marker", () => {
     stubWindow("https://chill.institute/search?__chill_reload=123");
+    const event = { preventDefault: vi.fn() };
 
-    handleVitePreloadError();
+    handleVitePreloadError(event);
 
     expect(replaceSpy).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
   it("clears the Vite preload reload guard after a cache-busted reload succeeds", () => {
@@ -128,43 +118,5 @@ describe("setupRuntimeErrorHandlers", () => {
       "",
       new URL("https://chill.institute/movies?sort=recent"),
     );
-  });
-
-  it("prevents global reporting for unhandled abort rejections", () => {
-    let defaultPrevented = false;
-    let propagationStopped = false;
-
-    handleUnhandledRejection({
-      reason: new DOMException("The user aborted a request.", "AbortError"),
-      preventDefault() {
-        defaultPrevented = true;
-      },
-      stopImmediatePropagation() {
-        propagationStopped = true;
-      },
-    });
-
-    expect(defaultPrevented).toBe(true);
-    expect(propagationStopped).toBe(true);
-  });
-
-  it("prevents global reporting for generated service worker registration failures", () => {
-    const rejected = new Error("Rejected");
-    rejected.stack = "Error: Rejected\n    at /registerSW.js:1:98\n    at serviceWorker.register";
-    let defaultPrevented = false;
-    let propagationStopped = false;
-
-    handleUnhandledRejection({
-      reason: rejected,
-      preventDefault() {
-        defaultPrevented = true;
-      },
-      stopImmediatePropagation() {
-        propagationStopped = true;
-      },
-    });
-
-    expect(defaultPrevented).toBe(true);
-    expect(propagationStopped).toBe(true);
   });
 });

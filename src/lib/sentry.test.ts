@@ -1,12 +1,10 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   filterCrashReportingIntegrations,
-  isExpectedRouteNotFound,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
 } from "./sentry";
-import { handleVitePreloadError } from "./runtime-errors";
 
 describe("filterCrashReportingIntegrations", () => {
   it("removes default integrations that emit non-crash telemetry", () => {
@@ -53,20 +51,7 @@ describe("keepAppBreadcrumbOnly", () => {
   });
 });
 
-describe("isExpectedRouteNotFound", () => {
-  it("recognizes TanStack Router not-found control flow objects", () => {
-    expect(isExpectedRouteNotFound({ isNotFound: true })).toBe(true);
-    expect(isExpectedRouteNotFound({ isNotFound: false })).toBe(false);
-    expect(isExpectedRouteNotFound(new Error("boom"))).toBe(false);
-    expect(isExpectedRouteNotFound(null)).toBe(false);
-  });
-});
-
 describe("sanitizeSentryEvent", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("removes user and request details before sending browser crash events", () => {
     const event = sanitizeSentryEvent({
       type: undefined,
@@ -91,63 +76,5 @@ describe("sanitizeSentryEvent", () => {
     if (!event) throw new Error("expected sanitized event");
     expect(event.user).toBeUndefined();
     expect(event.request).toBeUndefined();
-  });
-
-  it("drops expected dynamic import errors after scheduling an asset-skew reload", () => {
-    vi.stubGlobal("window", {
-      sessionStorage: {
-        getItem: (key: string) => (key === "chill.asset-skew-reload.v1" ? "1" : null),
-      },
-    });
-
-    const event = sanitizeSentryEvent({
-      type: undefined,
-      exception: {
-        values: [
-          {
-            type: "TypeError",
-            value: "Failed to fetch dynamically imported module",
-          },
-        ],
-      },
-    });
-
-    expect(event).toBeNull();
-  });
-
-  it("drops expected dynamic import errors when storage is unavailable during recovery", () => {
-    const replace = vi.fn();
-
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://chill.institute/movies",
-        replace,
-      },
-      sessionStorage: {
-        getItem() {
-          throw new Error("storage blocked");
-        },
-        setItem() {
-          throw new Error("storage blocked");
-        },
-      },
-    });
-
-    handleVitePreloadError();
-
-    expect(replace).toHaveBeenCalledOnce();
-    expect(
-      sanitizeSentryEvent({
-        type: undefined,
-        exception: {
-          values: [
-            {
-              type: "TypeError",
-              value: "Failed to fetch dynamically imported module",
-            },
-          ],
-        },
-      }),
-    ).toBeNull();
   });
 });
