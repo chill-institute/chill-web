@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import type { ChillSettings } from "@/lib/types";
 import { SortBy, SortDirection } from "@/lib/types";
@@ -12,10 +12,19 @@ export type FilterState = {
 };
 
 type DirtyQuickFilters = {
-  resolution: boolean;
-  codec: boolean;
-  other: boolean;
+  searchKey: string;
+  resolution?: FilterState["resolution"];
+  codec?: FilterState["codec"];
+  other?: FilterState["other"];
 };
+
+type LocalSort = {
+  baseSettingsData: ChillSettings | undefined;
+  sortBy: FilterState["sortBy"];
+  sortDirection: FilterState["sortDirection"];
+};
+
+type LocalSortPatch = Pick<LocalSort, "sortBy" | "sortDirection">;
 
 const initialState: FilterState = {
   resolution: [],
@@ -25,85 +34,85 @@ const initialState: FilterState = {
   sortDirection: SortDirection.DESC,
 };
 
-const cleanQuickFilters: DirtyQuickFilters = {
-  resolution: false,
-  codec: false,
-  other: false,
+const emptyQuickFilters = {
+  resolution: [],
+  codec: [],
+  other: [],
 };
 
-function toFilterState(settingsData: ChillSettings | undefined): FilterState {
-  if (!settingsData) {
-    return initialState;
+function savedQuickFilters(settingsData: ChillSettings | undefined) {
+  if (!settingsData?.rememberQuickFilters) {
+    return emptyQuickFilters;
   }
-
   return {
     resolution: settingsData.resolutionFilters,
     codec: settingsData.codecFilters,
     other: settingsData.otherFilters,
-    sortBy: settingsData.sortBy,
-    sortDirection: settingsData.sortDirection,
   };
 }
 
-export function syncFilterStateWithSettings(
-  state: FilterState,
+export function filterStateForSearch(
   settingsData: ChillSettings | undefined,
-  dirtyQuickFilters: DirtyQuickFilters,
+  searchKey: string,
+  localQuickFilters: DirtyQuickFilters | null,
+  localSort: LocalSort | null = null,
 ): FilterState {
-  const next = toFilterState(settingsData);
+  const quickFilters =
+    localQuickFilters?.searchKey === searchKey
+      ? {
+          ...savedQuickFilters(settingsData),
+          ...localQuickFilters,
+        }
+      : savedQuickFilters(settingsData);
+  const activeLocalSort =
+    localSort &&
+    (settingsData === localSort.baseSettingsData ||
+      (settingsData?.sortBy === localSort.sortBy &&
+        settingsData.sortDirection === localSort.sortDirection));
+
   return {
-    ...next,
-    resolution: dirtyQuickFilters.resolution ? state.resolution : next.resolution,
-    codec: dirtyQuickFilters.codec ? state.codec : next.codec,
-    other: dirtyQuickFilters.other ? state.other : next.other,
+    resolution: quickFilters.resolution,
+    codec: quickFilters.codec,
+    other: quickFilters.other,
+    sortBy: activeLocalSort ? localSort.sortBy : (settingsData?.sortBy ?? initialState.sortBy),
+    sortDirection: activeLocalSort
+      ? localSort.sortDirection
+      : (settingsData?.sortDirection ?? initialState.sortDirection),
   };
 }
 
-export function useSearchFilters(settingsData: ChillSettings | undefined) {
-  const [filters, setFilters] = useState<FilterState>(() => toFilterState(settingsData));
-  const dirtyQuickFiltersRef = useRef<DirtyQuickFilters>(cleanQuickFilters);
+function nextLocalQuickFilters(
+  previous: DirtyQuickFilters | null,
+  searchKey: string,
+  patch: Partial<Pick<FilterState, "resolution" | "codec" | "other">>,
+): DirtyQuickFilters {
+  return {
+    ...(previous?.searchKey === searchKey ? previous : null),
+    searchKey,
+    ...patch,
+  };
+}
 
-  useEffect(() => {
-    setFilters((prev) =>
-      syncFilterStateWithSettings(prev, settingsData, dirtyQuickFiltersRef.current),
-    );
-  }, [settingsData]);
+export function useSearchFilters(settingsData: ChillSettings | undefined, searchKey = "") {
+  const [localQuickFilters, setLocalQuickFilters] = useState<DirtyQuickFilters | null>(null);
+  const [localSort, setLocalSort] = useState<LocalSort | null>(null);
+  const filters = filterStateForSearch(settingsData, searchKey, localQuickFilters, localSort);
 
   function setResolution(resolution: FilterState["resolution"]): void {
-    dirtyQuickFiltersRef.current = {
-      ...dirtyQuickFiltersRef.current,
-      resolution: true,
-    };
-    setFilters((prev) => ({ ...prev, resolution }));
+    setLocalQuickFilters((prev) => nextLocalQuickFilters(prev, searchKey, { resolution }));
   }
 
   function setCodec(codec: FilterState["codec"]): void {
-    dirtyQuickFiltersRef.current = {
-      ...dirtyQuickFiltersRef.current,
-      codec: true,
-    };
-    setFilters((prev) => ({ ...prev, codec }));
+    setLocalQuickFilters((prev) => nextLocalQuickFilters(prev, searchKey, { codec }));
   }
 
   function setOther(other: FilterState["other"]): void {
-    dirtyQuickFiltersRef.current = {
-      ...dirtyQuickFiltersRef.current,
-      other: true,
-    };
-    setFilters((prev) => ({ ...prev, other }));
+    setLocalQuickFilters((prev) => nextLocalQuickFilters(prev, searchKey, { other }));
   }
 
-  function setSortBy(sortBy: FilterState["sortBy"]): void {
-    setFilters((prev) => ({ ...prev, sortBy }));
+  function setSort(sort: LocalSortPatch): void {
+    setLocalSort({ ...sort, baseSettingsData: settingsData });
   }
 
-  function toggleSortDirection(): void {
-    setFilters((prev) => ({
-      ...prev,
-      sortDirection:
-        prev.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC,
-    }));
-  }
-
-  return { filters, setCodec, setOther, setResolution, setSortBy, toggleSortDirection };
+  return { filters, setCodec, setOther, setResolution, setSort };
 }

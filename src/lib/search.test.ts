@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { ReleaseInfoSchema, SearchResultSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
 
-import { formatSearchResults, normalizeQuery } from "./search";
+import { defaultSortDirection, formatSearchResults, normalizeQuery } from "./search";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
 
 function release(overrides: Partial<{ resolution: string; codec: string; hdr: string }>) {
@@ -112,6 +112,19 @@ describe("formatSearchResults", () => {
     );
 
     expect(formatted.map((result) => result.id)).toEqual(["h264"]);
+  });
+});
+
+describe("defaultSortDirection", () => {
+  it("starts text sorts ascending", () => {
+    expect(defaultSortDirection(SortBy.TITLE)).toBe(SortDirection.ASC);
+    expect(defaultSortDirection(SortBy.SOURCE)).toBe(SortDirection.ASC);
+  });
+
+  it("starts ranked sorts descending", () => {
+    expect(defaultSortDirection(SortBy.SEEDERS)).toBe(SortDirection.DESC);
+    expect(defaultSortDirection(SortBy.SIZE)).toBe(SortDirection.DESC);
+    expect(defaultSortDirection(SortBy.UPLOADED_AT)).toBe(SortDirection.DESC);
   });
 });
 

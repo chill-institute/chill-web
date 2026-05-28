@@ -15,6 +15,19 @@ export function normalizeQuery(query: string): string {
   return trimmed;
 }
 
+export function defaultSortDirection(sortBy: SortBy): SortDirection {
+  switch (sortBy) {
+    case SortBy.TITLE:
+    case SortBy.SOURCE:
+      return SortDirection.ASC;
+    case SortBy.SEEDERS:
+    case SortBy.SIZE:
+    case SortBy.UPLOADED_AT:
+    default:
+      return SortDirection.DESC;
+  }
+}
+
 function applyResolution(result: SearchResult, filter: ResolutionFilter) {
   const resolution = effectiveInfo(result).resolution.toLowerCase();
   if (!resolution) return false;

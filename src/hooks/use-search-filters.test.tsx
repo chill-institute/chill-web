@@ -1,4 +1,4 @@
-import { create } from "@bufbuild/protobuf";
+import { create, type MessageInitShape } from "@bufbuild/protobuf";
 import {
   CodecFilter,
   OtherFilter,
@@ -10,34 +10,51 @@ import {
 import { describe, expect, it } from "vite-plus/test";
 import { renderToString } from "react-dom/server";
 
-import { syncFilterStateWithSettings, useSearchFilters } from "./use-search-filters";
+import { filterStateForSearch, useSearchFilters } from "./use-search-filters";
 
-function SearchFiltersHarness({ settings }: { settings: Parameters<typeof useSearchFilters>[0] }) {
-  const { filters } = useSearchFilters(settings);
+const defaultSettings = {
+  codecFilters: [],
+  disabledIndexerIds: [],
+  filterNastyResults: true,
+  filterResultsWithNoSeeders: false,
+  otherFilters: [],
+  rememberQuickFilters: false,
+  resolutionFilters: [],
+  searchResultDisplayBehavior: 2,
+  searchResultTitleBehavior: 2,
+  sortBy: SortBy.SEEDERS,
+  sortDirection: SortDirection.DESC,
+} satisfies MessageInitShape<typeof SearchSettingsSchema>;
+
+function makeSettings(overrides: MessageInitShape<typeof SearchSettingsSchema> = {}) {
+  return {
+    ...create(SearchSettingsSchema, { ...defaultSettings, ...overrides }),
+    download: {},
+  };
+}
+
+function SearchFiltersHarness({
+  savedSettings,
+}: {
+  savedSettings: Parameters<typeof useSearchFilters>[0];
+}) {
+  const { filters } = useSearchFilters(savedSettings);
 
   return <pre>{JSON.stringify(filters)}</pre>;
 }
 
 describe("useSearchFilters", () => {
   it("initializes from saved settings available on first render", () => {
-    const settings = {
-      ...create(SearchSettingsSchema, {
-        codecFilters: [CodecFilter.X265],
-        disabledIndexerIds: [],
-        filterNastyResults: true,
-        filterResultsWithNoSeeders: false,
-        otherFilters: [OtherFilter.HDR],
-        rememberQuickFilters: true,
-        resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-        searchResultDisplayBehavior: 2,
-        searchResultTitleBehavior: 2,
-        sortBy: SortBy.TITLE,
-        sortDirection: SortDirection.ASC,
-      }),
-      download: {},
-    };
+    const saved = makeSettings({
+      codecFilters: [CodecFilter.X265],
+      otherFilters: [OtherFilter.HDR],
+      rememberQuickFilters: true,
+      resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+      sortBy: SortBy.TITLE,
+      sortDirection: SortDirection.ASC,
+    });
 
-    const html = renderToString(<SearchFiltersHarness settings={settings} />);
+    const html = renderToString(<SearchFiltersHarness savedSettings={saved} />);
     const serialized = html.replace("<pre>", "").replace("</pre>", "").replaceAll("&quot;", '"');
 
     expect(serialized).toBe(
@@ -52,37 +69,13 @@ describe("useSearchFilters", () => {
   });
 
   it("keeps local quick filters when saved sort settings change", () => {
-    const state = {
+    const localQuickFilters = {
+      searchKey: "movie",
       resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-      codec: [],
-      other: [],
-      sortBy: SortBy.SEEDERS,
-      sortDirection: SortDirection.DESC,
     };
-    const settings = {
-      ...create(SearchSettingsSchema, {
-        codecFilters: [],
-        disabledIndexerIds: [],
-        filterNastyResults: true,
-        filterResultsWithNoSeeders: false,
-        otherFilters: [],
-        rememberQuickFilters: false,
-        resolutionFilters: [],
-        searchResultDisplayBehavior: 2,
-        searchResultTitleBehavior: 2,
-        sortBy: SortBy.SIZE,
-        sortDirection: SortDirection.ASC,
-      }),
-      download: {},
-    };
+    const saved = makeSettings({ sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC });
 
-    expect(
-      syncFilterStateWithSettings(state, settings, {
-        resolution: true,
-        codec: false,
-        other: false,
-      }),
-    ).toEqual({
+    expect(filterStateForSearch(saved, "movie", localQuickFilters)).toEqual({
       resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
       codec: [],
       other: [],
@@ -92,42 +85,110 @@ describe("useSearchFilters", () => {
   });
 
   it("syncs untouched quick filters from newly loaded settings", () => {
-    const state = {
-      resolution: [],
-      codec: [],
-      other: [],
-      sortBy: SortBy.SEEDERS,
-      sortDirection: SortDirection.DESC,
-    };
-    const settings = {
-      ...create(SearchSettingsSchema, {
-        codecFilters: [CodecFilter.X265],
-        disabledIndexerIds: [],
-        filterNastyResults: true,
-        filterResultsWithNoSeeders: false,
-        otherFilters: [OtherFilter.HDR],
-        rememberQuickFilters: true,
-        resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-        searchResultDisplayBehavior: 2,
-        searchResultTitleBehavior: 2,
-        sortBy: SortBy.SIZE,
-        sortDirection: SortDirection.ASC,
-      }),
-      download: {},
-    };
+    const saved = makeSettings({
+      codecFilters: [CodecFilter.X265],
+      otherFilters: [OtherFilter.HDR],
+      rememberQuickFilters: true,
+      resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+      sortBy: SortBy.SIZE,
+      sortDirection: SortDirection.ASC,
+    });
 
-    expect(
-      syncFilterStateWithSettings(state, settings, {
-        resolution: false,
-        codec: false,
-        other: false,
-      }),
-    ).toEqual({
+    expect(filterStateForSearch(saved, "movie", null)).toEqual({
       resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
       codec: [CodecFilter.X265],
       other: [OtherFilter.HDR],
       sortBy: SortBy.SIZE,
       sortDirection: SortDirection.ASC,
+    });
+  });
+
+  it("resets temporary quick filters for a new search without changing sort", () => {
+    const localQuickFilters = {
+      searchKey: "movie",
+      resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+    };
+    const saved = makeSettings({ sortBy: SortBy.TITLE, sortDirection: SortDirection.ASC });
+
+    expect(filterStateForSearch(saved, "show", localQuickFilters)).toEqual({
+      resolution: [],
+      codec: [],
+      other: [],
+      sortBy: SortBy.TITLE,
+      sortDirection: SortDirection.ASC,
+    });
+  });
+
+  it("keeps untouched remembered quick-filter categories synced from settings", () => {
+    const localQuickFilters = {
+      searchKey: "movie",
+      resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+    };
+    const saved = makeSettings({
+      codecFilters: [CodecFilter.X265],
+      otherFilters: [OtherFilter.HDR],
+      rememberQuickFilters: true,
+    });
+
+    expect(filterStateForSearch(saved, "movie", localQuickFilters)).toEqual({
+      resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+      codec: [CodecFilter.X265],
+      other: [OtherFilter.HDR],
+      sortBy: SortBy.SEEDERS,
+      sortDirection: SortDirection.DESC,
+    });
+  });
+
+  it("ignores saved quick filters when remembering is disabled", () => {
+    const saved = makeSettings({
+      codecFilters: [CodecFilter.X265],
+      otherFilters: [OtherFilter.HDR],
+      resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+    });
+
+    expect(filterStateForSearch(saved, "movie", null)).toEqual({
+      resolution: [],
+      codec: [],
+      other: [],
+      sortBy: SortBy.SEEDERS,
+      sortDirection: SortDirection.DESC,
+    });
+  });
+
+  it("uses local sort before the saved preference catches up", () => {
+    const saved = makeSettings();
+
+    expect(
+      filterStateForSearch(saved, "movie", null, {
+        baseSettingsData: saved,
+        sortBy: SortBy.TITLE,
+        sortDirection: SortDirection.ASC,
+      }),
+    ).toEqual({
+      resolution: [],
+      codec: [],
+      other: [],
+      sortBy: SortBy.TITLE,
+      sortDirection: SortDirection.ASC,
+    });
+  });
+
+  it("lets changed saved sort settings override stale local sort", () => {
+    const baseSettings = makeSettings();
+    const resetSettings = makeSettings({ sortBy: SortBy.SIZE });
+
+    expect(
+      filterStateForSearch(resetSettings, "movie", null, {
+        baseSettingsData: baseSettings,
+        sortBy: SortBy.TITLE,
+        sortDirection: SortDirection.ASC,
+      }),
+    ).toEqual({
+      resolution: [],
+      codec: [],
+      other: [],
+      sortBy: SortBy.SIZE,
+      sortDirection: SortDirection.DESC,
     });
   });
 });

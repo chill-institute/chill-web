@@ -8,6 +8,7 @@ import {
 } from "./support/seeds";
 import {
   CodecFilter,
+  ResolutionFilter,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
   SortBy,
@@ -371,6 +372,7 @@ test.describe("search page", () => {
     // No results, no empty state, no loading — just idle
     await expect(authenticatedPage.locator("table")).toBeHidden();
     await expect(authenticatedPage.getByText("we found absolutely nothing")).toBeHidden();
+    await expect(authenticatedPage.getByRole("group", { name: /quick filters/i })).toBeHidden();
   });
 
   test("column header sort changes result order", async ({ authenticatedPage, mockRpc }) => {
@@ -419,6 +421,60 @@ test.describe("search page", () => {
 
     await expect(rows.nth(0)).toContainText("Alpha Movie");
     await expect(rows.nth(1)).toContainText("Beta Movie");
+  });
+
+  test("mobile text sorts start ascending", async ({ authenticatedPage, mockRpc }) => {
+    const results = [
+      searchResult({
+        id: "r1",
+        title: "Zulu Movie 1080p",
+        seeders: 500n,
+        indexer: "yts",
+        source: "ZuluSource",
+      }),
+      searchResult({
+        id: "r2",
+        title: "Alpha Movie 1080p",
+        seeders: 10n,
+        indexer: "yts",
+        source: "MiddleSource",
+      }),
+      searchResult({
+        id: "r3",
+        title: "Beta Movie 1080p",
+        seeders: 50n,
+        indexer: "yts",
+        source: "AlphaSource",
+      }),
+    ];
+
+    await authenticatedPage.setViewportSize({ width: 393, height: 852 });
+    await mockRpc(
+      allModeMethods({
+        Search: searchResponse("movie", results),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    const rows = authenticatedPage.getByRole("list", { name: "Search results" }).locator("li");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toContainText("Zulu Movie 1080p");
+
+    await authenticatedPage.getByRole("button", { name: "name" }).click();
+
+    await expect(rows.nth(0)).toContainText("Alpha Movie 1080p");
+    await expect(rows.nth(1)).toContainText("Beta Movie 1080p");
+    await expect(rows.nth(2)).toContainText("Zulu Movie 1080p");
+
+    await authenticatedPage.getByRole("button", { name: "source" }).click();
+
+    await expect(rows.nth(0)).toContainText("Beta Movie 1080p");
+    await expect(rows.nth(0)).toContainText("AlphaSource");
+    await expect(rows.nth(1)).toContainText("Alpha Movie 1080p");
+    await expect(rows.nth(1)).toContainText("MiddleSource");
+    await expect(rows.nth(2)).toContainText("Zulu Movie 1080p");
+    await expect(rows.nth(2)).toContainText("ZuluSource");
   });
 
   test("changing sort keeps active quick filters applied", async ({
@@ -491,6 +547,124 @@ test.describe("search page", () => {
     await expect(rows.nth(0)).toContainText("Alpha Movie 2160p");
     await expect(rows.nth(1)).toContainText("Gamma Movie 2160p");
     await expect(authenticatedPage.getByRole("row", { name: /Beta Movie 1080p/ })).toHaveCount(0);
+  });
+
+  test("new search clears temporary quick filters when remembering is off", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(allModeMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+      const body = route.request().postDataJSON();
+      const query = body?.query === "show" ? "show" : "movie";
+      const results =
+        query === "show"
+          ? [
+              searchResult({
+                id: "show-1",
+                title: "Show Alpha 1080p",
+                seeders: 100n,
+                indexer: "yts",
+                source: "YTS",
+              }),
+              searchResult({
+                id: "show-2",
+                title: "Show Beta 720p",
+                seeders: 50n,
+                indexer: "yts",
+                source: "YTS",
+              }),
+            ]
+          : [
+              searchResult({
+                id: "movie-1",
+                title: "Movie Alpha 2160p",
+                seeders: 100n,
+                indexer: "yts",
+                source: "YTS",
+              }),
+              searchResult({
+                id: "movie-2",
+                title: "Movie Beta 1080p",
+                seeders: 50n,
+                indexer: "yts",
+                source: "YTS",
+              }),
+            ];
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(searchResponse(query, results)),
+      });
+    });
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(2);
+
+    await quickFilters.getByRole("checkbox", { name: "2160p" }).click();
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeChecked();
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).toContainText("Movie Alpha 2160p");
+
+    await authenticatedPage.getByRole("textbox", { name: "Search query" }).fill("show");
+    await authenticatedPage.getByRole("button", { name: "and chill" }).click();
+
+    await expect(authenticatedPage).toHaveURL(/\/search\?q=show$/);
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).not.toBeChecked();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Show Alpha 1080p");
+    await expect(rows.nth(1)).toContainText("Show Beta 720p");
+  });
+
+  test("remembered quick filters persist across searches", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const results = [
+      searchResult({
+        id: "r1",
+        title: "Alpha Movie 2160p",
+        seeders: 100n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+      searchResult({
+        id: "r2",
+        title: "Beta Movie 1080p",
+        seeders: 50n,
+        indexer: "yts",
+        source: "YTS",
+      }),
+    ];
+
+    await mockRpc(
+      allModeMethods({
+        GetUserSettings: userSettings({
+          rememberQuickFilters: true,
+          resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+        }),
+        Search: searchResponse("movie", results),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeChecked();
+    await expect(rows).toHaveCount(1);
+
+    await authenticatedPage.getByRole("textbox", { name: "Search query" }).fill("another movie");
+    await authenticatedPage.getByRole("button", { name: "and chill" }).click();
+
+    await expect(authenticatedPage).toHaveURL(/\/search\?q=another\+movie$/);
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeChecked();
+    await expect(rows).toHaveCount(1);
   });
 
   test("codec filter narrows results", async ({ authenticatedPage, mockRpc }) => {

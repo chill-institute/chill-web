@@ -12,7 +12,7 @@ import { useAuth } from "@/auth/auth";
 import { EmptyState } from "@/ui/components/empty-state";
 import { useFastestMode } from "@/hooks/use-fastest-mode";
 import { useSearchFilters } from "@/hooks/use-search-filters";
-import { formatSearchResults, normalizeQuery } from "@/lib/search";
+import { defaultSortDirection, formatSearchResults, normalizeQuery } from "@/lib/search";
 import {
   applyChillSettingsPatch,
   SearchResultDisplayBehavior,
@@ -38,8 +38,13 @@ export function SearchPage() {
     () => (configQuery.data ? toChillSettings(configQuery.data) : undefined),
     [configQuery.data],
   );
-  const { filters, setCodec, setOther, setResolution, setSortBy, toggleSortDirection } =
-    useSearchFilters(appSettings);
+  const {
+    filters,
+    setCodec,
+    setOther,
+    setResolution,
+    setSort: setLocalSort,
+  } = useSearchFilters(appSettings, submittedQuery);
   const saveConfigMutation = useSaveSettings();
 
   function patchConfig(patch: Partial<ChillSettings>) {
@@ -104,12 +109,13 @@ export function SearchPage() {
     if (filters.sortBy === nextSortBy) {
       const nextDirection =
         filters.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
-      toggleSortDirection();
+      setLocalSort({ sortBy: nextSortBy, sortDirection: nextDirection });
       patchConfig({ sortDirection: nextDirection });
       return;
     }
-    setSortBy(nextSortBy);
-    patchConfig({ sortBy: nextSortBy });
+    const nextDirection = defaultSortDirection(nextSortBy);
+    setLocalSort({ sortBy: nextSortBy, sortDirection: nextDirection });
+    patchConfig({ sortBy: nextSortBy, sortDirection: nextDirection });
   }
 
   if (!auth.isAuthenticated) {
@@ -178,22 +184,24 @@ export function SearchPage() {
       return (
         <section data-page="search" className="flex flex-col gap-3 lg:gap-6">
           <h1 className="sr-only">Search results</h1>
-          <SearchFilterBar
-            filters={filters}
-            onResolutionChange={(next) => {
-              setResolution(next);
-              if (effective.rememberQuickFilters) patchConfig({ resolutionFilters: next });
-            }}
-            onCodecChange={(next) => {
-              setCodec(next);
-              if (effective.rememberQuickFilters) patchConfig({ codecFilters: next });
-            }}
-            onOtherChange={(next) => {
-              setOther(next);
-              if (effective.rememberQuickFilters) patchConfig({ otherFilters: next });
-            }}
-            onSort={setSort}
-          />
+          {submittedQuery.length > 0 ? (
+            <SearchFilterBar
+              filters={filters}
+              onResolutionChange={(next) => {
+                setResolution(next);
+                if (effective.rememberQuickFilters) patchConfig({ resolutionFilters: next });
+              }}
+              onCodecChange={(next) => {
+                setCodec(next);
+                if (effective.rememberQuickFilters) patchConfig({ codecFilters: next });
+              }}
+              onOtherChange={(next) => {
+                setOther(next);
+                if (effective.rememberQuickFilters) patchConfig({ otherFilters: next });
+              }}
+              onSort={setSort}
+            />
+          ) : null}
 
           {renderContent}
 
