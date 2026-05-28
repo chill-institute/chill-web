@@ -16,6 +16,28 @@ test.describe("sign-in page", () => {
     await expect(page.getByRole("button", { name: "sign in again" })).toBeVisible();
   });
 
+  test("shows put.io verification failure with retry and help actions", async ({ page }) => {
+    await page.goto("/sign-in?error=PutioVerificationFailed");
+
+    await expect(page.getByText("did not confirm an active account")).toBeVisible();
+    await expect(page.getByRole("button", { name: "learn more" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "try again" })).toBeVisible();
+  });
+
+  for (const [errorCode, expectedMessage] of [
+    ["OAuthDenied", "put.io sign-in was cancelled"],
+    ["AuthFlowExpired", "that sign-in link expired"],
+    ["OAuthExchangeFailed", "put.io did not finish the sign-in handshake"],
+    ["PutioUnavailable", "we could not reach put.io"],
+  ] as const) {
+    test(`shows ${errorCode} callback failure message`, async ({ page }) => {
+      await page.goto(`/sign-in?error=${errorCode}`);
+
+      await expect(page.getByText(expectedMessage)).toBeVisible();
+      await expect(page.getByRole("button", { name: "try again" })).toBeVisible();
+    });
+  }
+
   test("shows generic error for unknown error type", async ({ page }) => {
     await page.goto("/sign-in?error=SomethingWrong");
 
@@ -82,6 +104,36 @@ test.describe("sign-in page", () => {
     expect(url.searchParams.get("q")).toBe("aurora");
   });
 
+  test("public sign-in error URLs do not clear an existing session", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+    await authenticatedPage.goto("/sign-in?error=SomethingWrong");
+
+    await expect(authenticatedPage.getByText("something went sideways")).toBeVisible();
+    await authenticatedPage.goto("/settings");
+    await expect(authenticatedPage.getByRole("heading", { name: "Settings" })).toBeVisible();
+  });
+
+  test("retrying a public sign-in error URL preserves an existing session", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+    await authenticatedPage.goto("/sign-in?error=SomethingWrong");
+    await authenticatedPage.route(/\/auth\/putio\/start/, (route) =>
+      route.fulfill({ status: 200, body: "" }),
+    );
+
+    const requestPromise = authenticatedPage.waitForRequest(/\/auth\/putio\/start/);
+    await authenticatedPage.getByRole("button", { name: "try again" }).click();
+    await requestPromise;
+
+    await authenticatedPage.goto("/settings");
+    await expect(authenticatedPage.getByRole("heading", { name: "Settings" })).toBeVisible();
+  });
+
   test("auth success returns to a stored search callback without router URL errors", async ({
     authenticatedPage,
     mockRpc,
@@ -102,6 +154,88 @@ test.describe("sign-in page", () => {
     await expect
       .poll(() => authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")))
       .toBe("oauth-token");
+  });
+
+  test("auth success sends callback failures to sign-in UI", async ({ page }) => {
+    await page.goto("/");
+    await page.evaluate(() => {
+      window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");
+      window.sessionStorage.setItem("chill.auth_callback", "/settings");
+    });
+
+    await page.goto(
+      "/auth/success?nonce=good-nonce&error=PutioVerificationFailed&request_id=req-123",
+    );
+
+    await page.waitForURL("**/sign-in**");
+    const url = new URL(page.url());
+    expect(url.pathname).toBe("/sign-in");
+    expect(url.searchParams.get("error")).toBe("PutioVerificationFailed");
+    expect(url.searchParams.get("callbackUrl")).toBe("/settings");
+    await expect(page.getByText("did not confirm an active account")).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem("chill.auth_token")))
+      .toBeNull();
+  });
+
+  test("auth success failure shows the error instead of reusing an old token", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+    await authenticatedPage.goto("/");
+    await authenticatedPage.evaluate(() => {
+      window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");
+      window.sessionStorage.setItem("chill.auth_callback", "/settings");
+    });
+
+    await authenticatedPage.goto("/auth/success?nonce=good-nonce&error=PutioVerificationFailed");
+
+    await authenticatedPage.waitForURL("**/sign-in**");
+    const url = new URL(authenticatedPage.url());
+    expect(url.pathname).toBe("/sign-in");
+    expect(url.searchParams.get("error")).toBe("PutioVerificationFailed");
+    await expect(authenticatedPage.getByText("did not confirm an active account")).toBeVisible();
+    await expect
+      .poll(() => authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")))
+      .toBeNull();
+
+    await authenticatedPage.goto("/settings");
+    await authenticatedPage.waitForURL("**/sign-in**");
+    expect(new URL(authenticatedPage.url()).pathname).toBe("/sign-in");
+  });
+
+  test("retrying a trusted callback failure returns to the stored callback after OAuth success", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({});
+    await authenticatedPage.goto("/");
+    await authenticatedPage.evaluate(() => {
+      window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");
+      window.sessionStorage.setItem("chill.auth_callback", "/settings");
+    });
+
+    await authenticatedPage.goto("/auth/success?nonce=good-nonce&error=PutioVerificationFailed");
+    await authenticatedPage.waitForURL("**/sign-in**");
+    expect(new URL(authenticatedPage.url()).searchParams.get("callbackUrl")).toBe("/settings");
+    await authenticatedPage.route(/\/auth\/putio\/start/, (route) =>
+      route.fulfill({ status: 200, body: "" }),
+    );
+
+    const requestPromise = authenticatedPage.waitForRequest(/\/auth\/putio\/start/);
+    await authenticatedPage.getByRole("button", { name: "try again" }).click();
+    const startURL = (await requestPromise).url();
+    const successURL = new URL(startURL).searchParams.get("success_url");
+    expect(successURL).not.toBeNull();
+
+    await authenticatedPage.goto(`${successURL}#auth_token=retry-token`);
+
+    await authenticatedPage.waitForURL("**/settings");
+    await expect(authenticatedPage.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect
+      .poll(() => authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")))
+      .toBe("retry-token");
   });
 });
 

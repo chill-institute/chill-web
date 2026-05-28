@@ -1,7 +1,16 @@
-import { SESSION_EXPIRED_ERROR } from "@/api/auth-errors";
+import {
+  AUTH_FLOW_EXPIRED_ERROR,
+  OAUTH_DENIED_ERROR,
+  OAUTH_EXCHANGE_FAILED_ERROR,
+  PUTIO_UNAVAILABLE_ERROR,
+  PUTIO_VERIFICATION_FAILED_ERROR,
+  SESSION_EXPIRED_ERROR,
+  UNKNOWN_AUTH_ERROR,
+} from "@/api/auth-errors";
 
 const AUTH_TOKEN_STORAGE_KEY = "chill.auth_token";
 const AUTH_CALLBACK_STORAGE_KEY = "chill.auth_callback";
+const AUTH_CALLBACK_FAILURE_STORAGE_KEY = "chill.auth_callback_failure";
 const AUTH_NONCE_STORAGE_KEY = "chill.auth_nonce";
 const AUTH_REDIRECT_STORAGE_KEY = "chill.auth_redirect";
 const AUTH_NONCE_QUERY_PARAM = "nonce";
@@ -12,6 +21,10 @@ const AUTH_ROUTE_PREFIX = "/auth/";
 type AuthRedirectSearch = {
   error: string | undefined;
   callbackUrl: string | undefined;
+};
+
+type AuthCallbackFailure = AuthRedirectSearch & {
+  requestId: string | undefined;
 };
 
 function readStoredToken() {
@@ -42,6 +55,7 @@ function consumePendingCallbackURL() {
 function clearStoredAuthState() {
   window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+  window.sessionStorage.removeItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
 }
@@ -155,6 +169,53 @@ function readAuthTokenFromLocation(location: Pick<Location, "hash">): string {
   return (fragment.get("auth_token") ?? "").trim();
 }
 
+function normalizeCallbackError(raw: null | string | undefined): string {
+  switch (raw?.trim()) {
+    case AUTH_FLOW_EXPIRED_ERROR:
+    case OAUTH_DENIED_ERROR:
+    case OAUTH_EXCHANGE_FAILED_ERROR:
+    case PUTIO_UNAVAILABLE_ERROR:
+    case PUTIO_VERIFICATION_FAILED_ERROR:
+      return raw.trim();
+    default:
+      return UNKNOWN_AUTH_ERROR;
+  }
+}
+
+function consumeCallbackFailure(): AuthCallbackFailure | null {
+  const searchParams = new URLSearchParams(window.location.search);
+  const rawError = searchParams.get("error")?.trim() ?? "";
+  if (!rawError) {
+    return null;
+  }
+
+  const nonceMatched = consumeAuthNonce(window.location);
+  const error = nonceMatched ? normalizeCallbackError(rawError) : UNKNOWN_AUTH_ERROR;
+  const requestId = searchParams.get("request_id")?.trim() || undefined;
+  const callbackUrl = nonceMatched
+    ? (normalizeCallbackPath(consumePendingCallbackURL()) ?? undefined)
+    : undefined;
+  if (nonceMatched) {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    window.sessionStorage.setItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY, "1");
+  } else {
+    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+  }
+  window.history.replaceState(null, "", "/auth/success");
+
+  return {
+    callbackUrl,
+    error,
+    requestId,
+  };
+}
+
+function consumeCallbackFailureAuthReset(): boolean {
+  const shouldReset = window.sessionStorage.getItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY) === "1";
+  window.sessionStorage.removeItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY);
+  return shouldReset;
+}
+
 function consumeCallbackToken(): string | null {
   if (!consumeAuthNonce(window.location)) {
     window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
@@ -189,6 +250,8 @@ export {
   buildSessionExpiredSignInPath,
   clearPendingAuthRedirectSearch,
   clearStoredAuthState,
+  consumeCallbackFailure,
+  consumeCallbackFailureAuthReset,
   consumeCallbackToken,
   consumePendingCallbackURL,
   authCallbackHref,

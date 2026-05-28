@@ -12,6 +12,7 @@ import {
   readAuthTokenFromLocation,
   storePendingCallbackURL,
 } from "./auth";
+import { consumeCallbackFailure, consumeCallbackFailureAuthReset } from "./auth-storage";
 
 function createMapStorage() {
   const storage = new Map<string, string>();
@@ -306,6 +307,90 @@ describe("consumeCallbackToken", () => {
 
     expect(consumeCallbackToken()).toBe("/search?q=aurora");
     expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+  });
+});
+
+describe("consumeCallbackFailure", () => {
+  it("returns a callback failure and preserves the stored callback", () => {
+    withWindowLocation(
+      "https://chill.institute/auth/success?nonce=ok&error=PutioVerificationFailed&request_id=req-123",
+    );
+    window.sessionStorage.setItem("chill.auth_nonce", "ok");
+    window.sessionStorage.setItem("chill.auth_callback", "/search?q=aurora");
+    window.localStorage.setItem("chill.auth_token", "old-token");
+
+    expect(consumeCallbackFailure()).toEqual({
+      callbackUrl: "/search?q=aurora",
+      error: "PutioVerificationFailed",
+      requestId: "req-123",
+    });
+    expect(window.localStorage.getItem("chill.auth_token")).toBeNull();
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+    expect(consumeCallbackFailureAuthReset()).toBe(true);
+    expect(consumeCallbackFailureAuthReset()).toBe(false);
+  });
+
+  it("consumes a matching nonce when present", () => {
+    withWindowLocation("https://chill.institute/auth/success?nonce=ok&error=PutioUnavailable");
+    window.sessionStorage.setItem("chill.auth_nonce", "ok");
+
+    expect(consumeCallbackFailure()).toEqual({
+      callbackUrl: undefined,
+      error: "PutioUnavailable",
+      requestId: undefined,
+    });
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBeNull();
+  });
+
+  it("returns unknown error when a stored nonce mismatches", () => {
+    withWindowLocation(
+      "https://chill.institute/auth/success?nonce=wrong&error=PutioVerificationFailed",
+    );
+    window.sessionStorage.setItem("chill.auth_nonce", "expected");
+    window.sessionStorage.setItem("chill.auth_callback", "/settings");
+    window.localStorage.setItem("chill.auth_token", "old-token");
+
+    expect(consumeCallbackFailure()).toEqual({
+      callbackUrl: undefined,
+      error: "UnknownError",
+      requestId: undefined,
+    });
+    expect(window.localStorage.getItem("chill.auth_token")).toBe("old-token");
+    expect(window.sessionStorage.getItem("chill.auth_nonce")).toBeNull();
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+    expect(consumeCallbackFailureAuthReset()).toBe(false);
+  });
+
+  it("returns unknown error when no nonce was stored", () => {
+    withWindowLocation("https://chill.institute/auth/success?error=PutioVerificationFailed");
+    window.sessionStorage.setItem("chill.auth_callback", "/settings");
+    window.localStorage.setItem("chill.auth_token", "old-token");
+
+    expect(consumeCallbackFailure()).toEqual({
+      callbackUrl: undefined,
+      error: "UnknownError",
+      requestId: undefined,
+    });
+    expect(window.localStorage.getItem("chill.auth_token")).toBe("old-token");
+    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
+    expect(consumeCallbackFailureAuthReset()).toBe(false);
+  });
+
+  it("normalizes unexpected callback failure codes", () => {
+    withWindowLocation("https://chill.institute/auth/success?nonce=ok&error=raw_backend_error");
+    window.sessionStorage.setItem("chill.auth_nonce", "ok");
+
+    expect(consumeCallbackFailure()).toEqual({
+      callbackUrl: undefined,
+      error: "UnknownError",
+      requestId: undefined,
+    });
+  });
+
+  it("returns null when no failure is present", () => {
+    withWindowLocation("https://chill.institute/auth/success");
+
+    expect(consumeCallbackFailure()).toBeNull();
   });
 });
 
