@@ -1,8 +1,9 @@
 import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
-import { type PropsWithChildren, useEffect, useRef, useState } from "react";
+import { type PropsWithChildren, useRef, useState } from "react";
 
 import { Button } from "@/ui/components/ui/button";
 import { Spinner } from "@/ui/components/ui/spinner";
+import { useMountEffect } from "@/ui/hooks/use-effects";
 
 import { useApi } from "../api-context";
 import { toErrorMessage } from "../errors";
@@ -28,13 +29,10 @@ export function AddTransferButton({
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(
-    () => () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    },
-    [],
-  );
+  useMountEffect(() => () => {
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+  });
 
   const phase = viewInPutio ? "view" : status;
   const { icon, text } = (() => {

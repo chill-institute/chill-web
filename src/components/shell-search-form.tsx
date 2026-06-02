@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
 
@@ -8,6 +8,7 @@ import { Field, FieldLabel } from "@/ui/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/ui/components/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/ui/tooltip";
 import { normalizeQuery } from "@/lib/search";
+import { useMountEffect } from "@/ui/hooks/use-effects";
 
 export function ShellSearchForm({
   focusOnMount = false,
@@ -23,15 +24,27 @@ export function ShellSearchForm({
   const value = draft?.base === initialQuery ? draft.value : initialQuery;
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
+  const focusedRef = useRef(false);
 
-  useEffect(() => {
+  function setInputFocused(next: boolean) {
+    focusedRef.current = next;
+    setFocused(next);
+  }
+
+  useMountEffect(() => {
     if (!focusOnMount) return;
     inputRef.current?.focus({ preventScroll: true });
-  }, [focusOnMount]);
+  });
 
-  useEffect(() => {
+  useMountEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "/" && !focused && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      if (
+        event.key === "/" &&
+        !focusedRef.current &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
         const target = event.target instanceof HTMLElement ? event.target : null;
         const tag = target?.tagName?.toLowerCase();
         const editable =
@@ -40,13 +53,13 @@ export function ShellSearchForm({
         event.preventDefault();
         inputRef.current?.focus();
       }
-      if (event.key === "Escape" && focused) {
+      if (event.key === "Escape" && focusedRef.current) {
         inputRef.current?.blur();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [focused]);
+  });
 
   const isTouchDevice = useMemo(
     () =>
@@ -127,8 +140,8 @@ export function ShellSearchForm({
               name="q"
               aria-label={label ? undefined : "Search query"}
               value={value}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               onChange={(event) => setDraft({ base: initialQuery, value: event.target.value })}
             />
             {trailingAddon}

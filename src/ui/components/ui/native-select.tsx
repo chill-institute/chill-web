@@ -1,9 +1,9 @@
-import * as React from "react";
 import { ChevronDownIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 
 import { cn } from "../../lib/cn";
 
-type NativeSelectProps = React.ComponentProps<"select"> & {
+type NativeSelectProps = ComponentProps<"select"> & {
   wrapperClassName?: string;
 };
 

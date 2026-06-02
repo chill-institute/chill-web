@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { SignInPage } from "@/auth/components/sign-in-page";
-import { signInSearchSchema } from "@/routes/-search-params";
+import { signInRouteOptions } from "@/auth/route-options/sign-in";
 
-export const Route = createFileRoute("/sign-in")({
-  validateSearch: signInSearchSchema,
-  component: SignInPage,
-});
+export const Route = createFileRoute("/sign-in")(signInRouteOptions);

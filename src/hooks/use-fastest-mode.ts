@@ -1,61 +1,198 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useRef, useState } from "react";
 
-type FastestPhase = "idle" | "fastest" | "all" | "empty";
+type FastestState<T> =
+  | { query: string; tag: "all" }
+  | { query: string; tag: "empty" }
+  | { tag: "idle" }
+  | { query: string; tag: "loading" }
+  | {
+      availableCount: number;
+      pendingCount: number;
+      query: string;
+      results: readonly T[];
+      tag: "preview";
+    };
 
-type SearchInfo = {
-  results: { length: number };
+type FastestIntent = { tag: "auto" } | { generation: number; query: string; tag: "showAll" };
+type FastestToastIntent = { query: string; tag: "showAll" };
+
+type FastestToastAction = { intent: FastestToastIntent; label: string };
+
+type FastestToast = {
+  action: FastestToastAction;
+  id: string;
+  kind: "default" | "loading";
+  message: string;
+};
+
+type SearchInfo<T> = {
+  results: readonly T[];
   totalCount: number;
   nonEmptyResolvedCount: number;
   pendingCount: number;
   hasPending: boolean;
 };
 
-export function computeFastestPhase(search: SearchInfo): FastestPhase {
-  const allDone = search.totalCount > 0 && !search.hasPending;
-  const threshold = Math.min(Math.ceil(search.totalCount / 2), 3);
-  const resultsCount = search.results.length;
+type FastestSnapshot<T> = {
+  query: string;
+  results: readonly T[];
+  sourceKey: string;
+};
 
-  if (allDone && resultsCount === 0) return "empty";
-  if (allDone && resultsCount > 0) return "all";
-  if (search.nonEmptyResolvedCount >= threshold && resultsCount > 0) return "fastest";
-  return "idle";
+type FastestStateInput<T> = {
+  enabled: boolean;
+  generation: number;
+  intent: FastestIntent;
+  query: string;
+  search: SearchInfo<T>;
+  sourceKey: string;
+  snapshot: FastestSnapshot<T> | null;
+};
+
+type FastestModel<T> = {
+  snapshot: FastestSnapshot<T> | null;
+  state: FastestState<T>;
+};
+
+function hasPreviewQuorum<T>(search: SearchInfo<T>): boolean {
+  const threshold = Math.min(Math.ceil(search.totalCount / 2), 3);
+  return search.nonEmptyResolvedCount >= threshold && search.results.length > 0;
 }
 
-export function useFastestMode(
-  isFastestMode: boolean,
-  submittedQuery: string,
-  searchState: SearchInfo,
-) {
-  const [showAllQuery, setShowAllQuery] = useState<string | null>(null);
-  const automaticPhase =
-    isFastestMode && submittedQuery.length > 0 ? computeFastestPhase(searchState) : "idle";
-  const phase =
-    showAllQuery === submittedQuery && automaticPhase === "fastest" ? "all" : automaticPhase;
+export function deriveFastestModel<T>({
+  enabled,
+  generation,
+  intent,
+  query,
+  search,
+  sourceKey,
+  snapshot,
+}: FastestStateInput<T>): FastestModel<T> {
+  if (!enabled || query.length === 0) {
+    return { snapshot: null, state: { tag: "idle" } };
+  }
 
-  useEffect(() => {
-    if (phase !== "fastest") {
-      return;
-    }
+  if (intent.tag === "showAll" && intent.query === query && intent.generation === generation) {
+    return { snapshot: null, state: { query, tag: "all" } };
+  }
 
-    const toastId = toast.loading(
-      `Fetching more from ${searchState.pendingCount} indexer${
-        searchState.pendingCount > 1 ? "s" : ""
-      }`,
-      {
-        duration: Number.POSITIVE_INFINITY,
-        position: "bottom-center",
-        action: {
-          label: "Update",
-          onClick: () => setShowAllQuery(submittedQuery),
-        },
+  if (snapshot?.query === query && snapshot.sourceKey === sourceKey) {
+    return {
+      snapshot,
+      state: {
+        availableCount: search.results.length,
+        pendingCount: search.pendingCount,
+        query,
+        results: snapshot.results,
+        tag: "preview",
       },
-    );
-
-    return () => {
-      toast.dismiss(toastId);
     };
-  }, [phase, searchState.pendingCount, submittedQuery]);
+  }
 
-  return phase;
+  const allDone = search.totalCount > 0 && !search.hasPending;
+  if (allDone && search.results.length === 0) {
+    return { snapshot: null, state: { query, tag: "empty" } };
+  }
+  if (allDone && search.results.length > 0) {
+    return { snapshot: null, state: { query, tag: "all" } };
+  }
+
+  if (!hasPreviewQuorum(search)) {
+    return {
+      snapshot: null,
+      state: search.hasPending ? { query, tag: "loading" } : { tag: "idle" },
+    };
+  }
+
+  const preview = {
+    query,
+    results: search.results,
+    sourceKey,
+  };
+
+  return {
+    snapshot: preview,
+    state: {
+      availableCount: search.results.length,
+      pendingCount: search.pendingCount,
+      query,
+      results: preview.results,
+      tag: "preview",
+    },
+  };
+}
+
+export function getFastestToast<T>(state: FastestState<T>): FastestToast | null {
+  if (state.tag !== "preview") return null;
+
+  const hiddenCount = state.availableCount - state.results.length;
+  if (hiddenCount <= 0) return null;
+
+  if (state.pendingCount === 0) {
+    return {
+      action: {
+        intent: { query: state.query, tag: "showAll" },
+        label: "Update",
+      },
+      id: "fastest-mode-search",
+      kind: "default",
+      message: `Found ${hiddenCount} more ${hiddenCount === 1 ? "result" : "results"}`,
+    };
+  }
+
+  return {
+    action: {
+      intent: { query: state.query, tag: "showAll" },
+      label: "Update",
+    },
+    id: "fastest-mode-search",
+    kind: "loading",
+    message: `Fetching more from ${state.pendingCount} indexer${
+      state.pendingCount === 1 ? "" : "s"
+    }`,
+  };
+}
+
+function getFastestResults<T>(state: FastestState<T>, currentResults: readonly T[]) {
+  return state.tag === "preview" ? state.results : currentResults;
+}
+
+export function useFastestMode<T>(
+  enabled: boolean,
+  query: string,
+  search: SearchInfo<T>,
+  sourceKey: string,
+) {
+  const [intent, setIntent] = useState<FastestIntent>({ tag: "auto" });
+  const snapshotRef = useRef<FastestSnapshot<T> | null>(null);
+  const generationRef = useRef({ generation: 0, query, sourceKey });
+  if (generationRef.current.query !== query || generationRef.current.sourceKey !== sourceKey) {
+    generationRef.current = {
+      generation: generationRef.current.generation + 1,
+      query,
+      sourceKey,
+    };
+  }
+  const generation = generationRef.current.generation;
+  const model = deriveFastestModel({
+    enabled,
+    generation,
+    intent,
+    query,
+    search,
+    sourceKey,
+    snapshot: snapshotRef.current,
+  });
+  snapshotRef.current = model.snapshot;
+
+  const dispatch = useCallback((nextIntent: FastestToastIntent) => {
+    setIntent({ ...nextIntent, generation: generationRef.current.generation });
+  }, []);
+
+  return {
+    dispatch,
+    results: getFastestResults(model.state, search.results),
+    state: model.state,
+    toast: getFastestToast(model.state),
+  };
 }

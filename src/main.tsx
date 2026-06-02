@@ -1,19 +1,23 @@
 import "./telemetry";
 
-import React, { Suspense, lazy } from "react";
+import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { registerSW } from "virtual:pwa-register";
 
 import { getRouter } from "./router";
-import { createSentryReactErrorHandler } from "./lib/sentry";
+import { addAppBreadcrumb, createSentryReactErrorHandler } from "./lib/sentry";
 import { queryClient } from "./query-client";
 import "./styles.css";
 
 registerSW({ immediate: true });
 
 const router = getRouter();
+router.subscribe("onResolved", (event) => {
+  if (!event.pathChanged) return;
+  addAppBreadcrumb("route", { path: event.toLocation.pathname });
+});
 
 const Devtools = import.meta.env.DEV
   ? lazy(async () => {
@@ -32,7 +36,7 @@ createRoot(container, {
   onRecoverableError: createSentryReactErrorHandler(),
   onUncaughtError: createSentryReactErrorHandler(),
 }).render(
-  <React.StrictMode>
+  <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} context={{ queryClient }} />
       {Devtools ? (
@@ -41,5 +45,5 @@ createRoot(container, {
         </Suspense>
       ) : null}
     </QueryClientProvider>
-  </React.StrictMode>,
+  </StrictMode>,
 );

@@ -59,12 +59,7 @@ const signOutSearchSchema = v.object({
   error: stringSearchParam,
 });
 
-function validateSignOutSearch(search: unknown): SignOutSearch {
-  const result = v.safeParse(signOutSearchSchema, search);
-  return result.success ? result.output : {};
-}
-
-type SignOutSearch = v.InferOutput<typeof signOutSearchSchema>;
+type SignInSearch = v.InferOutput<typeof signInSearchSchema>;
 
 export {
   movieCatalogSearchSchema,
@@ -73,5 +68,5 @@ export {
   signOutSearchSchema,
   tvShowDetailSearchSchema,
   tvShowsCatalogSearchSchema,
-  validateSignOutSearch,
 };
+export type { SignInSearch };

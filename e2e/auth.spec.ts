@@ -200,9 +200,16 @@ test.describe("sign-in page", () => {
       .poll(() => authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")))
       .toBeNull();
 
-    await authenticatedPage.goto("/settings");
+    await authenticatedPage.evaluate(() => {
+      window.history.pushState(null, "", "/settings");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
     await authenticatedPage.waitForURL("**/sign-in**");
     expect(new URL(authenticatedPage.url()).pathname).toBe("/sign-in");
+
+    await authenticatedPage.goto("/settings");
+    await authenticatedPage.waitForURL("**/sign-in**");
+    expect(new URL(authenticatedPage.url()).searchParams.get("callbackUrl")).toBe("/settings");
   });
 
   test("retrying a trusted callback failure returns to the stored callback after OAuth success", async ({

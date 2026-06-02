@@ -1,8 +1,9 @@
 import { Toaster as Sonner } from "sonner";
+import type { ComponentProps } from "react";
 
 import { useResolvedTheme } from "../../hooks/use-resolved-theme";
 
-type ToasterProps = React.ComponentProps<typeof Sonner>;
+type ToasterProps = ComponentProps<typeof Sonner>;
 
 export function Toaster(props: ToasterProps) {
   const theme = useResolvedTheme();

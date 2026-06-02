@@ -89,7 +89,7 @@ function compareValues(a: SearchResult, b: SearchResult, sortBy: SortBy) {
 }
 
 export function formatSearchResults(
-  results: SearchResult[],
+  results: readonly SearchResult[],
   resolutionFilters: ResolutionFilter[],
   codecFilters: CodecFilter[],
   otherFilters: OtherFilter[],

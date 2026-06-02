@@ -24,6 +24,7 @@ import { combineQueries } from "@/queries/combine";
 import { useIndexersQuery } from "@/queries/indexers";
 import { useSearchQueries } from "@/queries/search";
 import { useSaveSettings, useSettingsQuery } from "@/queries/settings";
+import { useSonnerToastDescriptor } from "@/ui/hooks/use-sonner-toast";
 
 const routeApi = getRouteApi("/search");
 
@@ -58,13 +59,21 @@ export function SearchPage() {
       (indexer) => indexer.enabled && !disabled.has(indexer.id),
     );
   }, [indexersQuery.data, appSettings?.disabledIndexerIds]);
+  const enabledIndexerKey = useMemo(
+    () => JSON.stringify(enabledIndexers.map((indexer) => indexer.id).sort()),
+    [enabledIndexers],
+  );
 
   const searchState = useSearchQueries(submittedQuery, enabledIndexers);
+  const behavior = appSettings?.searchResultDisplayBehavior;
+  const isFastestMode = behavior === SearchResultDisplayBehavior.FASTEST;
+  const fastestMode = useFastestMode(isFastestMode, submittedQuery, searchState, enabledIndexerKey);
+  const displayedResults = isFastestMode ? fastestMode.results : searchState.results;
 
   const formattedResults = useMemo(
     () =>
       formatSearchResults(
-        searchState.results,
+        displayedResults,
         filters.resolution,
         filters.codec,
         filters.other,
@@ -72,7 +81,7 @@ export function SearchPage() {
         filters.sortDirection,
       ),
     [
-      searchState.results,
+      displayedResults,
       filters.resolution,
       filters.codec,
       filters.other,
@@ -81,9 +90,42 @@ export function SearchPage() {
     ],
   );
 
-  const behavior = appSettings?.searchResultDisplayBehavior;
-  const isFastestMode = behavior === SearchResultDisplayBehavior.FASTEST;
-  const fastestPhase = useFastestMode(isFastestMode, submittedQuery, searchState);
+  const fastestToastActionLabel = fastestMode.toast?.action.label ?? null;
+  const fastestToastIntentQuery = fastestMode.toast?.action.intent.query ?? null;
+  const fastestToastId = fastestMode.toast?.id ?? null;
+  const fastestToastKind = fastestMode.toast?.kind ?? null;
+  const fastestToastMessage = fastestMode.toast?.message ?? null;
+  const dispatchFastestIntent = fastestMode.dispatch;
+  const fastestToastDescriptor = useMemo(() => {
+    if (
+      !fastestToastActionLabel ||
+      !fastestToastIntentQuery ||
+      !fastestToastId ||
+      !fastestToastKind ||
+      !fastestToastMessage
+    ) {
+      return null;
+    }
+    return {
+      action: {
+        label: fastestToastActionLabel,
+        onClick: () => dispatchFastestIntent({ query: fastestToastIntentQuery, tag: "showAll" }),
+      },
+      id: fastestToastId,
+      kind: fastestToastKind,
+      message: fastestToastMessage,
+      position: "bottom-center" as const,
+    };
+  }, [
+    dispatchFastestIntent,
+    fastestToastActionLabel,
+    fastestToastId,
+    fastestToastIntentQuery,
+    fastestToastKind,
+    fastestToastMessage,
+  ]);
+
+  useSonnerToastDescriptor(fastestToastDescriptor);
 
   type RenderPhase = "idle" | "loading" | "results" | "empty" | "filter-empty";
 
@@ -91,12 +133,12 @@ export function SearchPage() {
     if (submittedQuery.length === 0) return "idle";
 
     if (isFastestMode) {
-      if (fastestPhase === "idle" && searchState.hasPending) return "loading";
-      if (fastestPhase === "fastest" || fastestPhase === "all") {
-        if (formattedResults.length === 0 && searchState.results.length > 0) return "filter-empty";
+      if (fastestMode.state.tag === "loading") return "loading";
+      if (fastestMode.state.tag === "preview" || fastestMode.state.tag === "all") {
+        if (formattedResults.length === 0 && displayedResults.length > 0) return "filter-empty";
         if (formattedResults.length > 0) return "results";
       }
-      if (fastestPhase === "empty") return "empty";
+      if (fastestMode.state.tag === "empty") return "empty";
       return "idle";
     }
 

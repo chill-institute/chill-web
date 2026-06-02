@@ -101,10 +101,41 @@ export default defineConfig({
     ignorePatterns: ["src/routeTree.gen.ts", "dist/**"],
   },
   lint: {
+    plugins: ["eslint", "unicorn", "typescript", "oxc", "react"],
     options: {
       typeAware: true,
       typeCheck: true,
     },
+    rules: {
+      "react/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "react",
+              importNames: ["useEffect", "*"],
+              message:
+                "Use declarative React patterns first. For rare lifecycle work, use src/ui/hooks/use-effects; import named/type members from react instead of * as React.",
+            },
+          ],
+        },
+      ],
+    },
+    overrides: [
+      {
+        files: ["src/ui/hooks/use-effects.ts"],
+        rules: {
+          "no-restricted-imports": "off",
+        },
+      },
+      {
+        files: ["src/ui/hooks/use-sonner-toast.ts"],
+        rules: {
+          "no-restricted-imports": "off",
+        },
+      },
+    ],
   },
   test: {
     include: ["src/**/*.{test,spec}.{ts,tsx}"],

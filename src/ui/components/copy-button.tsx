@@ -1,7 +1,8 @@
 import { Clipboard, ClipboardCheck, ClipboardX } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { cn } from "../lib/cn";
+import { useMountEffect } from "../hooks/use-effects";
 import { Button } from "./ui/button";
 
 type CopyButtonProps = {
@@ -14,12 +15,9 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(
-    () => () => {
-      if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
-    },
-    [],
-  );
+  useMountEffect(() => () => {
+    if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+  });
 
   const scheduleReset = () => {
     if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);

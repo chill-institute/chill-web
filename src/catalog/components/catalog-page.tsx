@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { match } from "ts-pattern";
 
@@ -18,7 +18,6 @@ import { SignInRedirect } from "@/auth/components/sign-in-redirect";
 import { useAuth } from "@/auth/auth";
 import { instituteLogoUrl } from "@/ui/lib/brand-assets";
 
-import { writeLastTab } from "@/catalog/hooks/use-last-tab";
 import { useMoviesQuery } from "@/catalog/queries/movies";
 import { useSaveSettings, useSettingsQuery } from "@/catalog/queries/settings";
 import { useTVShowsQuery } from "@/catalog/queries/tv-shows";
@@ -57,10 +56,6 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     enabled: shouldFetchCatalog && tab === "tv-shows",
     source: effectiveTVShowsSource,
   });
-
-  useEffect(() => {
-    writeLastTab(tab);
-  }, [tab]);
 
   function patchConfig(patch: Partial<CatalogAppSettings>) {
     if (!configQuery.data) return;
@@ -170,7 +165,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     .exhaustive();
 }
 
-function HomeShell({ tab, children }: { tab: CatalogTab; children: React.ReactNode }) {
+function HomeShell({ tab, children }: { tab: CatalogTab; children: ReactNode }) {
   const brand = useMemo(() => <InstituteBrand />, []);
   const tabs = useMemo(() => <InstituteTabs active={tab} />, [tab]);
   const right = useMemo(() => <ShellSettingsMenu />, []);
@@ -302,7 +297,7 @@ function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentPr
     .exhaustive();
 }
 
-function PosterGrid({ children }: { children: React.ReactNode }) {
+function PosterGrid({ children }: { children: ReactNode }) {
   return (
     <div className="grid grid-cols-2 gap-3 pb-8 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
       {children}
@@ -310,7 +305,7 @@ function PosterGrid({ children }: { children: React.ReactNode }) {
   );
 }
 
-function staggerDelay(index: number): React.CSSProperties {
+function staggerDelay(index: number): CSSProperties {
   const ms = Math.min(index * 25, 350);
   return { animationDelay: `${ms}ms` };
 }

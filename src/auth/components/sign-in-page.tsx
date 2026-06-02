@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { ExternalLink, Loader } from "lucide-react";
 
 import { AuthPage } from "@/ui/components/auth-page";
@@ -15,18 +15,13 @@ import {
   UNKNOWN_AUTH_ERROR,
 } from "@/api/auth-errors";
 import { useGetPutioStartURL } from "@/auth/api-context";
-import {
-  authCallbackHref,
-  clearPendingAuthRedirectSearch,
-  consumeCallbackFailureAuthReset,
-  normalizeCallbackPath,
-} from "@/auth/auth-storage";
+import { consumeCallbackFailureAuthReset, normalizeCallbackPath } from "@/auth/auth-storage";
 import { prepareAuthSuccessURL, useAuth } from "@/auth/auth";
+import { useMountEffect } from "@/ui/hooks/use-effects";
 import { publicLinks } from "@/ui/lib/public-links";
 
 export function SignInPage() {
   const { isAuthenticated, setPendingCallbackURL, signOut } = useAuth();
-  const navigate = useNavigate();
   const search = useSearch({ from: "/sign-in" });
   const getPutioStartURL = useGetPutioStartURL();
   const [loading, setLoading] = useState<null | "help" | "sign-in">(null);
@@ -34,6 +29,13 @@ export function SignInPage() {
     () => new URL("/auth/success", window.location.origin).toString(),
     [],
   );
+
+  useMountEffect(() => {
+    // The one-shot callback-failure flag is only planted after auth storage has been cleared.
+    if (search.error && consumeCallbackFailureAuthReset()) {
+      signOut();
+    }
+  });
 
   const error = useMemo(() => {
     if (!search.error) {
@@ -94,23 +96,6 @@ export function SignInPage() {
     };
   }, [search.error]);
   const visibleError = loading === "sign-in" ? null : error;
-
-  useEffect(() => {
-    clearPendingAuthRedirectSearch();
-  }, []);
-
-  useEffect(() => {
-    if (!search.error) return;
-    const shouldResetAuth = consumeCallbackFailureAuthReset();
-    if (shouldResetAuth && isAuthenticated) {
-      signOut();
-    }
-  }, [isAuthenticated, search.error, signOut]);
-
-  useEffect(() => {
-    if (!isAuthenticated || search.error) return;
-    void navigate({ href: authCallbackHref(search.callbackUrl), replace: true });
-  }, [isAuthenticated, navigate, search.callbackUrl, search.error]);
 
   if (isAuthenticated && !error) {
     return (

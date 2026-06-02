@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, CalendarDays, HardDrive, Users } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { CopyButton } from "@/ui/components/copy-button";
@@ -34,7 +35,7 @@ function TitleCell({
   titleBehavior: Props["titleBehavior"];
 }) {
   const linkable = titleBehavior === SearchResultTitleBehavior.LINK;
-  const wrap = (children: React.ReactNode) =>
+  const wrap = (children: ReactNode) =>
     linkable ? (
       <a
         href={result.link}

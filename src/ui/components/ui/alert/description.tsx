@@ -1,8 +1,8 @@
-import * as React from "react";
+import type { ComponentProps } from "react";
 
 import { cn } from "../../../lib/cn";
 
-function AlertDescription({ className, ...props }: React.ComponentProps<"div">) {
+function AlertDescription({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-description"

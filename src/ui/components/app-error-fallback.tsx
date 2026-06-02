@@ -1,11 +1,12 @@
 import { ClipboardCheck, ClipboardX, Copy, RefreshCw, TriangleAlert } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { StatusPanel } from "./status-panel";
 import { Button } from "./ui/button";
 import { Field, FieldLabel } from "./ui/field";
 import { Textarea } from "./ui/textarea";
 import { buildErrorReport, formatErrorReport } from "../lib/error-report";
+import { useMountEffect } from "../hooks/use-effects";
 
 type AppErrorFallbackProps = {
   error: unknown;
@@ -37,12 +38,9 @@ function AppErrorFallback({
   const notesId = useId();
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(
-    () => () => {
-      if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
-    },
-    [],
-  );
+  useMountEffect(() => () => {
+    if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+  });
 
   const scheduleCopyReset = () => {
     if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);

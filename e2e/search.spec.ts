@@ -9,11 +9,13 @@ import {
 import {
   CodecFilter,
   ResolutionFilter,
+  type SearchResult,
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
   SortBy,
   SortDirection,
 } from "@chill-institute/contracts/chill/v4/api_pb";
+import type { Page } from "@playwright/test";
 
 const defaultMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings(),
@@ -31,6 +33,71 @@ const allModeMethods = (overrides?: Record<string, unknown>) => ({
   GetIndexers: indexersResponse([indexer({ id: "yts", name: "YTS" })]),
   ...overrides,
 });
+
+type MockRpc = (methods: Record<string, unknown>) => Promise<void>;
+
+type FastestSearchRequest = {
+  indexerId: string | undefined;
+  query: string;
+};
+
+type FastestSearchOptions = {
+  getResults: (request: FastestSearchRequest) => SearchResult[] | Promise<SearchResult[]>;
+  onSlowResolved?: () => void;
+};
+
+const fastestModeIndexers = () => [
+  indexer({ id: "yts", name: "YTS" }),
+  indexer({ id: "rarbg", name: "RARBG" }),
+  indexer({ id: "slow", name: "SlowTracker" }),
+];
+
+function fastestIndexerResult({
+  id,
+  indexerId,
+  title,
+}: {
+  id?: string;
+  indexerId: string | undefined;
+  title?: string;
+}) {
+  const safeIndexerId = indexerId ?? "unknown";
+  return searchResult({
+    id: id ?? `r-${safeIndexerId}`,
+    title: title ?? `Ubuntu from ${safeIndexerId}`,
+    indexer: safeIndexerId,
+    source: indexerId?.toUpperCase() ?? "UNKNOWN",
+  });
+}
+
+async function setupFastestModeSearch(
+  authenticatedPage: Page,
+  mockRpc: MockRpc,
+  { getResults, onSlowResolved }: FastestSearchOptions,
+) {
+  await mockRpc(
+    defaultMethods({
+      GetIndexers: indexersResponse(fastestModeIndexers()),
+    }),
+  );
+
+  await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+    const body = route.request().postDataJSON();
+    const indexerId = typeof body?.indexerId === "string" ? body.indexerId : undefined;
+    const query = typeof body?.query === "string" ? body.query : "unknown";
+
+    if (indexerId === "slow") {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      onSlowResolved?.();
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(searchResponse(query, await getResults({ indexerId, query }))),
+    });
+  });
+}
 
 test.describe("search page", () => {
   test("shows search results", async ({ authenticatedPage, mockRpc }) => {
@@ -69,60 +136,22 @@ test.describe("search page", () => {
     await expect(rows.nth(1)).toContainText("Ubuntu 22.04 LTS 720p");
   });
 
-  test("fastest mode shows early results, then dismisses the pending toast", async ({
+  test("fastest mode freezes early results until update", async ({
     authenticatedPage,
     mockRpc,
   }) => {
-    const ix = [
-      indexer({ id: "yts", name: "YTS" }),
-      indexer({ id: "rarbg", name: "RARBG" }),
-      indexer({ id: "slow", name: "SlowTracker" }),
-    ];
-
-    await mockRpc(
-      defaultMethods({
-        GetIndexers: indexersResponse(ix),
-      }),
-    );
-
-    // Override Search to add delay for the slow indexer
-    await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
-      const body = route.request().postDataJSON();
-      const indexerId = body?.indexerId;
-
-      if (indexerId === "slow") {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(
-            searchResponse("ubuntu", [
+    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+      getResults: ({ indexerId }) =>
+        indexerId === "slow"
+          ? [
               searchResult({
                 id: "r3",
                 title: "Ubuntu Slow Result",
                 indexer: "slow",
                 source: "SlowTracker",
               }),
-            ]),
-          ),
-        });
-        return;
-      }
-
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(
-          searchResponse("ubuntu", [
-            searchResult({
-              id: `r-${indexerId}`,
-              title: `Ubuntu from ${indexerId}`,
-              indexer: indexerId ?? "unknown",
-              source: indexerId?.toUpperCase() ?? "UNKNOWN",
-            }),
-          ]),
-        ),
-      });
+            ]
+          : [fastestIndexerResult({ indexerId })],
     });
 
     await authenticatedPage.goto("/search?q=ubuntu");
@@ -130,9 +159,90 @@ test.describe("search page", () => {
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows.first()).toBeVisible({ timeout: 5000 });
 
-    const toastLocator = authenticatedPage.getByText("Fetching more from 1 indexer");
+    await expect(authenticatedPage.getByText("Fetching more from 1 indexer")).toBeHidden();
+    await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeHidden();
+    const readyToastText = authenticatedPage.getByText("Found 1 more result");
+    await expect(readyToastText).toBeVisible({
+      timeout: 5000,
+    });
+    const readyToast = authenticatedPage.locator("[data-sonner-toast]").filter({
+      has: readyToastText,
+    });
+    await expect(readyToast).not.toHaveAttribute("data-type", "loading");
+    await expect(readyToast.locator(".sonner-loader")).toHaveCount(0);
+    await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeHidden();
+    await authenticatedPage.getByRole("button", { name: "Update" }).click();
+    await expect(authenticatedPage.getByText("Found 1 more result")).toBeHidden();
+    await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeVisible();
+  });
+
+  test("fastest mode suppresses the toast when late indexers add no results", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let slowResolved = false;
+
+    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+      getResults: ({ indexerId }) =>
+        indexerId === "slow" ? [] : [fastestIndexerResult({ indexerId })],
+      onSlowResolved: () => {
+        slowResolved = true;
+      },
+    });
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+
+    await expect(authenticatedPage.locator("table tbody tr")).toHaveCount(2);
+    await expect(authenticatedPage.getByText("Fetching more from 1 indexer")).toBeHidden();
+    await expect.poll(() => slowResolved).toBe(true);
+    await expect(authenticatedPage.getByText("Found 1 more result")).toBeHidden();
+    await expect(authenticatedPage.locator("[data-sonner-toast]")).toHaveCount(0);
+  });
+
+  test("fastest mode update action switches to all results and dismisses the toast", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+      getResults: ({ indexerId }) => [fastestIndexerResult({ indexerId })],
+    });
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+
+    const toastLocator = authenticatedPage.getByText("Found 1 more result");
     await expect(toastLocator).toBeVisible({ timeout: 5000 });
-    await expect(toastLocator).toBeHidden({ timeout: 5000 });
+    await authenticatedPage.getByRole("button", { name: "Update" }).click();
+    await expect(toastLocator).toBeHidden();
+
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(3);
+    await expect(authenticatedPage.getByText("Ubuntu from slow")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("fastest mode toast reappears for a subsequent search", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+      getResults: ({ indexerId, query }) => [
+        fastestIndexerResult({
+          id: `${query}-${indexerId ?? "unknown"}`,
+          indexerId,
+          title: `${query} from ${indexerId ?? "unknown"}`,
+        }),
+      ],
+    });
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+    const toastLocator = authenticatedPage.getByText("Found 1 more result");
+    await expect(toastLocator).toBeVisible({ timeout: 5000 });
+    await authenticatedPage.getByRole("button", { name: "Update" }).click();
+    await expect(toastLocator).toBeHidden();
+
+    await authenticatedPage.goto("/search?q=fedora");
+    await expect(toastLocator).toBeVisible({ timeout: 5000 });
   });
 
   test("empty state", async ({ authenticatedPage, mockRpc }) => {
