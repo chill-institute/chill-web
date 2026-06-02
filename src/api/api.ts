@@ -24,7 +24,7 @@ import {
 } from "./settings-defaults";
 
 const REQUEST_TIMEOUT_MS = 8000;
-const SEARCH_TIMEOUT_MS = 10000;
+const SEARCH_TIMEOUT_MS = 30000;
 
 function newRequestID(): string {
   if (typeof globalThis.crypto?.randomUUID === "function") {
