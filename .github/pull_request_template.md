@@ -1,14 +1,22 @@
 ## Summary
 
-Briefly describe the change.
+Briefly describe the net change.
 
-## Validation
+## Changed
+
+List the touched surfaces by intent, not as a commit log.
+
+## Risks
+
+Name what could regress and what reviewers should verify.
+
+## Verification
 
 - [ ] `vp run verify`
 - [ ] `vp run smoke`
 - [ ] `vp run e2e`
 - [ ] `vp run visual` when UI/layout/design snapshots should be checked
 
-## Notes
+## Complexity
 
-Anything reviewers should pay attention to.
+Reduced, neutral, or increased. If increased, explain why.
