@@ -629,7 +629,7 @@ test.describe("settings", () => {
     await expect.poll(() => saveCalls).toBe(1);
 
     const noSeedersCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
-      name: "Hide results with no seeders",
+      name: "Hide results with no peers",
     });
     await expect(noSeedersCheckbox).toHaveAttribute("aria-checked", "false");
 

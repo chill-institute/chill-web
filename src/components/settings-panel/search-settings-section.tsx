@@ -28,7 +28,7 @@ function SearchSettingsSection({
             persistPatch({ filterResultsWithNoSeeders: checked === true })
           }
         >
-          Hide results with no seeders
+          Hide results with no peers
         </CheckboxField>
         <CheckboxField
           id="remember-filters"
