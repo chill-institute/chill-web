@@ -29,10 +29,13 @@ vp run dev
 Run the full repo checks before opening or updating a pull request:
 
 ```bash
-vp run verify
-vp run smoke
+./scripts/verify.sh
 vp run e2e
 ```
+
+`./scripts/verify.sh` clears Vite+'s local task cache, runs the normal verify
+gate, and then runs the smoke test. If a direct `vp run ...` command fails with
+`Unrecognized database version`, run `vp cache clean` and retry.
 
 Playwright checks are split by signal. Functional coverage lives in ordinary e2e
 tests, and screenshot guardrails live under `e2e/visual/`
