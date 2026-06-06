@@ -8,7 +8,7 @@ import { FIVE_MINUTES, userSettingsQueryOptions } from "@/queries/user-settings-
 import { type Movie } from "@/catalog/lib/types";
 
 export const MOVIES_QUERY_KEY = ["movies"] as const;
-export const TV_SHOWS_QUERY_KEY = ["tv-shows"] as const;
+const TV_SHOWS_QUERY_KEY = ["tv-shows"] as const;
 const MOVIE_SEARCH_QUERY_KEY = ["movie-search"] as const;
 const TV_SHOW_DETAIL_QUERY_KEY = ["tv-show-detail"] as const;
 const TV_SHOW_SEASON_QUERY_KEY = ["tv-show-season"] as const;
