@@ -12,6 +12,8 @@ import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
+import { useSettingsQuery } from "@/queries/settings";
+import { CodecFilter, ResolutionFilter } from "@/lib/types";
 import {
   DetailModalBody,
   DetailModalShell,
@@ -48,6 +50,34 @@ const SORT_OPTIONS = ["seeders", "size", "age"] as const;
 type ResolutionFilterValue = (typeof RESOLUTION_FILTER_OPTIONS)[number];
 type CodecFilterValue = (typeof CODEC_FILTER_OPTIONS)[number];
 type SortValue = (typeof SORT_OPTIONS)[number];
+
+function initialResolutionFilter(
+  filters: readonly ResolutionFilter[] | undefined,
+): ResolutionFilterValue {
+  if (!filters || filters.length !== 1) return "all";
+  switch (filters[0]) {
+    case ResolutionFilter.RESOLUTION_FILTER_720P:
+      return "720p";
+    case ResolutionFilter.RESOLUTION_FILTER_1080P:
+      return "1080p";
+    case ResolutionFilter.RESOLUTION_FILTER_2160P:
+      return "2160p";
+    default:
+      return "all";
+  }
+}
+
+function initialCodecFilter(filters: readonly CodecFilter[] | undefined): CodecFilterValue {
+  if (!filters || filters.length !== 1) return "all";
+  switch (filters[0]) {
+    case CodecFilter.X264:
+      return "x264";
+    case CodecFilter.X265:
+      return "x265";
+    default:
+      return "all";
+  }
+}
 
 type ParsedResult = {
   result: SearchResult;
@@ -179,8 +209,13 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
 }
 
 function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: boolean }) {
-  const [resolutionFilter, setResolutionFilter] = useState<ResolutionFilterValue>("all");
-  const [codecFilter, setCodecFilter] = useState<CodecFilterValue>("all");
+  const settingsQuery = useSettingsQuery();
+  const [resolutionFilter, setResolutionFilter] = useState<ResolutionFilterValue>(() =>
+    initialResolutionFilter(settingsQuery.data?.search?.resolutionFilters),
+  );
+  const [codecFilter, setCodecFilter] = useState<CodecFilterValue>(() =>
+    initialCodecFilter(settingsQuery.data?.search?.codecFilters),
+  );
   const [sortBy, setSortBy] = useState<SortValue>("seeders");
   const searchQuery = useMovieSearchQuery({ movie });
 

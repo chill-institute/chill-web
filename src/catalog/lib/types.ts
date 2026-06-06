@@ -26,9 +26,9 @@ export type CatalogAppSettings = Omit<CatalogSettings, "$typeName"> & {
 type CatalogAppSettingsDefaults = Omit<CatalogSettings, "$typeName">;
 
 export const moviesSources = [
+  MoviesSource.ROTTEN_TOMATOES,
   MoviesSource.IMDB_MOVIEMETER,
   MoviesSource.YTS,
-  MoviesSource.ROTTEN_TOMATOES,
   MoviesSource.TRAKT,
   MoviesSource.IMDB_TOP_250,
 ] as const;
@@ -48,11 +48,16 @@ export const moviesSourceLabels: Record<MoviesSource, string> = {
 };
 
 export const tvShowsSources = [
+  TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS,
   TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
   TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
   TVShowsSource.TV_SHOWS_SOURCE_APPLE_TV_PLUS,
   TVShowsSource.TV_SHOWS_SOURCE_PRIME_VIDEO,
   TVShowsSource.TV_SHOWS_SOURCE_DISNEY_PLUS,
+  TVShowsSource.TV_SHOWS_SOURCE_HULU,
+  TVShowsSource.TV_SHOWS_SOURCE_PARAMOUNT_PLUS,
+  TVShowsSource.TV_SHOWS_SOURCE_AMC_PLUS,
+  TVShowsSource.TV_SHOWS_SOURCE_PEACOCK,
 ] as const;
 
 export function parseTVShowsSource(value: string): TVShowsSource | undefined {
@@ -62,6 +67,8 @@ export function parseTVShowsSource(value: string): TVShowsSource | undefined {
 
 export function getTVShowsSourceLabel(source: TVShowsSource): string {
   switch (source) {
+    case TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS:
+      return "All providers";
     case TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX:
       return "HBO Max";
     case TVShowsSource.TV_SHOWS_SOURCE_APPLE_TV_PLUS:
@@ -70,6 +77,14 @@ export function getTVShowsSourceLabel(source: TVShowsSource): string {
       return "Prime Video";
     case TVShowsSource.TV_SHOWS_SOURCE_DISNEY_PLUS:
       return "Disney+";
+    case TVShowsSource.TV_SHOWS_SOURCE_HULU:
+      return "Hulu";
+    case TVShowsSource.TV_SHOWS_SOURCE_PARAMOUNT_PLUS:
+      return "Paramount+";
+    case TVShowsSource.TV_SHOWS_SOURCE_AMC_PLUS:
+      return "AMC+";
+    case TVShowsSource.TV_SHOWS_SOURCE_PEACOCK:
+      return "Peacock";
     case TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED:
     case TVShowsSource.TV_SHOWS_SOURCE_NETFLIX:
     default:

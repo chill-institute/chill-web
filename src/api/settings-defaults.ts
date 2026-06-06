@@ -24,8 +24,8 @@ export const SEARCH_SETTINGS_FALLBACKS = {
 } as const;
 
 export const CATALOG_SETTINGS_FALLBACKS = {
-  moviesSource: MoviesSource.IMDB_MOVIEMETER,
-  tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
+  moviesSource: MoviesSource.ROTTEN_TOMATOES,
+  tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS,
 } as const;
 
 export function withSearchSettingsDefaults(settings: UserSettings): UserSettings {

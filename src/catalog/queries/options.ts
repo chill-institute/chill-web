@@ -55,7 +55,7 @@ export function tvShowsQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...TV_SHOWS_QUERY_KEY, source] as const,
-    queryFn: ({ signal }) => api.getTVShows(signal),
+    queryFn: ({ signal }) => api.getTVShows(source, signal),
     staleTime: FIVE_MINUTES,
     enabled: enabled && source !== undefined,
   });

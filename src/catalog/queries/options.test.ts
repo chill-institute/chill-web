@@ -128,7 +128,7 @@ describe("catalog query options", () => {
     expect(tvShowsQueryOptions(api, 3).queryKey).toEqual(["tv-shows", 3]);
     expect(tvShowsQueryOptions(api, 3).enabled).toBe(true);
     expect(api.getMovies).toHaveBeenCalledWith(expect.any(AbortSignal));
-    expect(api.getTVShows).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(api.getTVShows).toHaveBeenCalledWith(3, expect.any(AbortSignal));
   });
 
   it("builds movie search query keys and API arguments from movie identity", async () => {
