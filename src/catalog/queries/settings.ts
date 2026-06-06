@@ -4,7 +4,7 @@ import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
 import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
 import type { UserSettings } from "@/catalog/lib/types";
-import { resetChangedCatalogSourceQueries } from "@/catalog/queries/cache";
+import { resetChangedMovieSourceQueries } from "@/catalog/queries/cache";
 import { readCachedCatalogSettings, writeCachedSettings } from "@/queries/settings-cache";
 import {
   downloadFolderChanged,
@@ -48,7 +48,7 @@ export function useSaveSettings() {
         queryClient.setQueryData(USER_SETTINGS_QUERY_KEY, saved);
         writeCachedSettings(saved);
       }
-      resetChangedCatalogSourceQueries(queryClient, context, saved);
+      resetChangedMovieSourceQueries(queryClient, context, saved);
       if (downloadFolderChanged(context.previousSettings, saved)) {
         void invalidateDownloadFolder(queryClient);
       }

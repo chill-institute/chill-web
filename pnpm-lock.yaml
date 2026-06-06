@@ -15,8 +15,8 @@ importers:
         specifier: ^2.12.0
         version: 2.12.0
       '@chill-institute/contracts':
-        specifier: github:chill-institute/chill-contracts#v2.0.0
-        version: https://codeload.github.com/chill-institute/chill-contracts/tar.gz/70e8775ff216f5dc3428d6a4fed3391c92fc7e31
+        specifier: 2.1.0
+        version: 2.1.0
       '@connectrpc/connect':
         specifier: ^2.1.1
         version: 2.1.1(@bufbuild/protobuf@2.12.0)
@@ -798,9 +798,8 @@ packages:
   '@bufbuild/protobuf@2.12.0':
     resolution: {integrity: sha512-B/XlCaFIP8LOwzo+bz5uFzATYokcwCKQcghqnlfwSmM5eX/qTkvDBnDPs+gXtX/RyjxJ4DRikECcPJbyALA8FA==}
 
-  '@chill-institute/contracts@https://codeload.github.com/chill-institute/chill-contracts/tar.gz/70e8775ff216f5dc3428d6a4fed3391c92fc7e31':
-    resolution: {gitHosted: true, integrity: sha512-DBr2Spcn+BZL8av3FxhNud2zQ4LWxL649MF94A4xJC1hiHNZYvvCvvWXbnTNZOeSfPAPmAWlknUNzXl3Q4Ma6g==, tarball: https://codeload.github.com/chill-institute/chill-contracts/tar.gz/70e8775ff216f5dc3428d6a4fed3391c92fc7e31}
-    version: 2.0.0
+  '@chill-institute/contracts@2.1.0':
+    resolution: {integrity: sha512-hScVjA8KHwvqw9pyxIVQm5O9dUC+da6XL7D/zRc0FsCwGE9i84IOjwJMWuZSpjUHrXX00sG7hAkhMX6EakK8kQ==}
 
   '@connectrpc/connect-web@2.1.1':
     resolution: {integrity: sha512-J8317Q2MaFRCT1jzVR1o06bZhDIBmU0UAzWx6xOIXzOq8+k71/+k7MUF7AwcBUX+34WIvbm5syRgC5HXQA8fOg==}
@@ -4689,7 +4688,7 @@ snapshots:
 
   '@bufbuild/protobuf@2.12.0': {}
 
-  '@chill-institute/contracts@https://codeload.github.com/chill-institute/chill-contracts/tar.gz/70e8775ff216f5dc3428d6a4fed3391c92fc7e31':
+  '@chill-institute/contracts@2.1.0':
     dependencies:
       '@bufbuild/protobuf': 2.12.0
 

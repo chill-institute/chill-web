@@ -11,6 +11,7 @@ import {
   GetTVShowsResponseSchema,
   MovieSchema,
   SearchResponseSchema,
+  TVShowsSource,
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
@@ -121,14 +122,20 @@ describe("catalog query options", () => {
     expect(tvShowsQueryOptions(api, undefined).enabled).toBe(false);
 
     await client.fetchQuery(moviesQueryOptions(api, 2));
-    await client.fetchQuery(tvShowsQueryOptions(api, 3));
+    await client.fetchQuery(tvShowsQueryOptions(api, TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
 
     expect(moviesQueryOptions(api, 2).queryKey).toEqual(["movies", 2]);
     expect(moviesQueryOptions(api, 2).enabled).toBe(true);
-    expect(tvShowsQueryOptions(api, 3).queryKey).toEqual(["tv-shows", 3]);
-    expect(tvShowsQueryOptions(api, 3).enabled).toBe(true);
+    expect(tvShowsQueryOptions(api, TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX).queryKey).toEqual([
+      "tv-shows",
+      TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+    ]);
+    expect(tvShowsQueryOptions(api, TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX).enabled).toBe(true);
     expect(api.getMovies).toHaveBeenCalledWith(expect.any(AbortSignal));
-    expect(api.getTVShows).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(api.getTVShows).toHaveBeenCalledWith(
+      TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX,
+      expect.any(AbortSignal),
+    );
   });
 
   it("builds movie search query keys and API arguments from movie identity", async () => {

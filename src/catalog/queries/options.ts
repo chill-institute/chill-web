@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import type { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import type { ChillApi } from "@/api/api";
 import { createApi } from "@/lib/api";
@@ -7,7 +8,7 @@ import { FIVE_MINUTES, userSettingsQueryOptions } from "@/queries/user-settings-
 import { type Movie } from "@/catalog/lib/types";
 
 export const MOVIES_QUERY_KEY = ["movies"] as const;
-export const TV_SHOWS_QUERY_KEY = ["tv-shows"] as const;
+const TV_SHOWS_QUERY_KEY = ["tv-shows"] as const;
 const MOVIE_SEARCH_QUERY_KEY = ["movie-search"] as const;
 const TV_SHOW_DETAIL_QUERY_KEY = ["tv-show-detail"] as const;
 const TV_SHOW_SEASON_QUERY_KEY = ["tv-show-season"] as const;
@@ -50,12 +51,12 @@ export function movieSearchQueryOptions(api: ChillApi, movie: Movie, enabled = t
 
 export function tvShowsQueryOptions(
   api: ChillApi,
-  source: number | undefined,
+  source: TVShowsSource | undefined,
   enabled = source !== undefined,
 ) {
   return queryOptions({
     queryKey: [...TV_SHOWS_QUERY_KEY, source] as const,
-    queryFn: ({ signal }) => api.getTVShows(signal),
+    queryFn: ({ signal }) => api.getTVShows(source, signal),
     staleTime: FIVE_MINUTES,
     enabled: enabled && source !== undefined,
   });

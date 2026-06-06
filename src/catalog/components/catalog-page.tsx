@@ -1,6 +1,8 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { match } from "ts-pattern";
+
+import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { MoviesSourceSelect } from "@/catalog/components/movies-source-select";
 import { TVShowsSourceSelect } from "@/catalog/components/tv-shows-source-select";
@@ -40,12 +42,17 @@ type CatalogPageProps = {
 export function CatalogPage({ tab }: CatalogPageProps) {
   const auth = useAuth();
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { source?: number };
+  const tvShowsURLSource =
+    tab === "tv-shows" && typeof search.source === "number"
+      ? (search.source as TVShowsSource)
+      : undefined;
 
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
   const effectiveMoviesSource = appSettings?.moviesSource;
-  const effectiveTVShowsSource = appSettings?.tvShowsSource;
+  const effectiveTVShowsSource = tvShowsURLSource ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
   const shouldFetchCatalog =
     configQuery.status === "success" && !configQuery.isFetching && !saveConfigMutation.isPending;
   const moviesQuery = useMoviesQuery({
@@ -85,7 +92,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     .with({ status: "success" }, (query) => {
       const config = toCatalogAppSettings(query.data);
       const selectedMoviesSource = effectiveMoviesSource ?? config.moviesSource;
-      const selectedTVShowsSource = effectiveTVShowsSource ?? config.tvShowsSource;
+      const selectedTVShowsSource = effectiveTVShowsSource;
 
       const sourceSelector =
         tab === "movies" ? (
@@ -104,7 +111,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
           <TVShowsSourceSelect
             value={selectedTVShowsSource}
             onChange={(tvShowsSource) => {
-              patchConfig({ tvShowsSource });
+              // Intentionally not persisted: the picker is URL-only.
               void navigate({
                 to: "/tv-shows",
                 search: (prev) => ({ ...prev, source: tvShowsSource }),
@@ -138,7 +145,6 @@ export function CatalogPage({ tab }: CatalogPageProps) {
           onPickAnotherSource={() => {
             const next = cycleSource(tvShowsSources, selectedTVShowsSource);
             if (next === undefined) return;
-            patchConfig({ tvShowsSource: next });
             void navigate({
               to: "/tv-shows",
               search: (prev) => ({ ...prev, source: next }),
@@ -283,10 +289,7 @@ function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentPr
                 <Link
                   to="/tv-shows/$id"
                   params={{ id: show.imdbId }}
-                  search={{
-                    season: 1,
-                    source,
-                  }}
+                  search={(prev) => ({ ...prev, season: 1 })}
                 />
               }
             />

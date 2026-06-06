@@ -491,11 +491,11 @@ test.describe("catalog routing", () => {
     await expect(authenticatedPage.getByRole("heading", { name: "page not found" })).toHaveCount(0);
   });
 
-  test("tv detail source param waits for source-specific settings", async ({
+  test("tv detail source param uses the URL source without saving settings", async ({
     authenticatedPage,
     mockRpc,
   }) => {
-    let currentSource = TVShowsSource.TV_SHOWS_SOURCE_NETFLIX;
+    let saveCalls = 0;
     const season = tvShowSeason({ seasonNumber: 1, name: "Season 1", episodeCount: 1 });
     const episodes = [tvShowEpisode({ seasonNumber: 1, episodeNumber: 1, name: "Pilot" })];
 
@@ -528,10 +528,14 @@ test.describe("catalog routing", () => {
     });
 
     await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
-      const response =
-        currentSource === TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX
-          ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, [harborWard])
-          : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, []);
+      const body = route.request().postDataJSON() as { source?: string | number };
+      const requestedSource = String(body.source ?? "");
+      const isHBO =
+        requestedSource.includes("HBO") ||
+        requestedSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+      const response = isHBO
+        ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, [harborWard])
+        : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, []);
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -540,20 +544,11 @@ test.describe("catalog routing", () => {
     });
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
-      const body = route.request().postDataJSON() as {
-        settings?: { catalog?: { tvShowsSource?: string | number } };
-      };
-      const nextSource = String(body.settings?.catalog?.tvShowsSource ?? "");
-      if (
-        nextSource.includes("HBO") ||
-        nextSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX)
-      ) {
-        currentSource = TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX;
-      }
+      saveCalls += 1;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(userSettings({ tvShowsSource: currentSource })),
+        body: JSON.stringify(userSettings()),
       });
     });
 
@@ -568,5 +563,6 @@ test.describe("catalog routing", () => {
     await authenticatedPage.goto(`/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`);
 
     await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible({ timeout: 3000 });
+    expect(saveCalls).toBe(0);
   });
 });
