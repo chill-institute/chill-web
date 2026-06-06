@@ -285,7 +285,11 @@ function TVShowsContent({ query, onPickAnotherSource }: TVShowsContentProps) {
               rating={show.rating != null ? show.rating.toFixed(1) : null}
               year={show.year != null ? String(show.year) : null}
               render={
-                <Link to="/tv-shows/$id" params={{ id: show.imdbId }} search={{ season: 1 }} />
+                <Link
+                  to="/tv-shows/$id"
+                  params={{ id: show.imdbId }}
+                  search={(prev) => ({ ...prev, season: 1 })}
+                />
               }
             />
           ))}

@@ -2,9 +2,10 @@ import { lazy, Suspense } from "react";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 
+import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
+
 import { useTVShowDetailQuery, useTVShowsQuery } from "@/catalog/queries/tv-shows";
 import { useSettingsQuery } from "@/catalog/queries/settings";
-import { toCatalogAppSettings } from "@/catalog/lib/types";
 import { NotFoundScreen } from "@/ui/components/not-found-screen";
 
 const routeApi = getRouteApi("/tv-shows/$id");
@@ -21,11 +22,9 @@ function TVShowDetailRoute() {
   const navigate = useNavigate();
 
   const configQuery = useSettingsQuery();
-  const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
-  const activeSource = source ?? appSettings?.tvShowsSource;
-  const sourceReady = source === undefined || appSettings?.tvShowsSource === source;
+  const activeSource = source ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
   const tvShowsQuery = useTVShowsQuery({
-    enabled: configQuery.status === "success" && sourceReady,
+    enabled: configQuery.status === "success",
     source: activeSource,
   });
   const detailQuery = useTVShowDetailQuery({ imdbId: id });

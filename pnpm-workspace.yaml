@@ -4,6 +4,9 @@ packages:
 allowBuilds:
   "@sentry/cli": true
 
+minimumReleaseAgeExclude:
+  - "@chill-institute/*"
+
 peerDependencyRules:
   allowedVersions:
     vite: "0.1.22"

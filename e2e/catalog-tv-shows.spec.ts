@@ -85,19 +85,23 @@ test.describe("tv shows home", () => {
     await expect(authenticatedPage.getByText("Aurora Protocol")).toBeHidden();
   });
 
-  test("tv source select saves the new source and refreshes the list", async ({
+  test("tv source select updates the URL and refreshes the list", async ({
     authenticatedPage,
     mockRpc,
   }) => {
-    let currentSource = TVShowsSource.TV_SHOWS_SOURCE_NETFLIX;
+    let saveCalls = 0;
 
     await mockRpc(homeMethods());
 
     await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
-      const response =
-        currentSource === TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX
-          ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows)
-          : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, netflixShows);
+      const body = route.request().postDataJSON() as { source?: string | number };
+      const requestedSource = String(body.source ?? "");
+      const isHBO =
+        requestedSource.includes("HBO") ||
+        requestedSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+      const response = isHBO
+        ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows)
+        : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, netflixShows);
 
       await route.fulfill({
         status: 200,
@@ -107,26 +111,11 @@ test.describe("tv shows home", () => {
     });
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
-      const body = route.request().postDataJSON() as {
-        settings?: { catalog?: { tvShowsSource?: string | number } };
-      };
-
-      const nextSource = String(body.settings?.catalog?.tvShowsSource ?? "");
-      if (
-        nextSource.includes("HBO") ||
-        nextSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX)
-      ) {
-        currentSource = TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX;
-      }
-
+      saveCalls += 1;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(
-          userSettings({
-            tvShowsSource: currentSource,
-          }),
-        ),
+        body: JSON.stringify(userSettings()),
       });
     });
 
@@ -139,8 +128,13 @@ test.describe("tv shows home", () => {
       .getByRole("combobox", { name: "TV source" })
       .selectOption(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
 
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`),
+      { timeout: 2000 },
+    );
     await expect(authenticatedPage.getByText("Velvet Terminal")).toBeHidden({ timeout: 500 });
     await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible({ timeout: 2000 });
+    expect(saveCalls).toBe(0);
   });
 
   test("opening a tv card shows live detail data", async ({ authenticatedPage, mockRpc }) => {
