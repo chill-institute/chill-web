@@ -251,7 +251,7 @@ type TVShowsContentProps = {
   onPickAnotherSource: () => void;
 };
 
-function TVShowsContent({ query, onPickAnotherSource }: TVShowsContentProps) {
+function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentProps) {
   return match(query)
     .with({ status: "pending" }, () => <PosterGridSkeleton />)
     .with({ status: "error" }, (shows) =>
@@ -262,6 +262,7 @@ function TVShowsContent({ query, onPickAnotherSource }: TVShowsContentProps) {
       ),
     )
     .with({ status: "success" }, (shows) => {
+      if (shows.data.source !== source) return <PosterGridSkeleton />;
       if (shows.data.shows.length === 0) {
         if (shows.isFetching) return <PosterGridSkeleton />;
         return (

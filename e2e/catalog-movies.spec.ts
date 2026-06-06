@@ -1,7 +1,12 @@
 import { test, expect } from "./support/fixtures";
 import { create } from "@bufbuild/protobuf";
 import type { Page } from "@playwright/test";
-import { MoviesSource, ReleaseInfoSchema } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  CodecFilter,
+  MoviesSource,
+  ReleaseInfoSchema,
+  ResolutionFilter,
+} from "@chill-institute/contracts/chill/v4/api_pb";
 import {
   movie,
   moviesResponse,
@@ -239,6 +244,131 @@ test.describe("movies", () => {
 
     await pickFromSelect("Sort", "largest size");
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.2160p.WEB-DL.x265");
+  });
+
+  test("movie modal applies saved filters when full settings replace cached catalog settings", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    await authenticatedPage.addInitScript(
+      (cachedSettings) => {
+        window.localStorage.setItem("chill.catalog.settings.v1", cachedSettings);
+      },
+      JSON.stringify({
+        catalog: {
+          moviesSource: MoviesSource.IMDB_MOVIEMETER,
+          tvShowsSource: 1,
+        },
+        download: {},
+      }),
+    );
+
+    let releaseSettings: (() => void) | undefined;
+    const settingsRequested = new Promise<void>((resolve) => {
+      void authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+        resolve();
+        await new Promise<void>((release) => {
+          releaseSettings = release;
+        });
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            userSettings({
+              codecFilters: [CodecFilter.X265],
+              rememberQuickFilters: true,
+              resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+            }),
+          ),
+        });
+      });
+    });
+
+    await authenticatedPage.goto("/movies/m1");
+    await settingsRequested;
+
+    const movieDialog = authenticatedPage.getByRole("dialog", {
+      name: "Aurora Protocol details",
+    });
+    await expect(movieDialog).toBeVisible({ timeout: 3000 });
+    await expect(movieDialog.getByRole("combobox", { name: "Resolution" })).toHaveValue("all");
+
+    releaseSettings?.();
+
+    await expect(movieDialog.getByRole("combobox", { name: "Resolution" })).toHaveValue("2160p");
+    await expect(movieDialog.getByRole("combobox", { name: "Codec" })).toHaveValue("x265");
+    const resultItems = movieDialog
+      .getByRole("list", { name: "Torrent results list" })
+      .getByRole("listitem");
+    await expect(resultItems).toHaveCount(1);
+    await expect(resultItems.first()).toContainText("Aurora Protocol.2010.2160p.WEB-DL.x265");
+  });
+
+  test("movie modal ignores saved filters when quick-filter remembering is disabled", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    await authenticatedPage.addInitScript(
+      (cachedSettings) => {
+        window.localStorage.setItem("chill.catalog.settings.v1", cachedSettings);
+      },
+      JSON.stringify({
+        catalog: {
+          moviesSource: MoviesSource.IMDB_MOVIEMETER,
+          tvShowsSource: 1,
+        },
+        download: {},
+      }),
+    );
+
+    let releaseSettings: (() => void) | undefined;
+    const settingsRequested = new Promise<void>((resolve) => {
+      void authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+        resolve();
+        await new Promise<void>((release) => {
+          releaseSettings = release;
+        });
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            userSettings({
+              codecFilters: [CodecFilter.X265],
+              rememberQuickFilters: false,
+              resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+            }),
+          ),
+        });
+      });
+    });
+
+    await authenticatedPage.goto("/movies/m1");
+    await settingsRequested;
+
+    const movieDialog = authenticatedPage.getByRole("dialog", {
+      name: "Aurora Protocol details",
+    });
+    await expect(movieDialog).toBeVisible({ timeout: 3000 });
+
+    releaseSettings?.();
+
+    await expect(movieDialog.getByRole("combobox", { name: "Resolution" })).toHaveValue("all");
+    await expect(movieDialog.getByRole("combobox", { name: "Codec" })).toHaveValue("all");
+    await expect(
+      movieDialog.getByRole("list", { name: "Torrent results list" }).getByRole("listitem"),
+    ).toHaveCount(3);
   });
 
   test("changing source does not re-show stale movies while waiting for the new source", async ({

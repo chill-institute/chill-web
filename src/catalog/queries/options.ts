@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import type { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import type { ChillApi } from "@/api/api";
 import { createApi } from "@/lib/api";
@@ -50,7 +51,7 @@ export function movieSearchQueryOptions(api: ChillApi, movie: Movie, enabled = t
 
 export function tvShowsQueryOptions(
   api: ChillApi,
-  source: number | undefined,
+  source: TVShowsSource | undefined,
   enabled = source !== undefined,
 ) {
   return queryOptions({

@@ -246,7 +246,7 @@ export function tvShow(init?: TVShowInit) {
 }
 
 export function tvShowsResponse(shows: TVShow[]) {
-  return tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, shows);
+  return tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS, shows);
 }
 
 export function tvShowsResponseForSource(source: TVShowsSource, shows: TVShow[]) {

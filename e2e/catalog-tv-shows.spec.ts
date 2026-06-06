@@ -101,7 +101,7 @@ test.describe("tv shows home", () => {
         requestedSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
       const response = isHBO
         ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows)
-        : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, netflixShows);
+        : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS, netflixShows);
 
       await route.fulfill({
         status: 200,
@@ -135,6 +135,159 @@ test.describe("tv shows home", () => {
     await expect(authenticatedPage.getByText("Velvet Terminal")).toBeHidden({ timeout: 500 });
     await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible({ timeout: 2000 });
     expect(saveCalls).toBe(0);
+  });
+
+  test("tv source select does not render a mismatched source response", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(homeMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
+      const body = route.request().postDataJSON() as { source?: string | number };
+      const requestedSource = String(body.source ?? "");
+      const isHBO =
+        requestedSource.includes("HBO") ||
+        requestedSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          isHBO
+            ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, netflixShows)
+            : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS, netflixShows),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/tv-shows");
+    await expect(authenticatedPage.getByText("Velvet Terminal")).toBeVisible();
+
+    await authenticatedPage
+      .getByRole("combobox", { name: "TV source" })
+      .selectOption(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
+
+    await expect(authenticatedPage.getByText("Velvet Terminal")).toBeHidden({ timeout: 500 });
+    await expect(authenticatedPage.getByText("Harbor Ward")).toBeHidden();
+  });
+
+  test("opening a selected-provider show keeps the provider selected while the modal loads", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(homeMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
+      const body = route.request().postDataJSON() as { source?: string | number };
+      const requestedSource = String(body.source ?? "");
+      const isHBO =
+        requestedSource.includes("HBO") ||
+        requestedSource === String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          isHBO
+            ? tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows)
+            : tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS, hboShows),
+        ),
+      });
+    });
+
+    let releaseDetail: (() => void) | undefined;
+    await authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+      await new Promise<void>((release) => {
+        releaseDetail = release;
+      });
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          tvShowDetailResponse(
+            tvShowDetail({
+              imdbId: defaultShow.imdbId,
+              title: defaultShow.title,
+              networks: defaultShow.networks,
+            }),
+            defaultSeasons,
+          ),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/tv-shows");
+    await authenticatedPage
+      .getByRole("combobox", { name: "TV source" })
+      .selectOption(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
+    await authenticatedPage
+      .locator('[data-slot="poster-card"]')
+      .filter({ hasText: "Harbor Ward" })
+      .first()
+      .click();
+
+    await authenticatedPage.waitForURL(/\/tv-shows\/tt9000003/);
+    await expect(authenticatedPage.getByRole("combobox", { name: "TV source" })).toHaveValue(
+      String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX),
+    );
+    expect(new URL(authenticatedPage.url()).searchParams.get("source")).toBe(
+      String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX),
+    );
+
+    releaseDetail?.();
+  });
+
+  test("tv detail does not use fallback show data from a mismatched source response", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(homeMethods());
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_NETFLIX, [defaultShow]),
+        ),
+      });
+    });
+
+    let releaseDetail: (() => void) | undefined;
+    const detailRequested = new Promise<void>((resolve) => {
+      void authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+        resolve();
+        await new Promise<void>((release) => {
+          releaseDetail = release;
+        });
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            tvShowDetailResponse(
+              tvShowDetail({
+                imdbId: defaultShow.imdbId,
+                title: defaultShow.title,
+                networks: defaultShow.networks,
+              }),
+              defaultSeasons,
+            ),
+          ),
+        });
+      });
+    });
+
+    await authenticatedPage.goto(
+      `/tv-shows/${defaultShow.imdbId}?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}&season=1`,
+    );
+    await detailRequested;
+
+    await expect(authenticatedPage.getByRole("dialog", { name: "Harbor Ward" })).toHaveCount(0);
+
+    releaseDetail?.();
+
+    await expect(authenticatedPage.getByRole("dialog", { name: "Harbor Ward" })).toBeVisible({
+      timeout: 3000,
+    });
   });
 
   test("opening a tv card shows live detail data", async ({ authenticatedPage, mockRpc }) => {

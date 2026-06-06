@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
@@ -14,7 +15,7 @@ export function useTVShowsQuery({
   source,
 }: {
   enabled?: boolean;
-  source: number | undefined;
+  source: TVShowsSource | undefined;
 }) {
   const api = useApi();
   const auth = useAuth();

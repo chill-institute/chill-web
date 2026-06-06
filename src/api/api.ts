@@ -11,6 +11,7 @@ import {
   type GetTVShowSeasonResponse,
   type GetTVShowsResponse,
   type SearchResponse,
+  type TVShowsSource,
   type UserIndexer,
   type UserProfile,
   type UserSettings,
@@ -139,7 +140,10 @@ export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOp
     getMovies: (signal?: AbortSignal): Promise<GetMoviesResponse> =>
       call("Movies request", (s) => userClient.getMovies({}, { headers, signal: s }), signal),
 
-    getTVShows: (source: number | undefined, signal?: AbortSignal): Promise<GetTVShowsResponse> =>
+    getTVShows: (
+      source: TVShowsSource | undefined,
+      signal?: AbortSignal,
+    ): Promise<GetTVShowsResponse> =>
       call(
         "TV shows request",
         (s) => userClient.getTVShows({ source }, { headers, signal: s }),

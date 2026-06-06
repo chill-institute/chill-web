@@ -39,7 +39,9 @@ function TVShowDetailRoute() {
     });
 
   const fallbackShow =
-    configQuery.status === "success" && tvShowsQuery.status === "success"
+    configQuery.status === "success" &&
+    tvShowsQuery.status === "success" &&
+    tvShowsQuery.data.source === activeSource
       ? tvShowsQuery.data.shows.find((show) => show.imdbId === id)
       : undefined;
 

@@ -210,12 +210,22 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
 
 function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: boolean }) {
   const settingsQuery = useSettingsQuery();
-  const [resolutionFilter, setResolutionFilter] = useState<ResolutionFilterValue>(() =>
-    initialResolutionFilter(settingsQuery.data?.search?.resolutionFilters),
+  const settingsResolutionFilter = initialResolutionFilter(
+    settingsQuery.data?.search?.rememberQuickFilters
+      ? settingsQuery.data.search.resolutionFilters
+      : undefined,
   );
-  const [codecFilter, setCodecFilter] = useState<CodecFilterValue>(() =>
-    initialCodecFilter(settingsQuery.data?.search?.codecFilters),
+  const settingsCodecFilter = initialCodecFilter(
+    settingsQuery.data?.search?.rememberQuickFilters
+      ? settingsQuery.data.search.codecFilters
+      : undefined,
   );
+  const [resolutionFilterOverride, setResolutionFilter] = useState<
+    ResolutionFilterValue | undefined
+  >();
+  const [codecFilterOverride, setCodecFilter] = useState<CodecFilterValue | undefined>();
+  const resolutionFilter = resolutionFilterOverride ?? settingsResolutionFilter;
+  const codecFilter = codecFilterOverride ?? settingsCodecFilter;
   const [sortBy, setSortBy] = useState<SortValue>("seeders");
   const searchQuery = useMovieSearchQuery({ movie });
 
