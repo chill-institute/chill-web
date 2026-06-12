@@ -57,6 +57,10 @@ export function MoviePosterActions({ movie }: { movie: Movie }) {
     if (status === "pending") return;
     const query = movieQuery(movie);
     if (!query) return;
+    if (resetRef.current) {
+      clearTimeout(resetRef.current);
+      resetRef.current = null;
+    }
     setStatus("pending");
     try {
       const response = await api.search(query, undefined);
