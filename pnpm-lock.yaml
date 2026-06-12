@@ -15,8 +15,8 @@ importers:
         specifier: ^2.12.0
         version: 2.12.0
       '@chill-institute/contracts':
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.2.0
+        version: 2.2.0
       '@connectrpc/connect':
         specifier: ^2.1.1
         version: 2.1.1(@bufbuild/protobuf@2.12.0)
@@ -798,8 +798,8 @@ packages:
   '@bufbuild/protobuf@2.12.0':
     resolution: {integrity: sha512-B/XlCaFIP8LOwzo+bz5uFzATYokcwCKQcghqnlfwSmM5eX/qTkvDBnDPs+gXtX/RyjxJ4DRikECcPJbyALA8FA==}
 
-  '@chill-institute/contracts@2.1.0':
-    resolution: {integrity: sha512-hScVjA8KHwvqw9pyxIVQm5O9dUC+da6XL7D/zRc0FsCwGE9i84IOjwJMWuZSpjUHrXX00sG7hAkhMX6EakK8kQ==}
+  '@chill-institute/contracts@2.2.0':
+    resolution: {integrity: sha512-bxOquh+Y7ezJMLiRoxDz4xs62rG3LnY46gokGKJ5xMf98f7gCKnvBGNnsW+/W3S5hUGf4SFZ8Og37GYC9kNBDA==}
 
   '@connectrpc/connect-web@2.1.1':
     resolution: {integrity: sha512-J8317Q2MaFRCT1jzVR1o06bZhDIBmU0UAzWx6xOIXzOq8+k71/+k7MUF7AwcBUX+34WIvbm5syRgC5HXQA8fOg==}
@@ -4771,7 +4771,7 @@ snapshots:
 
   '@bufbuild/protobuf@2.12.0': {}
 
-  '@chill-institute/contracts@2.1.0':
+  '@chill-institute/contracts@2.2.0':
     dependencies:
       '@bufbuild/protobuf': 2.12.0
 
