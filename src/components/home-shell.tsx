@@ -17,7 +17,7 @@ export function HomeShell() {
           Welcome to The Institute
         </h1>
       </header>
-      <div className="border-border-strong bg-surface border-y px-4 py-6">
+      <div className="px-4 py-6">
         <div className="mx-auto w-full max-w-md">
           <ShellSearchForm focusOnMount label="What can we hook you up with?" />
         </div>

@@ -21,7 +21,7 @@
   --color-fg-4: var(--color-stone-500);
   --color-fg-inverse: var(--color-stone-100);
 
-  --color-border-strong: var(--color-stone-950);
+  --color-border-strong: color-mix(in oklab, var(--color-stone-950) 80%, transparent);
   --color-border-soft: color-mix(in oklab, var(--color-stone-950) 15%, transparent);
   --color-border-faint: color-mix(in oklab, var(--color-stone-950) 10%, transparent);
   --color-border-hairline: color-mix(in oklab, var(--color-stone-950) 12%, transparent);
@@ -66,7 +66,7 @@
   --duration-base: 180ms;
   --duration-slow: 240ms;
 
-  --shadow-press: 1px 1px 0 var(--color-stone-950);
+  --shadow-press: 1px 1px 0 color-mix(in oklab, var(--color-stone-950) 80%, transparent);
   --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.3);
   --shadow-poster: 0 8px 24px rgba(0, 0, 0, 0.3);
   --shadow-drawer: 0 -24px 48px rgba(0, 0, 0, 0.24);
@@ -146,7 +146,7 @@
     --color-fg-4: var(--color-stone-400);
     --color-fg-inverse: var(--color-stone-950);
 
-    --color-border-strong: var(--color-stone-700);
+    --color-border-strong: color-mix(in oklab, var(--color-stone-700) 80%, transparent);
     --color-border-soft: color-mix(in oklab, var(--color-stone-700) 70%, transparent);
     --color-border-faint: color-mix(in oklab, var(--color-stone-700) 30%, transparent);
     --color-border-hairline: color-mix(in oklab, var(--color-stone-700) 35%, transparent);
@@ -161,7 +161,7 @@
     --color-warn-border: color-mix(in oklab, oklch(0.85 0.15 80) 35%, transparent);
     --color-warn-text: oklch(0.78 0.16 80);
 
-    --shadow-press: 1px 1px 0 var(--color-stone-700);
+    --shadow-press: 1px 1px 0 color-mix(in oklab, var(--color-stone-700) 80%, transparent);
     --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.6);
     --shadow-poster: 0 8px 24px rgba(0, 0, 0, 0.55);
     --shadow-drawer: 0 -24px 48px rgba(0, 0, 0, 0.5);
@@ -399,7 +399,7 @@
    stone-700 (matching prod's `.dark .btn { box-shadow: 1px 1px #44403c; }`).
    Lives outside @layer base so it actually beats Tailwind's utility layer. */
 .dark .shadow-press {
-  --tw-shadow: 1px 1px 0 var(--color-stone-700);
+  --tw-shadow: 1px 1px 0 color-mix(in oklab, var(--color-stone-700) 80%, transparent);
 }
 
 @utility animate-collapsible-down {

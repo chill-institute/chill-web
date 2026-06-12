@@ -15,6 +15,7 @@ import {
   SortBy,
   SortDirection,
   type DownloadSettings,
+  type IndexerStat,
   type SearchResult,
   type SearchSettings,
   type UserSettings,
@@ -27,12 +28,11 @@ export {
   OtherFilter,
   ResolutionFilter,
   SearchResultDisplayBehavior,
-  SearchResultTitleBehavior,
   SortBy,
   SortDirection,
 };
 
-export type { SearchResult, UserSettings, UserIndexer };
+export type { IndexerStat, SearchResult, UserSettings, UserIndexer };
 
 export type ChillSettings = Omit<SearchSettings, "$typeName"> & {
   download: Omit<DownloadSettings, "$typeName">;
@@ -59,12 +59,6 @@ export const codecFilterLabels: Record<(typeof codecFilters)[number], string> = 
   [CodecFilter.X265]: "x265",
 };
 
-export const otherFilters = [OtherFilter.HDR] as const;
-
-export const otherFilterLabels: Record<(typeof otherFilters)[number], string> = {
-  [OtherFilter.HDR]: "HDR",
-};
-
 export const searchResultDisplayBehaviors = [
   SearchResultDisplayBehavior.ALL,
   SearchResultDisplayBehavior.FASTEST,
@@ -89,22 +83,6 @@ export const searchResultTitleBehaviorLabels: Record<
 > = {
   [SearchResultTitleBehavior.LINK]: "Link title to source",
   [SearchResultTitleBehavior.TEXT]: "Plain text title",
-};
-
-export const sortByValues = [
-  SortBy.TITLE,
-  SortBy.SEEDERS,
-  SortBy.SIZE,
-  SortBy.UPLOADED_AT,
-  SortBy.SOURCE,
-] as const;
-
-export const sortByLabels: Record<(typeof sortByValues)[number], string> = {
-  [SortBy.TITLE]: "Name",
-  [SortBy.SEEDERS]: "Seeders",
-  [SortBy.SIZE]: "Size",
-  [SortBy.UPLOADED_AT]: "Age",
-  [SortBy.SOURCE]: "Source",
 };
 
 const defaultUserSettings: ChillSettingsDefaults = {

@@ -3,7 +3,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
 import { isIgnorableAbortError } from "@/auth/errors";
-import type { SearchResult, UserIndexer } from "@/lib/types";
+import type { IndexerStat, SearchResult, UserIndexer } from "@/lib/types";
 
 export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) {
   const api = useApi();
@@ -35,8 +35,22 @@ export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) 
         }
       }
 
+      const statsByID = new Map<string, IndexerStat>();
+      for (const q of queries) {
+        for (const stat of q.data?.indexerStats ?? []) {
+          const key = stat.id || stat.name;
+          if (!key) continue;
+          const prior = statsByID.get(key);
+          if (!prior || stat.elapsedMs > prior.elapsedMs) {
+            statsByID.set(key, stat);
+          }
+        }
+      }
+      const indexerStats = [...statsByID.values()].sort((a, b) => b.elapsedMs - a.elapsedMs);
+
       return {
         results,
+        indexerStats,
         pendingCount,
         nonEmptyResolvedCount,
         totalCount: queries.length,

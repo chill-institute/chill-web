@@ -63,9 +63,9 @@ describe("isBackendUnavailableError", () => {
 
 describe("localizeError", () => {
   const expectedPutioProviderOutage = {
-    message: "Could not connect to put.io. Please try again.",
+    message: "can't reach",
     recoverySuggestion: {
-      description: "If this keeps happening, sign in again to refresh your put.io session.",
+      description: "if this keeps happening, sign in again to refresh your put.io session.",
       actions: [
         { kind: "retry", label: "retry" },
         { kind: "sign-in-again", label: "sign in again" },
@@ -88,9 +88,7 @@ describe("localizeError", () => {
 
 describe("toErrorMessage", () => {
   it("reuses the localized put.io outage message", () => {
-    expect(toErrorMessage(new Error("putio provider unavailable"))).toBe(
-      "Could not connect to put.io. Please try again.",
-    );
+    expect(toErrorMessage(new Error("putio provider unavailable"))).toBe("can't reach");
   });
 });
 

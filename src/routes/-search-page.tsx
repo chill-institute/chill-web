@@ -4,18 +4,27 @@ import { match } from "ts-pattern";
 
 import { SignInRedirect } from "@/auth/components/sign-in-redirect";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { SearchFilterBar } from "@/components/search-filter-bar";
-import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
-import { SearchResults } from "@/components/search-results";
+import { IndexerStatsPanel } from "@/components/indexer-stats-panel";
+import { SearchLoading } from "@/components/search-loading";
 import { SearchShell } from "@/components/search-shell";
+import {
+  TorrentResultList,
+  TorrentResultToolbar,
+  type CodecFilterValue,
+  type ResolutionFilterValue,
+  type ResultSortValue,
+} from "@/components/torrent-results";
 import { useAuth } from "@/auth/auth";
 import { EmptyState } from "@/ui/components/empty-state";
 import { useFastestMode } from "@/hooks/use-fastest-mode";
 import { useSearchFilters } from "@/hooks/use-search-filters";
-import { defaultSortDirection, formatSearchResults, normalizeQuery } from "@/lib/search";
+import { formatSearchResults, normalizeQuery } from "@/lib/search";
 import {
   applyChillSettingsPatch,
+  CodecFilter,
+  ResolutionFilter,
   SearchResultDisplayBehavior,
+  SortBy,
   SortDirection,
   toChillSettings,
   type ChillSettings,
@@ -27,6 +36,78 @@ import { useSaveSettings, useSettingsQuery } from "@/queries/settings";
 import { useSonnerToastDescriptor } from "@/ui/hooks/use-sonner-toast";
 
 const routeApi = getRouteApi("/search");
+
+function toResolutionValue(values: ResolutionFilter[]): ResolutionFilterValue {
+  if (values.length !== 1) return "all";
+  switch (values[0]) {
+    case ResolutionFilter.RESOLUTION_FILTER_720P:
+      return "720p";
+    case ResolutionFilter.RESOLUTION_FILTER_1080P:
+      return "1080p";
+    case ResolutionFilter.RESOLUTION_FILTER_2160P:
+      return "2160p";
+    default:
+      return "all";
+  }
+}
+
+function fromResolutionValue(value: ResolutionFilterValue): ResolutionFilter[] {
+  switch (value) {
+    case "720p":
+      return [ResolutionFilter.RESOLUTION_FILTER_720P];
+    case "1080p":
+      return [ResolutionFilter.RESOLUTION_FILTER_1080P];
+    case "2160p":
+      return [ResolutionFilter.RESOLUTION_FILTER_2160P];
+    default:
+      return [];
+  }
+}
+
+function toCodecValue(values: CodecFilter[]): CodecFilterValue {
+  if (values.length !== 1) return "all";
+  switch (values[0]) {
+    case CodecFilter.X264:
+      return "x264";
+    case CodecFilter.X265:
+      return "x265";
+    default:
+      return "all";
+  }
+}
+
+function fromCodecValue(value: CodecFilterValue): CodecFilter[] {
+  switch (value) {
+    case "x264":
+      return [CodecFilter.X264];
+    case "x265":
+      return [CodecFilter.X265];
+    default:
+      return [];
+  }
+}
+
+function toSortValue(sortBy: SortBy): ResultSortValue {
+  switch (sortBy) {
+    case SortBy.SIZE:
+      return "size";
+    case SortBy.UPLOADED_AT:
+      return "age";
+    default:
+      return "seeders";
+  }
+}
+
+function fromSortValue(value: ResultSortValue): SortBy {
+  switch (value) {
+    case "size":
+      return SortBy.SIZE;
+    case "age":
+      return SortBy.UPLOADED_AT;
+    default:
+      return SortBy.SEEDERS;
+  }
+}
 
 export function SearchPage() {
   const searchParams = routeApi.useSearch();
@@ -42,7 +123,6 @@ export function SearchPage() {
   const {
     filters,
     setCodec,
-    setOther,
     setResolution,
     setSort: setLocalSort,
   } = useSearchFilters(appSettings, submittedQuery);
@@ -147,17 +227,10 @@ export function SearchPage() {
     return "empty";
   })();
 
-  function setSort(nextSortBy: ChillSettings["sortBy"]) {
-    if (filters.sortBy === nextSortBy) {
-      const nextDirection =
-        filters.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
-      setLocalSort({ sortBy: nextSortBy, sortDirection: nextDirection });
-      patchConfig({ sortDirection: nextDirection });
-      return;
-    }
-    const nextDirection = defaultSortDirection(nextSortBy);
-    setLocalSort({ sortBy: nextSortBy, sortDirection: nextDirection });
-    patchConfig({ sortBy: nextSortBy, sortDirection: nextDirection });
+  function setSortValue(value: ResultSortValue) {
+    const sortBy = fromSortValue(value);
+    setLocalSort({ sortBy, sortDirection: SortDirection.DESC });
+    patchConfig({ sortBy, sortDirection: SortDirection.DESC });
   }
 
   if (!auth.isAuthenticated) {
@@ -166,15 +239,35 @@ export function SearchPage() {
 
   const combined = combineQueries(configQuery, indexersQuery);
 
+  const remember = appSettings?.rememberQuickFilters ?? false;
+  const filtersNode =
+    submittedQuery.length > 0 && appSettings ? (
+      <TorrentResultToolbar
+        resolution={toResolutionValue(filters.resolution)}
+        codec={toCodecValue(filters.codec)}
+        sort={toSortValue(filters.sortBy)}
+        hasActiveFilters={filters.resolution.length > 0 || filters.codec.length > 0}
+        onResolutionChange={(value) => {
+          const next = fromResolutionValue(value);
+          setResolution(next);
+          if (remember) patchConfig({ resolutionFilters: next });
+        }}
+        onCodecChange={(value) => {
+          const next = fromCodecValue(value);
+          setCodec(next);
+          if (remember) patchConfig({ codecFilters: next });
+        }}
+        onSortChange={setSortValue}
+        onClearFilters={() => {
+          setResolution([]);
+          setCodec([]);
+          if (remember) patchConfig({ resolutionFilters: [], codecFilters: [] });
+        }}
+      />
+    ) : null;
+
   const content = match(combined)
-    .with({ status: "pending" }, () =>
-      submittedQuery.length > 0 ? (
-        <>
-          <FilterBarLoading />
-          <SearchLoading />
-        </>
-      ) : null,
-    )
+    .with({ status: "pending" }, () => (submittedQuery.length > 0 ? <SearchLoading /> : null))
     .with({ status: "error" }, (q) => (
       <div className="mx-auto mt-6 w-full max-w-2xl">
         <UserErrorAlert error={q.error} />
@@ -212,40 +305,36 @@ export function SearchPage() {
             description="Try changing your filters."
           />
         ))
-        .with("results", () => (
-          <SearchResults
-            results={formattedResults}
-            sortBy={filters.sortBy}
-            sortDirection={filters.sortDirection}
-            titleBehavior={effective.searchResultTitleBehavior}
-            onSort={setSort}
-          />
-        ))
+        .with("results", () => <TorrentResultList results={formattedResults} />)
         .exhaustive();
 
       return (
         <section data-page="search" className="flex flex-col gap-3 lg:gap-6">
           <h1 className="sr-only">Search results</h1>
-          {submittedQuery.length > 0 ? (
-            <SearchFilterBar
-              filters={filters}
-              onResolutionChange={(next) => {
-                setResolution(next);
-                if (effective.rememberQuickFilters) patchConfig({ resolutionFilters: next });
-              }}
-              onCodecChange={(next) => {
-                setCodec(next);
-                if (effective.rememberQuickFilters) patchConfig({ codecFilters: next });
-              }}
-              onOtherChange={(next) => {
-                setOther(next);
-                if (effective.rememberQuickFilters) patchConfig({ otherFilters: next });
-              }}
-              onSort={setSort}
-            />
-          ) : null}
-
           {renderContent}
+
+          {searchState.indexerStats.length > 0 ? (
+            <details className="mx-auto w-full max-w-7xl">
+              <summary className="hover-hover:hover:text-fg-2 w-fit cursor-pointer text-xs text-fg-3 select-none">
+                indexer stats
+              </summary>
+              <IndexerStatsPanel
+                indexers={(indexersQuery.data ?? []).map((indexer) => ({
+                  id: indexer.id,
+                  name: indexer.name,
+                }))}
+                stats={searchState.indexerStats}
+                disabledIndexerIds={effective.disabledIndexerIds}
+                onToggle={(id) => {
+                  const current = effective.disabledIndexerIds;
+                  const next = current.includes(id)
+                    ? current.filter((item) => item !== id)
+                    : [...current, id];
+                  patchConfig({ disabledIndexerIds: next });
+                }}
+              />
+            </details>
+          ) : null}
 
           {searchState.firstError ? (
             <UserErrorAlert
@@ -264,5 +353,9 @@ export function SearchPage() {
     })
     .exhaustive();
 
-  return <SearchShell contentWidth="wide">{content}</SearchShell>;
+  return (
+    <SearchShell contentWidth="wide" filters={filtersNode}>
+      {content}
+    </SearchShell>
+  );
 }

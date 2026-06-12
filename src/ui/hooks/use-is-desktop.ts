@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 const DESKTOP_MIN_WIDTH = "(min-width: 640px)";
 
-export function useMediaQuery(query: string): boolean {
+function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(
     (listener) => {
       if (typeof window === "undefined") return () => {};

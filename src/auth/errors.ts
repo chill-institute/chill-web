@@ -92,9 +92,9 @@ export function shouldRetryQueryError(failureCount: number, error: unknown) {
 export function localizeError(error: unknown): LocalizedError {
   if (isPutioProviderUnavailableError(error)) {
     return {
-      message: "Could not connect to put.io. Please try again.",
+      message: "can't reach",
       recoverySuggestion: {
-        description: "If this keeps happening, sign in again to refresh your put.io session.",
+        description: "if this keeps happening, sign in again to refresh your put.io session.",
         actions: [
           { kind: "retry", label: "retry" },
           { kind: "sign-in-again", label: "sign in again" },
@@ -104,13 +104,13 @@ export function localizeError(error: unknown): LocalizedError {
   }
   if (isBackendUnavailableError(error)) {
     return {
-      message: "Service temporarily unavailable. Please try again shortly.",
+      message: "service down",
     };
   }
   if (error instanceof ConnectError) {
     if (error.code === Code.Unauthenticated || error.code === Code.PermissionDenied) {
       return {
-        message: "Session expired. Please sign in again.",
+        message: "session expired",
       };
     }
     if (error.rawMessage) {
@@ -125,7 +125,7 @@ export function localizeError(error: unknown): LocalizedError {
     };
   }
   return {
-    message: "Unexpected error",
+    message: "something's wrong",
   };
 }
 
