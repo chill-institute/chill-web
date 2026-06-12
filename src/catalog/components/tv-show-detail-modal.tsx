@@ -201,6 +201,12 @@ function TvShowDetailContent({
                   {selectedSeason.episodeCount} episodes
                   <span className="mx-1.5">·</span>
                   {formatAirDate(selectedSeason.airDate)}
+                  {downloadsQuery.data?.seasonPack?.resolution ? (
+                    <>
+                      <span className="mx-1.5">·</span>
+                      {downloadsQuery.data.seasonPack.resolution}
+                    </>
+                  ) : null}
                   {downloadsQuery.data?.seasonPack?.size ? (
                     <>
                       <span className="mx-1.5">·</span>
@@ -276,6 +282,14 @@ function TvShowDetailContent({
                         <span>· {formatAirDate(episode.airDate)}</span>
                         {episode.runtime ? <span>· {episode.runtime}m</span> : null}
                         {episode.rating ? <span>· ★ {episode.rating.toFixed(1)}</span> : null}
+                        {episodeDownload?.resolution ? (
+                          <span className="tabular-nums">· {episodeDownload.resolution}</span>
+                        ) : null}
+                        {episodeDownload?.size ? (
+                          <span className="tabular-nums">
+                            · {formatBytes(episodeDownload.size)}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
