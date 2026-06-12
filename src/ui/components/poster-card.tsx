@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { Star } from "lucide-react";
+import { ArrowUpRight, Star } from "lucide-react";
 import type { CSSProperties, ImgHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "../lib/cn";
@@ -12,6 +12,7 @@ type PosterCardProps = useRender.ComponentProps<"article"> & {
   imageFetchPriority?: ImgHTMLAttributes<HTMLImageElement>["fetchPriority"];
   imageLoading?: ImgHTMLAttributes<HTMLImageElement>["loading"];
   rating?: string | null;
+  ratingHref?: string | null;
   year?: string | null;
   footer?: ReactNode;
   className?: string;
@@ -24,6 +25,7 @@ function PosterCard({
   imageFetchPriority = "auto",
   imageLoading = "lazy",
   rating,
+  ratingHref,
   year,
   footer,
   className,
@@ -65,27 +67,58 @@ function PosterCard({
                 </div>
               )}
             </div>
-            <div className="text-fg-3 flex flex-col gap-1 px-3 pt-2.5 pb-3 text-base sm:text-sm">
-              <h2 className="text-fg-1 m-0 text-base leading-tight break-words sm:text-lg">
-                {title}
-              </h2>
-              {(rating != null || year != null) && (
-                <div className="flex items-center gap-1.5 tabular-nums">
-                  {rating != null && (
-                    <>
-                      <Star
-                        className="size-3 fill-rating-amber text-rating-amber"
-                        strokeWidth={0}
-                        aria-hidden="true"
-                      />
-                      <span className="text-fg-1">{rating}</span>
-                    </>
-                  )}
-                  {rating != null && year != null && <span className="text-fg-4">·</span>}
-                  {year != null && <span>{year}</span>}
-                </div>
-              )}
-              {footer}
+            <div className="flex items-start justify-between gap-2 px-3 pt-2.5 pb-3">
+              <div className="text-fg-3 flex min-w-0 flex-col gap-1 text-base sm:text-sm">
+                <h2
+                  title={title}
+                  className="text-fg-1 m-0 truncate text-base leading-tight sm:text-lg"
+                >
+                  {title}
+                </h2>
+                {(rating != null || year != null) && (
+                  <div className="flex items-center gap-1.5 tabular-nums">
+                    {rating != null && (
+                      <span className="flex items-center gap-1">
+                        <Star
+                          className="size-3.5 fill-rating-amber text-rating-amber"
+                          strokeWidth={0}
+                          aria-hidden="true"
+                        />
+                        <span className="text-fg-1">{rating}</span>
+                      </span>
+                    )}
+                    {rating != null && year != null && <span className="text-fg-4">·</span>}
+                    {year != null && <span>{year}</span>}
+                    {ratingHref ? (
+                      <>
+                        <span className="text-fg-4">·</span>
+                        <span
+                          role="link"
+                          tabIndex={0}
+                          title="View on IMDb"
+                          className="text-fg-2 hover-hover:hover:text-fg-1 inline-flex cursor-pointer items-center gap-0.5 transition-colors"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            window.open(ratingHref, "_blank", "noopener,noreferrer");
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              window.open(ratingHref, "_blank", "noopener,noreferrer");
+                            }
+                          }}
+                        >
+                          <span>IMDb</span>
+                          <ArrowUpRight className="size-3 shrink-0" strokeWidth={1.25} />
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {footer ? <div className="shrink-0">{footer}</div> : null}
             </div>
           </>
         ),

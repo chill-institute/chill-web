@@ -11,6 +11,31 @@ type CopyButtonProps = {
   className?: string;
 };
 
+async function copyText(value: string): Promise<boolean> {
+  try {
+    if (window.isSecureContext && navigator.clipboard) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // fall back to execCommand below (e.g. non-secure context)
+  }
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,14 +58,9 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
       data-slot="copy-button"
       variant={variant === "stamp" ? "default" : "ghost"}
       size={variant === "stamp" ? "default" : "icon-sm"}
-      className={cn("cursor-copy", variant === "stamp" && "min-w-8 px-2", className)}
+      className={cn(variant === "stamp" && "min-w-8 px-2", className)}
       onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(value);
-          setState("copied");
-        } catch {
-          setState("error");
-        }
+        setState((await copyText(value)) ? "copied" : "error");
         scheduleReset();
       }}
       aria-label={

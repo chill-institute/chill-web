@@ -4,6 +4,7 @@ import { match } from "ts-pattern";
 
 import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
+import { MoviePosterActions } from "@/catalog/components/movie-poster-actions";
 import { MoviesSourceSelect } from "@/catalog/components/movies-source-select";
 import { TVShowsSourceSelect } from "@/catalog/components/tv-shows-source-select";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
@@ -235,8 +236,10 @@ function MoviesContent({ query, source, onPickAnotherSource }: MoviesContentProp
               imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
               imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
               rating={movie.rating != null ? movie.rating.toFixed(1) : null}
+              ratingHref={movie.externalUrl || undefined}
               year={movie.year != null ? String(movie.year) : null}
               render={<Link to="/movies/$id" params={{ id: movie.id }} search={(prev) => prev} />}
+              footer={<MoviePosterActions movie={movie} />}
             />
           ))}
         </PosterGrid>

@@ -1,19 +1,21 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Film, HardDrive, Monitor, Search, Users } from "lucide-react";
 
-import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { normalizeCodecFilterValue } from "@/api/release-info";
-import { Button } from "@/ui/components/ui/button";
-import { NativeSelect } from "@/ui/components/ui/native-select";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { Skeleton } from "@/ui/components/ui/skeleton";
-import { cn } from "@/ui/lib/cn";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
-import { formatAge, formatBytes } from "@/ui/lib/format";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
 import { useSettingsQuery } from "@/queries/settings";
 import { CodecFilter, ResolutionFilter } from "@/lib/types";
+import {
+  TorrentResultList,
+  TorrentResultToolbar,
+  TorrentResultsEmpty,
+  type CodecFilterValue,
+  type ResolutionFilterValue,
+  type ResultSortValue,
+} from "@/components/torrent-results";
 import {
   DetailModalBody,
   DetailModalShell,
@@ -30,26 +32,10 @@ import {
 const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
 
-const UPLOADED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-
-const SEEDER_FORMATTER = new Intl.NumberFormat();
-
 type Props = {
   movie: Movie;
   onClose: () => void;
 };
-
-const RESOLUTION_FILTER_OPTIONS = ["all", "2160p", "1080p", "720p"] as const;
-const CODEC_FILTER_OPTIONS = ["all", "x265", "x264"] as const;
-const SORT_OPTIONS = ["seeders", "size", "age"] as const;
-
-type ResolutionFilterValue = (typeof RESOLUTION_FILTER_OPTIONS)[number];
-type CodecFilterValue = (typeof CODEC_FILTER_OPTIONS)[number];
-type SortValue = (typeof SORT_OPTIONS)[number];
 
 function initialResolutionFilter(
   filters: readonly ResolutionFilter[] | undefined,
@@ -86,107 +72,25 @@ type ParsedResult = {
   uploadedAtTimestamp: number;
 };
 
-function formatUploadedAt(value: string) {
-  if (!value) {
-    return "Unknown date";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return UPLOADED_AT_FORMATTER.format(date);
-}
-
-function formatResultAge(value: string) {
-  if (!value) {
-    return undefined;
-  }
-
-  const age = formatAge(value);
-  if (age === "unknown") {
-    return undefined;
-  }
-
-  return age === "Today" ? age : `${age} ago`;
-}
-
-function formatSeederCount(seeders: bigint) {
-  if (seeders <= 0n) {
-    return undefined;
-  }
-
-  const count = Number(seeders);
-  const formattedCount = SEEDER_FORMATTER.format(count);
-  return `${formattedCount} seeder${count === 1 ? "" : "s"}`;
-}
-
-function canSendResult(result: SearchResult) {
-  return result.link.trim().length > 0;
-}
-
-function compareBigintsDescending(left: bigint, right: bigint) {
-  if (left === right) {
-    return 0;
-  }
-
-  return left > right ? -1 : 1;
-}
-
-function parseResolution(result: {
-  releaseInfo?: { resolution: string } | undefined;
-}): ParsedResult["resolution"] {
+function parseResolution(result: SearchResult): ParsedResult["resolution"] {
   const value = result.releaseInfo?.resolution.toLowerCase();
   if (value === "2160p" || value === "1080p" || value === "720p") return value;
   return undefined;
 }
 
-function parseCodec(result: {
-  releaseInfo?: { codec: string } | undefined;
-}): ParsedResult["codec"] {
+function parseCodec(result: SearchResult): ParsedResult["codec"] {
   return normalizeCodecFilterValue(result.releaseInfo?.codec);
 }
 
 function parseUploadedAtTimestamp(uploadedAt: string) {
-  if (!uploadedAt) {
-    return 0;
-  }
-
+  if (!uploadedAt) return 0;
   const timestamp = new Date(uploadedAt).getTime();
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
-function FilterSelect<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: ReadonlyArray<{ value: T; label: string }>;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <NativeSelect
-      aria-label={label}
-      name={label.toLowerCase()}
-      value={value}
-      wrapperClassName="block w-[9.75rem] max-w-full sm:w-fit"
-      className="h-8 py-1.5 text-sm whitespace-nowrap"
-      onChange={(event) => {
-        const next = options.find((option) => option.value === event.currentTarget.value);
-        if (next) onChange(next.value);
-      }}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </NativeSelect>
-  );
+function compareBigintsDescending(left: bigint, right: bigint) {
+  if (left === right) return 0;
+  return left > right ? -1 : 1;
 }
 
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
@@ -210,15 +114,12 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
 
 function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: boolean }) {
   const settingsQuery = useSettingsQuery();
+  const remember = settingsQuery.data?.search?.rememberQuickFilters ?? false;
   const settingsResolutionFilter = initialResolutionFilter(
-    settingsQuery.data?.search?.rememberQuickFilters
-      ? settingsQuery.data.search.resolutionFilters
-      : undefined,
+    remember ? settingsQuery.data?.search?.resolutionFilters : undefined,
   );
   const settingsCodecFilter = initialCodecFilter(
-    settingsQuery.data?.search?.rememberQuickFilters
-      ? settingsQuery.data.search.codecFilters
-      : undefined,
+    remember ? settingsQuery.data?.search?.codecFilters : undefined,
   );
   const [resolutionFilterOverride, setResolutionFilter] = useState<
     ResolutionFilterValue | undefined
@@ -226,7 +127,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const [codecFilterOverride, setCodecFilter] = useState<CodecFilterValue | undefined>();
   const resolutionFilter = resolutionFilterOverride ?? settingsResolutionFilter;
   const codecFilter = codecFilterOverride ?? settingsCodecFilter;
-  const [sortBy, setSortBy] = useState<SortValue>("seeders");
+  const [sortBy, setSortBy] = useState<ResultSortValue>("seeders");
   const searchQuery = useMovieSearchQuery({ movie });
 
   const results = searchQuery.data?.results ?? EMPTY_RESULTS;
@@ -241,13 +142,13 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
       })),
     [results],
   );
-  const { visibleResults, sendableResultsCount } = useMemo(() => {
+  const visibleResults = useMemo(() => {
     const filtered = parsedResults.filter((entry) => {
       if (resolutionFilter !== "all" && entry.resolution !== resolutionFilter) return false;
       if (codecFilter !== "all" && entry.codec !== codecFilter) return false;
       return true;
     });
-    const sorted = filtered.toSorted((left, right) => {
+    return filtered.toSorted((left, right) => {
       if (sortBy === "size") {
         const sizeOrder = compareBigintsDescending(left.result.size, right.result.size);
         if (sizeOrder !== 0) return sizeOrder;
@@ -264,14 +165,9 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
       }
       return left.result.title.localeCompare(right.result.title);
     });
-    let sendable = 0;
-    for (const entry of sorted) {
-      if (canSendResult(entry.result)) sendable++;
-    }
-    return { visibleResults: sorted, sendableResultsCount: sendable };
   }, [parsedResults, resolutionFilter, codecFilter, sortBy]);
-  const hasOnlyUnavailableResults = visibleResults.length > 0 && sendableResultsCount === 0;
   const hasActiveFilters = resolutionFilter !== "all" || codecFilter !== "all";
+
   return (
     <DetailModalShell isDesktop={isDesktop}>
       <DetailModalHeader
@@ -306,16 +202,16 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             <UserErrorAlert error={searchQuery.error} />
           </div>
         ) : results.length === 0 ? (
-          <EmptyResults
+          <TorrentResultsEmpty
             title="no torrent results found"
             body="searched by movie title and year, but nothing usable came back yet."
           />
         ) : (
           <>
-            <ResultsToolbar
-              resolutionFilter={resolutionFilter}
-              codecFilter={codecFilter}
-              sortBy={sortBy}
+            <TorrentResultToolbar
+              resolution={resolutionFilter}
+              codec={codecFilter}
+              sort={sortBy}
               hasActiveFilters={hasActiveFilters}
               onResolutionChange={setResolutionFilter}
               onCodecChange={setCodecFilter}
@@ -327,179 +223,20 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
             />
 
             {visibleResults.length === 0 ? (
-              <EmptyResults
+              <TorrentResultsEmpty
                 title="no results match these filters"
                 body="try a different resolution or codec to widen the result set."
               />
             ) : (
-              <>
-                {hasOnlyUnavailableResults ? (
-                  <p className="m-0 text-sm text-fg-3">
-                    results came back, but none include a usable transfer link yet.
-                  </p>
-                ) : null}
-
-                <ul
-                  aria-label="Torrent results list"
-                  className="border-border-soft bg-surface-2 m-0 shrink-0 list-none overflow-hidden rounded border p-0"
-                >
-                  {visibleResults.map(({ result, resolution, codec }) => {
-                    const isSendable = canSendResult(result);
-                    const ageLabel = formatResultAge(result.uploadedAt);
-                    const uploadedAtLabel = result.uploadedAt
-                      ? formatUploadedAt(result.uploadedAt)
-                      : undefined;
-                    const sizeLabel = result.size > 0n ? formatBytes(result.size) : undefined;
-                    const seederLabel = formatSeederCount(result.seeders);
-
-                    return (
-                      <li
-                        key={result.id || `${result.title}-${result.link}`}
-                        className={cn(
-                          "border-border-faint flex flex-col gap-3 border-t px-3 py-3 first:border-t-0 sm:flex-row sm:items-center sm:justify-between",
-                          !isSendable && "opacity-70",
-                        )}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="break-words text-sm text-fg-1">{result.title}</div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-4">
-                            <span className="text-fg-3">
-                              {result.indexer || result.source || "unknown"}
-                            </span>
-                            {resolution ? (
-                              <span className="inline-flex items-center gap-1 tabular-nums">
-                                <Monitor className="size-3" />
-                                {resolution}
-                              </span>
-                            ) : null}
-                            {codec ? (
-                              <span className="inline-flex items-center gap-1">
-                                <Film className="size-3" />
-                                {codec}
-                              </span>
-                            ) : null}
-                            {sizeLabel ? (
-                              <span className="inline-flex items-center gap-1 tabular-nums">
-                                <HardDrive className="size-3" />
-                                {sizeLabel}
-                              </span>
-                            ) : null}
-                            {seederLabel ? (
-                              <span className="inline-flex items-center gap-1 tabular-nums">
-                                <Users className="size-3" />
-                                {seederLabel}
-                              </span>
-                            ) : null}
-                            {ageLabel ? (
-                              <span
-                                className="inline-flex items-center gap-1 tabular-nums"
-                                title={uploadedAtLabel}
-                              >
-                                <CalendarDays className="size-3" />
-                                {ageLabel}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          {isSendable ? (
-                            <AddTransferButton className="w-full sm:w-auto" url={result.link}>
-                              send to put.io
-                            </AddTransferButton>
-                          ) : (
-                            <Button
-                              variant="off"
-                              disabled
-                              className="w-full sm:w-auto"
-                              aria-label={`Cannot send ${result.title} to put.io`}
-                              title="This result is missing a usable transfer link"
-                            >
-                              unavailable
-                            </Button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
+              <TorrentResultList
+                results={visibleResults.map((entry) => entry.result)}
+                columns={false}
+              />
             )}
           </>
         )}
       </DetailModalBody>
     </DetailModalShell>
-  );
-}
-
-function ResultsToolbar({
-  resolutionFilter,
-  codecFilter,
-  sortBy,
-  hasActiveFilters,
-  onResolutionChange,
-  onCodecChange,
-  onSortChange,
-  onClearFilters,
-}: {
-  resolutionFilter: ResolutionFilterValue;
-  codecFilter: CodecFilterValue;
-  sortBy: SortValue;
-  hasActiveFilters: boolean;
-  onResolutionChange: (value: ResolutionFilterValue) => void;
-  onCodecChange: (value: CodecFilterValue) => void;
-  onSortChange: (value: SortValue) => void;
-  onClearFilters: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-      <div className="flex flex-wrap items-end gap-2">
-        <FilterSelect
-          label="Resolution"
-          value={resolutionFilter}
-          onChange={onResolutionChange}
-          options={RESOLUTION_FILTER_OPTIONS.map((value) => ({
-            value,
-            label: value === "all" ? "all resolutions" : value,
-          }))}
-        />
-        <FilterSelect
-          label="Codec"
-          value={codecFilter}
-          onChange={onCodecChange}
-          options={CODEC_FILTER_OPTIONS.map((value) => ({
-            value,
-            label: value === "all" ? "all codecs" : value,
-          }))}
-        />
-        <FilterSelect<SortValue>
-          label="Sort"
-          value={sortBy}
-          onChange={onSortChange}
-          options={[
-            { value: "seeders", label: "most seeders" },
-            { value: "size", label: "largest size" },
-            { value: "age", label: "newest first" },
-          ]}
-        />
-        {hasActiveFilters ? (
-          <Button variant="ghost" size="sm" onClick={onClearFilters}>
-            clear filters
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function EmptyResults({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="border-border-soft bg-surface-2 text-fg-2 rounded border px-4 py-6 text-sm">
-      <div className="flex items-center gap-2 font-medium text-fg-1">
-        <Search className="size-4" />
-        <span>{title}</span>
-      </div>
-      <p className="m-0 mt-2">{body}</p>
-    </div>
   );
 }
 
