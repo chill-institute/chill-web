@@ -61,7 +61,7 @@ export function QuickFilters({
   className,
 }: Props) {
   return (
-    <div className={cn("@container", className)}>
+    <div role="group" aria-label="Quick filters" className={cn("@container", className)}>
       <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-center @2xl:gap-x-4 @2xl:gap-y-2">
         <FilterGroup label="resolution">
           {resolutionOrder.map((filter) => (

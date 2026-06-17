@@ -181,19 +181,11 @@ test.describe("movies", () => {
     await expect(movieDialog.getByText("Aurora Protocol.2010.1080p.BluRay.x264")).toBeVisible();
     await expect(movieDialog.getByText("Science Fiction")).toBeVisible();
     await expect(movieDialog.getByText("Action")).toBeVisible();
-    await expect(movieDialog.getByLabel("Resolution")).toBeVisible();
-    await expect(movieDialog.getByLabel("Codec")).toBeVisible();
-    await expect(movieDialog.getByLabel("Sort", { exact: true })).toBeVisible();
-    const filterSelectWrappers = movieDialog.locator('[data-slot="native-select-wrapper"]');
-    await expect(filterSelectWrappers).toHaveCount(3);
-    const filterBoxes = await Promise.all(
-      Array.from({ length: 3 }, (_, index) => filterSelectWrappers.nth(index).boundingBox()),
-    );
-    for (const filterBox of filterBoxes) {
-      if (filterBox === null) throw new Error("Expected filter select to have a box");
-      expect(filterBox.width).toBeGreaterThan(80);
-      expect(filterBox.width).toBeLessThanOrEqual(160);
-    }
+    const quickFilters = movieDialog.getByRole("group", { name: /quick filters/i });
+    await expect(quickFilters).toBeVisible();
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeVisible();
+    await expect(quickFilters.getByRole("checkbox", { name: "x265" })).toBeVisible();
+    await expect(quickFilters.getByRole("combobox", { name: "Sort results" })).toBeVisible();
     await expect(
       movieDialog.getByRole("button", { name: /send to put\.io/i }).last(),
     ).toBeVisible();
@@ -212,11 +204,19 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/movies");
     await openFirstMovieModal(authenticatedPage);
 
-    const pickFromSelect = async (label: string, optionLabel: string) => {
-      await authenticatedPage.getByRole("combobox", { name: label }).selectOption({
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    const setResolution = (label: string, checked: boolean) => {
+      const box = quickFilters.getByRole("checkbox", { name: label });
+      return checked ? box.check() : box.uncheck();
+    };
+    const setCodec = (label: string, checked: boolean) => {
+      const box = quickFilters.getByRole("checkbox", { name: label });
+      return checked ? box.check() : box.uncheck();
+    };
+    const setSort = (optionLabel: string) =>
+      quickFilters.getByRole("combobox", { name: "Sort results" }).selectOption({
         label: optionLabel,
       });
-    };
 
     const resultsList = authenticatedPage.getByRole("list", { name: "Torrent results list" });
     const resultItems = resultsList.getByRole("listitem");
@@ -224,25 +224,26 @@ test.describe("movies", () => {
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.1080p.BluRay.x264");
 
-    await pickFromSelect("Resolution", "2160p");
+    await setResolution("2160p", true);
     await expect(resultItems).toHaveCount(1);
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.2160p.WEB-DL.x265");
 
-    await pickFromSelect("Resolution", "all resolutions");
-    await pickFromSelect("Codec", "x265");
+    await setResolution("2160p", false);
+    await setCodec("x265", true);
     await expect(resultItems).toHaveCount(2);
     await expect(resultsList).not.toContainText("Aurora Protocol.2010.1080p.BluRay.x264");
 
-    await pickFromSelect("Codec", "x264");
+    await setCodec("x265", false);
+    await setCodec("x264", true);
     await expect(resultItems).toHaveCount(1);
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.1080p.BluRay.x264");
 
-    await pickFromSelect("Codec", "all codecs");
-    await pickFromSelect("Sort", "newest first");
+    await setCodec("x264", false);
+    await setSort("newest");
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.720p.BluRay.x265");
 
-    await pickFromSelect("Sort", "largest size");
+    await setSort("largest");
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.2160p.WEB-DL.x265");
   });
 
@@ -297,12 +298,12 @@ test.describe("movies", () => {
       name: "Aurora Protocol details",
     });
     await expect(movieDialog).toBeVisible({ timeout: 3000 });
-    await expect(movieDialog.getByRole("combobox", { name: "Resolution" })).toHaveValue("all");
+    await expect(movieDialog.getByRole("checkbox", { name: "2160p" })).not.toBeChecked();
 
     releaseSettings?.();
 
-    await expect(movieDialog.getByRole("combobox", { name: "Resolution" })).toHaveValue("2160p");
-    await expect(movieDialog.getByRole("combobox", { name: "Codec" })).toHaveValue("x265");
+    await expect(movieDialog.getByRole("checkbox", { name: "2160p" })).toBeChecked();
+    await expect(movieDialog.getByRole("checkbox", { name: "x265" })).toBeChecked();
     const resultItems = movieDialog
       .getByRole("list", { name: "Torrent results list" })
       .getByRole("listitem");
@@ -364,8 +365,8 @@ test.describe("movies", () => {
 
     releaseSettings?.();
 
-    await expect(movieDialog.getByRole("combobox", { name: "Resolution" })).toHaveValue("all");
-    await expect(movieDialog.getByRole("combobox", { name: "Codec" })).toHaveValue("all");
+    await expect(movieDialog.getByRole("checkbox", { name: "2160p" })).not.toBeChecked();
+    await expect(movieDialog.getByRole("checkbox", { name: "x265" })).not.toBeChecked();
     await expect(
       movieDialog.getByRole("list", { name: "Torrent results list" }).getByRole("listitem"),
     ).toHaveCount(3);

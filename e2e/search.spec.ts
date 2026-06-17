@@ -571,13 +571,14 @@ test.describe("search page", () => {
     await expect(rows).toHaveCount(3);
     await expect(rows.nth(0)).toContainText("Zulu Movie 1080p");
 
-    await authenticatedPage.getByRole("button", { name: "name" }).click();
+    const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
+    await sortSelect.selectOption({ label: "name" });
 
     await expect(rows.nth(0)).toContainText("Alpha Movie 1080p");
     await expect(rows.nth(1)).toContainText("Beta Movie 1080p");
     await expect(rows.nth(2)).toContainText("Zulu Movie 1080p");
 
-    await authenticatedPage.getByRole("button", { name: "source" }).click();
+    await sortSelect.selectOption({ label: "source" });
 
     await expect(rows.nth(0)).toContainText("Beta Movie 1080p");
     await expect(rows.nth(0)).toContainText("AlphaSource");
@@ -804,8 +805,8 @@ test.describe("search page", () => {
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(2);
 
-    const filterBar = authenticatedPage.locator("#quick-filters");
-    await filterBar.locator("label").filter({ hasText: "x265" }).click();
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    await quickFilters.getByRole("checkbox", { name: "x265" }).check();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("x265 HEVC");
   });
@@ -831,9 +832,9 @@ test.describe("search page", () => {
 
     await authenticatedPage.goto("/search?q=thor");
 
-    const filterBar = authenticatedPage.locator("#quick-filters");
-    const firstFilter = filterBar.getByText("720p", { exact: true });
-    const lastFilter = filterBar.getByText("HDR", { exact: true });
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    const firstFilter = quickFilters.getByText("720p", { exact: true });
+    const lastFilter = quickFilters.getByText("2160p", { exact: true });
     await expect(firstFilter).toBeVisible();
     await expect(lastFilter).toBeVisible();
 
@@ -896,10 +897,9 @@ test.describe("search page", () => {
 
     await authenticatedPage.goto("/search?q=movie");
 
-    const filterBar = authenticatedPage.locator("#quick-filters");
-    await expect(filterBar.locator("input#codec-2")).toBeChecked();
-    await expect(filterBar.locator("input#res-3")).not.toBeChecked();
-    await expect(filterBar.locator("input#other-1")).not.toBeChecked();
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    await expect(quickFilters.getByRole("checkbox", { name: "x265" })).toBeChecked();
+    await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).not.toBeChecked();
 
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(2);
