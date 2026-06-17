@@ -287,6 +287,7 @@ function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentPr
               imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
               imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
               rating={show.rating != null ? show.rating.toFixed(1) : null}
+              ratingHref={show.externalUrl || undefined}
               year={show.year != null ? String(show.year) : null}
               render={
                 <Link

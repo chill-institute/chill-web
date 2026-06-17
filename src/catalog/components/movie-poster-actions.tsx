@@ -102,10 +102,11 @@ export function MoviePosterActions({ movie }: { movie: Movie }) {
   const label = preferenceLabel();
 
   return (
-    <div className="flex gap-1.5">
+    <div className="flex w-full gap-1.5 sm:w-auto">
       <Button
         variant="default"
-        size="icon-sm"
+        size="sm"
+        className="w-full justify-center gap-1.5 sm:size-7 sm:gap-0 sm:px-0 [&_svg:not([class*='size-'])]:size-3.5"
         disabled={status === "pending"}
         aria-label={`Download top result for ${movie.title}`}
         title={label ? `Download top ${label} result` : "Download top result"}
@@ -116,6 +117,7 @@ export function MoviePosterActions({ movie }: { movie: Movie }) {
         }}
       >
         {downloadIcon}
+        <span className="sm:hidden">send to put.io</span>
       </Button>
     </div>
   );
