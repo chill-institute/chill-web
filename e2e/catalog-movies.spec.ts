@@ -1,6 +1,6 @@
 import { test, expect } from "./support/fixtures";
 import { create } from "@bufbuild/protobuf";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import {
   CodecFilter,
   MoviesSource,
@@ -103,6 +103,31 @@ async function openFirstMovieModal(page: Page) {
   const firstCard = page.locator('[data-slot="poster-card"]').first();
   await expect(firstCard).toBeVisible();
   await firstCard.click();
+}
+
+async function elementBox(locator: Locator) {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  if (box === null) throw new Error("Expected element to have a bounding box");
+  return box;
+}
+
+async function stableElementBox(locator: Locator) {
+  let previous = await elementBox(locator);
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await locator.evaluate(() => new Promise<void>((resolve) => window.setTimeout(resolve, 50)));
+    const next = await elementBox(locator);
+    if (Math.abs(next.x - previous.x) <= 1 && Math.abs(next.y - previous.y) <= 1) {
+      return next;
+    }
+    previous = next;
+  }
+  return previous;
+}
+
+function expectStablePosition(before: { x: number; y: number }, after: { x: number; y: number }) {
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
 }
 
 test.describe("movies", () => {
@@ -329,6 +354,47 @@ test.describe("movies", () => {
 
     await expect.poll(() => savedBodies.length).toBeGreaterThan(0);
   });
+
+  for (const { name, viewport } of [
+    { name: "desktop", viewport: { width: 1280, height: 720 } },
+    { name: "mobile", viewport: { width: 390, height: 844 } },
+  ]) {
+    test(`movie detail keeps IMDb link stable while torrents load on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize(viewport);
+      await mockRpc(homeMethods());
+
+      let releaseSearch: () => void = () => {};
+      const delayedSearch = new Promise<void>((resolve) => {
+        releaseSearch = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+        await delayedSearch;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(searchResponse("Aurora Protocol 2010", auroraSearchResults)),
+        });
+      });
+
+      await authenticatedPage.goto("/movies");
+      await openFirstMovieModal(authenticatedPage);
+
+      const movieDialog = authenticatedPage.getByRole("dialog", {
+        name: "Aurora Protocol details",
+      });
+      const imdbLink = movieDialog.getByRole("link", { name: /IMDb/i });
+      const before = await stableElementBox(imdbLink);
+
+      releaseSearch();
+      await expect(movieDialog.getByText("Aurora Protocol.2010.1080p.BluRay.x264")).toBeVisible();
+      const after = await stableElementBox(imdbLink);
+
+      expectStablePosition(before, after);
+    });
+  }
 
   test("movie modal filters results and updates result order when sort changes", async ({
     authenticatedPage,

@@ -67,6 +67,21 @@ function EpisodeActionSkeleton() {
   return <Skeleton className="size-8 shrink-0 rounded" />;
 }
 
+function SeasonSummarySkeleton() {
+  return (
+    <div
+      className="border-border-soft bg-surface-2 mb-4 flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between"
+      aria-hidden="true"
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-3 w-48" />
+      </div>
+      <Skeleton className="h-8 w-full rounded sm:w-40" />
+    </div>
+  );
+}
+
 type DetailData = NonNullable<ReturnType<typeof useTVShowDetailQuery>["data"]>;
 type SeasonData = NonNullable<ReturnType<typeof useTVShowSeasonQuery>["data"]>;
 type SeasonDownloadsData = NonNullable<ReturnType<typeof useTVShowSeasonDownloadsQuery>["data"]>;
@@ -239,6 +254,8 @@ function TvShowDetailContent({
                 )}
               </div>
             </div>
+          ) : detailQuery.isPending ? (
+            <SeasonSummarySkeleton />
           ) : null}
 
           {downloadsQuery.status === "error" ? (

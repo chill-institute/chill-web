@@ -18,6 +18,7 @@ import {
   userSettings,
 } from "./support/seeds";
 import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
+import type { Page } from "@playwright/test";
 
 const aurora = movie({
   id: "m1",
@@ -59,6 +60,27 @@ const harborWard = tvShow({
   networks: ["HBO Max"],
 });
 
+const scrollMovies = Array.from({ length: 30 }, (_, index) => {
+  const number = index + 1;
+  return movie({
+    id: `scroll-movie-${number}`,
+    title: `Scroll Movie ${number}`,
+    titlePretty: `Scroll Movie ${number}`,
+    year: 2000 + number,
+    posterUrl: "/test/poster.svg",
+  });
+});
+
+const scrollShows = Array.from({ length: 30 }, (_, index) => {
+  const number = index + 1;
+  return tvShow({
+    imdbId: `tt91${String(number).padStart(5, "0")}`,
+    title: `Scroll Show ${number}`,
+    year: 2000 + number,
+    posterUrl: "/test/poster.svg",
+  });
+});
+
 const auroraSearchResults = [
   searchResult({
     id: "sr1",
@@ -72,6 +94,19 @@ const auroraSearchResults = [
     uploadedAt: "2026-04-01T00:00:00Z",
   }),
 ];
+
+async function scrollToCatalogBottom(page: Page) {
+  return page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    return window.scrollY;
+  });
+}
+
+async function expectPageScrollPreserved(page: Page, before: number) {
+  const after = await page.evaluate(() => window.scrollY);
+  expect(before).toBeGreaterThan(300);
+  expect(after).toBeGreaterThanOrEqual(before - 2);
+}
 
 test.describe("catalog routing", () => {
   test("/ stays on the search home with the search tab active", async ({ authenticatedPage }) => {
@@ -417,6 +452,33 @@ test.describe("catalog routing", () => {
     await expect(authenticatedPage.locator('[data-slot="poster-card"]').first()).toBeVisible();
   });
 
+  test("opening a movie modal preserves the catalog scroll position", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse(scrollMovies),
+      GetTVShows: tvShowsResponse([]),
+      Search: searchResponse("Scroll Movie 30 2030", []),
+    });
+
+    await authenticatedPage.goto("/movies");
+    const targetCard = authenticatedPage
+      .locator('[data-slot="poster-card"]')
+      .filter({ hasText: "Scroll Movie 30" });
+    await expect(targetCard).toBeVisible();
+
+    const scrollBefore = await scrollToCatalogBottom(authenticatedPage);
+    await targetCard.click();
+    await authenticatedPage.waitForURL(/\/movies\/scroll-movie-30/);
+
+    await expect(
+      authenticatedPage.getByRole("dialog", { name: /Scroll Movie 30 details/i }),
+    ).toBeVisible();
+    await expectPageScrollPreserved(authenticatedPage, scrollBefore);
+  });
+
   test("opening a tv card preserves catalog search params", async ({
     authenticatedPage,
     mockRpc,
@@ -436,6 +498,39 @@ test.describe("catalog routing", () => {
     const url = new URL(authenticatedPage.url());
     expect(url.searchParams.get("source")).toBe(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
     expect(url.searchParams.get("season")).toBe("1");
+  });
+
+  test("opening a tv modal preserves the catalog scroll position", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+      GetMovies: moviesResponse([]),
+      GetTVShows: tvShowsResponse(scrollShows),
+      GetTVShowDetail: tvShowDetailResponse(
+        tvShowDetail({
+          imdbId: scrollShows[29].imdbId,
+          title: scrollShows[29].title,
+          year: scrollShows[29].year,
+          posterUrl: scrollShows[29].posterUrl,
+        }),
+        [],
+      ),
+    });
+
+    await authenticatedPage.goto("/tv-shows");
+    const targetCard = authenticatedPage
+      .locator('[data-slot="poster-card"]')
+      .filter({ hasText: "Scroll Show 30" });
+    await expect(targetCard).toBeVisible();
+
+    const scrollBefore = await scrollToCatalogBottom(authenticatedPage);
+    await targetCard.click();
+    await authenticatedPage.waitForURL(/\/tv-shows\/tt9100030/);
+
+    await expect(authenticatedPage.getByRole("dialog", { name: "Scroll Show 30" })).toBeVisible();
+    await expectPageScrollPreserved(authenticatedPage, scrollBefore);
   });
 
   test("unknown tv detail renders not found", async ({ authenticatedPage, mockRpc }) => {

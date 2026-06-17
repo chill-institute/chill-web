@@ -105,18 +105,10 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
 
       <DetailModalBody movieScroll>
         {searchQuery.status === "pending" ? (
-          <div className="border-border-soft bg-surface-2 overflow-hidden rounded border">
-            {RESULT_SKELETON_SLOTS.map((slot) => (
-              <div
-                key={slot}
-                className="border-border-faint flex items-center gap-3 border-t p-3 first:border-t-0"
-              >
-                <Skeleton className="h-3 w-14 rounded" />
-                <Skeleton className="h-4 flex-1" />
-                <Skeleton className="h-7 w-28 rounded" />
-              </div>
-            ))}
-          </div>
+          <>
+            <ResultsToolbarSkeleton />
+            <ResultsListSkeleton />
+          </>
         ) : searchQuery.status === "error" ? (
           <div className="flex flex-col gap-2">
             <p className="text-sm text-fg-2">
@@ -160,6 +152,36 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         )}
       </DetailModalBody>
     </DetailModalShell>
+  );
+}
+
+function ResultsToolbarSkeleton() {
+  return (
+    <div className="flex flex-wrap items-end gap-2" aria-hidden="true">
+      <Skeleton className="h-8 w-[9.75rem] rounded" />
+      <Skeleton className="h-8 w-[7.5rem] rounded" />
+      <Skeleton className="h-8 w-[8.75rem] rounded" />
+    </div>
+  );
+}
+
+function ResultsListSkeleton() {
+  return (
+    <div
+      className="border-border-soft bg-surface-2 overflow-hidden rounded border"
+      aria-hidden="true"
+    >
+      {RESULT_SKELETON_SLOTS.map((slot) => (
+        <div
+          key={slot}
+          className="border-border-faint flex items-center gap-3 border-t p-3 first:border-t-0"
+        >
+          <Skeleton className="h-3 w-14 rounded" />
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-7 w-28 rounded" />
+        </div>
+      ))}
+    </div>
   );
 }
 
