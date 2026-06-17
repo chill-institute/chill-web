@@ -61,8 +61,11 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
   const saveSettingsMutation = useSaveSettings();
   const searchQuery = useMovieSearchQuery({ movie });
 
+  // The modal shows QuickFilters as soon as the torrent search returns, which can be
+  // before settings finish loading. The save mutation resolves the base settings itself
+  // (cache, else a server fetch), so this must not bail out when settingsQuery.data is
+  // still pending — otherwise a change made in that window would be silently dropped.
   function patchConfig(patch: Partial<ChillSettings>) {
-    if (!settingsQuery.data) return;
     saveSettingsMutation.mutate((settings) => applyChillSettingsPatch(settings, patch));
   }
 

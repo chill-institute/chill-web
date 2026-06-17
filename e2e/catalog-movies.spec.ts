@@ -263,6 +263,73 @@ test.describe("movies", () => {
     expect(saveCount).toBe(0);
   });
 
+  test("movie modal persists a sort change made before settings finish loading", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    await authenticatedPage.addInitScript(
+      (cachedSettings) => {
+        window.localStorage.setItem("chill.catalog.settings.v1", cachedSettings);
+      },
+      JSON.stringify({
+        catalog: { moviesSource: MoviesSource.IMDB_MOVIEMETER, tvShowsSource: 1 },
+        download: {},
+      }),
+    );
+
+    const savedBodies: string[] = [];
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      savedBodies.push(route.request().postData() ?? "");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({})),
+      });
+    });
+
+    // Hold every GetUserSettings request on one shared latch so both the settings query
+    // and the save mutation's own base-settings fetch stay pending until released.
+    let releaseSettings = () => {};
+    const settingsHeld = new Promise<void>((release) => {
+      releaseSettings = release;
+    });
+    let markRequested = () => {};
+    const settingsRequested = new Promise<void>((resolve) => {
+      markRequested = resolve;
+    });
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      markRequested();
+      await settingsHeld;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({})),
+      });
+    });
+
+    await authenticatedPage.goto("/movies/m1");
+    await settingsRequested;
+
+    const movieDialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
+    await expect(movieDialog).toBeVisible({ timeout: 3000 });
+
+    // Settings are still loading; change sort within that window.
+    await movieDialog
+      .getByRole("combobox", { name: "Sort results" })
+      .selectOption({ label: "newest" });
+
+    // Releasing lets the mutation's base-settings fetch complete and the save go through.
+    releaseSettings();
+
+    await expect.poll(() => savedBodies.length).toBeGreaterThan(0);
+  });
+
   test("movie modal filters results and updates result order when sort changes", async ({
     authenticatedPage,
     mockRpc,
