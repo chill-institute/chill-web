@@ -1,22 +1,18 @@
-import { ArrowUpDown, CalendarDays, Film, HardDrive, Monitor, Search, Users } from "lucide-react";
-import type { ReactNode } from "react";
+import { CalendarDays, Film, HardDrive, Monitor, Search, Users } from "lucide-react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { normalizeCodecFilterValue } from "@/api/release-info";
 import { Button } from "@/ui/components/ui/button";
 import { CopyButton } from "@/ui/components/copy-button";
-import { NativeSelect } from "@/ui/components/ui/native-select";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import type { SearchResult } from "@/lib/types";
 
 const RESOLUTION_FILTER_OPTIONS = ["all", "2160p", "1080p", "720p"] as const;
 const CODEC_FILTER_OPTIONS = ["all", "x265", "x264"] as const;
-const RESULT_SORT_OPTIONS = ["seeders", "size", "age"] as const;
 
 export type ResolutionFilterValue = (typeof RESOLUTION_FILTER_OPTIONS)[number];
 export type CodecFilterValue = (typeof CODEC_FILTER_OPTIONS)[number];
-export type ResultSortValue = (typeof RESULT_SORT_OPTIONS)[number];
 
 const UPLOADED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -58,108 +54,6 @@ function parseResolution(result: SearchResult): Exclude<ResolutionFilterValue, "
 
 function parseCodec(result: SearchResult): Exclude<CodecFilterValue, "all"> | undefined {
   return normalizeCodecFilterValue(result.releaseInfo?.codec);
-}
-
-function FilterSelect<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  icon,
-}: {
-  label: string;
-  value: T;
-  options: ReadonlyArray<{ value: T; label: string }>;
-  onChange: (value: T) => void;
-  icon?: ReactNode;
-}) {
-  return (
-    <div className="relative w-[9.75rem] max-w-full sm:w-fit">
-      {icon ? (
-        <span className="pointer-events-none absolute top-1/2 left-2.5 z-10 -translate-y-1/2 text-fg-3 [&_svg]:size-3.5">
-          {icon}
-        </span>
-      ) : null}
-      <NativeSelect
-        aria-label={label}
-        name={label.toLowerCase()}
-        value={value}
-        wrapperClassName="block w-full"
-        className={cn("h-8 py-0 leading-none text-sm whitespace-nowrap", icon && "pl-8")}
-        onChange={(event) => {
-          const next = options.find((option) => option.value === event.currentTarget.value);
-          if (next) onChange(next.value);
-        }}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
-    </div>
-  );
-}
-
-export function TorrentResultToolbar({
-  resolution,
-  codec,
-  sort,
-  hasActiveFilters,
-  onResolutionChange,
-  onCodecChange,
-  onSortChange,
-  onClearFilters,
-}: {
-  resolution: ResolutionFilterValue;
-  codec: CodecFilterValue;
-  sort: ResultSortValue;
-  hasActiveFilters: boolean;
-  onResolutionChange: (value: ResolutionFilterValue) => void;
-  onCodecChange: (value: CodecFilterValue) => void;
-  onSortChange: (value: ResultSortValue) => void;
-  onClearFilters: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-end justify-end gap-2">
-      {hasActiveFilters ? (
-        <Button variant="ghost" size="sm" onClick={onClearFilters}>
-          clear filters
-        </Button>
-      ) : null}
-      <FilterSelect
-        label="Resolution"
-        icon={<Monitor />}
-        value={resolution}
-        onChange={onResolutionChange}
-        options={RESOLUTION_FILTER_OPTIONS.map((value) => ({
-          value,
-          label: value === "all" ? "all resolutions" : value,
-        }))}
-      />
-      <FilterSelect
-        label="Codec"
-        icon={<Film />}
-        value={codec}
-        onChange={onCodecChange}
-        options={CODEC_FILTER_OPTIONS.map((value) => ({
-          value,
-          label: value === "all" ? "all codecs" : value,
-        }))}
-      />
-      <FilterSelect<ResultSortValue>
-        label="Sort"
-        icon={<ArrowUpDown />}
-        value={sort}
-        onChange={onSortChange}
-        options={[
-          { value: "seeders", label: "most seeders" },
-          { value: "size", label: "largest size" },
-          { value: "age", label: "newest first" },
-        ]}
-      />
-    </div>
-  );
 }
 
 export function TorrentResultList({

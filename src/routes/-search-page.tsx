@@ -4,7 +4,7 @@ import { match } from "ts-pattern";
 
 import { SignInRedirect } from "@/auth/components/sign-in-redirect";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { SearchFilterBar } from "@/components/search-filter-bar";
+import { QuickFilters } from "@/components/quick-filters";
 import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
 import { SearchShell } from "@/components/search-shell";
@@ -42,7 +42,6 @@ export function SearchPage() {
   const {
     filters,
     setCodec,
-    setOther,
     setResolution,
     setSort: setLocalSort,
   } = useSearchFilters(appSettings, submittedQuery);
@@ -227,7 +226,7 @@ export function SearchPage() {
         <section data-page="search" className="flex flex-col gap-3 lg:gap-6">
           <h1 className="sr-only">Search results</h1>
           {submittedQuery.length > 0 ? (
-            <SearchFilterBar
+            <QuickFilters
               filters={filters}
               onResolutionChange={(next) => {
                 setResolution(next);
@@ -237,11 +236,10 @@ export function SearchPage() {
                 setCodec(next);
                 if (effective.rememberQuickFilters) patchConfig({ codecFilters: next });
               }}
-              onOtherChange={(next) => {
-                setOther(next);
-                if (effective.rememberQuickFilters) patchConfig({ otherFilters: next });
+              onSortChange={(next) => {
+                setLocalSort(next);
+                patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
               }}
-              onSort={setSort}
             />
           ) : null}
 
