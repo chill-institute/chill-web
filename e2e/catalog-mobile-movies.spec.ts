@@ -90,11 +90,11 @@ test.describe("mobile movies", () => {
       element.scrollTop = 0;
     });
 
-    const resolutionSelect = authenticatedPage.getByRole("combobox", { name: "Resolution" });
-    await expect(resolutionSelect).toBeVisible();
-    await resolutionSelect.selectOption("1080p");
+    const resolution1080p = authenticatedPage.getByRole("checkbox", { name: "1080p" });
+    await expect(resolution1080p).toBeVisible();
+    await resolution1080p.check();
 
-    await expect(resolutionSelect).toHaveValue("1080p");
+    await expect(resolution1080p).toBeChecked();
     await expect(resultItems).toHaveCount(16);
     await expect(resultItems.last()).toContainText("Part16");
     await expect(authenticatedPage.getByText("Part17")).not.toBeVisible();

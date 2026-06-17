@@ -1,21 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { normalizeCodecFilterValue } from "@/api/release-info";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
 import { useSettingsQuery } from "@/queries/settings";
-import { CodecFilter, ResolutionFilter } from "@/lib/types";
-import {
-  TorrentResultList,
-  TorrentResultToolbar,
-  TorrentResultsEmpty,
-  type CodecFilterValue,
-  type ResolutionFilterValue,
-  type ResultSortValue,
-} from "@/components/torrent-results";
+import { QuickFilters } from "@/components/quick-filters";
+import { useSearchFilters } from "@/hooks/use-search-filters";
+import { formatSearchResults } from "@/lib/search";
+import { toChillSettings } from "@/lib/types";
+import { TorrentResultList, TorrentResultsEmpty } from "@/components/torrent-results";
 import {
   DetailModalBody,
   DetailModalShell,
@@ -36,62 +31,6 @@ type Props = {
   movie: Movie;
   onClose: () => void;
 };
-
-function initialResolutionFilter(
-  filters: readonly ResolutionFilter[] | undefined,
-): ResolutionFilterValue {
-  if (!filters || filters.length !== 1) return "all";
-  switch (filters[0]) {
-    case ResolutionFilter.RESOLUTION_FILTER_720P:
-      return "720p";
-    case ResolutionFilter.RESOLUTION_FILTER_1080P:
-      return "1080p";
-    case ResolutionFilter.RESOLUTION_FILTER_2160P:
-      return "2160p";
-    default:
-      return "all";
-  }
-}
-
-function initialCodecFilter(filters: readonly CodecFilter[] | undefined): CodecFilterValue {
-  if (!filters || filters.length !== 1) return "all";
-  switch (filters[0]) {
-    case CodecFilter.X264:
-      return "x264";
-    case CodecFilter.X265:
-      return "x265";
-    default:
-      return "all";
-  }
-}
-
-type ParsedResult = {
-  result: SearchResult;
-  resolution?: Exclude<ResolutionFilterValue, "all">;
-  codec?: Exclude<CodecFilterValue, "all">;
-  uploadedAtTimestamp: number;
-};
-
-function parseResolution(result: SearchResult): ParsedResult["resolution"] {
-  const value = result.releaseInfo?.resolution.toLowerCase();
-  if (value === "2160p" || value === "1080p" || value === "720p") return value;
-  return undefined;
-}
-
-function parseCodec(result: SearchResult): ParsedResult["codec"] {
-  return normalizeCodecFilterValue(result.releaseInfo?.codec);
-}
-
-function parseUploadedAtTimestamp(uploadedAt: string) {
-  if (!uploadedAt) return 0;
-  const timestamp = new Date(uploadedAt).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function compareBigintsDescending(left: bigint, right: bigint) {
-  if (left === right) return 0;
-  return left > right ? -1 : 1;
-}
 
 function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: string[] }) {
   const metadata = useMemo(
@@ -114,59 +53,34 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
 
 function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: boolean }) {
   const settingsQuery = useSettingsQuery();
-  const remember = settingsQuery.data?.search?.rememberQuickFilters ?? false;
-  const settingsResolutionFilter = initialResolutionFilter(
-    remember ? settingsQuery.data?.search?.resolutionFilters : undefined,
+  const appSettings = useMemo(
+    () => (settingsQuery.data ? toChillSettings(settingsQuery.data) : undefined),
+    [settingsQuery.data],
   );
-  const settingsCodecFilter = initialCodecFilter(
-    remember ? settingsQuery.data?.search?.codecFilters : undefined,
-  );
-  const [resolutionFilterOverride, setResolutionFilter] = useState<
-    ResolutionFilterValue | undefined
-  >();
-  const [codecFilterOverride, setCodecFilter] = useState<CodecFilterValue | undefined>();
-  const resolutionFilter = resolutionFilterOverride ?? settingsResolutionFilter;
-  const codecFilter = codecFilterOverride ?? settingsCodecFilter;
-  const [sortBy, setSortBy] = useState<ResultSortValue>("seeders");
+  const { filters, setResolution, setCodec, setSort } = useSearchFilters(appSettings, movie.id);
   const searchQuery = useMovieSearchQuery({ movie });
 
   const results = searchQuery.data?.results ?? EMPTY_RESULTS;
   const metadataTags = useMemo(() => getDetailGenreTags(movie.genres), [movie.genres]);
-  const parsedResults = useMemo<ParsedResult[]>(
+  const visibleResults = useMemo(
     () =>
-      results.map((result) => ({
-        result,
-        resolution: parseResolution(result),
-        codec: parseCodec(result),
-        uploadedAtTimestamp: parseUploadedAtTimestamp(result.uploadedAt),
-      })),
-    [results],
+      formatSearchResults(
+        results,
+        filters.resolution,
+        filters.codec,
+        filters.other,
+        filters.sortBy,
+        filters.sortDirection,
+      ),
+    [
+      results,
+      filters.resolution,
+      filters.codec,
+      filters.other,
+      filters.sortBy,
+      filters.sortDirection,
+    ],
   );
-  const visibleResults = useMemo(() => {
-    const filtered = parsedResults.filter((entry) => {
-      if (resolutionFilter !== "all" && entry.resolution !== resolutionFilter) return false;
-      if (codecFilter !== "all" && entry.codec !== codecFilter) return false;
-      return true;
-    });
-    return filtered.toSorted((left, right) => {
-      if (sortBy === "size") {
-        const sizeOrder = compareBigintsDescending(left.result.size, right.result.size);
-        if (sizeOrder !== 0) return sizeOrder;
-      }
-      if (sortBy === "age") {
-        const ageOrder = right.uploadedAtTimestamp - left.uploadedAtTimestamp;
-        if (ageOrder !== 0) return ageOrder;
-      }
-      const seederOrder = compareBigintsDescending(left.result.seeders, right.result.seeders);
-      if (seederOrder !== 0) return seederOrder;
-      if (sortBy === "seeders") {
-        const sizeOrder = compareBigintsDescending(left.result.size, right.result.size);
-        if (sizeOrder !== 0) return sizeOrder;
-      }
-      return left.result.title.localeCompare(right.result.title);
-    });
-  }, [parsedResults, resolutionFilter, codecFilter, sortBy]);
-  const hasActiveFilters = resolutionFilter !== "all" || codecFilter !== "all";
 
   return (
     <DetailModalShell isDesktop={isDesktop}>
@@ -208,18 +122,11 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
           />
         ) : (
           <>
-            <TorrentResultToolbar
-              resolution={resolutionFilter}
-              codec={codecFilter}
-              sort={sortBy}
-              hasActiveFilters={hasActiveFilters}
-              onResolutionChange={setResolutionFilter}
-              onCodecChange={setCodecFilter}
-              onSortChange={setSortBy}
-              onClearFilters={() => {
-                setResolutionFilter("all");
-                setCodecFilter("all");
-              }}
+            <QuickFilters
+              filters={filters}
+              onResolutionChange={setResolution}
+              onCodecChange={setCodec}
+              onSortChange={setSort}
             />
 
             {visibleResults.length === 0 ? (
@@ -228,10 +135,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                 body="try a different resolution or codec to widen the result set."
               />
             ) : (
-              <TorrentResultList
-                results={visibleResults.map((entry) => entry.result)}
-                columns={false}
-              />
+              <TorrentResultList results={visibleResults} columns={false} />
             )}
           </>
         )}

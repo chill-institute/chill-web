@@ -67,7 +67,7 @@ function PosterCard({
                 </div>
               )}
             </div>
-            <div className="flex items-start justify-between gap-2 px-3 pt-2.5 pb-3">
+            <div className="flex flex-col gap-2 px-3 pt-2.5 pb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="text-fg-3 flex min-w-0 flex-col gap-1 text-base sm:text-sm">
                 <h2
                   title={title}
@@ -75,7 +75,7 @@ function PosterCard({
                 >
                   {title}
                 </h2>
-                {(rating != null || year != null) && (
+                {(rating != null || ratingHref || year != null) && (
                   <div className="flex items-center gap-1.5 tabular-nums">
                     {rating != null && (
                       <span className="flex items-center gap-1">
@@ -87,11 +87,9 @@ function PosterCard({
                         <span className="text-fg-1">{rating}</span>
                       </span>
                     )}
-                    {rating != null && year != null && <span className="text-fg-4">·</span>}
-                    {year != null && <span>{year}</span>}
                     {ratingHref ? (
                       <>
-                        <span className="text-fg-4">·</span>
+                        {rating != null && <span className="text-fg-4">·</span>}
                         <span
                           role="link"
                           tabIndex={0}
@@ -115,10 +113,16 @@ function PosterCard({
                         </span>
                       </>
                     ) : null}
+                    {year != null && (
+                      <>
+                        {(rating != null || ratingHref) && <span className="text-fg-4">·</span>}
+                        <span>{year}</span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
-              {footer ? <div className="shrink-0">{footer}</div> : null}
+              {footer ? <div className="w-full sm:w-auto sm:shrink-0">{footer}</div> : null}
             </div>
           </>
         ),
