@@ -191,6 +191,145 @@ test.describe("movies", () => {
     ).toBeVisible();
   });
 
+  test("movie modal persists a quick-filter change when remembering is on", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        GetUserSettings: userSettings({ rememberQuickFilters: true }),
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    const savedBodies: string[] = [];
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      savedBodies.push(route.request().postData() ?? "");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          userSettings({
+            rememberQuickFilters: true,
+            resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
+          }),
+        ),
+      });
+    });
+
+    await authenticatedPage.goto("/movies");
+    await openFirstMovieModal(authenticatedPage);
+
+    const movieDialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
+    await movieDialog.getByRole("checkbox", { name: "2160p" }).check();
+
+    await expect
+      .poll(() => savedBodies.some((body) => body.includes("RESOLUTION_FILTER_2160P")))
+      .toBe(true);
+  });
+
+  test("movie modal does not persist a quick-filter change when remembering is off", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        GetUserSettings: userSettings({ rememberQuickFilters: false }),
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    let saveCount = 0;
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({ rememberQuickFilters: false })),
+      });
+    });
+
+    await authenticatedPage.goto("/movies");
+    await openFirstMovieModal(authenticatedPage);
+
+    const movieDialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
+    const resultItems = movieDialog
+      .getByRole("list", { name: "Torrent results list" })
+      .getByRole("listitem");
+
+    await movieDialog.getByRole("checkbox", { name: "2160p" }).check();
+    await expect(resultItems).toHaveCount(1);
+
+    expect(saveCount).toBe(0);
+  });
+
+  test("movie modal persists a sort change made before settings finish loading", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      homeMethods({
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    await authenticatedPage.addInitScript(
+      (cachedSettings) => {
+        window.localStorage.setItem("chill.catalog.settings.v1", cachedSettings);
+      },
+      JSON.stringify({
+        catalog: { moviesSource: MoviesSource.IMDB_MOVIEMETER, tvShowsSource: 1 },
+        download: {},
+      }),
+    );
+
+    const savedBodies: string[] = [];
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      savedBodies.push(route.request().postData() ?? "");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({})),
+      });
+    });
+
+    // Hold every GetUserSettings request on one shared latch so both the settings query
+    // and the save mutation's own base-settings fetch stay pending until released.
+    let releaseSettings = () => {};
+    const settingsHeld = new Promise<void>((release) => {
+      releaseSettings = release;
+    });
+    let markRequested = () => {};
+    const settingsRequested = new Promise<void>((resolve) => {
+      markRequested = resolve;
+    });
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      markRequested();
+      await settingsHeld;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({})),
+      });
+    });
+
+    await authenticatedPage.goto("/movies/m1");
+    await settingsRequested;
+
+    const movieDialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
+    await expect(movieDialog).toBeVisible({ timeout: 3000 });
+
+    // Settings are still loading; change sort within that window.
+    await movieDialog
+      .getByRole("combobox", { name: "Sort results" })
+      .selectOption({ label: "newest" });
+
+    // Releasing lets the mutation's base-settings fetch complete and the save go through.
+    releaseSettings();
+
+    await expect.poll(() => savedBodies.length).toBeGreaterThan(0);
+  });
+
   test("movie modal filters results and updates result order when sort changes", async ({
     authenticatedPage,
     mockRpc,

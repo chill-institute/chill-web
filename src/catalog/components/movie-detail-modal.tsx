@@ -5,11 +5,11 @@ import { Skeleton } from "@/ui/components/ui/skeleton";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
 import { type Movie, type SearchResult } from "@/catalog/lib/types";
 import { useMovieSearchQuery } from "@/catalog/queries/movies";
-import { useSettingsQuery } from "@/queries/settings";
+import { useSaveSettings, useSettingsQuery } from "@/queries/settings";
 import { QuickFilters } from "@/components/quick-filters";
 import { useSearchFilters } from "@/hooks/use-search-filters";
 import { formatSearchResults } from "@/lib/search";
-import { toChillSettings } from "@/lib/types";
+import { applyChillSettingsPatch, toChillSettings, type ChillSettings } from "@/lib/types";
 import { TorrentResultList, TorrentResultsEmpty } from "@/components/torrent-results";
 import {
   DetailModalBody,
@@ -58,7 +58,16 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
     [settingsQuery.data],
   );
   const { filters, setResolution, setCodec, setSort } = useSearchFilters(appSettings, movie.id);
+  const saveSettingsMutation = useSaveSettings();
   const searchQuery = useMovieSearchQuery({ movie });
+
+  // The modal shows QuickFilters as soon as the torrent search returns, which can be
+  // before settings finish loading. The save mutation resolves the base settings itself
+  // (cache, else a server fetch), so this must not bail out when settingsQuery.data is
+  // still pending — otherwise a change made in that window would be silently dropped.
+  function patchConfig(patch: Partial<ChillSettings>) {
+    saveSettingsMutation.mutate((settings) => applyChillSettingsPatch(settings, patch));
+  }
 
   const results = searchQuery.data?.results ?? EMPTY_RESULTS;
   const metadataTags = useMemo(() => getDetailGenreTags(movie.genres), [movie.genres]);
@@ -124,9 +133,18 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
           <>
             <QuickFilters
               filters={filters}
-              onResolutionChange={setResolution}
-              onCodecChange={setCodec}
-              onSortChange={setSort}
+              onResolutionChange={(next) => {
+                setResolution(next);
+                if (appSettings?.rememberQuickFilters) patchConfig({ resolutionFilters: next });
+              }}
+              onCodecChange={(next) => {
+                setCodec(next);
+                if (appSettings?.rememberQuickFilters) patchConfig({ codecFilters: next });
+              }}
+              onSortChange={(next) => {
+                setSort(next);
+                patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
+              }}
             />
 
             {visibleResults.length === 0 ? (
