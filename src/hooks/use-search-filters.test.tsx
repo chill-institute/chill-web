@@ -61,7 +61,7 @@ describe("useSearchFilters", () => {
       JSON.stringify({
         resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
         codec: [CodecFilter.X265],
-        other: [OtherFilter.HDR],
+        other: [],
         sortBy: SortBy.TITLE,
         sortDirection: SortDirection.ASC,
       }),
@@ -97,7 +97,7 @@ describe("useSearchFilters", () => {
     expect(filterStateForSearch(saved, "movie", null)).toEqual({
       resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
       codec: [CodecFilter.X265],
-      other: [OtherFilter.HDR],
+      other: [],
       sortBy: SortBy.SIZE,
       sortDirection: SortDirection.ASC,
     });
@@ -133,7 +133,7 @@ describe("useSearchFilters", () => {
     expect(filterStateForSearch(saved, "movie", localQuickFilters)).toEqual({
       resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
       codec: [CodecFilter.X265],
-      other: [OtherFilter.HDR],
+      other: [],
       sortBy: SortBy.SEEDERS,
       sortDirection: SortDirection.DESC,
     });

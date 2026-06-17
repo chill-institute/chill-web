@@ -8,6 +8,7 @@ import {
 } from "./support/seeds";
 import {
   CodecFilter,
+  OtherFilter,
   ResolutionFilter,
   type SearchResult,
   SearchResultDisplayBehavior,
@@ -905,5 +906,33 @@ test.describe("search page", () => {
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(0)).toContainText("Alpha Movie 1080p x265 HDR");
     await expect(rows.nth(1)).toContainText("Gamma Movie 2160p x265 HDR");
+  });
+
+  test("does not apply a saved HDR filter that has no quick-filter control", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const results = [
+      searchResult({ id: "r1", title: "Movie 1080p x264", indexer: "yts", source: "YTS" }),
+      searchResult({ id: "r2", title: "Movie 2160p x265 HDR", indexer: "yts", source: "YTS" }),
+    ];
+
+    await mockRpc(
+      allModeMethods({
+        GetUserSettings: userSettings({
+          rememberQuickFilters: true,
+          otherFilters: [OtherFilter.HDR],
+        }),
+        Search: searchResponse("movie", results),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(2);
+
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    await expect(quickFilters.getByRole("checkbox", { name: /hdr/i })).toHaveCount(0);
   });
 });
