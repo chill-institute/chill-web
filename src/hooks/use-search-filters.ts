@@ -49,7 +49,9 @@ function savedQuickFilters(settingsData: ChillSettings | undefined) {
     codec: settingsData.codecFilters,
     // The HDR/other filter has no UI control anymore, so a previously saved
     // otherFilters value would otherwise apply as an invisible, unclearable filter.
-    other: [],
+    // Reuse the stable empty reference so filters.other keeps its identity across
+    // renders and does not rerun the result-formatting memos.
+    other: emptyQuickFilters.other,
   };
 }
 
