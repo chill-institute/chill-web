@@ -557,7 +557,7 @@ test.describe("search page", () => {
     await expect(rows.nth(2)).toContainText("Alpha Movie 1080p");
 
     const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
-    await sortSelect.selectOption({ label: "↑ peers" });
+    await sortSelect.selectOption({ label: "↑ PEERS" });
 
     // Ascending: fewest peers first.
     await expect(rows.nth(0)).toContainText("Alpha Movie 1080p");
@@ -565,7 +565,7 @@ test.describe("search page", () => {
     await expect(rows.nth(2)).toContainText("Zulu Movie 1080p");
 
     // Switching the same field back to descending still fires onChange.
-    await sortSelect.selectOption({ label: "↓ peers" });
+    await sortSelect.selectOption({ label: "↓ PEERS" });
     await expect(rows.nth(0)).toContainText("Zulu Movie 1080p");
   });
 
@@ -600,9 +600,9 @@ test.describe("search page", () => {
 
     await authenticatedPage.goto("/search?q=movie");
 
-    // Size-ascending must read "↑ size", not "↓ size", and match the result order.
+    // Size-ascending must read "↑ SIZE", not "↓ SIZE", and match the result order.
     const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
-    await expect(sortSelect.locator("option:checked")).toHaveText("↑ size");
+    await expect(sortSelect.locator("option:checked")).toHaveText("↑ SIZE");
     await expect(authenticatedPage.locator("table tbody tr").nth(0)).toContainText("Small 1080p");
   });
 
@@ -627,7 +627,7 @@ test.describe("search page", () => {
 
     // The removed title sort falls back to the default (most peers, descending).
     const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
-    await expect(sortSelect.locator("option:checked")).toHaveText("↓ peers");
+    await expect(sortSelect.locator("option:checked")).toHaveText("↓ PEERS");
 
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows.nth(0)).toContainText("Zeta 1080p");
@@ -948,7 +948,7 @@ test.describe("search page", () => {
     await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).not.toBeChecked();
     await expect(
       quickFilters.getByRole("combobox", { name: "Sort results" }).locator("option:checked"),
-    ).toHaveText("↑ size");
+    ).toHaveText("↑ SIZE");
 
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(2);

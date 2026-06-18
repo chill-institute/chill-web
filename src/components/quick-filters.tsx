@@ -28,12 +28,12 @@ type Props = {
 // Each option pins both a field and a direction; both directions are offered so the
 // select can always represent (and switch between) the sorts it exposes.
 const sortOptions = [
-  { label: "↓ peers", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.DESC },
-  { label: "↑ peers", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.ASC },
-  { label: "↓ size", sortBy: SortBy.SIZE, sortDirection: SortDirection.DESC },
-  { label: "↑ size", sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC },
-  { label: "↓ age", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.DESC },
-  { label: "↑ age", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.ASC },
+  { label: "↓ PEERS", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.DESC },
+  { label: "↑ PEERS", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.ASC },
+  { label: "↓ SIZE", sortBy: SortBy.SIZE, sortDirection: SortDirection.DESC },
+  { label: "↑ SIZE", sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC },
+  { label: "↓ AGE", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.DESC },
+  { label: "↑ AGE", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.ASC },
 ] as const;
 
 // Value carries the direction too, so the select reflects the active sort honestly and
@@ -112,7 +112,7 @@ export function QuickFilters({
           <span className="text-fg-3 w-20 shrink-0 text-sm @2xl:w-auto">sort by</span>
           <NativeSelect
             aria-label="Sort results"
-            wrapperClassName="@2xl:w-44"
+            wrapperClassName="w-32"
             value={activeSortValue}
             onChange={(event) => {
               const option = sortOptions.find(
