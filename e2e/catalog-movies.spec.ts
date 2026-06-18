@@ -322,7 +322,7 @@ test.describe("movies", () => {
     // Settings are still loading; change sort within that window.
     await movieDialog
       .getByRole("combobox", { name: "Sort results" })
-      .selectOption({ label: "newest" });
+      .selectOption({ label: "↓ AGE" });
 
     // Releasing lets the mutation's base-settings fetch complete and the save go through.
     releaseSettings();
@@ -378,11 +378,11 @@ test.describe("movies", () => {
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.1080p.BluRay.x264");
 
     await setCodec("x264", false);
-    await setSort("newest");
+    await setSort("↓ AGE");
     await expect(resultItems).toHaveCount(3);
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.720p.BluRay.x265");
 
-    await setSort("largest");
+    await setSort("↓ SIZE");
     await expect(resultItems.first()).toContainText("Aurora Protocol.2010.2160p.WEB-DL.x265");
   });
 

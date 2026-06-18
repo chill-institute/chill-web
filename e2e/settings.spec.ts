@@ -642,6 +642,62 @@ test.describe("settings", () => {
     expect(savedSearches.at(-1)?.filterResultsWithNoSeeders).toBe(true);
   });
 
+  test("search preferences bar persists resolution and sort", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let settingsState = userSettings();
+    const savedSearches: NonNullable<RequestSettingsPayload["search"]>[] = [];
+    let saveCalls = 0;
+
+    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCalls += 1;
+      const body = route.request().postDataJSON() as { settings?: RequestSettingsPayload };
+      if (body.settings?.search) {
+        savedSearches.push(body.settings.search);
+      }
+      if (body.settings) {
+        settingsState = body.settings as typeof settingsState;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+
+    const prefs = settingsPage(authenticatedPage).getByRole("group", { name: /quick filters/i });
+    await expect(prefs).toBeVisible({ timeout: 5000 });
+
+    // Choosing a resolution persists it and implies remembering.
+    await prefs.getByRole("checkbox", { name: "1080p" }).click();
+    await expect.poll(() => savedSearches.at(-1)?.rememberQuickFilters).toBe(true);
+    await expect
+      .poll(
+        () =>
+          (savedSearches.at(-1) as { resolutionFilters?: unknown[] }).resolutionFilters?.length ??
+          0,
+      )
+      .toBeGreaterThan(0);
+
+    // The sort pulldown is present and persists a change.
+    const callsBeforeSort = saveCalls;
+    await prefs.getByRole("combobox", { name: "Sort results" }).selectOption({ label: "↑ SIZE" });
+    await expect.poll(() => saveCalls).toBeGreaterThan(callsBeforeSort);
+  });
+
   test("theme select changes document theme", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(baseSettingsMethods());
     await authenticatedPage.goto("/settings");
