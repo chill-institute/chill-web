@@ -28,12 +28,12 @@ type Props = {
 // Each option pins both a field and a direction; both directions are offered so the
 // select can always represent (and switch between) the sorts it exposes.
 const sortOptions = [
-  { label: "most seeders", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.DESC },
-  { label: "least seeders", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.ASC },
-  { label: "largest", sortBy: SortBy.SIZE, sortDirection: SortDirection.DESC },
-  { label: "smallest", sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC },
-  { label: "newest", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.DESC },
-  { label: "oldest", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.ASC },
+  { label: "↓ peers", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.DESC },
+  { label: "↑ peers", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.ASC },
+  { label: "↓ size", sortBy: SortBy.SIZE, sortDirection: SortDirection.DESC },
+  { label: "↑ size", sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC },
+  { label: "↓ age", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.DESC },
+  { label: "↑ age", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.ASC },
 ] as const;
 
 // Value carries the direction too, so the select reflects the active sort honestly and
