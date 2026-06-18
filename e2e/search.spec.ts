@@ -534,29 +534,11 @@ test.describe("search page", () => {
     await expect(rows.nth(1)).toContainText("Beta Movie");
   });
 
-  test("mobile text sorts start ascending", async ({ authenticatedPage, mockRpc }) => {
+  test("mobile sort select offers both directions", async ({ authenticatedPage, mockRpc }) => {
     const results = [
-      searchResult({
-        id: "r1",
-        title: "Zulu Movie 1080p",
-        seeders: 500n,
-        indexer: "yts",
-        source: "ZuluSource",
-      }),
-      searchResult({
-        id: "r2",
-        title: "Alpha Movie 1080p",
-        seeders: 10n,
-        indexer: "yts",
-        source: "MiddleSource",
-      }),
-      searchResult({
-        id: "r3",
-        title: "Beta Movie 1080p",
-        seeders: 50n,
-        indexer: "yts",
-        source: "AlphaSource",
-      }),
+      searchResult({ id: "r1", title: "Zulu Movie 1080p", seeders: 500n, indexer: "yts" }),
+      searchResult({ id: "r2", title: "Alpha Movie 1080p", seeders: 10n, indexer: "yts" }),
+      searchResult({ id: "r3", title: "Beta Movie 1080p", seeders: 50n, indexer: "yts" }),
     ];
 
     await authenticatedPage.setViewportSize({ width: 393, height: 852 });
@@ -570,23 +552,86 @@ test.describe("search page", () => {
 
     const rows = authenticatedPage.getByRole("list", { name: "Search results" }).locator("li");
     await expect(rows).toHaveCount(3);
+    // Default is most seeders (descending).
     await expect(rows.nth(0)).toContainText("Zulu Movie 1080p");
+    await expect(rows.nth(2)).toContainText("Alpha Movie 1080p");
 
     const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
-    await sortSelect.selectOption({ label: "name" });
+    await sortSelect.selectOption({ label: "least seeders" });
 
+    // Ascending: fewest seeders first.
     await expect(rows.nth(0)).toContainText("Alpha Movie 1080p");
     await expect(rows.nth(1)).toContainText("Beta Movie 1080p");
     await expect(rows.nth(2)).toContainText("Zulu Movie 1080p");
 
-    await sortSelect.selectOption({ label: "source" });
+    // Switching the same field back to descending still fires onChange.
+    await sortSelect.selectOption({ label: "most seeders" });
+    await expect(rows.nth(0)).toContainText("Zulu Movie 1080p");
+  });
 
-    await expect(rows.nth(0)).toContainText("Beta Movie 1080p");
-    await expect(rows.nth(0)).toContainText("AlphaSource");
-    await expect(rows.nth(1)).toContainText("Alpha Movie 1080p");
-    await expect(rows.nth(1)).toContainText("MiddleSource");
-    await expect(rows.nth(2)).toContainText("Zulu Movie 1080p");
-    await expect(rows.nth(2)).toContainText("ZuluSource");
+  test("sort select reflects the active direction for a saved sort", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      allModeMethods({
+        GetUserSettings: userSettings({
+          sortBy: SortBy.SIZE,
+          sortDirection: SortDirection.ASC,
+        }),
+        Search: searchResponse("movie", [
+          searchResult({
+            id: "r1",
+            title: "Big 1080p",
+            seeders: 10n,
+            size: 8_000_000_000n,
+            indexer: "yts",
+          }),
+          searchResult({
+            id: "r2",
+            title: "Small 1080p",
+            seeders: 20n,
+            size: 1_000_000_000n,
+            indexer: "yts",
+          }),
+        ]),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    // Size-ascending must read "smallest", not "largest", and match the result order.
+    const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
+    await expect(sortSelect.locator("option:checked")).toHaveText("smallest");
+    await expect(authenticatedPage.locator("table tbody tr").nth(0)).toContainText("Small 1080p");
+  });
+
+  test("invalidates a saved title/source sort that is no longer offered", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      allModeMethods({
+        GetUserSettings: userSettings({
+          sortBy: SortBy.TITLE,
+          sortDirection: SortDirection.ASC,
+        }),
+        Search: searchResponse("movie", [
+          searchResult({ id: "r1", title: "Alpha 1080p", seeders: 10n, indexer: "yts" }),
+          searchResult({ id: "r2", title: "Zeta 1080p", seeders: 20n, indexer: "yts" }),
+        ]),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=movie");
+
+    // The removed title sort falls back to the default (most seeders, descending).
+    const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
+    await expect(sortSelect.locator("option:checked")).toHaveText("most seeders");
+
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows.nth(0)).toContainText("Zeta 1080p");
+    await expect(rows.nth(1)).toContainText("Alpha 1080p");
   });
 
   test("changing sort keeps active quick filters applied", async ({
@@ -889,7 +934,7 @@ test.describe("search page", () => {
         GetUserSettings: userSettings({
           rememberQuickFilters: true,
           codecFilters: [CodecFilter.X265],
-          sortBy: SortBy.TITLE,
+          sortBy: SortBy.SIZE,
           sortDirection: SortDirection.ASC,
         }),
         Search: searchResponse("movie", results),
@@ -901,6 +946,9 @@ test.describe("search page", () => {
     const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
     await expect(quickFilters.getByRole("checkbox", { name: "x265" })).toBeChecked();
     await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).not.toBeChecked();
+    await expect(
+      quickFilters.getByRole("combobox", { name: "Sort results" }).locator("option:checked"),
+    ).toHaveText("smallest");
 
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(2);

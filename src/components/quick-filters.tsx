@@ -25,14 +25,25 @@ type Props = {
   className?: string;
 };
 
-// One friendly option per sort field; direction is implied by the option.
+// Each option pins both a field and a direction; both directions are offered so the
+// select can always represent (and switch between) the sorts it exposes.
 const sortOptions = [
   { label: "most seeders", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.DESC },
+  { label: "least seeders", sortBy: SortBy.SEEDERS, sortDirection: SortDirection.ASC },
   { label: "largest", sortBy: SortBy.SIZE, sortDirection: SortDirection.DESC },
+  { label: "smallest", sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC },
   { label: "newest", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.DESC },
-  { label: "name", sortBy: SortBy.TITLE, sortDirection: SortDirection.ASC },
-  { label: "source", sortBy: SortBy.SOURCE, sortDirection: SortDirection.ASC },
+  { label: "oldest", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.ASC },
 ] as const;
+
+// Value carries the direction too, so the select reflects the active sort honestly and
+// re-selecting the same field in the opposite direction still fires onChange.
+function sortOptionValue(
+  sortBy: ChillSettings["sortBy"],
+  sortDirection: ChillSettings["sortDirection"],
+) {
+  return `${String(sortBy)}:${String(sortDirection)}`;
+}
 
 // Descending resolution and codec order to match the agreed layout (2160p → 720p, x265 → x264).
 const resolutionOrder = [...resolutionFilters].reverse();
@@ -60,6 +71,8 @@ export function QuickFilters({
   onSortChange,
   className,
 }: Props) {
+  const activeSortValue = sortOptionValue(filters.sortBy, filters.sortDirection);
+
   return (
     <div role="group" aria-label="Quick filters" className={cn("@container", className)}>
       <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-center @2xl:gap-x-4 @2xl:gap-y-2">
@@ -100,16 +113,21 @@ export function QuickFilters({
           <NativeSelect
             aria-label="Sort results"
             wrapperClassName="@2xl:w-44"
-            value={String(filters.sortBy)}
+            value={activeSortValue}
             onChange={(event) => {
-              const option = sortOptions.find((o) => String(o.sortBy) === event.target.value);
+              const option = sortOptions.find(
+                (o) => sortOptionValue(o.sortBy, o.sortDirection) === event.target.value,
+              );
               if (option) {
                 onSortChange({ sortBy: option.sortBy, sortDirection: option.sortDirection });
               }
             }}
           >
             {sortOptions.map((option) => (
-              <option key={option.label} value={String(option.sortBy)}>
+              <option
+                key={option.label}
+                value={sortOptionValue(option.sortBy, option.sortDirection)}
+              >
                 {option.label}
               </option>
             ))}

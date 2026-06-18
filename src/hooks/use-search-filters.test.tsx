@@ -50,7 +50,7 @@ describe("useSearchFilters", () => {
       otherFilters: [OtherFilter.HDR],
       rememberQuickFilters: true,
       resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-      sortBy: SortBy.TITLE,
+      sortBy: SortBy.SIZE,
       sortDirection: SortDirection.ASC,
     });
 
@@ -62,7 +62,7 @@ describe("useSearchFilters", () => {
         resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
         codec: [CodecFilter.X265],
         other: [],
-        sortBy: SortBy.TITLE,
+        sortBy: SortBy.SIZE,
         sortDirection: SortDirection.ASC,
       }),
     );
@@ -108,13 +108,13 @@ describe("useSearchFilters", () => {
       searchKey: "movie",
       resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
     };
-    const saved = makeSettings({ sortBy: SortBy.TITLE, sortDirection: SortDirection.ASC });
+    const saved = makeSettings({ sortBy: SortBy.SIZE, sortDirection: SortDirection.ASC });
 
     expect(filterStateForSearch(saved, "show", localQuickFilters)).toEqual({
       resolution: [],
       codec: [],
       other: [],
-      sortBy: SortBy.TITLE,
+      sortBy: SortBy.SIZE,
       sortDirection: SortDirection.ASC,
     });
   });
@@ -161,14 +161,14 @@ describe("useSearchFilters", () => {
     expect(
       filterStateForSearch(saved, "movie", null, {
         baseSettingsData: saved,
-        sortBy: SortBy.TITLE,
+        sortBy: SortBy.SIZE,
         sortDirection: SortDirection.ASC,
       }),
     ).toEqual({
       resolution: [],
       codec: [],
       other: [],
-      sortBy: SortBy.TITLE,
+      sortBy: SortBy.SIZE,
       sortDirection: SortDirection.ASC,
     });
   });
@@ -188,6 +188,20 @@ describe("useSearchFilters", () => {
       codec: [],
       other: [],
       sortBy: SortBy.SIZE,
+      sortDirection: SortDirection.DESC,
+    });
+  });
+
+  it("falls back to the default sort when a removed title/source sort is saved", () => {
+    const savedTitle = makeSettings({ sortBy: SortBy.TITLE, sortDirection: SortDirection.ASC });
+    expect(filterStateForSearch(savedTitle, "movie", null)).toMatchObject({
+      sortBy: SortBy.SEEDERS,
+      sortDirection: SortDirection.DESC,
+    });
+
+    const savedSource = makeSettings({ sortBy: SortBy.SOURCE, sortDirection: SortDirection.ASC });
+    expect(filterStateForSearch(savedSource, "movie", null)).toMatchObject({
+      sortBy: SortBy.SEEDERS,
       sortDirection: SortDirection.DESC,
     });
   });

@@ -18,11 +18,16 @@ type Props = {
 };
 
 const columns = [
-  { key: SortBy.TITLE, label: "Very well. Here are the results", align: "left" as const },
-  { key: SortBy.SOURCE, label: "source", align: "center" as const },
-  { key: SortBy.SIZE, label: "size", align: "center" as const },
-  { key: SortBy.SEEDERS, label: "seeders", align: "center" as const },
-  { key: SortBy.UPLOADED_AT, label: "age", align: "center" as const },
+  {
+    key: SortBy.TITLE,
+    label: "Very well. Here are the results",
+    align: "left" as const,
+    sortable: false,
+  },
+  { key: SortBy.SOURCE, label: "source", align: "center" as const, sortable: false },
+  { key: SortBy.SIZE, label: "size", align: "center" as const, sortable: true },
+  { key: SortBy.SEEDERS, label: "seeders", align: "center" as const, sortable: true },
+  { key: SortBy.UPLOADED_AT, label: "age", align: "center" as const, sortable: true },
 ];
 
 const LARGE_RESULTS_QUERY = "(min-width: 1024px)";
@@ -69,13 +74,27 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
           <thead className="border-border-strong border-b">
             <tr>
               {columns.map((column) => {
-                const active = sortBy === column.key;
+                const active = column.sortable && sortBy === column.key;
                 const isTitle = column.key === SortBy.TITLE;
-                const ariaSort = active
-                  ? sortDirection === SortDirection.ASC
-                    ? "ascending"
-                    : "descending"
-                  : "none";
+                const ariaSort = !column.sortable
+                  ? undefined
+                  : active
+                    ? sortDirection === SortDirection.ASC
+                      ? "ascending"
+                      : "descending"
+                    : "none";
+                const label = (
+                  <span
+                    className={cn("inline-flex items-center gap-0.5", !isTitle && "justify-center")}
+                  >
+                    <span>{column.label}</span>
+                    {active ? (
+                      <span className="inline-flex size-3" aria-hidden="true">
+                        {sortDirection === SortDirection.ASC ? <ArrowUp /> : <ArrowDown />}
+                      </span>
+                    ) : null}
+                  </span>
+                );
                 return (
                   <th
                     key={column.key}
@@ -87,28 +106,27 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
                         : "px-2 pb-1 text-center text-sm font-normal whitespace-nowrap"
                     }
                   >
-                    <button
-                      type="button"
-                      className={cn(
-                        "min-h-6 w-full cursor-pointer",
-                        isTitle ? "text-left" : "text-center",
-                      )}
-                      onClick={() => onSort(column.key)}
-                    >
+                    {column.sortable ? (
+                      <button
+                        type="button"
+                        className={cn(
+                          "min-h-6 w-full cursor-pointer",
+                          isTitle ? "text-left" : "text-center",
+                        )}
+                        onClick={() => onSort(column.key)}
+                      >
+                        {label}
+                      </button>
+                    ) : (
                       <span
                         className={cn(
-                          "inline-flex items-center gap-0.5",
-                          !isTitle && "justify-center",
+                          "block min-h-6 w-full",
+                          isTitle ? "text-left" : "text-center",
                         )}
                       >
-                        <span>{column.label}</span>
-                        {active ? (
-                          <span className="inline-flex size-3" aria-hidden="true">
-                            {sortDirection === SortDirection.ASC ? <ArrowUp /> : <ArrowDown />}
-                          </span>
-                        ) : null}
+                        {label}
                       </span>
-                    </button>
+                    )}
                   </th>
                 );
               })}

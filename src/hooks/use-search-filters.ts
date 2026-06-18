@@ -40,6 +40,21 @@ const emptyQuickFilters = {
   other: [],
 };
 
+// Results can only be sorted by these fields now (seeders/size/uploaded, either direction);
+// title/source sorting was removed. A stale saved title/source sort falls back to the default.
+const quickSortFields = new Set<ChillSettings["sortBy"]>([
+  SortBy.SEEDERS,
+  SortBy.SIZE,
+  SortBy.UPLOADED_AT,
+]);
+
+function normalizeSort(sortBy: FilterState["sortBy"], sortDirection: FilterState["sortDirection"]) {
+  if (!quickSortFields.has(sortBy)) {
+    return { sortBy: initialState.sortBy, sortDirection: initialState.sortDirection };
+  }
+  return { sortBy, sortDirection };
+}
+
 function savedQuickFilters(settingsData: ChillSettings | undefined) {
   if (!settingsData?.rememberQuickFilters) {
     return emptyQuickFilters;
@@ -74,14 +89,19 @@ export function filterStateForSearch(
       (settingsData?.sortBy === localSort.sortBy &&
         settingsData.sortDirection === localSort.sortDirection));
 
+  const sort = normalizeSort(
+    activeLocalSort ? localSort.sortBy : (settingsData?.sortBy ?? initialState.sortBy),
+    activeLocalSort
+      ? localSort.sortDirection
+      : (settingsData?.sortDirection ?? initialState.sortDirection),
+  );
+
   return {
     resolution: quickFilters.resolution,
     codec: quickFilters.codec,
     other: quickFilters.other,
-    sortBy: activeLocalSort ? localSort.sortBy : (settingsData?.sortBy ?? initialState.sortBy),
-    sortDirection: activeLocalSort
-      ? localSort.sortDirection
-      : (settingsData?.sortDirection ?? initialState.sortDirection),
+    sortBy: sort.sortBy,
+    sortDirection: sort.sortDirection,
   };
 }
 
