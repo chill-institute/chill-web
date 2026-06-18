@@ -346,7 +346,7 @@ test("settings modal", async ({ authenticatedPage, mockRpc }) => {
 
   await expect(authenticatedPage.locator('[data-page="settings"]')).toBeVisible();
   await expect(authenticatedPage.getByText("visual", { exact: true })).toBeVisible();
-  await expect(authenticatedPage.getByText("Search settings")).toBeVisible();
+  await expect(authenticatedPage.getByText("Search preferences")).toBeVisible();
   await expect(authenticatedPage).toHaveScreenshot("settings-modal.png", visualOptions);
 });
 
