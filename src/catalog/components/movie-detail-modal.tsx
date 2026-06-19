@@ -133,6 +133,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
           <>
             <QuickFilters
               filters={filters}
+              inlineOnDesktop
               onResolutionChange={(next) => {
                 setResolution(next);
                 if (appSettings?.rememberQuickFilters) patchConfig({ resolutionFilters: next });
