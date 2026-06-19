@@ -28,6 +28,7 @@ function SearchSettingsSection({
       <QuickFilters
         className="mb-3"
         filters={filters}
+        inlineOnDesktop
         // These are the persisted preferences, so remembering is implied.
         onResolutionChange={(next) =>
           persistPatch({ resolutionFilters: next, rememberQuickFilters: true })

@@ -23,6 +23,7 @@ type Props = {
   onCodecChange: (next: FilterState["codec"]) => void;
   onSortChange: (next: QuickFilterSort) => void;
   className?: string;
+  inlineOnDesktop?: boolean;
 };
 
 // Each option pins both a field and a direction; both directions are offered so the
@@ -53,10 +54,23 @@ function toggle<T>(values: readonly T[], value: T, checked: boolean): T[] {
   return checked ? [...values, value] : values.filter((v) => v !== value);
 }
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterGroup({
+  label,
+  children,
+  inlineOnDesktop = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  inlineOnDesktop?: boolean;
+}) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-fg-3 w-20 shrink-0 text-sm @2xl:hidden @4xl:inline @4xl:w-auto">
+      <span
+        className={cn(
+          "text-fg-3 w-20 shrink-0 text-sm @4xl:inline @4xl:w-auto",
+          inlineOnDesktop ? "md:w-auto" : "@2xl:hidden",
+        )}
+      >
         {label}
       </span>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">{children}</div>
@@ -70,13 +84,21 @@ export function QuickFilters({
   onCodecChange,
   onSortChange,
   className,
+  inlineOnDesktop = false,
 }: Props) {
   const activeSortValue = sortOptionValue(filters.sortBy, filters.sortDirection);
 
   return (
     <div role="group" aria-label="Quick filters" className={cn("@container", className)}>
-      <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-center @2xl:gap-x-4 @2xl:gap-y-2">
-        <FilterGroup label="resolution">
+      <div
+        className={cn(
+          "flex flex-col gap-3",
+          inlineOnDesktop
+            ? "md:flex-row md:items-center md:gap-x-4 md:gap-y-2"
+            : "@2xl:flex-row @2xl:items-center @2xl:gap-x-4 @2xl:gap-y-2",
+        )}
+      >
+        <FilterGroup label="resolution" inlineOnDesktop={inlineOnDesktop}>
           {resolutionOrder.map((filter) => (
             <CheckboxField
               key={String(filter)}
@@ -91,9 +113,15 @@ export function QuickFilters({
           ))}
         </FilterGroup>
 
-        <span aria-hidden="true" className="bg-border-hairline hidden h-3.5 w-px @2xl:block" />
+        <span
+          aria-hidden="true"
+          className={cn(
+            "bg-border-hairline hidden h-3.5 w-px",
+            inlineOnDesktop ? "md:block" : "@2xl:block",
+          )}
+        />
 
-        <FilterGroup label="codec">
+        <FilterGroup label="codec" inlineOnDesktop={inlineOnDesktop}>
           {codecOrder.map((filter) => (
             <CheckboxField
               key={String(filter)}
@@ -106,13 +134,26 @@ export function QuickFilters({
           ))}
         </FilterGroup>
 
-        <div className="hidden @2xl:block @2xl:flex-1" />
+        <div
+          className={cn(
+            "hidden",
+            inlineOnDesktop ? "md:block md:flex-1" : "@2xl:block @2xl:flex-1",
+          )}
+        />
 
         <div className="flex items-center gap-3">
-          <span className="text-fg-3 w-20 shrink-0 text-sm @2xl:w-auto">sort by</span>
+          <span
+            className={cn(
+              "text-fg-3 w-20 shrink-0 text-sm",
+              inlineOnDesktop ? "md:w-auto" : "@2xl:w-auto",
+            )}
+          >
+            sort by
+          </span>
           <NativeSelect
             aria-label="Sort results"
             wrapperClassName="w-32"
+            className="h-[1.875rem] py-1 pr-7 pl-2 text-xs sm:text-xs"
             value={activeSortValue}
             onChange={(event) => {
               const option = sortOptions.find(
