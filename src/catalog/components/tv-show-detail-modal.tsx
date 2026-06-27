@@ -201,7 +201,7 @@ function TvShowDetailContent({
           ) : detailQuery.isPending ? (
             <div className="mb-4 flex gap-1">
               {SEASON_TAB_SKELETON_SLOTS.map((slot) => (
-                <Skeleton key={slot} className="h-6 w-16" />
+                <Skeleton key={slot} className="h-7 w-16 rounded" />
               ))}
             </div>
           ) : null}

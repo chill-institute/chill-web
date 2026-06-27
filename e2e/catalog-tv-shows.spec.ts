@@ -1,7 +1,12 @@
 import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
-import type { Locator } from "@playwright/test";
 
 import { expect, test } from "./support/fixtures";
+import {
+  expectNoExcessBottomSpace,
+  expectStableBox,
+  expectStablePosition,
+  stableElementBox,
+} from "./support/layout";
 import {
   movie,
   moviesResponse,
@@ -67,31 +72,6 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
   GetTVShows: tvShowsResponse(netflixShows),
   ...overrides,
 });
-
-async function elementBox(locator: Locator) {
-  await expect(locator).toBeVisible();
-  const box = await locator.boundingBox();
-  if (box === null) throw new Error("Expected element to have a bounding box");
-  return box;
-}
-
-async function stableElementBox(locator: Locator) {
-  let previous = await elementBox(locator);
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    await locator.evaluate(() => new Promise<void>((resolve) => window.setTimeout(resolve, 50)));
-    const next = await elementBox(locator);
-    if (Math.abs(next.x - previous.x) <= 1 && Math.abs(next.y - previous.y) <= 1) {
-      return next;
-    }
-    previous = next;
-  }
-  return previous;
-}
-
-function expectStablePosition(before: { x: number; y: number }, after: { x: number; y: number }) {
-  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
-}
 
 test.describe("tv shows home", () => {
   test("switching tabs swaps content", async ({ authenticatedPage, mockRpc }) => {
@@ -401,6 +381,135 @@ test.describe("tv shows home", () => {
     { name: "desktop", viewport: { width: 1280, height: 720 } },
     { name: "mobile", viewport: { width: 390, height: 844 } },
   ]) {
+    test(`tv detail keeps modal frame stable while details load on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize(viewport);
+      await mockRpc(
+        homeMethods({
+          GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows),
+          GetTVShowSeason: tvShowSeasonResponse(
+            defaultShow.imdbId,
+            1,
+            defaultSeasons[0],
+            defaultEpisodes,
+          ),
+          GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(
+            tvShowDownload({
+              title: "Harbor.Ward.S01.2160p.WEB-DL.x265-GROUP",
+              seasonNumber: 1,
+              episodeNumber: undefined,
+            }),
+            [],
+          ),
+        }),
+      );
+
+      let releaseDetail: () => void = () => {};
+      const delayedDetail = new Promise<void>((resolve) => {
+        releaseDetail = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+        await delayedDetail;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            tvShowDetailResponse(
+              tvShowDetail({
+                imdbId: defaultShow.imdbId,
+                title: defaultShow.title,
+                networks: defaultShow.networks,
+              }),
+              defaultSeasons,
+            ),
+          ),
+        });
+      });
+
+      await authenticatedPage.goto(`/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`);
+      await authenticatedPage
+        .locator('[data-slot="poster-card"]')
+        .filter({ hasText: "Harbor Ward" })
+        .first()
+        .click();
+
+      const modal = authenticatedPage.getByRole("dialog", { name: "Harbor Ward" });
+      const modalShell = modal.locator("[data-detail-modal-shell]");
+      const modalBody = modal.locator("[data-detail-modal-body]");
+      const beforeShell = await stableElementBox(modalShell);
+      const beforeBody = await stableElementBox(modalBody);
+
+      releaseDetail();
+      await expect(modal.getByRole("tab", { name: "Season 1", exact: true })).toBeVisible();
+      const afterShell = await stableElementBox(modalShell);
+      const afterBody = await stableElementBox(modalBody);
+
+      expectStablePosition(beforeShell, afterShell);
+      expectStablePosition(beforeBody, afterBody);
+    });
+
+    test(`tv detail avoids excess bottom space while details load on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize(viewport);
+      await mockRpc(
+        homeMethods({
+          GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows),
+          GetTVShowSeason: tvShowSeasonResponse(
+            defaultShow.imdbId,
+            8,
+            tvShowSeason({ seasonNumber: 8, name: "Season 8", episodeCount: 2 }),
+            defaultEpisodes.map((episode) => tvShowEpisode({ ...episode, seasonNumber: 8 })),
+          ),
+          GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
+        }),
+      );
+
+      let releaseDetail: () => void = () => {};
+      const delayedDetail = new Promise<void>((resolve) => {
+        releaseDetail = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+        await delayedDetail;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            tvShowDetailResponse(
+              tvShowDetail({
+                imdbId: defaultShow.imdbId,
+                title: defaultShow.title,
+                networks: defaultShow.networks,
+              }),
+              [...defaultSeasons, tvShowSeason({ seasonNumber: 8, name: "Season 8" })],
+            ),
+          ),
+        });
+      });
+
+      await authenticatedPage.goto(
+        `/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}&season=8`,
+      );
+      await authenticatedPage
+        .locator('[data-slot="poster-card"]')
+        .filter({ hasText: "Harbor Ward" })
+        .first()
+        .click();
+
+      const modal = authenticatedPage.getByRole("dialog", { name: "Harbor Ward" });
+      const modalBody = modal.locator("[data-detail-modal-body]");
+      const modalBodyContent = modalBody.locator("> div").first();
+
+      await expectNoExcessBottomSpace(modalBody, modalBodyContent);
+
+      releaseDetail();
+      await expect(modal.getByRole("tab", { name: "Season 8", exact: true })).toBeVisible();
+      await expectNoExcessBottomSpace(modalBody, modalBodyContent);
+    });
+
     test(`tv detail keeps IMDb link stable while downloads load on ${name}`, async ({
       authenticatedPage,
       mockRpc,
@@ -468,14 +577,22 @@ test.describe("tv shows home", () => {
 
       const modal = authenticatedPage.getByRole("dialog", { name: "Harbor Ward" });
       await expect(modal.getByText("7:00 A.M.")).toBeVisible();
+      const modalShell = modal.locator("[data-detail-modal-shell]");
+      const modalBody = modal.locator("[data-detail-modal-body]");
       const imdbLink = modal.getByRole("link", { name: /IMDb/i });
-      const before = await stableElementBox(imdbLink);
+      const beforeShell = await stableElementBox(modalShell);
+      const beforeBody = await stableElementBox(modalBody);
+      const beforeLink = await stableElementBox(imdbLink);
 
       releaseDownloads();
       await expect(modal.getByRole("button", { name: /send season to put.io/i })).toBeVisible();
-      const after = await stableElementBox(imdbLink);
+      const afterShell = await stableElementBox(modalShell);
+      const afterBody = await stableElementBox(modalBody);
+      const afterLink = await stableElementBox(imdbLink);
 
-      expectStablePosition(before, after);
+      expectStablePosition(beforeShell, afterShell);
+      expectStablePosition(beforeBody, afterBody);
+      expectStableBox(beforeLink, afterLink);
     });
   }
 });

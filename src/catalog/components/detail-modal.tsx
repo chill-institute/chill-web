@@ -42,8 +42,8 @@ export function DetailResponsiveModal({
       onOpenChange={(open) => !open && onClose()}
       title={title}
       description={description}
-      desktopContentClassName="fixed top-1/2 left-1/2 h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 -translate-y-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
-      drawerContentClassName="!h-[min(92dvh,760px)] !max-h-[92dvh] overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
+      desktopContentClassName="fixed top-6 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
+      drawerContentClassName="max-h-[92dvh] overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
     >
       {children}
     </ResponsiveModal>
@@ -59,10 +59,11 @@ export function DetailModalShell({
 }) {
   return (
     <div
+      data-detail-modal-shell
       className={
         isDesktop
-          ? "h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border border-border-strong bg-surface p-0 text-fg-1 shadow-modal flex flex-col"
-          : "h-full min-h-0 w-full overflow-hidden bg-surface p-0 text-fg-1 flex flex-col"
+          ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border border-border-strong bg-surface p-0 text-fg-1 shadow-modal flex flex-col"
+          : "max-h-[92dvh] min-h-0 w-full overflow-hidden bg-surface p-0 text-fg-1 flex flex-col"
       }
     >
       {children}
@@ -215,6 +216,7 @@ export function DetailModalBody({
   return (
     <div
       {...dataProps}
+      data-detail-modal-body
       className={cn(
         "flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-2.5 pb-6 sm:px-6",
       )}

@@ -24,7 +24,7 @@ import {
   getDetailGenreTags,
 } from "@/catalog/components/detail-modal";
 
-const RESULT_SKELETON_SLOTS = Array.from({ length: 6 }, (_, i) => `result-skel-${i}`);
+const RESULT_SKELETON_SLOTS = Array.from({ length: 3 }, (_, i) => `result-skel-${i}`);
 const EMPTY_RESULTS: SearchResult[] = [];
 
 type Props = {
@@ -174,11 +174,21 @@ function ResultsListSkeleton() {
       {RESULT_SKELETON_SLOTS.map((slot) => (
         <div
           key={slot}
-          className="border-border-faint flex items-center gap-3 border-t p-3 first:border-t-0"
+          className="border-border-faint flex min-h-[8.9rem] flex-col gap-3 border-t p-3 first:border-t-0 sm:min-h-0 sm:flex-row sm:items-center"
         >
-          <Skeleton className="h-3 w-14 rounded" />
-          <Skeleton className="h-4 flex-1" />
-          <Skeleton className="h-7 w-28 rounded" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-11/12 rounded" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-3 w-12 rounded" />
+              <Skeleton className="h-3 w-14 rounded" />
+              <Skeleton className="h-3 w-12 rounded" />
+              <Skeleton className="h-3 w-16 rounded" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:shrink-0">
+            <Skeleton className="size-4 shrink-0 rounded" />
+            <Skeleton className="h-8 flex-1 rounded sm:w-28" />
+          </div>
         </div>
       ))}
     </div>

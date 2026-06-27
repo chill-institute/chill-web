@@ -1,6 +1,6 @@
 import { test, expect } from "./support/fixtures";
 import { create } from "@bufbuild/protobuf";
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import {
   CodecFilter,
   MoviesSource,
@@ -16,6 +16,7 @@ import {
   tvShowsResponse,
   userSettings,
 } from "./support/seeds";
+import { expectStableBox, expectStablePosition, stableElementBox } from "./support/layout";
 
 const movies = [
   movie({
@@ -103,31 +104,6 @@ async function openFirstMovieModal(page: Page) {
   const firstCard = page.locator('[data-slot="poster-card"]').first();
   await expect(firstCard).toBeVisible();
   await firstCard.click();
-}
-
-async function elementBox(locator: Locator) {
-  await expect(locator).toBeVisible();
-  const box = await locator.boundingBox();
-  if (box === null) throw new Error("Expected element to have a bounding box");
-  return box;
-}
-
-async function stableElementBox(locator: Locator) {
-  let previous = await elementBox(locator);
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    await locator.evaluate(() => new Promise<void>((resolve) => window.setTimeout(resolve, 50)));
-    const next = await elementBox(locator);
-    if (Math.abs(next.x - previous.x) <= 1 && Math.abs(next.y - previous.y) <= 1) {
-      return next;
-    }
-    previous = next;
-  }
-  return previous;
-}
-
-function expectStablePosition(before: { x: number; y: number }, after: { x: number; y: number }) {
-  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
 }
 
 test.describe("movies", () => {
@@ -385,14 +361,22 @@ test.describe("movies", () => {
       const movieDialog = authenticatedPage.getByRole("dialog", {
         name: "Aurora Protocol details",
       });
+      const modalShell = movieDialog.locator("[data-detail-modal-shell]");
+      const modalBody = movieDialog.locator("[data-detail-modal-body]");
       const imdbLink = movieDialog.getByRole("link", { name: /IMDb/i });
-      const before = await stableElementBox(imdbLink);
+      const beforeShell = await stableElementBox(modalShell);
+      const beforeBody = await stableElementBox(modalBody);
+      const beforeLink = await stableElementBox(imdbLink);
 
       releaseSearch();
       await expect(movieDialog.getByText("Aurora Protocol.2010.1080p.BluRay.x264")).toBeVisible();
-      const after = await stableElementBox(imdbLink);
+      const afterShell = await stableElementBox(modalShell);
+      const afterBody = await stableElementBox(modalBody);
+      const afterLink = await stableElementBox(imdbLink);
 
-      expectStablePosition(before, after);
+      expectStablePosition(beforeShell, afterShell);
+      expectStablePosition(beforeBody, afterBody);
+      expectStableBox(beforeLink, afterLink);
     });
   }
 
