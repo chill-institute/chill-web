@@ -19,7 +19,11 @@ import {
   tvShow,
   tvShowDetail,
   tvShowDetailResponse,
+  tvShowDownload,
+  tvShowEpisode,
   tvShowSeason,
+  tvShowSeasonDownloadsResponse,
+  tvShowSeasonResponse,
   tvShowsResponse,
   userFile,
   userSettings,
@@ -236,6 +240,40 @@ test("movie detail modal", async ({ authenticatedPage, mockRpc }, testInfo) => {
   );
 });
 
+test("movie detail modal loading", async ({ authenticatedPage, mockRpc }, testInfo) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods());
+
+  let releaseSearch: () => void = () => {};
+  const delayedSearch = new Promise<void>((resolve) => {
+    releaseSearch = resolve;
+  });
+  const searchRequested = new Promise<void>((resolve) => {
+    void authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+      resolve();
+      await delayedSearch;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(searchResponse("Synthetic Feature Alpha 2010", [])),
+      });
+    });
+  });
+
+  await authenticatedPage.goto("/movies");
+  await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
+  await searchRequested;
+
+  const dialog = authenticatedPage.getByRole("dialog", { name: "Synthetic Feature Alpha details" });
+  await expect(dialog.locator("[data-detail-modal-body]")).toBeVisible();
+  await expect(dialog).toHaveScreenshot(
+    "movie-detail-modal-loading.png",
+    testInfo.project.name.startsWith("mobile") ? mobileDrawerVisualOptions : visualOptions,
+  );
+
+  releaseSearch();
+});
+
 test("movie detail modal search error", async ({ authenticatedPage, mockRpc }, testInfo) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(defaultMethods());
@@ -258,6 +296,96 @@ test("movie detail modal search error", async ({ authenticatedPage, mockRpc }, t
     "movie-detail-modal-search-error.png",
     testInfo.project.name.startsWith("mobile") ? mobileDrawerVisualOptions : visualOptions,
   );
+});
+
+test("tv show detail modal loading", async ({ authenticatedPage, mockRpc }, testInfo) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(
+    defaultMethods({
+      GetTVShows: tvShowsResponse(tvShows),
+    }),
+  );
+
+  let releaseDetail: () => void = () => {};
+  const delayedDetail = new Promise<void>((resolve) => {
+    releaseDetail = resolve;
+  });
+  const detailRequested = new Promise<void>((resolve) => {
+    void authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+      resolve();
+      await delayedDetail;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          tvShowDetailResponse(
+            tvShowDetail({
+              imdbId: tvShows[0].imdbId,
+              title: tvShows[0].title,
+              year: tvShows[0].year,
+              posterUrl: tvShows[0].posterUrl,
+              rating: tvShows[0].rating,
+              genres: ["Drama", "Mystery"],
+            }),
+            [
+              tvShowSeason({ seasonNumber: 1, name: "Season 1", episodeCount: 2 }),
+              tvShowSeason({ seasonNumber: 8, name: "Season 8", episodeCount: 2 }),
+            ],
+          ),
+        ),
+      });
+    });
+  });
+
+  await authenticatedPage.route("**/chill.v4.UserService/GetTVShowSeason", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        tvShowSeasonResponse(
+          tvShows[0].imdbId,
+          8,
+          tvShowSeason({ seasonNumber: 8, name: "Season 8", episodeCount: 2 }),
+          [
+            tvShowEpisode({ seasonNumber: 8, episodeNumber: 1, name: "Eighth Signal" }),
+            tvShowEpisode({ seasonNumber: 8, episodeNumber: 2, name: "Late Return" }),
+          ],
+        ),
+      ),
+    });
+  });
+
+  await authenticatedPage.route(
+    "**/chill.v4.UserService/GetTVShowSeasonDownloads",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          tvShowSeasonDownloadsResponse(
+            tvShowDownload({
+              title: "Synthetic.Show.Gamma.S08.2160p.WEB-DL.x265-FIXTURE",
+              seasonNumber: 8,
+              episodeNumber: undefined,
+            }),
+            [],
+          ),
+        ),
+      });
+    },
+  );
+
+  await authenticatedPage.goto(`/tv-shows/${tvShows[0].imdbId}?season=8`);
+  await detailRequested;
+
+  const dialog = authenticatedPage.getByRole("dialog", { name: "Synthetic Show Gamma" });
+  await expect(dialog.locator("[data-detail-modal-body]")).toBeVisible();
+  await expect(dialog).toHaveScreenshot(
+    "tv-show-detail-modal-loading.png",
+    testInfo.project.name.startsWith("mobile") ? mobileDrawerVisualOptions : visualOptions,
+  );
+
+  releaseDetail();
 });
 
 test("tv show detail modal error", async ({ authenticatedPage, mockRpc }, testInfo) => {

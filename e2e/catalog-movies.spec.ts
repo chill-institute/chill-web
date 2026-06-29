@@ -16,6 +16,7 @@ import {
   tvShowsResponse,
   userSettings,
 } from "./support/seeds";
+import { expectStableBox, expectStablePosition, stableElementBox } from "./support/layout";
 
 const movies = [
   movie({
@@ -329,6 +330,55 @@ test.describe("movies", () => {
 
     await expect.poll(() => savedBodies.length).toBeGreaterThan(0);
   });
+
+  for (const { name, viewport } of [
+    { name: "desktop", viewport: { width: 1280, height: 720 } },
+    { name: "mobile", viewport: { width: 390, height: 844 } },
+  ]) {
+    test(`movie detail keeps IMDb link stable while torrents load on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize(viewport);
+      await mockRpc(homeMethods());
+
+      let releaseSearch: () => void = () => {};
+      const delayedSearch = new Promise<void>((resolve) => {
+        releaseSearch = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+        await delayedSearch;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(searchResponse("Aurora Protocol 2010", auroraSearchResults)),
+        });
+      });
+
+      await authenticatedPage.goto("/movies");
+      await openFirstMovieModal(authenticatedPage);
+
+      const movieDialog = authenticatedPage.getByRole("dialog", {
+        name: "Aurora Protocol details",
+      });
+      const modalShell = movieDialog.locator("[data-detail-modal-shell]");
+      const modalBody = movieDialog.locator("[data-detail-modal-body]");
+      const imdbLink = movieDialog.getByRole("link", { name: /IMDb/i });
+      const beforeShell = await stableElementBox(modalShell);
+      const beforeBody = await stableElementBox(modalBody);
+      const beforeLink = await stableElementBox(imdbLink);
+
+      releaseSearch();
+      await expect(movieDialog.getByText("Aurora Protocol.2010.1080p.BluRay.x264")).toBeVisible();
+      const afterShell = await stableElementBox(modalShell);
+      const afterBody = await stableElementBox(modalBody);
+      const afterLink = await stableElementBox(imdbLink);
+
+      expectStablePosition(beforeShell, afterShell);
+      expectStablePosition(beforeBody, afterBody);
+      expectStableBox(beforeLink, afterLink);
+    });
+  }
 
   test("movie modal filters results and updates result order when sort changes", async ({
     authenticatedPage,

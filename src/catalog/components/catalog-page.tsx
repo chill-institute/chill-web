@@ -238,7 +238,14 @@ function MoviesContent({ query, source, onPickAnotherSource }: MoviesContentProp
               rating={movie.rating != null ? movie.rating.toFixed(1) : null}
               ratingHref={movie.externalUrl || undefined}
               year={movie.year != null ? String(movie.year) : null}
-              render={<Link to="/movies/$id" params={{ id: movie.id }} search={(prev) => prev} />}
+              render={
+                <Link
+                  to="/movies/$id"
+                  params={{ id: movie.id }}
+                  search={(prev) => prev}
+                  resetScroll={false}
+                />
+              }
               footer={<MoviePosterActions movie={movie} />}
             />
           ))}
@@ -294,6 +301,7 @@ function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentPr
                   to="/tv-shows/$id"
                   params={{ id: show.imdbId }}
                   search={(prev) => ({ ...prev, season: 1 })}
+                  resetScroll={false}
                 />
               }
             />
