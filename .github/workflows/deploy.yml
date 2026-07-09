@@ -25,7 +25,7 @@ jobs:
   validate:
     needs: workflow-security
     if: ${{ needs.workflow-security.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Require default branch
         env:

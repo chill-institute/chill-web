@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   deploy-app:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     environment:
       name: ${{ inputs.environment-name }}
       url: ${{ inputs.environment-url }}
