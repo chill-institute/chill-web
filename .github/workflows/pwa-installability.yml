@@ -40,7 +40,7 @@ concurrency:
 
 jobs:
   metadata-smoke:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -60,7 +60,7 @@ jobs:
   android-home-screen-experiment:
     if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.run_android_emulator) }}
     timeout-minutes: 25
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     env:
       ANDROID_SYSTEM_IMAGE: "system-images;android-35;google_apis_playstore;x86_64"
       MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
