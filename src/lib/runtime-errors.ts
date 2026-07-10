@@ -1,6 +1,6 @@
-const assetSkewReloadKey = "chill.asset-skew-reload.v1";
-const assetSkewReloadParam = "__chill_reload";
-let assetSkewReloadPendingInMemory = false;
+const preloadRecoveryParam = "__chill_reload";
+const sessionStorageProbeKey = "chill.preload-recovery-probe.v1";
+let preloadRecoveryPending = false;
 
 type RouteResolutionMatch = {
   status: "pending" | "success" | "error" | "redirected" | "notFound";
@@ -24,58 +24,38 @@ function isAbortLikeError(error: unknown) {
   return false;
 }
 
-function getSessionStorageItem(key: string) {
+function canUseSessionStorage() {
   try {
-    return window.sessionStorage.getItem(key);
+    window.sessionStorage.setItem(sessionStorageProbeKey, "1");
+    window.sessionStorage.removeItem(sessionStorageProbeKey);
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
-function removeSessionStorageItem(key: string) {
-  try {
-    window.sessionStorage.removeItem(key);
-  } catch {
-    // Storage may be unavailable in private or locked-down browser contexts.
-  }
-}
+function handleVitePreloadError() {
+  if (canUseSessionStorage() || preloadRecoveryPending) return false;
 
-function setSessionStorageItem(key: string, value: string) {
-  try {
-    window.sessionStorage.setItem(key, value);
-  } catch {
-    // The URL reload marker still prevents a same-load retry loop.
-  }
-}
-
-function reloadOnceForAssetSkew() {
   const url = new URL(window.location.href);
-  if (url.searchParams.has(assetSkewReloadParam)) return false;
-  if (getSessionStorageItem(assetSkewReloadKey)) return false;
+  if (url.searchParams.has(preloadRecoveryParam)) return false;
 
-  setSessionStorageItem(assetSkewReloadKey, "1");
-  assetSkewReloadPendingInMemory = true;
-  url.searchParams.set(assetSkewReloadParam, String(Date.now()));
+  preloadRecoveryPending = true;
+  url.searchParams.set(preloadRecoveryParam, String(Date.now()));
   window.location.replace(url);
   return true;
 }
 
-function isAssetSkewReloadPending() {
-  return assetSkewReloadPendingInMemory;
-}
-
-function resetAssetSkewReloadGuardAfterSuccessfulRouteResolution(
+function resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution(
   matches: readonly RouteResolutionMatch[],
 ) {
   if (matches.length === 0 || matches.some((match) => match.status !== "success")) return false;
 
   const url = new URL(window.location.href);
-  removeSessionStorageItem(assetSkewReloadKey);
-  assetSkewReloadPendingInMemory = false;
+  if (!url.searchParams.has(preloadRecoveryParam)) return false;
 
-  if (!url.searchParams.has(assetSkewReloadParam)) return true;
-
-  url.searchParams.delete(assetSkewReloadParam);
+  preloadRecoveryPending = false;
+  url.searchParams.delete(preloadRecoveryParam);
   window.history.replaceState(window.history.state, "", url);
   return true;
 }
@@ -84,14 +64,9 @@ function setupRuntimeErrorHandlers() {
   window.addEventListener("vite:preloadError", handleVitePreloadError);
 }
 
-function handleVitePreloadError() {
-  reloadOnceForAssetSkew();
-}
-
 export {
   handleVitePreloadError,
-  isAssetSkewReloadPending,
   isAbortLikeError,
-  resetAssetSkewReloadGuardAfterSuccessfulRouteResolution,
+  resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
   setupRuntimeErrorHandlers,
 };

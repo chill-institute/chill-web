@@ -23,15 +23,19 @@ Build output:
 - `dist/`
 - `/assets/*` responses are fingerprinted build artifacts. They are served with
   immutable browser caching, and the static-asset worker converts SPA HTML
-  fallbacks on `/assets/*` into real `404` responses so stale chunk URLs trigger
-  one guarded runtime recovery reload instead of loading `index.html` as
-  JavaScript. The failed import remains rejected so route loaders cannot receive
-  an undefined module, and the reload guard clears only after every route match
-  resolves successfully.
+  fallbacks on `/assets/*` into real `404` responses instead of loading
+  `index.html` as JavaScript. TanStack Router owns normal split-route recovery: a
+  missing route module gets one guarded full-page reload, and a persistent failure
+  reaches the app error screen. A URL-guarded Vite fallback provides the same
+  one-shot recovery when browser session storage is unavailable. Route-owned
+  detail modals ship in their route chunks so they do not add a second unguarded
+  lazy-import boundary.
 - The service worker precaches the app shell and generated assets. New service
-  workers auto-activate and reload controlled clients when deployed so users do
-  not stay pinned to an old app shell. Public fonts, social images, docs imagery,
-  test fixtures, icons, and seasonal logos stay out of the install cache.
+  workers wait while existing tabs continue with their current app shell and
+  cache. The app prompts when an update is ready; accepting activates the worker
+  and reloads the page, while deferring leaves the current version running.
+  Public fonts, social images, docs imagery, test fixtures, icons, and seasonal
+  logos stay out of the install cache.
 
 ## Routing
 

@@ -3,7 +3,6 @@ import type { Breadcrumb, ErrorEvent } from "@sentry/react";
 import type { ErrorInfo } from "react";
 
 import { APP_NAME } from "./app-info";
-import { isAssetSkewReloadPending } from "./runtime-errors";
 
 const sentryEventIds = new WeakMap<object, string>();
 const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession"]);
@@ -84,25 +83,7 @@ function initSentry() {
   });
 }
 
-function isAssetSkewReloadEvent(event: ErrorEvent) {
-  const values = event.exception?.values ?? [];
-
-  return values.some((value) => {
-    const message = `${value.type ?? ""} ${value.value ?? ""}`.toLowerCase();
-    return (
-      message.includes("failed to fetch dynamically imported module") ||
-      message.includes("importing a module script failed") ||
-      message.includes("error loading dynamically imported module") ||
-      message.includes("unable to preload")
-    );
-  });
-}
-
 function sanitizeSentryEvent(event: ErrorEvent): ErrorEvent | null {
-  if (isAssetSkewReloadPending() && isAssetSkewReloadEvent(event)) {
-    return null;
-  }
-
   return {
     ...event,
     user: undefined,
