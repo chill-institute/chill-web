@@ -81,3 +81,30 @@ test("keeps the service worker precache focused on the app shell", async ({ page
   expect(source).not.toContain("logo512-maskable.png");
   expect(source).not.toContain("test/poster.svg");
 });
+
+test("clears the asset-skew reload guard after the route resolves", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("chill.asset-skew-reload.v1", "1");
+  });
+
+  await page.goto("/sign-in?__chill_reload=123");
+
+  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page.getByRole("button", { name: "sign in with put.io" })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.sessionStorage.getItem("chill.asset-skew-reload.v1")))
+    .toBeNull();
+});
+
+test("preserves Vite preload failures for the route loader", async ({ page }) => {
+  await page.goto("/sign-in");
+
+  const defaultPrevented = await page.evaluate(() => {
+    window.sessionStorage.setItem("chill.asset-skew-reload.v1", "1");
+    const event = new Event("vite:preloadError", { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+
+  expect(defaultPrevented).toBe(false);
+});

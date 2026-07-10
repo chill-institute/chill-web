@@ -1,7 +1,10 @@
 const assetSkewReloadKey = "chill.asset-skew-reload.v1";
 const assetSkewReloadParam = "__chill_reload";
+let assetSkewReloadPendingInMemory = false;
 
-type PreloadRecoveryEvent = Pick<Event, "preventDefault">;
+type RouteResolutionMatch = {
+  status: "pending" | "success" | "error" | "redirected" | "notFound";
+};
 
 function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -51,34 +54,44 @@ function reloadOnceForAssetSkew() {
   if (getSessionStorageItem(assetSkewReloadKey)) return false;
 
   setSessionStorageItem(assetSkewReloadKey, "1");
+  assetSkewReloadPendingInMemory = true;
   url.searchParams.set(assetSkewReloadParam, String(Date.now()));
   window.location.replace(url);
   return true;
 }
 
-function resetAssetSkewReloadGuardAfterReload() {
-  const url = new URL(window.location.href);
-  if (!url.searchParams.has(assetSkewReloadParam)) return;
+function isAssetSkewReloadPending() {
+  return assetSkewReloadPendingInMemory;
+}
 
+function resetAssetSkewReloadGuardAfterSuccessfulRouteResolution(
+  matches: readonly RouteResolutionMatch[],
+) {
+  if (matches.length === 0 || matches.some((match) => match.status !== "success")) return false;
+
+  const url = new URL(window.location.href);
   removeSessionStorageItem(assetSkewReloadKey);
+  assetSkewReloadPendingInMemory = false;
+
+  if (!url.searchParams.has(assetSkewReloadParam)) return true;
+
   url.searchParams.delete(assetSkewReloadParam);
   window.history.replaceState(window.history.state, "", url);
+  return true;
 }
 
 function setupRuntimeErrorHandlers() {
-  resetAssetSkewReloadGuardAfterReload();
-  window.addEventListener("vite:preloadError", (event) => handleVitePreloadError(event));
+  window.addEventListener("vite:preloadError", handleVitePreloadError);
 }
 
-function handleVitePreloadError(event?: PreloadRecoveryEvent) {
-  if (reloadOnceForAssetSkew()) {
-    event?.preventDefault();
-  }
+function handleVitePreloadError() {
+  reloadOnceForAssetSkew();
 }
 
 export {
   handleVitePreloadError,
+  isAssetSkewReloadPending,
   isAbortLikeError,
-  resetAssetSkewReloadGuardAfterReload,
+  resetAssetSkewReloadGuardAfterSuccessfulRouteResolution,
   setupRuntimeErrorHandlers,
 };

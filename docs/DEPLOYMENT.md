@@ -24,8 +24,10 @@ Build output:
 - `/assets/*` responses are fingerprinted build artifacts. They are served with
   immutable browser caching, and the static-asset worker converts SPA HTML
   fallbacks on `/assets/*` into real `404` responses so stale chunk URLs trigger
-  the runtime preload recovery path instead of loading `index.html` as
-  JavaScript.
+  one guarded runtime recovery reload instead of loading `index.html` as
+  JavaScript. The failed import remains rejected so route loaders cannot receive
+  an undefined module, and the reload guard clears only after every route match
+  resolves successfully.
 - The service worker precaches the app shell and generated assets. New service
   workers auto-activate and reload controlled clients when deployed so users do
   not stay pinned to an old app shell. Public fonts, social images, docs imagery,

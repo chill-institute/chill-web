@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 
 import {
   handleVitePreloadError,
+  isAssetSkewReloadPending,
   isAbortLikeError,
-  resetAssetSkewReloadGuardAfterReload,
+  resetAssetSkewReloadGuardAfterSuccessfulRouteResolution,
+  setupRuntimeErrorHandlers,
 } from "./runtime-errors";
 
 describe("isAbortLikeError", () => {
@@ -19,11 +21,12 @@ describe("isAbortLikeError", () => {
 
 describe("setupRuntimeErrorHandlers", () => {
   const sessionStorage = new Map<string, string>();
+  let eventTarget: EventTarget;
   let replaceStateSpy: ReturnType<typeof vi.fn>;
   let replaceSpy: ReturnType<typeof vi.fn>;
 
   function stubWindow(href: string) {
-    vi.stubGlobal("window", {
+    eventTarget = Object.assign(new EventTarget(), {
       history: {
         state: { route: "movies" },
         replaceState: replaceStateSpy,
@@ -38,6 +41,7 @@ describe("setupRuntimeErrorHandlers", () => {
         setItem: (key: string, value: string) => sessionStorage.set(key, value),
       },
     });
+    vi.stubGlobal("window", eventTarget);
   }
 
   beforeEach(() => {
@@ -48,22 +52,30 @@ describe("setupRuntimeErrorHandlers", () => {
   });
 
   afterEach(() => {
+    stubWindow("https://chill.institute/?__chill_reload=test-cleanup");
+    resetAssetSkewReloadGuardAfterSuccessfulRouteResolution([{ status: "success" }]);
     vi.unstubAllGlobals();
   });
 
-  it("schedules the one-shot Vite preload recovery reload", () => {
-    const firstEvent = { preventDefault: vi.fn() };
-    const secondEvent = { preventDefault: vi.fn() };
+  it("keeps Vite preload failures rejected while scheduling the one-shot reload", async () => {
+    const failure = new TypeError("Failed to fetch dynamically imported module");
+    setupRuntimeErrorHandlers();
 
-    handleVitePreloadError(firstEvent);
-    handleVitePreloadError(secondEvent);
+    const importResult = Promise.reject(failure).catch((error: unknown) => {
+      const event = new Event("vite:preloadError", { cancelable: true });
+      Object.defineProperty(event, "payload", { value: error });
+      eventTarget.dispatchEvent(event);
+      if (!event.defaultPrevented) throw error;
+    });
+
+    await expect(importResult).rejects.toBe(failure);
+    handleVitePreloadError();
 
     expect(replaceSpy).toHaveBeenCalledTimes(1);
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/movies\?__chill_reload=\d+$/,
     );
-    expect(firstEvent.preventDefault).toHaveBeenCalledTimes(1);
-    expect(secondEvent.preventDefault).not.toHaveBeenCalled();
+    expect(isAssetSkewReloadPending()).toBe(true);
   });
 
   it("still schedules the one-shot preload recovery when session storage is unavailable", () => {
@@ -94,23 +106,28 @@ describe("setupRuntimeErrorHandlers", () => {
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/search\?__chill_reload=\d+$/,
     );
+    expect(isAssetSkewReloadPending()).toBe(true);
   });
 
   it("lets preload errors surface when the URL already carries the reload marker", () => {
     stubWindow("https://chill.institute/search?__chill_reload=123");
-    const event = { preventDefault: vi.fn() };
 
-    handleVitePreloadError(event);
+    handleVitePreloadError();
 
     expect(replaceSpy).not.toHaveBeenCalled();
-    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(isAssetSkewReloadPending()).toBe(false);
   });
 
-  it("clears the Vite preload reload guard after a cache-busted reload succeeds", () => {
+  it("keeps the reload guard through startup and clears it after route resolution", () => {
     sessionStorage.set("chill.asset-skew-reload.v1", "1");
     stubWindow("https://chill.institute/movies?__chill_reload=123&sort=recent");
 
-    resetAssetSkewReloadGuardAfterReload();
+    setupRuntimeErrorHandlers();
+
+    expect(sessionStorage.get("chill.asset-skew-reload.v1")).toBe("1");
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+
+    resetAssetSkewReloadGuardAfterSuccessfulRouteResolution([{ status: "success" }]);
 
     expect(sessionStorage.has("chill.asset-skew-reload.v1")).toBe(false);
     expect(replaceStateSpy).toHaveBeenCalledWith(
@@ -118,5 +135,29 @@ describe("setupRuntimeErrorHandlers", () => {
       "",
       new URL("https://chill.institute/movies?sort=recent"),
     );
+  });
+
+  it("keeps the one-shot guard when the route resolves into an error", () => {
+    handleVitePreloadError();
+
+    const cleared = resetAssetSkewReloadGuardAfterSuccessfulRouteResolution([
+      { status: "success" },
+      { status: "error" },
+    ]);
+
+    expect(cleared).toBe(false);
+    expect(sessionStorage.get("chill.asset-skew-reload.v1")).toBe("1");
+    expect(isAssetSkewReloadPending()).toBe(true);
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+  });
+
+  it("clears a stale session guard after a successful redirect drops the URL marker", () => {
+    sessionStorage.set("chill.asset-skew-reload.v1", "1");
+    stubWindow("https://chill.institute/sign-in");
+
+    resetAssetSkewReloadGuardAfterSuccessfulRouteResolution([{ status: "success" }]);
+
+    expect(sessionStorage.has("chill.asset-skew-reload.v1")).toBe(false);
+    expect(replaceStateSpy).not.toHaveBeenCalled();
   });
 });

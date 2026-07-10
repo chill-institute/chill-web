@@ -7,6 +7,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { registerSW } from "virtual:pwa-register";
 
 import { getRouter } from "./router";
+import { resetAssetSkewReloadGuardAfterSuccessfulRouteResolution } from "./lib/runtime-errors";
 import { addAppBreadcrumb, createSentryReactErrorHandler } from "./lib/sentry";
 import { queryClient } from "./query-client";
 import "./styles.css";
@@ -15,6 +16,7 @@ registerSW({ immediate: true });
 
 const router = getRouter();
 router.subscribe("onResolved", (event) => {
+  resetAssetSkewReloadGuardAfterSuccessfulRouteResolution(router.state.matches);
   if (!event.pathChanged) return;
   addAppBreadcrumb("route", { path: event.toLocation.pathname });
 });
