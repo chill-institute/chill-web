@@ -13,7 +13,8 @@ export function Toaster(props: ToasterProps) {
       theme={theme}
       toastOptions={{
         classNames: {
-          actionButton: "group-[.toast]:bg-fg-1 group-[.toast]:text-fg-inverse lowercase",
+          actionButton:
+            "ml-0! only-of-type:ml-auto! group-[.toast]:bg-fg-1 group-[.toast]:text-fg-inverse lowercase",
           cancelButton: "group-[.toast]:bg-hover group-[.toast]:text-fg-3",
           description: "group-[.toast]:text-fg-3",
           toast:

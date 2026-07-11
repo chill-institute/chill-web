@@ -8,6 +8,7 @@ import {
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../support/fixtures";
+import { stableElementBox } from "../support/layout";
 import {
   downloadFolderResponse,
   indexer,
@@ -186,8 +187,14 @@ test("PWA update prompt", async ({ authenticatedPage, mockRpc }) => {
     hasText: "new version available",
   });
   await expect(updateToast).toBeVisible();
-  await expect(updateToast.getByRole("button", { name: "reload" })).toBeVisible();
-  await expect(updateToast.getByRole("button", { name: "later" })).toBeVisible();
+  const reloadButton = updateToast.getByRole("button", { name: "reload" });
+  const laterButton = updateToast.getByRole("button", { name: "later" });
+  const [reloadBox, laterBox] = await Promise.all([
+    stableElementBox(reloadButton),
+    stableElementBox(laterButton),
+  ]);
+  expect(Math.round(reloadBox.x - (laterBox.x + laterBox.width))).toBe(6);
+  expect(Math.abs(reloadBox.y - laterBox.y)).toBeLessThanOrEqual(1);
   await expect(authenticatedPage).toHaveScreenshot("pwa-update-toast.png", visualOptions);
 });
 
