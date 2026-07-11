@@ -1,4 +1,5 @@
 import { expect, test } from "./support/fixtures";
+import { indexer, indexersResponse, searchResponse, userSettings } from "./support/seeds";
 
 test("is installable as a home-screen app", async ({ context, page }) => {
   const client = await context.newCDPSession(page);
@@ -80,4 +81,107 @@ test("keeps the service worker precache focused on the app shell", async ({ page
   expect(source).not.toContain("logo192-maskable.png");
   expect(source).not.toContain("logo512-maskable.png");
   expect(source).not.toContain("test/poster.svg");
+  expect(source).toContain('self.addEventListener("message"');
+  expect(source).toContain('"SKIP_WAITING"');
+  expect(source.match(/self\.skipWaiting\(\)/g)).toHaveLength(1);
+  expect(source).not.toContain("clientsClaim");
+});
+
+test.describe("route chunk recovery", () => {
+  test.use({ serviceWorkers: "block" });
+
+  const methods = {
+    GetUserSettings: userSettings(),
+    GetIndexers: indexersResponse([indexer()]),
+    Search: searchResponse("stale chunk", []),
+  };
+
+  test("reloads once when an emitted route chunk is briefly unavailable", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let completedPageLoads = 0;
+    let failedChunkRequests = 0;
+    let targetChunkPath: string | undefined;
+
+    authenticatedPage.on("load", () => {
+      if (authenticatedPage.url().includes("/search?q=stale+chunk")) {
+        completedPageLoads += 1;
+      }
+    });
+    await authenticatedPage.route(/\/assets\/search-[^/?]+\.js(?:\?.*)?$/, async (route) => {
+      const chunkPath = new URL(route.request().url()).pathname;
+      targetChunkPath ??= chunkPath;
+
+      if (chunkPath === targetChunkPath && failedChunkRequests === 0) {
+        failedChunkRequests += 1;
+        await route.fulfill({ status: 404, contentType: "text/plain", body: "Not found\n" });
+        return;
+      }
+
+      await route.continue();
+    });
+    await mockRpc(methods);
+
+    await authenticatedPage.goto("/search?q=stale+chunk");
+
+    await expect(authenticatedPage.locator('[data-page="search"]')).toBeVisible();
+    expect(failedChunkRequests).toBe(1);
+    expect(completedPageLoads).toBe(2);
+    await expect
+      .poll(() =>
+        authenticatedPage.evaluate(
+          () =>
+            Object.keys(window.sessionStorage).filter((key) =>
+              key.startsWith("tanstack_router_reload:"),
+            ).length,
+        ),
+      )
+      .toBe(1);
+  });
+
+  test("surfaces a persistent route chunk failure without reloading again", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let completedPageLoads = 0;
+    let failedChunkRequests = 0;
+    let targetChunkPath: string | undefined;
+
+    authenticatedPage.on("load", () => {
+      if (authenticatedPage.url().includes("/search?q=stale+chunk")) {
+        completedPageLoads += 1;
+      }
+    });
+    await authenticatedPage.route(/\/assets\/search-[^/?]+\.js(?:\?.*)?$/, async (route) => {
+      const chunkPath = new URL(route.request().url()).pathname;
+      targetChunkPath ??= chunkPath;
+
+      if (chunkPath === targetChunkPath) {
+        failedChunkRequests += 1;
+        await route.fulfill({ status: 404, contentType: "text/plain", body: "Not found\n" });
+        return;
+      }
+
+      await route.continue();
+    });
+    await mockRpc(methods);
+
+    await authenticatedPage.goto("/search?q=stale+chunk");
+
+    await expect(
+      authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
+    ).toBeVisible();
+    await authenticatedPage.waitForTimeout(750);
+    expect(failedChunkRequests).toBe(2);
+    expect(completedPageLoads).toBe(2);
+    expect(
+      await authenticatedPage.evaluate(
+        () =>
+          Object.keys(window.sessionStorage).filter((key) =>
+            key.startsWith("tanstack_router_reload:"),
+          ).length,
+      ),
+    ).toBe(1);
+  });
 });

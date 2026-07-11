@@ -1,20 +1,14 @@
-import { lazy, Suspense } from "react";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 
 import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
+import { TvShowDetailModal } from "@/catalog/components/tv-show-detail-modal";
 import { useTVShowDetailQuery, useTVShowsQuery } from "@/catalog/queries/tv-shows";
 import { useSettingsQuery } from "@/catalog/queries/settings";
 import { NotFoundScreen } from "@/ui/components/not-found-screen";
 
 const routeApi = getRouteApi("/tv-shows/$id");
-
-const TvShowDetailModal = lazy(() =>
-  import("@/catalog/components/tv-show-detail-modal").then((m) => ({
-    default: m.TvShowDetailModal,
-  })),
-);
 
 function TVShowDetailRoute() {
   const { id } = routeApi.useParams();
@@ -60,15 +54,13 @@ function TVShowDetailRoute() {
   }
 
   return (
-    <Suspense fallback={null}>
-      <TvShowDetailModal
-        imdbId={id}
-        fallbackShow={fallbackShow}
-        activeSeason={season}
-        onSeasonChange={setSeason}
-        onClose={close}
-      />
-    </Suspense>
+    <TvShowDetailModal
+      imdbId={id}
+      fallbackShow={fallbackShow}
+      activeSeason={season}
+      onSeasonChange={setSeason}
+      onClose={close}
+    />
   );
 }
 
