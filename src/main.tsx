@@ -5,32 +5,26 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { registerSW } from "virtual:pwa-register";
-import { toast } from "sonner";
 
 import { getRouter } from "./router";
 import { resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution } from "./lib/runtime-errors";
 import { addAppBreadcrumb, createSentryReactErrorHandler } from "./lib/sentry";
 import { queryClient } from "./query-client";
+import { showPwaUpdateToast } from "./ui/lib/pwa-update-toast";
 import "./styles.css";
 
-const pwaUpdateToastId = "pwa-update";
 const updateServiceWorker = registerSW({
   immediate: true,
   onNeedRefresh() {
-    toast("new version available", {
-      action: {
-        label: "reload",
-        onClick: () => void updateServiceWorker(true),
-      },
-      cancel: {
-        label: "later",
-        onClick: () => toast.dismiss(pwaUpdateToastId),
-      },
-      duration: Number.POSITIVE_INFINITY,
-      id: pwaUpdateToastId,
-    });
+    showPwaUpdateToast(updateServiceWorker);
   },
 });
+
+if (import.meta.env.VITE_PUBLIC_RELEASE === "visual-test") {
+  window.addEventListener("chill:visual-pwa-update", () => {
+    showPwaUpdateToast(() => Promise.resolve());
+  });
+}
 
 const router = getRouter();
 router.subscribe("onResolved", (event) => {

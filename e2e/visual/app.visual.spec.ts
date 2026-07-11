@@ -172,6 +172,25 @@ test("not found screen", async ({ page }) => {
   await expect(page).toHaveScreenshot("not-found-screen.png", visualOptions);
 });
 
+test("PWA update prompt", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods());
+  await authenticatedPage.goto("/");
+  await expect(authenticatedPage.locator("#search-global")).toBeVisible();
+
+  await authenticatedPage.evaluate(() => {
+    window.dispatchEvent(new Event("chill:visual-pwa-update"));
+  });
+
+  const updateToast = authenticatedPage.locator("[data-sonner-toast]").filter({
+    hasText: "new version available",
+  });
+  await expect(updateToast).toBeVisible();
+  await expect(updateToast.getByRole("button", { name: "reload" })).toBeVisible();
+  await expect(updateToast.getByRole("button", { name: "later" })).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("pwa-update-toast.png", visualOptions);
+});
+
 test("movies catalog", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(defaultMethods());
