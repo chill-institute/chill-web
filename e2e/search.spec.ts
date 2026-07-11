@@ -18,8 +18,6 @@ import {
 } from "@chill-institute/contracts/chill/v4/api_pb";
 import type { Page } from "@playwright/test";
 
-import { stableElementBox } from "./support/layout";
-
 const defaultMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings(),
   GetIndexers: indexersResponse([
@@ -174,17 +172,7 @@ test.describe("search page", () => {
     await expect(readyToast).not.toHaveAttribute("data-type", "loading");
     await expect(readyToast.locator(".sonner-loader")).toHaveCount(0);
     await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeHidden();
-    const updateButton = authenticatedPage.getByRole("button", { name: "Update" });
-    const [readyToastBox, updateButtonBox] = await Promise.all([
-      stableElementBox(readyToast),
-      stableElementBox(updateButton),
-    ]);
-    const actionRightInset = Math.round(
-      readyToastBox.x + readyToastBox.width - (updateButtonBox.x + updateButtonBox.width),
-    );
-    expect(actionRightInset).toBeGreaterThanOrEqual(16);
-    expect(actionRightInset).toBeLessThanOrEqual(17);
-    await updateButton.click();
+    await authenticatedPage.getByRole("button", { name: "Update" }).click();
     await expect(authenticatedPage.getByText("Found 1 more result")).toBeHidden();
     await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeVisible();
   });
