@@ -232,9 +232,9 @@ test.describe("tv shows home", () => {
       .click();
 
     await authenticatedPage.waitForURL(/\/tv-shows\/tt9000003/);
-    await expect(authenticatedPage.getByRole("combobox", { name: "TV source" })).toHaveValue(
-      String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX),
-    );
+    await expect(
+      authenticatedPage.getByRole("combobox", { name: "TV source", includeHidden: true }),
+    ).toHaveValue(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
     expect(new URL(authenticatedPage.url()).searchParams.get("source")).toBe(
       String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX),
     );
