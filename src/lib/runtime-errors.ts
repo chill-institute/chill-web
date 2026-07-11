@@ -2,6 +2,8 @@ const preloadRecoveryParam = "__chill_reload";
 const sessionStorageProbeKey = "chill.preload-recovery-probe.v1";
 let preloadRecoveryPending = false;
 
+type PreloadRecoveryEvent = Pick<Event, "preventDefault">;
+
 type RouteResolutionMatch = {
   status: "pending" | "success" | "error" | "redirected" | "notFound";
 };
@@ -34,7 +36,7 @@ function canUseSessionStorage() {
   }
 }
 
-function handleVitePreloadError() {
+function handleVitePreloadError(event?: PreloadRecoveryEvent) {
   if (canUseSessionStorage() || preloadRecoveryPending) return false;
 
   const url = new URL(window.location.href);
@@ -43,6 +45,7 @@ function handleVitePreloadError() {
   preloadRecoveryPending = true;
   url.searchParams.set(preloadRecoveryParam, String(Date.now()));
   window.location.replace(url);
+  event?.preventDefault();
   return true;
 }
 

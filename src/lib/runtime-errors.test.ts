@@ -58,19 +58,26 @@ describe("preload recovery without session storage", () => {
   });
 
   it("defers to TanStack Router when session storage works", () => {
-    expect(handleVitePreloadError()).toBe(false);
+    const event = { preventDefault: vi.fn() };
+
+    expect(handleVitePreloadError(event)).toBe(false);
     expect(replaceSpy).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
   it("reloads once with a URL guard when session storage throws", () => {
     stubWindow({ href: "https://chill.institute/search", storageThrows: true });
+    const firstEvent = { preventDefault: vi.fn() };
+    const secondEvent = { preventDefault: vi.fn() };
 
-    expect(handleVitePreloadError()).toBe(true);
-    expect(handleVitePreloadError()).toBe(false);
+    expect(handleVitePreloadError(firstEvent)).toBe(true);
+    expect(handleVitePreloadError(secondEvent)).toBe(false);
     expect(replaceSpy).toHaveBeenCalledTimes(1);
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/search\?__chill_reload=\d+$/,
     );
+    expect(firstEvent.preventDefault).toHaveBeenCalledTimes(1);
+    expect(secondEvent.preventDefault).not.toHaveBeenCalled();
   });
 
   it("does not reload when the fallback marker is already present", () => {
@@ -79,8 +86,11 @@ describe("preload recovery without session storage", () => {
       storageThrows: true,
     });
 
-    expect(handleVitePreloadError()).toBe(false);
+    const event = { preventDefault: vi.fn() };
+
+    expect(handleVitePreloadError(event)).toBe(false);
     expect(replaceSpy).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
   it("keeps the marker through errors and clears it after route success", () => {
