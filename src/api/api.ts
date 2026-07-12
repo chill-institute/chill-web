@@ -17,7 +17,7 @@ import {
   type UserSettings,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { redirectToSignInOnAuthFailure } from "./auth-failure";
+import { isAuthFailure } from "./auth-failure";
 import { withTimeoutSignal } from "./request-timeout";
 import {
   withSaveUserSettingsResponseDefaults,
@@ -50,9 +50,15 @@ export type CreateApiOptions = {
   authToken: string;
   baseUrl: string;
   normalizeSettings?: (settings: UserSettings) => UserSettings;
+  onAuthFailure?: (error: unknown) => void;
 };
 
-export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOptions) {
+export function createApi({
+  authToken,
+  baseUrl,
+  normalizeSettings,
+  onAuthFailure,
+}: CreateApiOptions) {
   const transport = createConnectTransport({
     baseUrl: `${baseUrl}/v4`,
     interceptors: [requestIDInterceptor],
@@ -73,7 +79,9 @@ export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOp
       if (timed.didTimeout()) {
         throw new ConnectError(`${label} timed out`, Code.DeadlineExceeded);
       }
-      redirectToSignInOnAuthFailure(error);
+      if (isAuthFailure(error)) {
+        onAuthFailure?.(error);
+      }
       throw error;
     } finally {
       timed.cleanup();
