@@ -1,6 +1,25 @@
+import { ConnectError, Code } from "@connectrpc/connect";
 import { describe, expect, it, vi } from "vite-plus/test";
 
-import { withTimeoutSignal } from "./request-timeout";
+import {
+  ClientRequestTimeoutError,
+  isClientRequestTimeoutError,
+  withTimeoutSignal,
+} from "./request-timeout";
+
+describe("ClientRequestTimeoutError", () => {
+  it("identifies locally exhausted request budgets", () => {
+    const error = new ClientRequestTimeoutError("Search");
+
+    expect(error.message).toContain("Search timed out");
+    expect(isClientRequestTimeoutError(error)).toBe(true);
+    expect(
+      isClientRequestTimeoutError(
+        new ConnectError("upstream deadline exceeded", Code.DeadlineExceeded),
+      ),
+    ).toBe(false);
+  });
+});
 
 describe("withTimeoutSignal", () => {
   it("aborts when the timeout elapses", () => {

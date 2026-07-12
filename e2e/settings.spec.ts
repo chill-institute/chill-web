@@ -4,7 +4,7 @@ import {
   SearchResultDisplayBehavior,
   SearchResultTitleBehavior,
 } from "@chill-institute/contracts/chill/v4/api_pb";
-import { test, expect } from "./support/fixtures";
+import { expect, readSubmittedSettings, test } from "./support/fixtures";
 import {
   downloadFolderResponse,
   folderResponse,
@@ -640,6 +640,119 @@ test.describe("settings", () => {
     await expect.poll(() => savedFilterNasty).not.toBe(true);
     expect(savedSearches.at(-1)?.filterNastyResults).not.toBe(true);
     expect(savedSearches.at(-1)?.filterResultsWithNoSeeders).toBe(true);
+  });
+
+  test("failed settings saves refetch the server value", async ({ authenticatedPage, mockRpc }) => {
+    const settingsState = userSettings({ filterNastyResults: true });
+    let settingsReads = 0;
+
+    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      settingsReads += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      await fulfillPutioProviderUnavailable(route);
+    });
+
+    await authenticatedPage.goto("/settings");
+
+    const nastyCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
+      name: "Try to filter out nasty stuff",
+    });
+    await expect(nastyCheckbox).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
+    const readsBeforeSave = settingsReads;
+
+    await nastyCheckbox.click();
+
+    await expect(
+      settingsPage(authenticatedPage).getByText("Could not connect to put.io. Please try again."),
+    ).toBeVisible();
+    await expect.poll(() => settingsReads).toBeGreaterThan(readsBeforeSave);
+    await expect(nastyCheckbox).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("an older failed save does not refetch over a newer settings change", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let settingsState: unknown = userSettings({
+      filterNastyResults: true,
+      filterResultsWithNoSeeders: false,
+    });
+    let settingsReads = 0;
+    let saveCalls = 0;
+    let releaseFirstSave: (() => void) | undefined;
+    let lastSavedFilterNasty: unknown;
+    let lastSavedFilterNoSeeders: unknown;
+
+    await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      settingsReads += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCalls += 1;
+      const submittedSettings = readSubmittedSettings(route);
+      if (saveCalls === 1) {
+        await new Promise<void>((resolve) => {
+          releaseFirstSave = resolve;
+        });
+        await fulfillPutioProviderUnavailable(route);
+        return;
+      }
+      settingsState = submittedSettings;
+      const submittedSearch =
+        typeof submittedSettings === "object" && submittedSettings !== null
+          ? Reflect.get(submittedSettings, "search")
+          : undefined;
+      lastSavedFilterNasty =
+        typeof submittedSearch === "object" && submittedSearch !== null
+          ? Reflect.get(submittedSearch, "filterNastyResults")
+          : undefined;
+      lastSavedFilterNoSeeders =
+        typeof submittedSearch === "object" && submittedSearch !== null
+          ? Reflect.get(submittedSearch, "filterResultsWithNoSeeders")
+          : undefined;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+
+    const nastyCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
+      name: "Try to filter out nasty stuff",
+    });
+    const noSeedersCheckbox = settingsPage(authenticatedPage).getByRole("checkbox", {
+      name: "Hide results with no peers",
+    });
+    await expect(nastyCheckbox).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
+    const readsBeforeSaves = settingsReads;
+
+    await nastyCheckbox.click();
+    await expect.poll(() => saveCalls).toBe(1);
+    await noSeedersCheckbox.click();
+    releaseFirstSave?.();
+
+    await expect.poll(() => saveCalls).toBe(2);
+    await expect.poll(() => lastSavedFilterNasty).not.toBe(true);
+    await expect.poll(() => lastSavedFilterNoSeeders).toBe(true);
+    expect(settingsReads).toBe(readsBeforeSaves);
   });
 
   test("search preferences bar persists resolution and sort", async ({

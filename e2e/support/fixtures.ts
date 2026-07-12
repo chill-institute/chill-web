@@ -1,4 +1,4 @@
-import { test as base, type Page, type Route } from "@playwright/test";
+import { expect as playwrightExpect, test as base, type Page, type Route } from "@playwright/test";
 
 import { playwrightPort } from "./port";
 
@@ -28,7 +28,7 @@ function methodFromUrl(url: string): string | undefined {
   return match?.[1];
 }
 
-async function createMockRpc(page: Page): Promise<MockRpc> {
+async function createMockRpc(page: Page, unexpectedMethods: Set<string>): Promise<MockRpc> {
   return async (methods: MockRpcMethods) => {
     await page.route(SERVICE_PATTERN, async (route: Route) => {
       const method = methodFromUrl(route.request().url());
@@ -40,12 +40,15 @@ async function createMockRpc(page: Page): Promise<MockRpc> {
         });
         return;
       }
-      // Return empty proto JSON for any unmocked method to avoid
-      // hitting the real server and triggering auth redirects.
+      const unexpectedMethod = method ?? "unknown UserService method";
+      unexpectedMethods.add(unexpectedMethod);
       await route.fulfill({
-        status: 200,
+        status: 500,
         contentType: "application/json",
-        body: "{}",
+        body: JSON.stringify({
+          code: "internal",
+          message: `Unexpected test RPC: ${unexpectedMethod}`,
+        }),
       });
     });
   };
@@ -58,6 +61,25 @@ async function stubBackendHealth(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({ status: "ok" }),
     });
+  });
+}
+
+export function readSubmittedSettings(route: Route): unknown {
+  const requestBody: unknown = route.request().postDataJSON();
+  const settings =
+    typeof requestBody === "object" && requestBody !== null
+      ? Reflect.get(requestBody, "settings")
+      : undefined;
+  playwrightExpect(settings, "SaveUserSettings request must include settings").toBeDefined();
+  return settings;
+}
+
+export async function fulfillSubmittedSettings(route: Route) {
+  const settings = readSubmittedSettings(route);
+  await route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(settings),
   });
 }
 
@@ -80,8 +102,13 @@ export const test = base.extend<{
     await context.close();
   },
   mockRpc: async ({ authenticatedPage }, provide) => {
-    const mock = await createMockRpc(authenticatedPage);
+    const unexpectedMethods = new Set<string>();
+    const mock = await createMockRpc(authenticatedPage, unexpectedMethods);
     await provide(mock);
+    playwrightExpect(
+      [...unexpectedMethods].sort(),
+      "Every UserService RPC must have an explicit browser-test response",
+    ).toEqual([]);
   },
 });
 

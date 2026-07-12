@@ -24,7 +24,7 @@ jobs:
 
   e2e:
     needs: verify-app
-    if: ${{ github.actor != 'dependabot[bot]' && needs.verify-app.result == 'success' }}
+    if: ${{ needs.verify-app.result == 'success' }}
     uses: ./.github/workflows/_e2e.yml
 
   verify-result:

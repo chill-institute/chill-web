@@ -1,4 +1,4 @@
-import { create } from "@bufbuild/protobuf";
+import { create, equals } from "@bufbuild/protobuf";
 import type { QueryClient } from "@tanstack/react-query";
 import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
@@ -100,9 +100,11 @@ export function settingsSaveIsCurrent({
 }: Pick<SettingsCacheOptions, "queryClient"> & {
   context: SettingsSaveContext | undefined;
 }) {
+  const currentSettings = queryClient.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY);
   return (
     context?.stagedSettings === undefined ||
-    queryClient.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY) === context.stagedSettings
+    (currentSettings !== undefined &&
+      equals(UserSettingsSchema, currentSettings, context.stagedSettings))
   );
 }
 
@@ -123,6 +125,17 @@ export function cacheSavedSettings({
   writeCachedSettings(settings);
 }
 
+export function invalidateFailedSettingsSave({
+  context,
+  queryClient,
+}: Pick<SettingsCacheOptions, "queryClient"> & {
+  context: SettingsSaveContext | undefined;
+}) {
+  if (settingsSaveIsCurrent({ context, queryClient })) {
+    void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
+  }
+}
+
 export async function saveSettingsWithCache({
   api,
   onSuccess,
@@ -138,9 +151,7 @@ export async function saveSettingsWithCache({
     onSuccess?.(saved, context);
     return saved;
   } catch (error) {
-    if (settingsSaveIsCurrent({ context, queryClient })) {
-      void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
-    }
+    invalidateFailedSettingsSave({ context, queryClient });
     throw error;
   }
 }

@@ -1,4 +1,4 @@
-import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
+import { createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
   UserService,
@@ -17,8 +17,8 @@ import {
   type UserSettings,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { redirectToSignInOnAuthFailure } from "./auth-failure";
-import { withTimeoutSignal } from "./request-timeout";
+import { isAuthFailure } from "./auth-failure";
+import { ClientRequestTimeoutError, withTimeoutSignal } from "./request-timeout";
 import {
   withSaveUserSettingsResponseDefaults,
   withUserSettingsDefaults,
@@ -50,9 +50,15 @@ export type CreateApiOptions = {
   authToken: string;
   baseUrl: string;
   normalizeSettings?: (settings: UserSettings) => UserSettings;
+  onAuthFailure?: (error: unknown) => void;
 };
 
-export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOptions) {
+export function createApi({
+  authToken,
+  baseUrl,
+  normalizeSettings,
+  onAuthFailure,
+}: CreateApiOptions) {
   const transport = createConnectTransport({
     baseUrl: `${baseUrl}/v4`,
     interceptors: [requestIDInterceptor],
@@ -71,9 +77,11 @@ export function createApi({ authToken, baseUrl, normalizeSettings }: CreateApiOp
       return await fn(timed.signal);
     } catch (error) {
       if (timed.didTimeout()) {
-        throw new ConnectError(`${label} timed out`, Code.DeadlineExceeded);
+        throw new ClientRequestTimeoutError(label);
       }
-      redirectToSignInOnAuthFailure(error);
+      if (isAuthFailure(error)) {
+        onAuthFailure?.(error);
+      }
       throw error;
     } finally {
       timed.cleanup();

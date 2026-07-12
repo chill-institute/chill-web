@@ -41,11 +41,28 @@ function withAssetHeaders(response: Response) {
   });
 }
 
+function withHtmlSecurityHeaders(response: Response) {
+  const headers = new Headers(response.headers);
+  headers.set("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export async function handleStaticAssetRequest(request: Request, env: StaticAssetEnv) {
   const url = new URL(request.url);
   const response = await env.ASSETS.fetch(request);
 
   if (!isAssetPath(url.pathname)) {
+    if (response.ok && isHtmlResponse(response)) {
+      return withHtmlSecurityHeaders(response);
+    }
     return response;
   }
 

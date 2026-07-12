@@ -1,6 +1,8 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 import { describe, expect, it } from "vite-plus/test";
 
+import { ClientRequestTimeoutError } from "@/api/request-timeout";
+
 import {
   isBackendUnavailableError,
   isIgnorableAbortError,
@@ -95,6 +97,17 @@ describe("toErrorMessage", () => {
 });
 
 describe("shouldRetryQueryError", () => {
+  it("does not retry a request that exhausted its deadline", () => {
+    expect(shouldRetryQueryError(0, new ClientRequestTimeoutError("Search"))).toBe(false);
+  });
+
+  it("retries a server-issued deadline error once", () => {
+    const error = new ConnectError("upstream deadline exceeded", Code.DeadlineExceeded);
+
+    expect(shouldRetryQueryError(0, error)).toBe(true);
+    expect(shouldRetryQueryError(1, error)).toBe(false);
+  });
+
   it("allows a single retry before outage mode is active", () => {
     expect(shouldRetryQueryError(0, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
     expect(shouldRetryQueryError(1, new ConnectError("unavailable", Code.Unavailable))).toBe(false);

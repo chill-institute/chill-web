@@ -517,6 +517,13 @@ test.describe("catalog routing", () => {
         }),
         [],
       ),
+      GetTVShowSeason: tvShowSeasonResponse(
+        scrollShows[29].imdbId,
+        1,
+        tvShowSeason({ seasonNumber: 1 }),
+        [],
+      ),
+      GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
     });
 
     await authenticatedPage.goto("/tv-shows");
@@ -538,6 +545,7 @@ test.describe("catalog routing", () => {
       GetUserSettings: userSettings(),
       GetMovies: moviesResponse([]),
       GetTVShows: tvShowsResponse([]),
+      GetTVShowDetail: {},
     });
 
     await authenticatedPage.goto("/tv-shows/tt-missing-show");

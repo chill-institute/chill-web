@@ -1,4 +1,12 @@
 import { test, expect } from "./support/fixtures";
+import { indexersResponse, userSettings } from "./support/seeds";
+
+const authenticatedShellMethods = () => ({
+  GetDownloadFolder: {},
+  GetIndexers: indexersResponse([]),
+  GetUserProfile: {},
+  GetUserSettings: userSettings(),
+});
 
 test.describe("sign-in page", () => {
   test("shows access denied error with learn more action", async ({ page }) => {
@@ -84,7 +92,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/sign-in");
 
     await authenticatedPage.waitForURL("**/");
@@ -95,7 +103,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/sign-in?callbackUrl=%2Fsearch%3Fq%3Daurora");
 
     await authenticatedPage.waitForURL("**/search?q=aurora");
@@ -108,7 +116,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/sign-in?error=SomethingWrong");
 
     await expect(authenticatedPage.getByText("something went sideways")).toBeVisible();
@@ -120,7 +128,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/sign-in?error=SomethingWrong");
     await authenticatedPage.route(/\/auth\/putio\/start/, (route) =>
       route.fulfill({ status: 200, body: "" }),
@@ -138,7 +146,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/");
     await authenticatedPage.evaluate(() => {
       window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");
@@ -182,7 +190,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/");
     await authenticatedPage.evaluate(() => {
       window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");
@@ -216,7 +224,7 @@ test.describe("sign-in page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc({});
+    await mockRpc(authenticatedShellMethods());
     await authenticatedPage.goto("/");
     await authenticatedPage.evaluate(() => {
       window.sessionStorage.setItem("chill.auth_nonce", "good-nonce");

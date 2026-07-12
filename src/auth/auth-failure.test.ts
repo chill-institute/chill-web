@@ -1,7 +1,9 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { isAuthFailure, redirectToSignInOnAuthFailure } from "./auth-failure";
+import { isAuthFailure } from "@/api/auth-failure";
+
+import { redirectToSignInOnAuthFailure } from "./auth-failure";
 
 describe("isAuthFailure", () => {
   it("returns true for ConnectError with Unauthenticated code", () => {
