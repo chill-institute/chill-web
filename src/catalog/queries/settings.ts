@@ -1,65 +1,29 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 
-import { useApi } from "@/auth/api-context";
-import { useAuth } from "@/auth/auth";
-import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
-import type { UserSettings } from "@/catalog/lib/types";
 import { resetChangedMovieSourceQueries } from "@/catalog/queries/cache";
-import { readCachedCatalogSettings, writeCachedSettings } from "@/queries/settings-cache";
-import {
-  downloadFolderChanged,
-  prepareSettingsSave,
-  saveSettings,
-  settingsSaveIsCurrent,
-  USER_SETTINGS_MUTATION_SCOPE,
-  USER_SETTINGS_QUERY_KEY,
-  type SettingsSaveContext,
-  type SettingsUpdate,
-} from "@/queries/settings-mutation";
-import { userSettingsQueryOptions } from "@/queries/user-settings-options";
+import type { UserSettings } from "@/catalog/lib/types";
+import { readCachedCatalogSettings } from "@/queries/settings-cache";
+import { useSaveUserSettings, useUserSettingsQuery } from "@/queries/settings-hooks";
+import type { SettingsSaveContext } from "@/queries/settings-mutation";
+
+function resetSavedMovieSource({
+  context,
+  queryClient,
+  saved,
+}: {
+  context: SettingsSaveContext | undefined;
+  queryClient: QueryClient;
+  saved: UserSettings;
+}) {
+  resetChangedMovieSourceQueries(queryClient, context, saved);
+}
 
 export function useSettingsQuery() {
-  const api = useApi();
-  const auth = useAuth();
-
-  return useQuery({
-    ...userSettingsQueryOptions(api, {
-      read: readCachedCatalogSettings,
-      write: writeCachedSettings,
-    }),
-    enabled: auth.isAuthenticated,
-  });
+  return useUserSettingsQuery(readCachedCatalogSettings);
 }
 
 export function useSaveSettings() {
-  const api = useApi();
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation<UserSettings, Error, SettingsUpdate, SettingsSaveContext>({
-    mutationFn: (update) =>
-      saveSettings({
-        api,
-        queryClient,
-        update,
-      }),
-    onMutate: (update) => prepareSettingsSave({ queryClient, update }),
-    onSuccess: (saved, _update, context) => {
-      if (settingsSaveIsCurrent({ context, queryClient })) {
-        queryClient.setQueryData(USER_SETTINGS_QUERY_KEY, saved);
-        writeCachedSettings(saved);
-      }
-      resetChangedMovieSourceQueries(queryClient, context, saved);
-      if (downloadFolderChanged(context.previousSettings, saved)) {
-        void invalidateDownloadFolder(queryClient);
-      }
-    },
-    onError: (_error, _update, context) => {
-      if (settingsSaveIsCurrent({ context, queryClient })) {
-        void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
-      }
-    },
-    scope: USER_SETTINGS_MUTATION_SCOPE,
-  });
+  const mutation = useSaveUserSettings(resetSavedMovieSource);
 
   return {
     ...mutation,
