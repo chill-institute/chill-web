@@ -6,12 +6,12 @@ import { invalidateDownloadFolder } from "@/auth/queries/download-folder";
 import type { UserSettings } from "@/lib/types";
 import { writeCachedSettings } from "@/queries/settings-cache";
 import {
+  cacheSavedSettings,
   downloadFolderChanged,
+  invalidateFailedSettingsSave,
   prepareSettingsSave,
   saveSettings,
-  settingsSaveIsCurrent,
   USER_SETTINGS_MUTATION_SCOPE,
-  USER_SETTINGS_QUERY_KEY,
   type SettingsSaveContext,
   type SettingsUpdate,
 } from "@/queries/settings-mutation";
@@ -46,19 +46,14 @@ export function useSaveUserSettings(onSaved?: SettingsSavedHandler) {
     mutationFn: (update) => saveSettings({ api, queryClient, update }),
     onMutate: (update) => prepareSettingsSave({ queryClient, update }),
     onSuccess: (saved, _update, context) => {
-      if (settingsSaveIsCurrent({ context, queryClient })) {
-        queryClient.setQueryData(USER_SETTINGS_QUERY_KEY, saved);
-        writeCachedSettings(saved);
-      }
+      cacheSavedSettings({ context, queryClient, settings: saved, writeCachedSettings });
       onSaved?.({ context, queryClient, saved });
       if (downloadFolderChanged(context.previousSettings, saved)) {
         void invalidateDownloadFolder(queryClient);
       }
     },
     onError: (_error, _update, context) => {
-      if (settingsSaveIsCurrent({ context, queryClient })) {
-        void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
-      }
+      invalidateFailedSettingsSave({ context, queryClient });
     },
     scope: USER_SETTINGS_MUTATION_SCOPE,
   });

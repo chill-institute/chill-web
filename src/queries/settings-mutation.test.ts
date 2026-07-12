@@ -10,6 +10,7 @@ import {
 import {
   cacheSavedSettings,
   downloadFolderChanged,
+  invalidateFailedSettingsSave,
   prepareSettingsSave,
   settingsSaveIsCurrent,
   stagedSettingsForSave,
@@ -26,14 +27,17 @@ function settings(folderId: bigint): UserSettings {
 function createQueryClientStub(initial: UserSettings) {
   let data = initial;
   const cancelQueries = vi.fn(() => Promise.resolve());
+  const invalidateQueries = vi.fn(() => Promise.resolve());
   return {
     cancelQueries,
+    invalidateQueries,
     get data() {
       return data;
     },
     client: {
       cancelQueries,
       getQueryData: vi.fn((key) => (key === USER_SETTINGS_QUERY_KEY ? data : undefined)),
+      invalidateQueries,
       setQueryData: vi.fn((key, next: UserSettings) => {
         if (key === USER_SETTINGS_QUERY_KEY) data = next;
       }),
@@ -116,6 +120,30 @@ describe("settings mutation cache helpers", () => {
 
     expect(queryClient.data).toBe(second);
     expect(writeCachedSettings).not.toHaveBeenCalled();
+  });
+
+  it("invalidates a failed current save without disturbing a newer staged update", async () => {
+    const queryClient = createQueryClientStub(settings(0n));
+    const firstContext = await prepareSettingsSave({
+      queryClient: queryClient.client,
+      update: settings(1n),
+    });
+
+    invalidateFailedSettingsSave({ context: firstContext, queryClient: queryClient.client });
+
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: USER_SETTINGS_QUERY_KEY,
+    });
+
+    queryClient.invalidateQueries.mockClear();
+    await prepareSettingsSave({
+      queryClient: queryClient.client,
+      update: settings(2n),
+    });
+
+    invalidateFailedSettingsSave({ context: firstContext, queryClient: queryClient.client });
+
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
   });
 
   it("detects changed download folders only when the saved value is explicit", () => {

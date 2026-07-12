@@ -123,6 +123,17 @@ export function cacheSavedSettings({
   writeCachedSettings(settings);
 }
 
+export function invalidateFailedSettingsSave({
+  context,
+  queryClient,
+}: Pick<SettingsCacheOptions, "queryClient"> & {
+  context: SettingsSaveContext | undefined;
+}) {
+  if (settingsSaveIsCurrent({ context, queryClient })) {
+    void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
+  }
+}
+
 export async function saveSettingsWithCache({
   api,
   onSuccess,
@@ -138,9 +149,7 @@ export async function saveSettingsWithCache({
     onSuccess?.(saved, context);
     return saved;
   } catch (error) {
-    if (settingsSaveIsCurrent({ context, queryClient })) {
-      void queryClient.invalidateQueries({ queryKey: USER_SETTINGS_QUERY_KEY });
-    }
+    invalidateFailedSettingsSave({ context, queryClient });
     throw error;
   }
 }
