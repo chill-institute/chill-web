@@ -1,4 +1,4 @@
-import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
+import { createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
   UserService,
@@ -18,7 +18,7 @@ import {
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { isAuthFailure } from "./auth-failure";
-import { withTimeoutSignal } from "./request-timeout";
+import { ClientRequestTimeoutError, withTimeoutSignal } from "./request-timeout";
 import {
   withSaveUserSettingsResponseDefaults,
   withUserSettingsDefaults,
@@ -77,7 +77,7 @@ export function createApi({
       return await fn(timed.signal);
     } catch (error) {
       if (timed.didTimeout()) {
-        throw new ConnectError(`${label} timed out`, Code.DeadlineExceeded);
+        throw new ClientRequestTimeoutError(label);
       }
       if (isAuthFailure(error)) {
         onAuthFailure?.(error);

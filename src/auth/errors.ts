@@ -1,5 +1,6 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 
+import { isClientRequestTimeoutError } from "@/api/request-timeout";
 import { isAbortLikeError } from "@/lib/runtime-errors";
 
 export type LocalizedErrorRecoveryAction =
@@ -86,7 +87,7 @@ export function isBackendUnavailableError(error: unknown) {
 }
 
 export function shouldRetryQueryError(failureCount: number, error: unknown) {
-  if (error instanceof ConnectError && error.code === Code.DeadlineExceeded) {
+  if (isClientRequestTimeoutError(error)) {
     return false;
   }
   return failureCount < 1 && isBackendUnavailableError(error);

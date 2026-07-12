@@ -1,8 +1,23 @@
+import { Code, ConnectError } from "@connectrpc/connect";
+
 type TimeoutSignal = {
   cleanup: () => void;
   didTimeout: () => boolean;
   signal: AbortSignal;
 };
+
+const clientRequestTimeoutErrors = new WeakSet<object>();
+
+export class ClientRequestTimeoutError extends ConnectError {
+  constructor(label: string) {
+    super(`${label} timed out`, Code.DeadlineExceeded);
+    clientRequestTimeoutErrors.add(this);
+  }
+}
+
+export function isClientRequestTimeoutError(error: unknown): error is ClientRequestTimeoutError {
+  return typeof error === "object" && error !== null && clientRequestTimeoutErrors.has(error);
+}
 
 export function withTimeoutSignal(
   parent: AbortSignal | undefined,
