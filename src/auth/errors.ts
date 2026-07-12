@@ -86,6 +86,9 @@ export function isBackendUnavailableError(error: unknown) {
 }
 
 export function shouldRetryQueryError(failureCount: number, error: unknown) {
+  if (error instanceof ConnectError && error.code === Code.DeadlineExceeded) {
+    return false;
+  }
   return failureCount < 1 && isBackendUnavailableError(error);
 }
 

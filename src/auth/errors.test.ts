@@ -95,6 +95,12 @@ describe("toErrorMessage", () => {
 });
 
 describe("shouldRetryQueryError", () => {
+  it("does not retry a request that exhausted its deadline", () => {
+    expect(shouldRetryQueryError(0, new ConnectError("timed out", Code.DeadlineExceeded))).toBe(
+      false,
+    );
+  });
+
   it("allows a single retry before outage mode is active", () => {
     expect(shouldRetryQueryError(0, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
     expect(shouldRetryQueryError(1, new ConnectError("unavailable", Code.Unavailable))).toBe(false);
