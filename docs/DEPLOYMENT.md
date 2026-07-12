@@ -36,6 +36,11 @@ Build output:
   and reloads the page, while deferring leaves the current version running.
   Public fonts, social images, docs imagery, test fixtures, icons, and seasonal
   logos stay out of the install cache.
+- Successful HTML responses include `X-Content-Type-Options`, `Referrer-Policy`,
+  `X-Frame-Options`, and a conservative `Permissions-Policy`. Content Security
+  Policy and HSTS are separate deployment concerns because they must account for
+  the inline theme bootstrap, API and Sentry origins, PWA behavior, and sibling
+  subdomains.
 
 ## Routing
 
