@@ -430,6 +430,7 @@ test("tv show detail modal error", async ({ authenticatedPage, mockRpc }, testIn
         }),
         [tvShowSeason({ seasonNumber: 1, name: "Season 1" })],
       ),
+      GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
     }),
   );
   await authenticatedPage.route("**/chill.v4.UserService/GetTVShowSeason", async (route) => {
