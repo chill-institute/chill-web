@@ -1,4 +1,4 @@
-import { test, expect } from "./support/fixtures";
+import { expect, fulfillSubmittedSettings, test } from "./support/fixtures";
 import {
   indexer,
   indexersResponse,
@@ -544,9 +544,12 @@ test.describe("search page", () => {
     await authenticatedPage.setViewportSize({ width: 393, height: 852 });
     await mockRpc(
       allModeMethods({
-        SaveUserSettings: userSettings(),
         Search: searchResponse("movie", results),
       }),
+    );
+    await authenticatedPage.route(
+      "**/chill.v4.UserService/SaveUserSettings",
+      fulfillSubmittedSettings,
     );
 
     await authenticatedPage.goto("/search?q=movie");

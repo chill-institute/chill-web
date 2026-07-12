@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import type { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vite-plus/test";
 import {
   DownloadSettingsSchema,
@@ -24,24 +24,20 @@ function settings(folderId: bigint): UserSettings {
   });
 }
 
-function createQueryClientStub(initial: UserSettings) {
-  let data = initial;
-  const cancelQueries = vi.fn(() => Promise.resolve());
-  const invalidateQueries = vi.fn(() => Promise.resolve());
+function createQueryClientHarness(initial: UserSettings) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity, retry: false } },
+  });
+  client.setQueryData(USER_SETTINGS_QUERY_KEY, initial);
+  const cancelQueries = vi.spyOn(client, "cancelQueries");
+  const invalidateQueries = vi.spyOn(client, "invalidateQueries");
   return {
     cancelQueries,
     invalidateQueries,
     get data() {
-      return data;
+      return client.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY) ?? initial;
     },
-    client: {
-      cancelQueries,
-      getQueryData: vi.fn((key) => (key === USER_SETTINGS_QUERY_KEY ? data : undefined)),
-      invalidateQueries,
-      setQueryData: vi.fn((key, next: UserSettings) => {
-        if (key === USER_SETTINGS_QUERY_KEY) data = next;
-      }),
-    } as unknown as QueryClient,
+    client,
   };
 }
 
@@ -49,13 +45,13 @@ describe("settings mutation cache helpers", () => {
   it("snapshots and stages settings before saving", async () => {
     const previous = settings(1n);
     const next = settings(2n);
-    const queryClient = createQueryClientStub(previous);
+    const queryClient = createQueryClientHarness(previous);
 
     const context = await prepareSettingsSave({ queryClient: queryClient.client, update: next });
 
     expect(context.previousSettings).toBe(previous);
     expect(context.stagedSettings).toBe(next);
-    expect(queryClient.data).toBe(next);
+    expect(queryClient.data).toStrictEqual(next);
     expect(queryClient.cancelQueries).toHaveBeenCalledWith({
       queryKey: USER_SETTINGS_QUERY_KEY,
     });
@@ -67,12 +63,12 @@ describe("settings mutation cache helpers", () => {
       writeCachedSettings: vi.fn(),
     });
 
-    expect(queryClient.data).toBe(next);
+    expect(queryClient.data).toStrictEqual(next);
   });
 
   it("stages function updates on top of the latest cached settings", async () => {
     const previous = settings(1n);
-    const queryClient = createQueryClientStub(previous);
+    const queryClient = createQueryClientHarness(previous);
 
     await prepareSettingsSave({
       queryClient: queryClient.client,
@@ -95,7 +91,7 @@ describe("settings mutation cache helpers", () => {
   it("does not let an older save clobber a newer staged update", async () => {
     const first = settings(1n);
     const second = settings(2n);
-    const queryClient = createQueryClientStub(settings(0n));
+    const queryClient = createQueryClientHarness(settings(0n));
     const writeCachedSettings = vi.fn();
 
     const firstContext = await prepareSettingsSave({
@@ -118,12 +114,12 @@ describe("settings mutation cache helpers", () => {
       writeCachedSettings,
     });
 
-    expect(queryClient.data).toBe(second);
+    expect(queryClient.data).toStrictEqual(second);
     expect(writeCachedSettings).not.toHaveBeenCalled();
   });
 
   it("invalidates a failed current save without disturbing a newer staged update", async () => {
-    const queryClient = createQueryClientStub(settings(0n));
+    const queryClient = createQueryClientHarness(settings(0n));
     const firstContext = await prepareSettingsSave({
       queryClient: queryClient.client,
       update: settings(1n),

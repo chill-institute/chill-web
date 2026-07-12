@@ -64,6 +64,25 @@ async function stubBackendHealth(page: Page) {
   });
 }
 
+export function readSubmittedSettings(route: Route): unknown {
+  const requestBody: unknown = route.request().postDataJSON();
+  const settings =
+    typeof requestBody === "object" && requestBody !== null
+      ? Reflect.get(requestBody, "settings")
+      : undefined;
+  playwrightExpect(settings, "SaveUserSettings request must include settings").toBeDefined();
+  return settings;
+}
+
+export async function fulfillSubmittedSettings(route: Route) {
+  const settings = readSubmittedSettings(route);
+  await route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(settings),
+  });
+}
+
 export const test = base.extend<{
   authenticatedPage: Page;
   mockRpc: MockRpc;

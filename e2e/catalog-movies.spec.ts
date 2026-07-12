@@ -1,4 +1,4 @@
-import { test, expect } from "./support/fixtures";
+import { expect, fulfillSubmittedSettings, test } from "./support/fixtures";
 import { create } from "@bufbuild/protobuf";
 import type { Page } from "@playwright/test";
 import {
@@ -386,9 +386,12 @@ test.describe("movies", () => {
   }) => {
     await mockRpc(
       homeMethods({
-        SaveUserSettings: userSettings(),
         Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
       }),
+    );
+    await authenticatedPage.route(
+      "**/chill.v4.UserService/SaveUserSettings",
+      fulfillSubmittedSettings,
     );
 
     await authenticatedPage.goto("/movies");

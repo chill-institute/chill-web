@@ -1,4 +1,4 @@
-import { create } from "@bufbuild/protobuf";
+import { create, equals } from "@bufbuild/protobuf";
 import type { QueryClient } from "@tanstack/react-query";
 import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
@@ -100,9 +100,11 @@ export function settingsSaveIsCurrent({
 }: Pick<SettingsCacheOptions, "queryClient"> & {
   context: SettingsSaveContext | undefined;
 }) {
+  const currentSettings = queryClient.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY);
   return (
     context?.stagedSettings === undefined ||
-    queryClient.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY) === context.stagedSettings
+    (currentSettings !== undefined &&
+      equals(UserSettingsSchema, currentSettings, context.stagedSettings))
   );
 }
 
