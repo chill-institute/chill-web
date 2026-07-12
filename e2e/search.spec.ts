@@ -544,6 +544,7 @@ test.describe("search page", () => {
     await authenticatedPage.setViewportSize({ width: 393, height: 852 });
     await mockRpc(
       allModeMethods({
+        SaveUserSettings: userSettings(),
         Search: searchResponse("movie", results),
       }),
     );

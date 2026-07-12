@@ -386,6 +386,7 @@ test.describe("movies", () => {
   }) => {
     await mockRpc(
       homeMethods({
+        SaveUserSettings: userSettings(),
         Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
       }),
     );

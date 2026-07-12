@@ -38,6 +38,7 @@ test.describe("shell search form", () => {
   }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      GetIndexers: indexersResponse([]),
     });
 
     await authenticatedPage.goto("/");

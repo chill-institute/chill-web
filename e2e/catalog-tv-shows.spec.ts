@@ -181,7 +181,17 @@ test.describe("tv shows home", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc(homeMethods());
+    await mockRpc(
+      homeMethods({
+        GetTVShowSeason: tvShowSeasonResponse(
+          defaultShow.imdbId,
+          1,
+          defaultSeasons[0],
+          defaultEpisodes,
+        ),
+        GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
+      }),
+    );
 
     await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
       const body = route.request().postDataJSON() as { source?: string | number };
@@ -246,7 +256,17 @@ test.describe("tv shows home", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await mockRpc(homeMethods());
+    await mockRpc(
+      homeMethods({
+        GetTVShowSeason: tvShowSeasonResponse(
+          defaultShow.imdbId,
+          1,
+          defaultSeasons[0],
+          defaultEpisodes,
+        ),
+        GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
+      }),
+    );
 
     await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
       await route.fulfill({
