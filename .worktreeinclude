@@ -1,0 +1,3 @@
+# Optional local overrides copied by Codex and Claude managed worktrees.
+.env
+.env.local
