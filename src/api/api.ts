@@ -18,6 +18,7 @@ import {
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { isAuthFailure } from "./auth-failure";
+import { setClientMetadata } from "./client-metadata";
 import { ClientRequestTimeoutError, withTimeoutSignal } from "./request-timeout";
 import {
   withSaveUserSettingsResponseDefaults,
@@ -34,8 +35,9 @@ function newRequestID(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-const requestIDInterceptor: Interceptor = (next) => async (request) => {
+const requestMetadataInterceptor: Interceptor = (next) => async (request) => {
   request.header.set("X-Request-Id", newRequestID());
+  setClientMetadata(request.header, import.meta.env.VITE_PUBLIC_RELEASE);
   return next(request);
 };
 
@@ -61,7 +63,7 @@ export function createApi({
 }: CreateApiOptions) {
   const transport = createConnectTransport({
     baseUrl: `${baseUrl}/v4`,
-    interceptors: [requestIDInterceptor],
+    interceptors: [requestMetadataInterceptor],
   });
   const userClient = createClient(UserService, transport);
   const headers = authHeader(authToken);

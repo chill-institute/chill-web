@@ -29,6 +29,8 @@ The app keeps API, auth, UI, and catalog code local so there is no workspace pac
 
 - The app is a client-rendered React SPA.
 - The browser calls the hosted API directly.
+- Connect requests identify the client as `web` and carry the public build
+  release in `X-Chill-Client-Version` for backend-owned product analytics.
 - Shared contract types come from `@chill-institute/contracts`
 - Hosted app and redirect domains are documented in [Deployment](./DEPLOYMENT.md).
 
@@ -97,11 +99,13 @@ Hosted environments use `https://api.chill.institute` by default. Set
 `VITE_PUBLIC_API_BASE_URL` to point a local or preview build at a different API.
 
 Sentry is disabled when `VITE_PUBLIC_SENTRY_DSN` is unset. Browser crash events
-are configured without product analytics, tracing, session replay, default PII,
-or default browser breadcrumbs. The app records only route-path breadcrumbs that
-exclude query strings and request data; event request data is removed before
-sending. Known noisy browser and extension crash messages are filtered
-client-side before they reach Sentry.
+are configured without browser-side product analytics, tracing, session replay,
+default PII, or default browser breadcrumbs. The client metadata headers do not
+identify a browser installation or capture browser events; the backend may use
+them only as bounded properties on its existing server-side product events. The
+app records only route-path breadcrumbs that exclude query strings and request
+data; event request data is removed before sending. Known noisy browser and
+extension crash messages are filtered client-side before they reach Sentry.
 
 Production and staging builds upload hidden source maps only when
 `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all available. The
