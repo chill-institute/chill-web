@@ -49,6 +49,10 @@ function handleVitePreloadError(event?: PreloadRecoveryEvent) {
   return true;
 }
 
+function isPreloadRecoveryPending() {
+  return preloadRecoveryPending;
+}
+
 function resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution(
   matches: readonly RouteResolutionMatch[],
 ) {
@@ -70,6 +74,7 @@ function setupRuntimeErrorHandlers() {
 export {
   handleVitePreloadError,
   isAbortLikeError,
+  isPreloadRecoveryPending,
   resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
   setupRuntimeErrorHandlers,
 };

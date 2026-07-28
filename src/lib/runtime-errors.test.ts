@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import {
   handleVitePreloadError,
   isAbortLikeError,
+  isPreloadRecoveryPending,
   resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
 } from "./runtime-errors";
 
@@ -73,6 +74,7 @@ describe("preload recovery without session storage", () => {
     expect(handleVitePreloadError(firstEvent)).toBe(true);
     expect(handleVitePreloadError(secondEvent)).toBe(false);
     expect(replaceSpy).toHaveBeenCalledTimes(1);
+    expect(isPreloadRecoveryPending()).toBe(true);
     expect(String(replaceSpy.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/chill\.institute\/search\?__chill_reload=\d+$/,
     );

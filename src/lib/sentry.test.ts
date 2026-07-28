@@ -1,10 +1,70 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
+import {
+  handleVitePreloadError,
+  resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
+} from "./runtime-errors";
 import {
   configureCrashReportingIntegrations,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
+  shouldCaptureRuntimeError,
 } from "./sentry";
+
+afterEach(() => {
+  vi.stubGlobal("window", {
+    history: {
+      state: null,
+      replaceState: vi.fn(),
+    },
+    location: {
+      href: "https://chill.institute/?__chill_reload=test-cleanup",
+    },
+  });
+  resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution([{ status: "success" }]);
+  vi.unstubAllGlobals();
+});
+
+describe("shouldCaptureRuntimeError", () => {
+  it("does not report runtime errors while preload recovery is replacing the page", () => {
+    const replace = vi.fn();
+    vi.stubGlobal("window", {
+      history: {
+        state: null,
+        replaceState: vi.fn(),
+      },
+      location: {
+        href: "https://chill.institute/search",
+        replace,
+      },
+      sessionStorage: {
+        removeItem() {
+          throw new Error("storage blocked");
+        },
+        setItem() {
+          throw new Error("storage blocked");
+        },
+      },
+    });
+
+    expect(shouldCaptureRuntimeError()).toBe(true);
+    expect(handleVitePreloadError({ preventDefault: vi.fn() })).toBe(true);
+    expect(shouldCaptureRuntimeError()).toBe(false);
+    expect(replace).toHaveBeenCalledTimes(1);
+
+    vi.stubGlobal("window", {
+      history: {
+        state: null,
+        replaceState: vi.fn(),
+      },
+      location: {
+        href: "https://chill.institute/search?__chill_reload=1",
+      },
+    });
+    resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution([{ status: "success" }]);
+    expect(shouldCaptureRuntimeError()).toBe(true);
+  });
+});
 
 describe("configureCrashReportingIntegrations", () => {
   it("keeps global errors while disabling global unhandled rejections", () => {

@@ -140,6 +140,54 @@ test.describe("route chunk recovery", () => {
       .toBe(1);
   });
 
+  test("recovers once without reporting a page error when session storage is unavailable", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let completedPageLoads = 0;
+    let failedChunkRequests = 0;
+    let targetChunkPath: string | undefined;
+    const pageErrors: string[] = [];
+
+    authenticatedPage.on("load", () => {
+      if (authenticatedPage.url().includes("/search?q=stale+chunk")) {
+        completedPageLoads += 1;
+      }
+    });
+    authenticatedPage.on("pageerror", (error) => {
+      pageErrors.push(error.message);
+    });
+    await authenticatedPage.addInitScript(() => {
+      Object.defineProperty(window, "sessionStorage", {
+        configurable: true,
+        get() {
+          throw new DOMException("Session storage is unavailable.", "SecurityError");
+        },
+      });
+    });
+    await authenticatedPage.route(/\/assets\/search-[^/?]+\.js(?:\?.*)?$/, async (route) => {
+      const chunkPath = new URL(route.request().url()).pathname;
+      targetChunkPath ??= chunkPath;
+
+      if (chunkPath === targetChunkPath && failedChunkRequests === 0) {
+        failedChunkRequests += 1;
+        await route.fulfill({ status: 404, contentType: "text/plain", body: "Not found\n" });
+        return;
+      }
+
+      await route.continue();
+    });
+    await mockRpc(methods);
+
+    await authenticatedPage.goto("/search?q=stale+chunk");
+
+    await expect(authenticatedPage.locator('[data-page="search"]')).toBeVisible();
+    expect(failedChunkRequests).toBe(1);
+    expect(completedPageLoads).toBe(2);
+    expect(pageErrors).toEqual([]);
+    expect(new URL(authenticatedPage.url()).searchParams.has("__chill_reload")).toBe(false);
+  });
+
   test("surfaces a persistent route chunk failure without reloading again", async ({
     authenticatedPage,
     mockRpc,
