@@ -6,17 +6,40 @@ type TimeoutSignal = {
   signal: AbortSignal;
 };
 
-const clientRequestTimeoutErrors = new WeakSet<object>();
+export type ClientRequestTimeoutDetails = {
+  operation: string;
+  requestId?: string;
+  surface?: string;
+  timeoutMs?: number;
+};
+
+const clientRequestTimeoutDetails = new WeakMap<object, ClientRequestTimeoutDetails>();
 
 export class ClientRequestTimeoutError extends ConnectError {
-  constructor(label: string) {
+  constructor(label: string, details?: Omit<ClientRequestTimeoutDetails, "operation">) {
     super(`${label} timed out`, Code.DeadlineExceeded);
-    clientRequestTimeoutErrors.add(this);
+    clientRequestTimeoutDetails.set(this, { operation: label, ...details });
   }
 }
 
 export function isClientRequestTimeoutError(error: unknown): error is ClientRequestTimeoutError {
-  return typeof error === "object" && error !== null && clientRequestTimeoutErrors.has(error);
+  return typeof error === "object" && error !== null && clientRequestTimeoutDetails.has(error);
+}
+
+export function annotateClientRequestTimeout(
+  error: unknown,
+  details: Partial<Pick<ClientRequestTimeoutDetails, "operation" | "surface">>,
+) {
+  if (typeof error !== "object" || error === null) return;
+
+  const current = clientRequestTimeoutDetails.get(error);
+  if (current) clientRequestTimeoutDetails.set(error, { ...current, ...details });
+}
+
+export function getClientRequestTimeoutDetails(error: unknown) {
+  return typeof error === "object" && error !== null
+    ? clientRequestTimeoutDetails.get(error)
+    : undefined;
 }
 
 export function withTimeoutSignal(

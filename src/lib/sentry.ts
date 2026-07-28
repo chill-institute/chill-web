@@ -2,6 +2,8 @@ import * as Sentry from "@sentry/react";
 import type { Breadcrumb, ErrorEvent } from "@sentry/react";
 import type { ErrorInfo } from "react";
 
+import { getClientRequestTimeoutDetails } from "@/api/request-timeout";
+
 import { APP_NAME } from "./app-info";
 import { isPreloadRecoveryPending } from "./runtime-errors";
 
@@ -84,9 +86,29 @@ function initSentry() {
   });
 }
 
-function sanitizeSentryEvent(event: ErrorEvent): ErrorEvent | null {
+function sanitizeSentryEvent(
+  event: ErrorEvent,
+  hint?: { originalException?: unknown },
+): ErrorEvent | null {
+  const timeout = getClientRequestTimeoutDetails(hint?.originalException);
   return {
     ...event,
+    tags: timeout
+      ? {
+          ...event.tags,
+          "request.operation": timeout.operation,
+          ...(timeout.surface ? { "request.surface": timeout.surface } : {}),
+        }
+      : event.tags,
+    contexts: timeout
+      ? {
+          ...event.contexts,
+          request_timeout: {
+            request_id: timeout.requestId,
+            timeout_ms: timeout.timeoutMs,
+          },
+        }
+      : event.contexts,
     user: undefined,
     request: undefined,
   };

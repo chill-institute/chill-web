@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createApi } from "./api";
+import { getClientRequestTimeoutDetails } from "./request-timeout";
 
 describe("createApi request metadata", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -29,5 +31,36 @@ describe("createApi request metadata", () => {
       import.meta.env.VITE_PUBLIC_RELEASE?.trim() || "unknown",
     );
     expect(capturedRequest?.headers.get("X-Request-Id")).toBeTruthy();
+  });
+
+  it("keeps timeout evidence aligned with the request sent to the API", async () => {
+    vi.useFakeTimers();
+    let capturedRequestId: string | null = null;
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      capturedRequestId = request.headers.get("X-Request-Id");
+      await new Promise<void>((_resolve, reject) => {
+        request.signal.addEventListener("abort", () => reject(request.signal.reason), {
+          once: true,
+        });
+      });
+      return new Response();
+    });
+
+    const api = createApi({
+      authToken: "placeholder",
+      baseUrl: "https://api.example.test",
+    });
+    const request = api.getUserSettings().catch((error: unknown) => error);
+
+    await vi.advanceTimersByTimeAsync(8000);
+    const error = await request;
+
+    expect(capturedRequestId).toBeTruthy();
+    expect(getClientRequestTimeoutDetails(error)).toEqual({
+      operation: "Settings request",
+      requestId: capturedRequestId,
+      timeoutMs: 8000,
+    });
   });
 });

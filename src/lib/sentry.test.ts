@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
+import { annotateClientRequestTimeout, ClientRequestTimeoutError } from "@/api/request-timeout";
+
 import {
   handleVitePreloadError,
   resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
@@ -138,5 +140,38 @@ describe("sanitizeSentryEvent", () => {
     if (!event) throw new Error("expected sanitized event");
     expect(event.user).toBeUndefined();
     expect(event.request).toBeUndefined();
+  });
+
+  it("adds safe timeout correlation without retaining request data", () => {
+    const error = new ClientRequestTimeoutError("Settings request", {
+      requestId: "request-123",
+      timeoutMs: 8000,
+    });
+    annotateClientRequestTimeout(error, {
+      operation: "settings.read",
+      surface: "movies.source-sync",
+    });
+
+    const event = sanitizeSentryEvent(
+      {
+        type: undefined,
+        request: { data: "private" },
+      },
+      { originalException: error },
+    );
+
+    expect(event).toMatchObject({
+      tags: {
+        "request.operation": "settings.read",
+        "request.surface": "movies.source-sync",
+      },
+      contexts: {
+        request_timeout: {
+          request_id: "request-123",
+          timeout_ms: 8000,
+        },
+      },
+    });
+    expect(event?.request).toBeUndefined();
   });
 });

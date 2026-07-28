@@ -5,9 +5,13 @@ import { Button, buttonVariants } from "./ui/button";
 
 type BackendUnavailableScreenProps = {
   onRetry?: () => Promise<unknown> | void;
+  reloadAfterRetry?: boolean;
 };
 
-function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
+function BackendUnavailableScreen({
+  onRetry,
+  reloadAfterRetry = true,
+}: BackendUnavailableScreenProps) {
   return (
     <StatusPanel>
       <div className="flex items-start gap-3">
@@ -35,11 +39,11 @@ function BackendUnavailableScreen({ onRetry }: BackendUnavailableScreenProps) {
           variant="outline"
           onClick={() => {
             void onRetry?.();
-            window.location.reload();
+            if (reloadAfterRetry) window.location.reload();
           }}
         >
           <RefreshCw />
-          reload page
+          {reloadAfterRetry ? "reload page" : "try again"}
         </Button>
         <a
           className={buttonVariants({ variant: "outline" })}
