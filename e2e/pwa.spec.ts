@@ -256,6 +256,8 @@ test.describe("route chunk recovery", () => {
     await expect(
       authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
     ).toBeVisible();
+    await authenticatedPage.waitForTimeout(750);
+    expect(completedPageLoads).toBe(2);
     expect(
       await authenticatedPage.evaluate(
         () =>
