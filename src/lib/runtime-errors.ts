@@ -1,5 +1,11 @@
 const preloadRecoveryParam = "__chill_reload";
 const sessionStorageProbeKey = "chill.preload-recovery-probe.v1";
+const tanstackReloadKeyPrefix = "tanstack_router_reload:";
+const moduleLoadErrorPrefixes = [
+  "Failed to fetch dynamically imported module",
+  "error loading dynamically imported module",
+  "Importing a module script failed",
+] as const;
 let preloadRecoveryPending = false;
 
 type PreloadRecoveryEvent = Pick<Event, "preventDefault">;
@@ -24,6 +30,36 @@ function isAbortLikeError(error: unknown) {
     );
   }
   return false;
+}
+
+function moduleLoadRecoveryTags(error: unknown) {
+  const message = errorMessage(error);
+  if (!moduleLoadErrorPrefixes.some((prefix) => message.startsWith(prefix))) return {};
+
+  let strategy = "tanstack_session";
+  let attempted = "unknown";
+
+  if (typeof window !== "undefined") {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has(preloadRecoveryParam)) {
+      strategy = "vite_url";
+      attempted = "true";
+    } else {
+      try {
+        if (window.sessionStorage.getItem(`${tanstackReloadKeyPrefix}${message}`) === "1") {
+          attempted = "true";
+        }
+      } catch {
+        strategy = "vite_url";
+      }
+    }
+  }
+
+  return {
+    module_load_failure: "true",
+    module_recovery_attempted: attempted,
+    module_recovery_strategy: strategy,
+  };
 }
 
 function canUseSessionStorage() {
@@ -75,6 +111,7 @@ export {
   handleVitePreloadError,
   isAbortLikeError,
   isPreloadRecoveryPending,
+  moduleLoadRecoveryTags,
   resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
   setupRuntimeErrorHandlers,
 };

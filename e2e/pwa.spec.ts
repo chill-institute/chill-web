@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./support/fixtures";
 import { indexer, indexersResponse, searchResponse, userSettings } from "./support/seeds";
 
@@ -90,14 +92,42 @@ test("keeps the service worker precache focused on the app shell", async ({ page
 test.describe("route chunk recovery", () => {
   test.use({ serviceWorkers: "block" });
 
+  const preloadErrorMessagesKey = "chill.test.preload-error-messages";
+
   const methods = {
     GetUserSettings: userSettings(),
     GetIndexers: indexersResponse([indexer()]),
     Search: searchResponse("stale chunk", []),
   };
 
+  async function observePreloadErrors(page: Page) {
+    await page.addInitScript((storageKey) => {
+      window.addEventListener("vite:preloadError", (event) => {
+        const payload: unknown = Reflect.get(event, "payload");
+        const message = payload instanceof Error ? payload.message : String(payload);
+        const stored: unknown = JSON.parse(window.sessionStorage.getItem(storageKey) ?? "[]");
+        const messages = Array.isArray(stored) ? stored : [];
+        window.sessionStorage.setItem(storageKey, JSON.stringify([...messages, message]));
+      });
+    }, preloadErrorMessagesKey);
+  }
+
+  async function expectPreloadErrorMessages(page: Page, browserName: string) {
+    const messages: unknown = await page.evaluate(
+      (storageKey) => JSON.parse(window.sessionStorage.getItem(storageKey) ?? "[]"),
+      preloadErrorMessagesKey,
+    );
+    expect(messages).toBeInstanceOf(Array);
+    if (!Array.isArray(messages)) throw new Error("expected preload error messages");
+    expect(messages.length).toBeGreaterThan(0);
+    if (browserName === "webkit") {
+      expect(new Set(messages)).toEqual(new Set(["Importing a module script failed."]));
+    }
+  }
+
   test("reloads once when an emitted route chunk is briefly unavailable", async ({
     authenticatedPage,
+    browserName,
     mockRpc,
   }) => {
     let completedPageLoads = 0;
@@ -115,19 +145,20 @@ test.describe("route chunk recovery", () => {
 
       if (chunkPath === targetChunkPath && failedChunkRequests === 0) {
         failedChunkRequests += 1;
-        await route.fulfill({ status: 404, contentType: "text/plain", body: "Not found\n" });
+        await route.abort("connectionfailed");
         return;
       }
 
       await route.continue();
     });
     await mockRpc(methods);
+    await observePreloadErrors(authenticatedPage);
 
     await authenticatedPage.goto("/search?q=stale+chunk");
 
+    await expect.poll(() => completedPageLoads).toBe(2);
     await expect(authenticatedPage.locator('[data-page="search"]')).toBeVisible();
-    expect(failedChunkRequests).toBe(1);
-    expect(completedPageLoads).toBe(2);
+    await expect.poll(() => failedChunkRequests).toBe(1);
     await expect
       .poll(() =>
         authenticatedPage.evaluate(
@@ -138,6 +169,7 @@ test.describe("route chunk recovery", () => {
         ),
       )
       .toBe(1);
+    await expectPreloadErrorMessages(authenticatedPage, browserName);
   });
 
   test("recovers once without reporting a page error when session storage is unavailable", async ({
@@ -190,6 +222,7 @@ test.describe("route chunk recovery", () => {
 
   test("surfaces a persistent route chunk failure without reloading again", async ({
     authenticatedPage,
+    browserName,
     mockRpc,
   }) => {
     let completedPageLoads = 0;
@@ -214,14 +247,16 @@ test.describe("route chunk recovery", () => {
       await route.continue();
     });
     await mockRpc(methods);
+    await observePreloadErrors(authenticatedPage);
 
     await authenticatedPage.goto("/search?q=stale+chunk");
 
+    await expect.poll(() => completedPageLoads).toBe(2);
+    expect(failedChunkRequests).toBeGreaterThan(0);
     await expect(
       authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
     ).toBeVisible();
     await authenticatedPage.waitForTimeout(750);
-    expect(failedChunkRequests).toBe(2);
     expect(completedPageLoads).toBe(2);
     expect(
       await authenticatedPage.evaluate(
@@ -231,5 +266,6 @@ test.describe("route chunk recovery", () => {
           ).length,
       ),
     ).toBe(1);
+    await expectPreloadErrorMessages(authenticatedPage, browserName);
   });
 });

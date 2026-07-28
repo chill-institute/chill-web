@@ -17,9 +17,19 @@ export default defineConfig({
   reporter: process.env.CI
     ? [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]]
     : "list",
+  projects: [
+    {
+      name: "chromium",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "webkit-route-recovery",
+      grep: /surfaces a persistent route chunk failure/,
+      use: { browserName: "webkit" },
+    },
+  ],
   use: {
     baseURL,
-    browserName: "chromium",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "retain-on-failure",

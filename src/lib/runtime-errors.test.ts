@@ -4,6 +4,7 @@ import {
   handleVitePreloadError,
   isAbortLikeError,
   isPreloadRecoveryPending,
+  moduleLoadRecoveryTags,
   resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution,
 } from "./runtime-errors";
 
@@ -22,7 +23,16 @@ describe("preload recovery without session storage", () => {
   let replaceSpy: ReturnType<typeof vi.fn>;
   let replaceStateSpy: ReturnType<typeof vi.fn>;
 
-  function stubWindow({ href, storageThrows }: { href: string; storageThrows: boolean }) {
+  function stubWindow({
+    href,
+    storageEntries = [],
+    storageThrows,
+  }: {
+    href: string;
+    storageEntries?: [string, string][];
+    storageThrows: boolean;
+  }) {
+    const storage = new Map(storageEntries);
     replaceSpy = vi.fn();
     replaceStateSpy = vi.fn();
     vi.stubGlobal("window", {
@@ -35,6 +45,10 @@ describe("preload recovery without session storage", () => {
         replace: replaceSpy,
       },
       sessionStorage: {
+        getItem(key: string) {
+          if (storageThrows) throw new Error("storage blocked");
+          return storage.get(key) ?? null;
+        },
         removeItem() {
           if (storageThrows) throw new Error("storage blocked");
         },
@@ -114,5 +128,48 @@ describe("preload recovery without session storage", () => {
       "",
       new URL("https://chill.institute/search?q=matrix"),
     );
+  });
+});
+
+describe("moduleLoadRecoveryTags", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("identifies a terminal Safari module failure after the TanStack reload", () => {
+    const message = "Importing a module script failed.";
+    vi.stubGlobal("window", {
+      location: { href: "https://chill.institute/movies" },
+      sessionStorage: {
+        getItem: (key: string) => (key === `tanstack_router_reload:${message}` ? "1" : null),
+      },
+    });
+
+    expect(moduleLoadRecoveryTags(new TypeError(message))).toEqual({
+      module_load_failure: "true",
+      module_recovery_attempted: "true",
+      module_recovery_strategy: "tanstack_session",
+    });
+  });
+
+  it("identifies the URL fallback after storage-unavailable recovery", () => {
+    vi.stubGlobal("window", {
+      location: { href: "https://chill.institute/search?__chill_reload=123" },
+      sessionStorage: {
+        getItem() {
+          throw new Error("storage blocked");
+        },
+      },
+    });
+
+    expect(moduleLoadRecoveryTags(new TypeError("Importing a module script failed."))).toEqual({
+      module_load_failure: "true",
+      module_recovery_attempted: "true",
+      module_recovery_strategy: "vite_url",
+    });
+  });
+
+  it("does not tag unrelated application errors", () => {
+    expect(moduleLoadRecoveryTags(new Error("provider unavailable"))).toEqual({});
   });
 });

@@ -21,6 +21,7 @@ on:
       - ".maestro/**"
       - "e2e/pwa.spec.ts"
       - "index.html"
+      - "playwright.config.ts"
       - "public/apple-touch-icon.png"
       - "public/favicon.ico"
       - "public/logo*.png"
@@ -49,7 +50,7 @@ jobs:
         uses: ./.github/actions/setup-vite-plus
 
       - name: Install Playwright browser
-        run: vp exec playwright install chromium
+        run: vp exec playwright install --with-deps chromium webkit
 
       - name: Build app
         run: vp build

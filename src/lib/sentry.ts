@@ -5,7 +5,7 @@ import type { ErrorInfo } from "react";
 import { getClientRequestTimeoutDetails } from "@/api/request-timeout";
 
 import { APP_NAME } from "./app-info";
-import { isPreloadRecoveryPending } from "./runtime-errors";
+import { isPreloadRecoveryPending, moduleLoadRecoveryTags } from "./runtime-errors";
 
 const sentryEventIds = new WeakMap<object, string>();
 const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession"]);
@@ -126,7 +126,10 @@ function createSentryReactErrorHandler() {
   return (error: unknown, info: ErrorInfo) => {
     if (!shouldCaptureRuntimeError()) return;
 
-    const eventId = Sentry.captureReactException(error, info);
+    const eventId = Sentry.withScope((scope) => {
+      scope.setTags(moduleLoadRecoveryTags(error));
+      return Sentry.captureReactException(error, info);
+    });
 
     rememberSentryEventId(error, eventId);
   };
@@ -155,6 +158,7 @@ function captureAppException(
     tags: {
       app: APP_NAME,
       release: release ?? "dev",
+      ...moduleLoadRecoveryTags(error),
     },
     contexts: componentStack
       ? {

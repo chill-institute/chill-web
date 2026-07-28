@@ -31,7 +31,8 @@ Build output:
   after that fallback schedules page replacement are not reported as crashes;
   terminal failures after the guarded retry remain reportable. Route-owned detail
   modals ship in their route chunks so they do not add a second unguarded lazy-import
-  boundary.
+  boundary. Terminal module-load crash reports carry bounded recovery
+  strategy and attempt tags without duplicating the failed asset URL into tags.
 - The service worker precaches the app shell and generated assets. New service
   workers wait while existing tabs continue with their current app shell and
   cache. The app prompts when an update is ready; accepting activates the worker
