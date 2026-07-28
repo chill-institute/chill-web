@@ -27,9 +27,11 @@ Build output:
   `index.html` as JavaScript. TanStack Router owns normal split-route recovery: a
   missing route module gets one guarded full-page reload, and a persistent failure
   reaches the app error screen. A URL-guarded Vite fallback provides the same
-  one-shot recovery when browser session storage is unavailable. Route-owned
-  detail modals ship in their route chunks so they do not add a second unguarded
-  lazy-import boundary.
+  one-shot recovery when browser session storage is unavailable. Errors caught
+  after that fallback schedules page replacement are not reported as crashes;
+  terminal failures after the guarded retry remain reportable. Route-owned detail
+  modals ship in their route chunks so they do not add a second unguarded lazy-import
+  boundary.
 - The service worker precaches the app shell and generated assets. New service
   workers wait while existing tabs continue with their current app shell and
   cache. The app prompts when an update is ready; accepting activates the worker

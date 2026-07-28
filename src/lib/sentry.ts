@@ -3,6 +3,7 @@ import type { Breadcrumb, ErrorEvent } from "@sentry/react";
 import type { ErrorInfo } from "react";
 
 import { APP_NAME } from "./app-info";
+import { isPreloadRecoveryPending } from "./runtime-errors";
 
 const sentryEventIds = new WeakMap<object, string>();
 const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession"]);
@@ -91,12 +92,18 @@ function sanitizeSentryEvent(event: ErrorEvent): ErrorEvent | null {
   };
 }
 
+function shouldCaptureRuntimeError() {
+  return !isPreloadRecoveryPending();
+}
+
 function createSentryReactErrorHandler() {
   if (!isSentryConfigured()) {
     return () => {};
   }
 
   return (error: unknown, info: ErrorInfo) => {
+    if (!shouldCaptureRuntimeError()) return;
+
     const eventId = Sentry.captureReactException(error, info);
 
     rememberSentryEventId(error, eventId);
@@ -115,6 +122,8 @@ function captureAppException(
     routePath?: string;
   } = {},
 ) {
+  if (!shouldCaptureRuntimeError()) return undefined;
+
   const existing = getSentryEventId(error);
   if (existing) return existing;
 
@@ -150,4 +159,5 @@ export {
   initSentry,
   keepAppBreadcrumbOnly,
   sanitizeSentryEvent,
+  shouldCaptureRuntimeError,
 };
