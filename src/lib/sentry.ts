@@ -126,8 +126,9 @@ function createSentryReactErrorHandler() {
   return (error: unknown, info: ErrorInfo) => {
     if (!shouldCaptureRuntimeError()) return;
 
-    const eventId = Sentry.captureReactException(error, info, {
-      tags: moduleLoadRecoveryTags(error),
+    const eventId = Sentry.withScope((scope) => {
+      scope.setTags(moduleLoadRecoveryTags(error));
+      return Sentry.captureReactException(error, info);
     });
 
     rememberSentryEventId(error, eventId);
