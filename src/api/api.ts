@@ -36,7 +36,6 @@ function newRequestID(): string {
 }
 
 const requestMetadataInterceptor: Interceptor = (next) => async (request) => {
-  request.header.set("X-Request-Id", newRequestID());
   setClientMetadata(request.header, import.meta.env.VITE_PUBLIC_RELEASE);
   return next(request);
 };
@@ -70,16 +69,19 @@ export function createApi({
 
   async function call<T>(
     label: string,
-    fn: (signal: AbortSignal) => Promise<T>,
+    fn: (signal: AbortSignal, requestHeaders: Headers) => Promise<T>,
     signal?: AbortSignal,
     timeoutMs = REQUEST_TIMEOUT_MS,
   ): Promise<T> {
+    const requestId = newRequestID();
+    const requestHeaders = new Headers(headers);
+    requestHeaders.set("X-Request-Id", requestId);
     const timed = withTimeoutSignal(signal, timeoutMs);
     try {
-      return await fn(timed.signal);
+      return await fn(timed.signal, requestHeaders);
     } catch (error) {
       if (timed.didTimeout()) {
-        throw new ClientRequestTimeoutError(label);
+        throw new ClientRequestTimeoutError(label, { requestId, timeoutMs });
       }
       if (isAuthFailure(error)) {
         onAuthFailure?.(error);
@@ -97,13 +99,21 @@ export function createApi({
 
   return {
     getUserProfile: (signal?: AbortSignal): Promise<UserProfile> =>
-      call("Profile request", (s) => userClient.getUserProfile({}, { headers, signal: s }), signal),
+      call(
+        "Profile request",
+        (s, requestHeaders) =>
+          userClient.getUserProfile({}, { headers: requestHeaders, signal: s }),
+        signal,
+      ),
 
     search: (query: string, indexerId?: string, signal?: AbortSignal): Promise<SearchResponse> =>
       call(
         "Search",
-        (s) =>
-          userClient.search({ query, indexerId: indexerId || undefined }, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.search(
+            { query, indexerId: indexerId || undefined },
+            { headers: requestHeaders, signal: s },
+          ),
         signal,
         SEARCH_TIMEOUT_MS,
       ),
@@ -111,7 +121,7 @@ export function createApi({
     getIndexers: async (signal?: AbortSignal): Promise<UserIndexer[]> => {
       const response = await call(
         "Indexers request",
-        (s) => userClient.getIndexers({}, { headers, signal: s }),
+        (s, requestHeaders) => userClient.getIndexers({}, { headers: requestHeaders, signal: s }),
         signal,
       );
       return response.indexers;
@@ -120,35 +130,47 @@ export function createApi({
     getUserSettings: async (signal?: AbortSignal): Promise<UserSettings> => {
       const response = await call(
         "Settings request",
-        (s) => userClient.getUserSettings({}, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.getUserSettings({}, { headers: requestHeaders, signal: s }),
         signal,
       );
       return applySettingsDefaults(response);
     },
 
     saveUserSettings: async (settings: UserSettings): Promise<UserSettings> => {
-      const response = await call("Save settings request", (s) =>
-        userClient.saveUserSettings({ settings }, { headers, signal: s }),
+      const response = await call("Save settings request", (s, requestHeaders) =>
+        userClient.saveUserSettings({ settings }, { headers: requestHeaders, signal: s }),
       );
       const withDefaults = withSaveUserSettingsResponseDefaults({ fallback: settings, response });
       return normalizeSettings ? normalizeSettings(withDefaults) : withDefaults;
     },
 
     addTransfer: (url: string): Promise<AddTransferResponse> =>
-      call("Add transfer request", (s) => userClient.addTransfer({ url }, { headers, signal: s })),
+      call("Add transfer request", (s, requestHeaders) =>
+        userClient.addTransfer({ url }, { headers: requestHeaders, signal: s }),
+      ),
 
     getDownloadFolder: (signal?: AbortSignal): Promise<GetDownloadFolderResponse> =>
       call(
         "Download folder request",
-        (s) => userClient.getDownloadFolder({}, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.getDownloadFolder({}, { headers: requestHeaders, signal: s }),
         signal,
       ),
 
     getFolder: (id: bigint, signal?: AbortSignal): Promise<GetFolderResponse> =>
-      call("Folder request", (s) => userClient.getFolder({ id }, { headers, signal: s }), signal),
+      call(
+        "Folder request",
+        (s, requestHeaders) => userClient.getFolder({ id }, { headers: requestHeaders, signal: s }),
+        signal,
+      ),
 
     getMovies: (signal?: AbortSignal): Promise<GetMoviesResponse> =>
-      call("Movies request", (s) => userClient.getMovies({}, { headers, signal: s }), signal),
+      call(
+        "Movies request",
+        (s, requestHeaders) => userClient.getMovies({}, { headers: requestHeaders, signal: s }),
+        signal,
+      ),
 
     getTVShows: (
       source: TVShowsSource | undefined,
@@ -156,14 +178,16 @@ export function createApi({
     ): Promise<GetTVShowsResponse> =>
       call(
         "TV shows request",
-        (s) => userClient.getTVShows({ source }, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.getTVShows({ source }, { headers: requestHeaders, signal: s }),
         signal,
       ),
 
     getTVShowDetail: (imdbId: string, signal?: AbortSignal): Promise<GetTVShowDetailResponse> =>
       call(
         "TV show detail request",
-        (s) => userClient.getTVShowDetail({ imdbId }, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.getTVShowDetail({ imdbId }, { headers: requestHeaders, signal: s }),
         signal,
       ),
 
@@ -174,7 +198,11 @@ export function createApi({
     ): Promise<GetTVShowSeasonResponse> =>
       call(
         "TV show season request",
-        (s) => userClient.getTVShowSeason({ imdbId, seasonNumber }, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.getTVShowSeason(
+            { imdbId, seasonNumber },
+            { headers: requestHeaders, signal: s },
+          ),
         signal,
       ),
 
@@ -185,8 +213,11 @@ export function createApi({
     ): Promise<GetTVShowSeasonDownloadsResponse> =>
       call(
         "TV show season downloads request",
-        (s) =>
-          userClient.getTVShowSeasonDownloads({ imdbId, seasonNumber }, { headers, signal: s }),
+        (s, requestHeaders) =>
+          userClient.getTVShowSeasonDownloads(
+            { imdbId, seasonNumber },
+            { headers: requestHeaders, signal: s },
+          ),
         signal,
       ),
   };

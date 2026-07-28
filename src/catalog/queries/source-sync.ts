@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { MoviesSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
+import { annotateClientRequestTimeout } from "@/api/request-timeout";
 import { createApi } from "@/lib/api";
 import { saveSettingsWithCache } from "@/queries/settings-mutation";
 
@@ -20,19 +21,33 @@ export async function syncMovieSourceFromSearch({
 }) {
   if (source === undefined) return;
 
-  const settings = await queryClient.ensureQueryData(settingsQueryOptions(token));
+  const settings = await queryClient.fetchQuery(settingsQueryOptions(token)).catch((error) => {
+    annotateClientRequestTimeout(error, {
+      operation: "settings.read",
+      surface: "movies.source-sync",
+    });
+    throw error;
+  });
   const appSettings = toCatalogAppSettings(settings);
 
   if (appSettings.moviesSource === source) return;
 
   const api = createApi(token);
-  await saveSettingsWithCache({
-    api,
-    queryClient,
-    update: (current) => applyCatalogAppSettingsPatch(current, { moviesSource: source }),
-    writeCachedSettings,
-    onSuccess: (saved, context) => {
-      resetChangedMovieSourceQueries(queryClient, context, saved);
-    },
-  });
+  try {
+    await saveSettingsWithCache({
+      api,
+      queryClient,
+      update: (current) => applyCatalogAppSettingsPatch(current, { moviesSource: source }),
+      writeCachedSettings,
+      onSuccess: (saved, context) => {
+        resetChangedMovieSourceQueries(queryClient, context, saved);
+      },
+    });
+  } catch (error) {
+    annotateClientRequestTimeout(error, {
+      operation: "settings.write",
+      surface: "movies.source-sync",
+    });
+    throw error;
+  }
 }

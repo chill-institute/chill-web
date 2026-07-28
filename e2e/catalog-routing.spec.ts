@@ -345,6 +345,50 @@ test.describe("catalog routing", () => {
     expect(savedBodies.at(-1)?.settings?.search?.rememberQuickFilters).toBe(true);
   });
 
+  test("timed-out movie settings load retries without showing the crash screen", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc({
+      GetUserSettings: userSettings({ moviesSource: MoviesSource.YTS }),
+      GetMovies: moviesResponseForSource(MoviesSource.YTS, [nightCourier]),
+      GetTVShows: tvShowsResponse([]),
+    });
+    let settingsCalls = 0;
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      settingsCalls += 1;
+      const callNumber = settingsCalls;
+      if (callNumber === 1) {
+        await new Promise((resolve) => setTimeout(resolve, 8250));
+      }
+      try {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(userSettings({ moviesSource: MoviesSource.YTS })),
+        });
+      } catch {
+        if (callNumber !== 1) throw new Error("retry settings request could not be fulfilled");
+      }
+    });
+
+    await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
+
+    await expect(
+      authenticatedPage.getByRole("heading", { name: "The Institute is having a moment…" }),
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(authenticatedPage.getByText("Something went wrong.")).toHaveCount(0);
+
+    await authenticatedPage.evaluate(() => Reflect.set(window, "__retryMarker", "present"));
+    await authenticatedPage.getByRole("button", { name: "try again" }).click();
+
+    await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 3000 });
+    expect(await authenticatedPage.evaluate(() => Reflect.get(window, "__retryMarker"))).toBe(
+      "present",
+    );
+    expect(settingsCalls).toBe(2);
+  });
+
   test("clicking a movie card navigates to /movies/:id", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
       GetUserSettings: userSettings(),

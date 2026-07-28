@@ -5,6 +5,7 @@ import { readStoredToken } from "@/auth/auth";
 import { CatalogPage } from "@/catalog/components/catalog-page";
 import { settingsQueryOptions } from "@/catalog/queries/options";
 import { syncMovieSourceFromSearch } from "@/catalog/queries/source-sync";
+import { MoviesError, reportMoviesError } from "@/routes/-movies-error";
 import { movieCatalogSearchSchema } from "@/routes/-search-params";
 
 export const Route = createFileRoute("/movies")({
@@ -16,6 +17,8 @@ export const Route = createFileRoute("/movies")({
     await syncMovieSourceFromSearch({ queryClient, source, token });
     void queryClient.prefetchQuery(settingsQueryOptions(token));
   },
+  onError: reportMoviesError,
+  errorComponent: MoviesError,
   component: MoviesLayout,
 });
 
