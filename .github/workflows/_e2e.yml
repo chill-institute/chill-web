@@ -29,7 +29,7 @@ jobs:
         uses: ./.github/actions/setup-vite-plus
 
       - name: Install Playwright browser
-        run: vp exec playwright install chromium webkit
+        run: vp exec playwright install --with-deps chromium webkit
 
       - name: Build app
         run: vp run build
