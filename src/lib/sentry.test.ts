@@ -233,6 +233,37 @@ describe("sanitizeSentryEvent", () => {
         exception: {
           values: [
             {
+              type: "SecurityError",
+              value: "The operation is insecure.",
+              stacktrace: {
+                frames: [{ filename: "../../src/auth/auth-storage.ts", function: "rc" }],
+              },
+            },
+          ],
+        },
+      }),
+    ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
+              type: "SecurityError",
+              value: "The operation is insecure.",
+            },
+          ],
+        },
+      }),
+    ).not.toBeNull();
+
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
               type: "TypeError",
               value: "Cannot read properties of null (reading 'getItem')",
               stacktrace: {

@@ -122,6 +122,13 @@ function hasStorageAccessEvidence(event: ErrorEvent, text: string) {
   return false;
 }
 
+function isSecurityError(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  if (hint?.originalException instanceof DOMException) {
+    return hint.originalException.name === "SecurityError";
+  }
+  return exceptionValues(event).some((value) => value.type === "SecurityError");
+}
+
 function isBlockedStorageAccessError(event: ErrorEvent, hint?: { originalException?: unknown }) {
   const text = exceptionText(event, hint);
   if (
@@ -130,6 +137,11 @@ function isBlockedStorageAccessError(event: ErrorEvent, hint?: { originalExcepti
     /Can't find variable: (?:local|session)Storage/.test(text) ||
     /(?:local|session)Storage is null/.test(text)
   ) {
+    return true;
+  }
+  // Alternate browser wording (for example "The operation is insecure.") still
+  // needs storage evidence so unrelated SecurityErrors keep reporting.
+  if (isSecurityError(event, hint) && hasStorageAccessEvidence(event, text)) {
     return true;
   }
   // Only drop null getItem crashes that are clearly storage-related.
