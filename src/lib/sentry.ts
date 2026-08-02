@@ -86,13 +86,71 @@ function initSentry() {
   });
 }
 
+function exceptionValues(event: ErrorEvent) {
+  return event.exception?.values ?? [];
+}
+
+function exceptionText(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  const fromHint =
+    hint?.originalException instanceof Error
+      ? `${hint.originalException.name}: ${hint.originalException.message}`
+      : typeof hint?.originalException === "string"
+        ? hint.originalException
+        : "";
+  const fromEvent = exceptionValues(event)
+    .map((value) => `${value.type ?? ""}: ${value.value ?? ""}`)
+    .join("\n");
+  return `${fromHint}\n${fromEvent}\n${event.message ?? ""}`;
+}
+
+function isNoisyBrowserExtensionError(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  return exceptionText(event, hint).includes("__firefox__");
+}
+
+function isBlockedStorageAccessError(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  const text = exceptionText(event, hint);
+  if (text.includes("Failed to read the 'localStorage' property from 'Window'")) {
+    return true;
+  }
+  if (text.includes("Access is denied for this document") && text.includes("localStorage")) {
+    return true;
+  }
+  if (text.includes("Cannot read properties of null (reading 'getItem')")) {
+    return true;
+  }
+  if (text.includes("Can't find variable: localStorage") || text.includes("localStorage is null")) {
+    return true;
+  }
+  return false;
+}
+
+function isRecoverableModuleLoadNoise(event: ErrorEvent) {
+  const tags = event.tags ?? {};
+  if (tags.module_load_failure !== "true") {
+    return false;
+  }
+  // Keep terminal failures after recovery was already attempted.
+  return tags.module_recovery_attempted !== "true";
+}
+
 function sanitizeSentryEvent(
   event: ErrorEvent,
   hint?: { originalException?: unknown },
 ): ErrorEvent | null {
+  if (
+    isNoisyBrowserExtensionError(event, hint) ||
+    isBlockedStorageAccessError(event, hint) ||
+    isRecoverableModuleLoadNoise(event)
+  ) {
+    return null;
+  }
+
   const timeout = getClientRequestTimeoutDetails(hint?.originalException);
   return {
     ...event,
+    fingerprint: timeout
+      ? ["client-timeout", timeout.operation, timeout.surface ?? "unspecified"]
+      : event.fingerprint,
     tags: timeout
       ? {
           ...event.tags,

@@ -14,7 +14,8 @@ export const Route = createFileRoute("/movies")({
   loader: async ({ context: { queryClient }, deps: { source } }) => {
     const token = readStoredToken();
     if (!token) return;
-    await syncMovieSourceFromSearch({ queryClient, source, token });
+    // Persist URL source preference without blocking catalog render on put.io latency.
+    void syncMovieSourceFromSearch({ queryClient, source, token }).catch(reportMoviesError);
     void queryClient.prefetchQuery(settingsQueryOptions(token));
   },
   onError: reportMoviesError,

@@ -26,6 +26,7 @@ import {
 } from "./settings-defaults";
 
 const REQUEST_TIMEOUT_MS = 8000;
+const SETTINGS_TIMEOUT_MS = 20000;
 const SEARCH_TIMEOUT_MS = 30000;
 
 function newRequestID(): string {
@@ -133,13 +134,18 @@ export function createApi({
         (s, requestHeaders) =>
           userClient.getUserSettings({}, { headers: requestHeaders, signal: s }),
         signal,
+        SETTINGS_TIMEOUT_MS,
       );
       return applySettingsDefaults(response);
     },
 
     saveUserSettings: async (settings: UserSettings): Promise<UserSettings> => {
-      const response = await call("Save settings request", (s, requestHeaders) =>
-        userClient.saveUserSettings({ settings }, { headers: requestHeaders, signal: s }),
+      const response = await call(
+        "Save settings request",
+        (s, requestHeaders) =>
+          userClient.saveUserSettings({ settings }, { headers: requestHeaders, signal: s }),
+        undefined,
+        SETTINGS_TIMEOUT_MS,
       );
       const withDefaults = withSaveUserSettingsResponseDefaults({ fallback: settings, response });
       return normalizeSettings ? normalizeSettings(withDefaults) : withDefaults;

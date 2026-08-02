@@ -145,7 +145,7 @@ describe("sanitizeSentryEvent", () => {
   it("adds safe timeout correlation without retaining request data", () => {
     const error = new ClientRequestTimeoutError("Settings request", {
       requestId: "request-123",
-      timeoutMs: 8000,
+      timeoutMs: 20000,
     });
     annotateClientRequestTimeout(error, {
       operation: "settings.read",
@@ -161,6 +161,7 @@ describe("sanitizeSentryEvent", () => {
     );
 
     expect(event).toMatchObject({
+      fingerprint: ["client-timeout", "settings.read", "movies.source-sync"],
       tags: {
         "request.operation": "settings.read",
         "request.surface": "movies.source-sync",
@@ -168,10 +169,74 @@ describe("sanitizeSentryEvent", () => {
       contexts: {
         request_timeout: {
           request_id: "request-123",
-          timeout_ms: 8000,
+          timeout_ms: 20000,
         },
       },
     });
     expect(event?.request).toBeUndefined();
+  });
+
+  it("drops known browser extension and blocked storage noise", () => {
+    expect(
+      sanitizeSentryEvent(
+        {
+          type: undefined,
+          exception: {
+            values: [{ type: "ReferenceError", value: "Can't find variable: __firefox__" }],
+          },
+        },
+        { originalException: new ReferenceError("Can't find variable: __firefox__") },
+      ),
+    ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent(
+        {
+          type: undefined,
+          exception: {
+            values: [
+              {
+                type: "SecurityError",
+                value:
+                  "Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
+              },
+            ],
+          },
+        },
+        {
+          originalException: new DOMException(
+            "Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
+            "SecurityError",
+          ),
+        },
+      ),
+    ).toBeNull();
+  });
+
+  it("drops recoverable module-load noise but keeps terminal recovery failures", () => {
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        tags: {
+          module_load_failure: "true",
+          module_recovery_attempted: "unknown",
+        },
+        exception: {
+          values: [{ type: "TypeError", value: "Importing a module script failed." }],
+        },
+      }),
+    ).toBeNull();
+
+    const terminal = sanitizeSentryEvent({
+      type: undefined,
+      tags: {
+        module_load_failure: "true",
+        module_recovery_attempted: "true",
+      },
+      exception: {
+        values: [{ type: "TypeError", value: "Importing a module script failed." }],
+      },
+    });
+    expect(terminal).not.toBeNull();
   });
 });

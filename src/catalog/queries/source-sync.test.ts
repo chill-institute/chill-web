@@ -65,13 +65,13 @@ describe("syncMovieSourceFromSearch", () => {
       source: MoviesSource.YTS,
       token: "placeholder",
     }).catch((error: unknown) => error);
-    await vi.advanceTimersByTimeAsync(8000);
+    await vi.advanceTimersByTimeAsync(20000);
     const error = await attempt;
 
     expect(getClientRequestTimeoutDetails(error)).toMatchObject({
       operation: "settings.read",
       surface: "movies.source-sync",
-      timeoutMs: 8000,
+      timeoutMs: 20000,
     });
   });
 
@@ -121,13 +121,13 @@ describe("syncMovieSourceFromSearch", () => {
       source: MoviesSource.YTS,
       token: "placeholder",
     }).catch((error: unknown) => error);
-    await vi.advanceTimersByTimeAsync(8000);
+    await vi.advanceTimersByTimeAsync(20000);
     const error = await firstAttempt;
 
     expect(getClientRequestTimeoutDetails(error)).toMatchObject({
       operation: "settings.write",
       surface: "movies.source-sync",
-      timeoutMs: 8000,
+      timeoutMs: 20000,
     });
 
     serverSource = MoviesSource.YTS;
