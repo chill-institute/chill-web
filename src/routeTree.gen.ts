@@ -9,44 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignOutRouteImport } from './routes/sign-out'
-import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
-import { Route as MoviesRouteRouteImport } from './routes/movies/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TvShowsIndexRouteImport } from './routes/tv-shows/index'
-import { Route as MoviesIndexRouteImport } from './routes/movies/index'
-import { Route as TvShowsIdRouteImport } from './routes/tv-shows/$id'
-import { Route as MoviesIdRouteImport } from './routes/movies/$id'
-import { Route as DebugCrashRouteImport } from './routes/debug.crash'
-import { Route as AuthSuccessRouteImport } from './routes/auth/success'
+import { Route as MoviesRouteRouteImport } from './routes/movies/route'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignOutRouteImport } from './routes/sign-out'
+import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
+import { Route as AuthSuccessRouteImport } from './routes/auth/success'
+import { Route as DebugCrashRouteImport } from './routes/debug.crash'
+import { Route as MoviesIndexRouteImport } from './routes/movies/index'
+import { Route as MoviesIdRouteImport } from './routes/movies/$id'
+import { Route as TvShowsIndexRouteImport } from './routes/tv-shows/index'
+import { Route as TvShowsIdRouteImport } from './routes/tv-shows/$id'
 
-const SignOutRoute = SignOutRouteImport.update({
-  id: '/sign-out',
-  path: '/sign-out',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TvShowsRouteRoute = TvShowsRouteRouteImport.update({
-  id: '/tv-shows',
-  path: '/tv-shows',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MoviesRouteRoute = MoviesRouteRouteImport.update({
@@ -54,34 +34,34 @@ const MoviesRouteRoute = MoviesRouteRouteImport.update({
   path: '/movies',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TvShowsIndexRoute = TvShowsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TvShowsRouteRoute,
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const MoviesIndexRoute = MoviesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MoviesRouteRoute,
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const TvShowsIdRoute = TvShowsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => TvShowsRouteRoute,
+const SignOutRoute = SignOutRouteImport.update({
+  id: '/sign-out',
+  path: '/sign-out',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const MoviesIdRoute = MoviesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => MoviesRouteRoute,
+const TvShowsRouteRoute = TvShowsRouteRouteImport.update({
+  id: '/tv-shows',
+  path: '/tv-shows',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const DebugCrashRoute = DebugCrashRouteImport.update({
-  id: '/debug/crash',
-  path: '/debug/crash',
+const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
+  id: '/auth/cli-token',
+  path: '/auth/cli-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSuccessRoute = AuthSuccessRouteImport.update({
@@ -89,10 +69,30 @@ const AuthSuccessRoute = AuthSuccessRouteImport.update({
   path: '/auth/success',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
-  id: '/auth/cli-token',
-  path: '/auth/cli-token',
+const DebugCrashRoute = DebugCrashRouteImport.update({
+  id: '/debug/crash',
+  path: '/debug/crash',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MoviesIndexRoute = MoviesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MoviesRouteRoute,
+} as any)
+const MoviesIdRoute = MoviesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MoviesRouteRoute,
+} as any)
+const TvShowsIndexRoute = TvShowsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TvShowsRouteRoute,
+} as any)
+const TvShowsIdRoute = TvShowsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => TvShowsRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -206,39 +206,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sign-out': {
-      id: '/sign-out'
-      path: '/sign-out'
-      fullPath: '/sign-out'
-      preLoaderRoute: typeof SignOutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tv-shows': {
-      id: '/tv-shows'
-      path: '/tv-shows'
-      fullPath: '/tv-shows'
-      preLoaderRoute: typeof TvShowsRouteRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/movies': {
@@ -248,46 +220,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoviesRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tv-shows/': {
-      id: '/tv-shows/'
-      path: '/'
-      fullPath: '/tv-shows/'
-      preLoaderRoute: typeof TvShowsIndexRouteImport
-      parentRoute: typeof TvShowsRouteRoute
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/movies/': {
-      id: '/movies/'
-      path: '/'
-      fullPath: '/movies/'
-      preLoaderRoute: typeof MoviesIndexRouteImport
-      parentRoute: typeof MoviesRouteRoute
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/tv-shows/$id': {
-      id: '/tv-shows/$id'
-      path: '/$id'
-      fullPath: '/tv-shows/$id'
-      preLoaderRoute: typeof TvShowsIdRouteImport
-      parentRoute: typeof TvShowsRouteRoute
+    '/sign-out': {
+      id: '/sign-out'
+      path: '/sign-out'
+      fullPath: '/sign-out'
+      preLoaderRoute: typeof SignOutRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/movies/$id': {
-      id: '/movies/$id'
-      path: '/$id'
-      fullPath: '/movies/$id'
-      preLoaderRoute: typeof MoviesIdRouteImport
-      parentRoute: typeof MoviesRouteRoute
+    '/tv-shows': {
+      id: '/tv-shows'
+      path: '/tv-shows'
+      fullPath: '/tv-shows'
+      preLoaderRoute: typeof TvShowsRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/debug/crash': {
-      id: '/debug/crash'
-      path: '/debug/crash'
-      fullPath: '/debug/crash'
-      preLoaderRoute: typeof DebugCrashRouteImport
+    '/auth/cli-token': {
+      id: '/auth/cli-token'
+      path: '/auth/cli-token'
+      fullPath: '/auth/cli-token'
+      preLoaderRoute: typeof AuthCliTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/success': {
@@ -297,12 +269,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/cli-token': {
-      id: '/auth/cli-token'
-      path: '/auth/cli-token'
-      fullPath: '/auth/cli-token'
-      preLoaderRoute: typeof AuthCliTokenRouteImport
+    '/debug/crash': {
+      id: '/debug/crash'
+      path: '/debug/crash'
+      fullPath: '/debug/crash'
+      preLoaderRoute: typeof DebugCrashRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/movies/': {
+      id: '/movies/'
+      path: '/'
+      fullPath: '/movies/'
+      preLoaderRoute: typeof MoviesIndexRouteImport
+      parentRoute: typeof MoviesRouteRoute
+    }
+    '/movies/$id': {
+      id: '/movies/$id'
+      path: '/$id'
+      fullPath: '/movies/$id'
+      preLoaderRoute: typeof MoviesIdRouteImport
+      parentRoute: typeof MoviesRouteRoute
+    }
+    '/tv-shows/': {
+      id: '/tv-shows/'
+      path: '/'
+      fullPath: '/tv-shows/'
+      preLoaderRoute: typeof TvShowsIndexRouteImport
+      parentRoute: typeof TvShowsRouteRoute
+    }
+    '/tv-shows/$id': {
+      id: '/tv-shows/$id'
+      path: '/$id'
+      fullPath: '/tv-shows/$id'
+      preLoaderRoute: typeof TvShowsIdRouteImport
+      parentRoute: typeof TvShowsRouteRoute
     }
   }
 }

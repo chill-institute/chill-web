@@ -18,7 +18,7 @@ runs:
       run: |
         set -euo pipefail
 
-        version="$(jq -er '(.devDependencies["vite-plus"] // .dependencies["vite-plus"]) | sub("^[~^]"; "")' package.json)"
+        version="$(scripts/ci/vite-plus-version)"
         echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
     - name: Set up Vite+
