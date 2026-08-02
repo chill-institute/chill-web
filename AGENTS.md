@@ -48,7 +48,7 @@
 - Auth flow routes (sign-out, debug.crash, auth/success, auth/cli-token) live as `*RouteOptions` objects in `src/auth/route-options/*`. App route files should stay thin shims.
 - Keep Vite and hook/config changes minimal and intentional.
 - Keep hook behavior in `.vite-hooks/`; the `.githooks/` launchers delegate to that canonical path.
-- CI verifies and deploys the app surface; docs-only, workflow-only, and e2e-only changes do not deploy it.
+- When `SST_PRODUCTION_AUTO_DEPLOY_ENABLED` is true, every push to `main` runs workflow security, app verification, functional e2e, and production app and redirect deployment.
 
 ## Read More
 
