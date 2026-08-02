@@ -1,6 +1,6 @@
-# About The Institute
+# About chill.institute
 
-The Institute is a put.io companion app:
+chill.institute is a put.io companion app:
 
 - [chill.institute](https://chill.institute) is the search and browse experience for finding releases fast, comparing results, browsing movies and TV shows, and sending downloads to put.io without a bunch of ceremony
 
@@ -14,12 +14,10 @@ The Institute is a put.io companion app:
 
 ## Privacy
 
-- the app stores your auth token in the browser so it can talk to the API on your behalf
-- the web app does not run browser product analytics, session replay, autocapture, or behavior-tracking SDKs
-- the API uses pseudonymous, server-side product analytics to improve product decisions and prioritize what to work on next; event payloads do not include search text, media IDs, URLs, account identifiers, IP addresses, user agents, or free-form errors
-- if crash reporting is configured, unexpected crashes are sent to Sentry with route paths, browser/runtime details, release, and stack trace; auth tokens, cookies, request bodies, user IDs, request URLs, and search query strings are not intentionally sent
-- if crash reporting is not configured, the crash report stays local unless you copy it yourself
-- some operational diagnostics exist on the server side to keep the service healthy
+- The app stores your auth token in the browser so it can talk to the API on your behalf.
+- Product analytics runs only in the API. It uses pseudonymous identifiers and bounded event properties; payloads exclude search text, media IDs, URLs, account identifiers, IP addresses, user agents, and free-form errors.
+- When browser crash reporting is configured, unexpected crashes include route paths, browser/runtime details, release, and stack traces. Auth tokens, cookies, request bodies, user IDs, request URLs, and search query strings are not intentionally sent.
+- Without browser crash reporting, the crash report stays local unless you copy it yourself.
 
 ## Contact
 

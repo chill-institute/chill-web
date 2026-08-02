@@ -49,7 +49,6 @@ Build output:
 
 ## Routing
 
-- there is no staging binge host
 - `/auth/success` stays on the app host so the browser can finish the auth callback
 - RSS and download links should use the API host directly
 
@@ -61,7 +60,6 @@ Build output:
 - `Main` verifies, runs functional e2e, builds and deploys the production web surface, and deploys the production redirect worker
 - Manual deploy workflows are maintainer-only fallbacks for staging, production app, or production redirect reruns
 - App deploy jobs call the shared `Build and Deploy App` action for bundle build, Sentry source maps, SST state restore/save, and SST app deploy
-- PRs do not create public preview deployments
 - Live host monitoring and rollback are maintainer-operated outside GitHub Actions
 
 ## Verification
@@ -72,5 +70,3 @@ After a hosted web change, external monitoring should cover:
 - one redirect host
 - one real app load in the SPA
 - one real auth redirect start URL
-
-Maintainer-only operational details are intentionally outside the scope of this public document.

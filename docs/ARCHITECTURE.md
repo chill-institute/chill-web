@@ -44,14 +44,14 @@ The app keeps API, auth, UI, and catalog code local so there is no workspace pac
 
 ## Routes
 
-| Route                                    | Responsibility                                 |
-| ---------------------------------------- | ---------------------------------------------- |
-| `/`                                      | search home shell                              |
-| `/search`                                | search flow, filters, and result listing       |
-| `/movies` and `/movies/$id`              | movie catalog and detail modal                 |
-| `/tv-shows` and `/tv-shows/$id`          | TV catalog and detail modal                    |
-| `/settings`                              | user settings and folder-related configuration |
-| `/sign-in`, `/sign-out`, `/auth/success` | auth lifecycle routes                          |
+| Route                              | Responsibility                                 |
+| ---------------------------------- | ---------------------------------------------- |
+| `/`                                | search home shell                              |
+| `/search`                          | search flow, filters, and result listing       |
+| `/movies` and `/movies/$id`        | movie catalog and detail modal                 |
+| `/tv-shows` and `/tv-shows/$id`    | TV catalog and detail modal                    |
+| `/settings`                        | user settings and folder-related configuration |
+| `/sign-in`, `/sign-out`, `/auth/*` | browser and CLI-token auth lifecycle routes    |
 
 ## Data Flow
 
