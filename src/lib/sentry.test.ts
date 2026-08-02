@@ -211,6 +211,52 @@ describe("sanitizeSentryEvent", () => {
         },
       ),
     ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
+              type: "SecurityError",
+              value:
+                "Failed to read the 'sessionStorage' property from 'Window': Access is denied for this document.",
+            },
+          ],
+        },
+      }),
+    ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
+              type: "TypeError",
+              value: "Cannot read properties of null (reading 'getItem')",
+              stacktrace: {
+                frames: [{ filename: "../../src/auth/auth-storage.ts", function: "rc" }],
+              },
+            },
+          ],
+        },
+      }),
+    ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent({
+        type: undefined,
+        exception: {
+          values: [
+            {
+              type: "TypeError",
+              value: "Cannot read properties of null (reading 'getItem')",
+            },
+          ],
+        },
+      }),
+    ).not.toBeNull();
   });
 
   it("drops recoverable module-load noise but keeps terminal recovery failures", () => {

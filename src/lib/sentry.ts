@@ -107,18 +107,36 @@ function isNoisyBrowserExtensionError(event: ErrorEvent, hint?: { originalExcept
   return exceptionText(event, hint).includes("__firefox__");
 }
 
+function hasStorageAccessEvidence(event: ErrorEvent, text: string) {
+  if (/localStorage|sessionStorage|auth-storage|Storage\.getItem/i.test(text)) {
+    return true;
+  }
+  for (const value of exceptionValues(event)) {
+    for (const frame of value.stacktrace?.frames ?? []) {
+      const location = `${frame.filename ?? ""} ${frame.abs_path ?? ""} ${frame.function ?? ""}`;
+      if (/localStorage|sessionStorage|auth-storage/i.test(location)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function isBlockedStorageAccessError(event: ErrorEvent, hint?: { originalException?: unknown }) {
   const text = exceptionText(event, hint);
-  if (text.includes("Failed to read the 'localStorage' property from 'Window'")) {
+  if (
+    /Failed to read the '(?:local|session)Storage' property from 'Window'/.test(text) ||
+    (/Access is denied for this document/.test(text) && /(?:local|session)Storage/.test(text)) ||
+    /Can't find variable: (?:local|session)Storage/.test(text) ||
+    /(?:local|session)Storage is null/.test(text)
+  ) {
     return true;
   }
-  if (text.includes("Access is denied for this document") && text.includes("localStorage")) {
-    return true;
-  }
-  if (text.includes("Cannot read properties of null (reading 'getItem')")) {
-    return true;
-  }
-  if (text.includes("Can't find variable: localStorage") || text.includes("localStorage is null")) {
+  // Only drop null getItem crashes that are clearly storage-related.
+  if (
+    text.includes("Cannot read properties of null (reading 'getItem')") &&
+    hasStorageAccessEvidence(event, text)
+  ) {
     return true;
   }
   return false;
