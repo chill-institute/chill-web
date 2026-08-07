@@ -10,6 +10,9 @@ import { resetChangedMovieSourceQueries } from "@/catalog/queries/cache";
 import { settingsQueryOptions } from "@/catalog/queries/options";
 import { writeCachedSettings } from "@/queries/settings-cache";
 
+let movieSourceSyncChain: Promise<void> = Promise.resolve();
+let movieSourceSyncGeneration = 0;
+
 export async function syncMovieSourceFromSearch({
   queryClient,
   source,
@@ -21,6 +24,28 @@ export async function syncMovieSourceFromSearch({
 }) {
   if (source === undefined) return;
 
+  // Latest-wins: overlapping loader runs must not let an older source overwrite a newer URL.
+  const generation = ++movieSourceSyncGeneration;
+  const run = async () => {
+    if (generation !== movieSourceSyncGeneration) return;
+    await persistMovieSourceFromSearch({ queryClient, source, token, generation });
+  };
+
+  movieSourceSyncChain = movieSourceSyncChain.then(run, run);
+  return movieSourceSyncChain;
+}
+
+async function persistMovieSourceFromSearch({
+  queryClient,
+  source,
+  token,
+  generation,
+}: {
+  queryClient: QueryClient;
+  source: MoviesSource;
+  token: string;
+  generation: number;
+}) {
   const settings = await queryClient.fetchQuery(settingsQueryOptions(token)).catch((error) => {
     annotateClientRequestTimeout(error, {
       operation: "settings.read",
@@ -28,8 +53,9 @@ export async function syncMovieSourceFromSearch({
     });
     throw error;
   });
-  const appSettings = toCatalogAppSettings(settings);
+  if (generation !== movieSourceSyncGeneration) return;
 
+  const appSettings = toCatalogAppSettings(settings);
   if (appSettings.moviesSource === source) return;
 
   const api = createApi(token);

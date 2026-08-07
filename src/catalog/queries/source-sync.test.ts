@@ -1,4 +1,4 @@
-import { create, toJson } from "@bufbuild/protobuf";
+import { create, fromJson, toJson, type JsonValue } from "@bufbuild/protobuf";
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
@@ -94,6 +94,57 @@ describe("syncMovieSourceFromSearch", () => {
     });
 
     expect(methods).toEqual(["GetUserSettings"]);
+  });
+
+  it("lets the latest overlapping source sync win", async () => {
+    const queryClient = createQueryClient();
+    const serverSource = MoviesSource.ROTTEN_TOMATOES;
+    let releaseFirstRead!: () => void;
+    const firstReadGate = new Promise<void>((resolve) => {
+      releaseFirstRead = resolve;
+    });
+    let reads = 0;
+    const savedSources: number[] = [];
+
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      const method = new URL(request.url).pathname.split("/").at(-1);
+      if (method === "GetUserSettings") {
+        reads += 1;
+        if (reads === 1) await firstReadGate;
+        return settingsResponse(serverSource);
+      }
+      if (method !== "SaveUserSettings") throw new Error(`Unexpected RPC: ${method}`);
+
+      const body = (await request.clone().json()) as { settings?: JsonValue };
+      if (body.settings === undefined) {
+        throw new Error("SaveUserSettings missing settings");
+      }
+      const saved = fromJson(UserSettingsSchema, body.settings);
+      const nextSource = saved.catalog?.moviesSource;
+      if (nextSource === undefined) {
+        throw new Error("SaveUserSettings missing moviesSource");
+      }
+      savedSources.push(nextSource);
+      return settingsResponse(nextSource);
+    });
+
+    const first = syncMovieSourceFromSearch({
+      queryClient,
+      source: MoviesSource.YTS,
+      token: "placeholder",
+    });
+    await vi.waitFor(() => expect(reads).toBe(1));
+
+    const second = syncMovieSourceFromSearch({
+      queryClient,
+      source: MoviesSource.IMDB_MOVIEMETER,
+      token: "placeholder",
+    });
+    releaseFirstRead();
+    await Promise.all([first, second]);
+
+    expect(savedSources).toEqual([MoviesSource.IMDB_MOVIEMETER]);
   });
 
   it("reconciles a timed-out save with a fresh read before writing again", async () => {
