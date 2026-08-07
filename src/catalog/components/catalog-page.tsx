@@ -2,7 +2,7 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { match } from "ts-pattern";
 
-import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
+import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { MoviePosterActions } from "@/catalog/components/movie-poster-actions";
 import { MoviesSourceSelect } from "@/catalog/components/movies-source-select";
@@ -44,6 +44,10 @@ export function CatalogPage({ tab }: CatalogPageProps) {
   const auth = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { source?: number };
+  const moviesURLSource =
+    tab === "movies" && typeof search.source === "number"
+      ? (search.source as MoviesSource)
+      : undefined;
   const tvShowsURLSource =
     tab === "tv-shows" && typeof search.source === "number"
       ? (search.source as TVShowsSource)
@@ -52,10 +56,13 @@ export function CatalogPage({ tab }: CatalogPageProps) {
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
-  const effectiveMoviesSource = appSettings?.moviesSource;
+  // Deep-linked movie source is the render source of truth; settings sync persists it in the background.
+  const effectiveMoviesSource = moviesURLSource ?? appSettings?.moviesSource;
   const effectiveTVShowsSource = tvShowsURLSource ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
-  const shouldFetchCatalog =
+  const settingsSettledForCatalog =
     configQuery.status === "success" && !configQuery.isFetching && !saveConfigMutation.isPending;
+  const shouldFetchCatalog =
+    (tab === "movies" && moviesURLSource !== undefined) || settingsSettledForCatalog;
   const moviesQuery = useMoviesQuery({
     enabled: shouldFetchCatalog && tab === "movies",
     source: effectiveMoviesSource,
@@ -70,8 +77,92 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     saveConfigMutation.mutate((settings) => applyCatalogAppSettingsPatch(settings, patch));
   }
 
+  function renderCatalog(selectedMoviesSource: MoviesSource, selectedTVShowsSource: TVShowsSource) {
+    const sourceSelector =
+      tab === "movies" ? (
+        <MoviesSourceSelect
+          value={selectedMoviesSource}
+          onChange={(moviesSource) => {
+            patchConfig({ moviesSource });
+            void navigate({
+              to: "/movies",
+              search: (prev) => ({ ...prev, source: moviesSource }),
+              replace: true,
+            });
+          }}
+        />
+      ) : (
+        <TVShowsSourceSelect
+          value={selectedTVShowsSource}
+          onChange={(tvShowsSource) => {
+            // Intentionally not persisted: the picker is URL-only.
+            void navigate({
+              to: "/tv-shows",
+              search: (prev) => ({ ...prev, source: tvShowsSource }),
+              replace: true,
+            });
+          }}
+        />
+      );
+
+    const activeContent = !shouldFetchCatalog ? (
+      <PosterGridSkeleton />
+    ) : tab === "movies" ? (
+      <MoviesContent
+        query={moviesQuery}
+        source={selectedMoviesSource}
+        onPickAnotherSource={() => {
+          const next = cycleSource(moviesSources, selectedMoviesSource);
+          if (next === undefined) return;
+          patchConfig({ moviesSource: next });
+          void navigate({
+            to: "/movies",
+            search: (prev) => ({ ...prev, source: next }),
+            replace: true,
+          });
+        }}
+      />
+    ) : (
+      <TVShowsContent
+        query={tvShowsQuery}
+        source={selectedTVShowsSource}
+        onPickAnotherSource={() => {
+          const next = cycleSource(tvShowsSources, selectedTVShowsSource);
+          if (next === undefined) return;
+          void navigate({
+            to: "/tv-shows",
+            search: (prev) => ({ ...prev, source: next }),
+            replace: true,
+          });
+        }}
+      />
+    );
+
+    return (
+      <HomeShell tab={tab}>
+        <PageHeading tab={tab}>
+          <SortRow className="mb-0 sm:justify-end lg:mb-0">{sourceSelector}</SortRow>
+        </PageHeading>
+
+        {activeContent}
+
+        {configQuery.status === "error" ? (
+          <UserErrorAlert className="mt-4" error={configQuery.error} />
+        ) : null}
+        {saveConfigMutation.error ? (
+          <UserErrorAlert className="mt-4" error={saveConfigMutation.error} />
+        ) : null}
+      </HomeShell>
+    );
+  }
+
   if (!auth.isAuthenticated) {
     return <SignInRedirect />;
+  }
+
+  // URL-sourced movies can render/fetch without waiting on put.io settings latency.
+  if (moviesURLSource !== undefined) {
+    return renderCatalog(moviesURLSource, effectiveTVShowsSource);
   }
 
   return match(configQuery)
@@ -92,82 +183,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     ))
     .with({ status: "success" }, (query) => {
       const config = toCatalogAppSettings(query.data);
-      const selectedMoviesSource = effectiveMoviesSource ?? config.moviesSource;
-      const selectedTVShowsSource = effectiveTVShowsSource;
-
-      const sourceSelector =
-        tab === "movies" ? (
-          <MoviesSourceSelect
-            value={selectedMoviesSource}
-            onChange={(moviesSource) => {
-              patchConfig({ moviesSource });
-              void navigate({
-                to: "/movies",
-                search: (prev) => ({ ...prev, source: moviesSource }),
-                replace: true,
-              });
-            }}
-          />
-        ) : (
-          <TVShowsSourceSelect
-            value={selectedTVShowsSource}
-            onChange={(tvShowsSource) => {
-              // Intentionally not persisted: the picker is URL-only.
-              void navigate({
-                to: "/tv-shows",
-                search: (prev) => ({ ...prev, source: tvShowsSource }),
-                replace: true,
-              });
-            }}
-          />
-        );
-
-      const activeContent = !shouldFetchCatalog ? (
-        <PosterGridSkeleton />
-      ) : tab === "movies" ? (
-        <MoviesContent
-          query={moviesQuery}
-          source={selectedMoviesSource}
-          onPickAnotherSource={() => {
-            const next = cycleSource(moviesSources, selectedMoviesSource);
-            if (next === undefined) return;
-            patchConfig({ moviesSource: next });
-            void navigate({
-              to: "/movies",
-              search: (prev) => ({ ...prev, source: next }),
-              replace: true,
-            });
-          }}
-        />
-      ) : (
-        <TVShowsContent
-          query={tvShowsQuery}
-          source={selectedTVShowsSource}
-          onPickAnotherSource={() => {
-            const next = cycleSource(tvShowsSources, selectedTVShowsSource);
-            if (next === undefined) return;
-            void navigate({
-              to: "/tv-shows",
-              search: (prev) => ({ ...prev, source: next }),
-              replace: true,
-            });
-          }}
-        />
-      );
-
-      return (
-        <HomeShell tab={tab}>
-          <PageHeading tab={tab}>
-            <SortRow className="mb-0 sm:justify-end lg:mb-0">{sourceSelector}</SortRow>
-          </PageHeading>
-
-          {activeContent}
-
-          {saveConfigMutation.error ? (
-            <UserErrorAlert className="mt-4" error={saveConfigMutation.error} />
-          ) : null}
-        </HomeShell>
-      );
+      return renderCatalog(effectiveMoviesSource ?? config.moviesSource, effectiveTVShowsSource);
     })
     .exhaustive();
 }

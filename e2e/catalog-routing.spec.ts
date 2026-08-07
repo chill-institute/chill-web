@@ -355,11 +355,13 @@ test.describe("catalog routing", () => {
       GetTVShows: tvShowsResponse([]),
     });
     let settingsCalls = 0;
+    let releaseSettings!: () => void;
+    const settingsGate = new Promise<void>((resolve) => {
+      releaseSettings = resolve;
+    });
     await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
       settingsCalls += 1;
-      if (settingsCalls === 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2500));
-      }
+      await settingsGate;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -369,12 +371,15 @@ test.describe("catalog routing", () => {
 
     await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
 
+    // Catalog must render from the URL source while settings remains unresolved.
     await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 3000 });
     await expect(
       authenticatedPage.getByRole("heading", { name: "The Institute is having a moment…" }),
     ).toHaveCount(0);
     await expect(authenticatedPage.getByText("Something went wrong.")).toHaveCount(0);
     expect(settingsCalls).toBeGreaterThan(0);
+
+    releaseSettings();
   });
 
   test("clicking a movie card navigates to /movies/:id", async ({ authenticatedPage, mockRpc }) => {
