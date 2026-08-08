@@ -242,20 +242,6 @@ describe("sanitizeSentryEvent", () => {
           ],
         },
       }),
-    ).toBeNull();
-
-    expect(
-      sanitizeSentryEvent({
-        type: undefined,
-        exception: {
-          values: [
-            {
-              type: "SecurityError",
-              value: "The operation is insecure.",
-            },
-          ],
-        },
-      }),
     ).not.toBeNull();
 
     expect(

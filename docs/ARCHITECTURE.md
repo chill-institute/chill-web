@@ -106,10 +106,10 @@ them only as bounded properties on its existing server-side product events. The
 app records only route-path breadcrumbs that exclude query strings and request
 data; event request data is removed before sending. `beforeSend` drops known
 noisy browser/extension messages (for example `__firefox__`), blocked
-`localStorage`/`sessionStorage` access failures (including alternate
-`SecurityError` wording when the stack points at auth storage), and recoverable
-module-load noise before a reload retry has finished; intentional client
-request timeouts remain captured and are fingerprinted by operation and surface.
+`localStorage`/`sessionStorage` access failures with explicit storage evidence,
+and recoverable module-load noise before a reload retry has finished;
+intentional client request timeouts remain captured and are fingerprinted by
+operation and surface.
 
 Production and staging builds upload hidden source maps only when
 `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all available. The

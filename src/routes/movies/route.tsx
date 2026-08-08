@@ -5,7 +5,11 @@ import { readStoredToken } from "@/auth/auth";
 import { CatalogPage } from "@/catalog/components/catalog-page";
 import { settingsQueryOptions } from "@/catalog/queries/options";
 import { syncMovieSourceFromSearch } from "@/catalog/queries/source-sync";
-import { MoviesError, reportMoviesError } from "@/routes/-movies-error";
+import {
+  MoviesError,
+  reportMoviesError,
+  reportMoviesSourceSyncError,
+} from "@/routes/-movies-error";
 import { movieCatalogSearchSchema } from "@/routes/-search-params";
 
 export const Route = createFileRoute("/movies")({
@@ -15,7 +19,9 @@ export const Route = createFileRoute("/movies")({
     const token = readStoredToken();
     if (!token) return;
     // Persist URL source preference without blocking catalog render on put.io latency.
-    void syncMovieSourceFromSearch({ queryClient, source, token }).catch(reportMoviesError);
+    void syncMovieSourceFromSearch({ queryClient, source, token }).catch(
+      reportMoviesSourceSyncError,
+    );
     void queryClient.prefetchQuery(settingsQueryOptions(token));
   },
   onError: reportMoviesError,

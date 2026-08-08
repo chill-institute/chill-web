@@ -18,13 +18,21 @@ function MoviesError(props: ErrorComponentProps) {
   );
 }
 
-function reportMoviesError(error: unknown) {
-  if (!isClientRequestTimeoutError(error)) return;
-
+function captureMoviesError(error: unknown) {
   captureAppException(error, {
     release: import.meta.env.VITE_PUBLIC_RELEASE,
     routePath: window.location.pathname,
   });
 }
 
-export { MoviesError, reportMoviesError };
+function reportMoviesError(error: unknown) {
+  if (!isClientRequestTimeoutError(error)) return;
+
+  captureMoviesError(error);
+}
+
+function reportMoviesSourceSyncError(error: unknown) {
+  captureMoviesError(error);
+}
+
+export { MoviesError, reportMoviesError, reportMoviesSourceSyncError };
