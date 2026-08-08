@@ -61,8 +61,12 @@ export function CatalogPage({ tab }: CatalogPageProps) {
   const effectiveTVShowsSource = tvShowsURLSource ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
   const settingsSettledForCatalog =
     configQuery.status === "success" && !configQuery.isFetching && !saveConfigMutation.isPending;
-  const shouldFetchCatalog =
-    (tab === "movies" && moviesURLSource !== undefined) || settingsSettledForCatalog;
+  const shouldFetchURLMovies =
+    tab === "movies" &&
+    moviesURLSource !== undefined &&
+    !saveConfigMutation.isPending &&
+    (appSettings === undefined || appSettings.moviesSource === moviesURLSource);
+  const shouldFetchCatalog = shouldFetchURLMovies || settingsSettledForCatalog;
   const moviesQuery = useMoviesQuery({
     enabled: shouldFetchCatalog && tab === "movies",
     source: effectiveMoviesSource,
