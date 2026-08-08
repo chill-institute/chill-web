@@ -170,6 +170,7 @@ test.describe("movies", () => {
     await mockRpc(
       homeMethods({
         Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+        AddTransfer: { status: "OK" },
       }),
     );
 
@@ -187,9 +188,33 @@ test.describe("movies", () => {
     await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeVisible();
     await expect(quickFilters.getByRole("checkbox", { name: "x265" })).toBeVisible();
     await expect(quickFilters.getByRole("combobox", { name: "Sort results" })).toBeVisible();
-    await expect(
-      movieDialog.getByRole("button", { name: /send to put\.io/i }).last(),
-    ).toBeVisible();
+    const sendButton = movieDialog.getByRole("button", { name: /send to put\.io/i }).last();
+    await expect(sendButton).toBeVisible();
+    const requestPromise = authenticatedPage.waitForRequest("**/chill.v4.UserService/AddTransfer");
+    await sendButton.click();
+    const request = await requestPromise;
+    expect(request.postDataJSON()).toMatchObject({
+      catalogOrigin: { moviesSource: "MOVIES_SOURCE_IMDB_MOVIEMETER" },
+    });
+  });
+
+  test("movie quick-send carries the catalog source", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc(
+      homeMethods({
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+        AddTransfer: { status: "OK" },
+      }),
+    );
+
+    await authenticatedPage.goto("/movies");
+    const requestPromise = authenticatedPage.waitForRequest("**/chill.v4.UserService/AddTransfer");
+    await authenticatedPage
+      .getByRole("button", { name: "Download top result for Aurora Protocol" })
+      .click();
+    const request = await requestPromise;
+    expect(request.postDataJSON()).toMatchObject({
+      catalogOrigin: { moviesSource: "MOVIES_SOURCE_IMDB_MOVIEMETER" },
+    });
   });
 
   test("movie modal persists a quick-filter change when remembering is on", async ({

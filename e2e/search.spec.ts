@@ -437,7 +437,10 @@ test.describe("search page", () => {
     const sendButton = firstRow.getByRole("button", {
       name: "send to put.io",
     });
+    const requestPromise = authenticatedPage.waitForRequest("**/chill.v4.UserService/AddTransfer");
     await sendButton.click();
+    const request = await requestPromise;
+    expect(request.postDataJSON()).toEqual({ url: "magnet:?xt=urn:btih:abc" });
 
     await expect(firstRow.getByText("sent!")).toBeVisible();
   });
