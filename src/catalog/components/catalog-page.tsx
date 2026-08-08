@@ -160,7 +160,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     return <SignInRedirect />;
   }
 
-  // URL-sourced movies can render/fetch without waiting on put.io settings latency.
+  // A matching URL-sourced response can render without waiting on settings refresh latency.
   if (moviesURLSource !== undefined) {
     return renderCatalog(moviesURLSource, effectiveTVShowsSource);
   }

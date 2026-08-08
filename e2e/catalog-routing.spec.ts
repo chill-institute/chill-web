@@ -334,6 +334,9 @@ test.describe("catalog routing", () => {
     await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
 
     await expect.poll(() => savedBodies.length, { timeout: 300 }).toBe(0);
+    await expect(authenticatedPage.getByText("Aurora Protocol")).toBeHidden();
+    await expect(authenticatedPage.getByText("Night Courier")).toBeHidden();
+    await expect(authenticatedPage.getByText("Something went wrong.")).toHaveCount(0);
 
     allowSettingsResponse = true;
     for (const releaseSettingsResponse of releaseSettingsResponses) {
@@ -345,7 +348,7 @@ test.describe("catalog routing", () => {
     expect(savedBodies.at(-1)?.settings?.search?.rememberQuickFilters).toBe(true);
   });
 
-  test("slow movie settings sync does not block the catalog or show the crash screen", async ({
+  test("matching movie source renders while settings refresh is slow", async ({
     authenticatedPage,
     mockRpc,
   }) => {
@@ -371,7 +374,6 @@ test.describe("catalog routing", () => {
 
     await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
 
-    // Catalog must render from the URL source while settings remains unresolved.
     await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 3000 });
     await expect(
       authenticatedPage.getByRole("heading", { name: "The Institute is having a moment…" }),
