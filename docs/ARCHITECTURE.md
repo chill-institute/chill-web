@@ -29,8 +29,10 @@ The app keeps API, auth, UI, and catalog code local so there is no workspace pac
 
 - The app is a client-rendered React SPA.
 - The browser calls the hosted API directly.
-- Connect requests identify the client as `web` and carry the public build
-  release in `X-Chill-Client-Version` for backend-owned product analytics.
+- Connect requests identify the client as `web` and carry the automatic,
+  SemVer-shaped deployment version in `X-Chill-Client-Version` for
+  backend-owned product analytics. The immutable commit release remains a
+  separate build value for debugging and Sentry.
 - Shared contract types come from `@chill-institute/contracts`
 - Hosted app and redirect domains are documented in [Deployment](./DEPLOYMENT.md).
 
@@ -91,6 +93,8 @@ Key modules:
 | `VITE_PUBLIC_API_BASE_URL`       | optional local override for the public API                 |
 | `VITE_PUBLIC_SENTRY_DSN`         | optional browser crash-reporting DSN                       |
 | `VITE_PUBLIC_SENTRY_ENVIRONMENT` | optional Sentry environment label                          |
+| `VITE_PUBLIC_VERSION`            | public deployment version sent as API client metadata      |
+| `VITE_PUBLIC_RELEASE`            | immutable public commit release used for debugging         |
 | `SENTRY_AUTH_TOKEN`              | build-time secret used by CI to upload Sentry source maps  |
 | `SENTRY_ORG`                     | build-time Sentry organization slug for source map uploads |
 | `SENTRY_PROJECT`                 | build-time Sentry project slug for source map uploads      |

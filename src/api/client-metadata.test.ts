@@ -3,16 +3,16 @@ import { describe, expect, it } from "vite-plus/test";
 import { setClientMetadata } from "./client-metadata";
 
 describe("setClientMetadata", () => {
-  it("sets the web client and trimmed build release", () => {
+  it("sets the web client and trimmed app version", () => {
     const headers = new Headers();
 
-    setClientMetadata(headers, " abcdef1 ");
+    setClientMetadata(headers, " 0.0.339 ");
 
     expect(headers.get("X-Chill-Client")).toBe("web");
-    expect(headers.get("X-Chill-Client-Version")).toBe("abcdef1");
+    expect(headers.get("X-Chill-Client-Version")).toBe("0.0.339");
   });
 
-  it("uses an explicit unknown version when the build release is empty", () => {
+  it("uses an explicit unknown version when the app version is empty", () => {
     const headers = new Headers();
 
     setClientMetadata(headers, " ");
@@ -20,7 +20,7 @@ describe("setClientMetadata", () => {
     expect(headers.get("X-Chill-Client-Version")).toBe("unknown");
   });
 
-  it("uses an explicit unknown version when the build release is unavailable", () => {
+  it("uses an explicit unknown version when the app version is unavailable", () => {
     const headers = new Headers();
 
     setClientMetadata(headers, undefined);

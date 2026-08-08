@@ -60,7 +60,7 @@ describe("createApi request metadata", () => {
     expect(capturedRequest).toBeDefined();
     expect(capturedRequest?.headers.get("X-Chill-Client")).toBe("web");
     expect(capturedRequest?.headers.get("X-Chill-Client-Version")).toBe(
-      import.meta.env.VITE_PUBLIC_RELEASE?.trim() || "unknown",
+      import.meta.env.VITE_PUBLIC_VERSION?.trim() || "unknown",
     );
     expect(capturedRequest?.headers.get("X-Request-Id")).toBeTruthy();
   });

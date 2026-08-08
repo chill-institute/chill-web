@@ -30,9 +30,15 @@ runs:
       shell: bash
       run: vp env
 
-    - name: Stamp deployed release
+    - name: Stamp deployed version and release
       shell: bash
-      run: echo "VITE_PUBLIC_RELEASE=$(git rev-parse --short HEAD)" >> "${GITHUB_ENV}"
+      run: |
+        set -euo pipefail
+
+        {
+          echo "VITE_PUBLIC_VERSION=0.0.$(git rev-list --count --first-parent HEAD)"
+          echo "VITE_PUBLIC_RELEASE=$(git rev-parse --short HEAD)"
+        } >> "${GITHUB_ENV}"
 
     - name: Build app bundle
       shell: bash
