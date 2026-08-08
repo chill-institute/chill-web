@@ -147,8 +147,7 @@ function isRecoverableModuleLoadNoise(event: ErrorEvent) {
   if (tags.module_load_failure !== "true") {
     return false;
   }
-  // Keep terminal failures after recovery was already attempted.
-  return tags.module_recovery_attempted !== "true";
+  return tags.module_recovery_attempted === "false";
 }
 
 function sanitizeSentryEvent(

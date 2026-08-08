@@ -282,13 +282,25 @@ describe("sanitizeSentryEvent", () => {
         type: undefined,
         tags: {
           module_load_failure: "true",
-          module_recovery_attempted: "unknown",
+          module_recovery_attempted: "false",
         },
         exception: {
           values: [{ type: "TypeError", value: "Importing a module script failed." }],
         },
       }),
     ).toBeNull();
+
+    const uncertain = sanitizeSentryEvent({
+      type: undefined,
+      tags: {
+        module_load_failure: "true",
+        module_recovery_attempted: "unknown",
+      },
+      exception: {
+        values: [{ type: "TypeError", value: "Importing a module script failed." }],
+      },
+    });
+    expect(uncertain).not.toBeNull();
 
     const terminal = sanitizeSentryEvent({
       type: undefined,

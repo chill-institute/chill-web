@@ -152,6 +152,36 @@ describe("moduleLoadRecoveryTags", () => {
     });
   });
 
+  it("identifies a recoverable module failure before the TanStack reload", () => {
+    vi.stubGlobal("window", {
+      location: { href: "https://chill.institute/movies" },
+      sessionStorage: { getItem: () => null },
+    });
+
+    expect(moduleLoadRecoveryTags(new TypeError("Importing a module script failed."))).toEqual({
+      module_load_failure: "true",
+      module_recovery_attempted: "false",
+      module_recovery_strategy: "tanstack_session",
+    });
+  });
+
+  it("keeps recovery state unknown when session storage is blocked", () => {
+    vi.stubGlobal("window", {
+      location: { href: "https://chill.institute/movies" },
+      sessionStorage: {
+        getItem() {
+          throw new Error("storage blocked");
+        },
+      },
+    });
+
+    expect(moduleLoadRecoveryTags(new TypeError("Importing a module script failed."))).toEqual({
+      module_load_failure: "true",
+      module_recovery_attempted: "unknown",
+      module_recovery_strategy: "vite_url",
+    });
+  });
+
   it("identifies the URL fallback after storage-unavailable recovery", () => {
     vi.stubGlobal("window", {
       location: { href: "https://chill.institute/search?__chill_reload=123" },
