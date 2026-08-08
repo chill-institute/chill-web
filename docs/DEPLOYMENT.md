@@ -18,6 +18,13 @@ Deploy builds upload hidden source maps when the GitHub environment provides
 `SENTRY_AUTH_TOKEN` as a secret plus `SENTRY_ORG` and `SENTRY_PROJECT` as
 variables. Uploaded source maps are deleted from `dist/` before deployment.
 
+App deploys stamp two independent build identifiers. `VITE_PUBLIC_VERSION` is
+`0.0.<first-parent-commit-count>`, a reproducible and monotonically increasing
+version on `main` used by backend product analytics and displayed in settings.
+`VITE_PUBLIC_RELEASE` remains the short commit SHA used by Sentry and linked from
+the settings footer. Deploy checkouts fetch full history so a commit produces the
+same version in automatic, manual, production, and staging deployments.
+
 Build output:
 
 - `dist/`

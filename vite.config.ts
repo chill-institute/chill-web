@@ -28,6 +28,24 @@ function resolveRelease() {
   }
 }
 
+function resolveVersion() {
+  const explicit = process.env.VITE_PUBLIC_VERSION?.trim();
+  if (explicit) {
+    return explicit;
+  }
+
+  try {
+    const commitCount = execSync("git rev-list --count --first-parent HEAD", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+    return `0.0.${commitCount}`;
+  } catch {
+    return "dev";
+  }
+}
+
 function resolvePublicSentryDsn() {
   if (process.env.VITE_PUBLIC_SENTRY_ENVIRONMENT) {
     return process.env.VITE_PUBLIC_SENTRY_DSN?.trim() ?? "";
@@ -37,6 +55,7 @@ function resolvePublicSentryDsn() {
 }
 
 const release = resolveRelease();
+const version = resolveVersion();
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN?.trim();
 const sentryOrg = process.env.SENTRY_ORG?.trim();
 const sentryProject = process.env.SENTRY_PROJECT?.trim();
@@ -164,6 +183,7 @@ export default defineConfig({
   ],
   define: {
     "import.meta.env.VITE_PUBLIC_RELEASE": JSON.stringify(release),
+    "import.meta.env.VITE_PUBLIC_VERSION": JSON.stringify(version),
     "import.meta.env.VITE_PUBLIC_SENTRY_DSN": JSON.stringify(publicSentryDsn),
   },
 });

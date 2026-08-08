@@ -65,7 +65,7 @@ function newRequestID(): string {
 }
 
 const requestMetadataInterceptor: Interceptor = (next) => async (request) => {
-  setClientMetadata(request.header, import.meta.env.VITE_PUBLIC_RELEASE);
+  setClientMetadata(request.header, import.meta.env.VITE_PUBLIC_VERSION);
   return next(request);
 };
 
