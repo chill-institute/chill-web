@@ -1,6 +1,7 @@
 import { CalendarDays, Film, HardDrive, Monitor, Search, Users } from "lucide-react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
+import type { CatalogOriginInput } from "@/api/api";
 import { normalizeCodecFilterValue } from "@/api/release-info";
 import { Button } from "@/ui/components/ui/button";
 import { CopyButton } from "@/ui/components/copy-button";
@@ -59,9 +60,11 @@ function parseCodec(result: SearchResult): Exclude<CodecFilterValue, "all"> | un
 export function TorrentResultList({
   results,
   columns = true,
+  catalogOrigin,
 }: {
   results: SearchResult[];
   columns?: boolean;
+  catalogOrigin?: CatalogOriginInput;
 }) {
   const sendableCount = results.reduce(
     (count, result) => count + (canSendResult(result) ? 1 : 0),
@@ -95,7 +98,11 @@ export function TorrentResultList({
             result.seeders > 0n ? SEEDER_FORMATTER.format(Number(result.seeders)) : undefined;
           const sourceLabel = result.indexer || result.source || "unknown";
           const action = isSendable ? (
-            <AddTransferButton className="flex-1 sm:flex-none" url={result.link}>
+            <AddTransferButton
+              className="flex-1 sm:flex-none"
+              url={result.link}
+              catalogOrigin={catalogOrigin}
+            >
               send to put.io
             </AddTransferButton>
           ) : (

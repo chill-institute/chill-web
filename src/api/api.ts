@@ -1,7 +1,12 @@
+import { create } from "@bufbuild/protobuf";
 import { createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
+  CatalogOriginSchema,
+  MoviesSource,
+  TVShowsSource,
   UserService,
+  type CatalogOrigin,
   type AddTransferResponse,
   type GetDownloadFolderResponse,
   type GetFolderResponse,
@@ -11,7 +16,6 @@ import {
   type GetTVShowSeasonResponse,
   type GetTVShowsResponse,
   type SearchResponse,
-  type TVShowsSource,
   type UserIndexer,
   type UserProfile,
   type UserSettings,
@@ -24,6 +28,30 @@ import {
   withSaveUserSettingsResponseDefaults,
   withUserSettingsDefaults,
 } from "./settings-defaults";
+
+export type CatalogOriginInput =
+  | { media: "movie"; source: MoviesSource }
+  | { media: "tv"; source: TVShowsSource };
+
+export function toCatalogOrigin(origin: CatalogOriginInput | undefined): CatalogOrigin | undefined {
+  if (!origin) {
+    return undefined;
+  }
+  if (origin.media === "movie") {
+    if (origin.source === MoviesSource.UNSPECIFIED) {
+      return undefined;
+    }
+    return create(CatalogOriginSchema, {
+      catalog: { case: "moviesSource", value: origin.source },
+    });
+  }
+  if (origin.source === TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED) {
+    return undefined;
+  }
+  return create(CatalogOriginSchema, {
+    catalog: { case: "tvShowsSource", value: origin.source },
+  });
+}
 
 const REQUEST_TIMEOUT_MS = 8000;
 const SETTINGS_TIMEOUT_MS = 20000;
@@ -151,9 +179,12 @@ export function createApi({
       return normalizeSettings ? normalizeSettings(withDefaults) : withDefaults;
     },
 
-    addTransfer: (url: string): Promise<AddTransferResponse> =>
+    addTransfer: (url: string, catalogOrigin?: CatalogOriginInput): Promise<AddTransferResponse> =>
       call("Add transfer request", (s, requestHeaders) =>
-        userClient.addTransfer({ url }, { headers: requestHeaders, signal: s }),
+        userClient.addTransfer(
+          { url, catalogOrigin: toCatalogOrigin(catalogOrigin) },
+          { headers: requestHeaders, signal: s },
+        ),
       ),
 
     getDownloadFolder: (signal?: AbortSignal): Promise<GetDownloadFolderResponse> =>

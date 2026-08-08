@@ -146,7 +146,11 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
                 body="try a different resolution or codec to widen the result set."
               />
             ) : (
-              <TorrentResultList results={visibleResults} columns={false} />
+              <TorrentResultList
+                results={visibleResults}
+                columns={false}
+                catalogOrigin={{ media: "movie", source: movie.source }}
+              />
             )}
           </>
         )}

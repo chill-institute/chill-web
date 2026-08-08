@@ -57,6 +57,7 @@ function TVShowDetailRoute() {
     <TvShowDetailModal
       imdbId={id}
       fallbackShow={fallbackShow}
+      catalogSource={activeSource}
       activeSeason={season}
       onSeasonChange={setSeason}
       onClose={close}

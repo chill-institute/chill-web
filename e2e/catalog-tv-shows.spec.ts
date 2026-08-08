@@ -320,6 +320,7 @@ test.describe("tv shows home", () => {
     await mockRpc(
       homeMethods({
         GetTVShows: tvShowsResponse(hboShows),
+        AddTransfer: { status: "OK" },
       }),
     );
 
@@ -394,7 +395,25 @@ test.describe("tv shows home", () => {
     ).toBeVisible();
     await expect(modal.getByRole("tab", { name: "Season 1", exact: true })).toBeVisible();
     await expect(modal.getByText("7:00 A.M.")).toBeVisible();
-    await expect(modal.getByRole("button", { name: /send season to put.io/i })).toBeVisible();
+    const sendSeasonButton = modal.getByRole("button", { name: /send season to put.io/i });
+    await expect(sendSeasonButton).toBeVisible();
+    const requestPromise = authenticatedPage.waitForRequest("**/chill.v4.UserService/AddTransfer");
+    await sendSeasonButton.click();
+    const request = await requestPromise;
+    expect(request.postDataJSON()).toMatchObject({
+      catalogOrigin: { tvShowsSource: "TV_SHOWS_SOURCE_ALL_PROVIDERS" },
+    });
+
+    const episodeRequestPromise = authenticatedPage.waitForRequest(
+      "**/chill.v4.UserService/AddTransfer",
+    );
+    await modal
+      .getByRole("button", { name: /Send Harbor Ward season 1 episode 1 to put.io/i })
+      .click();
+    const episodeRequest = await episodeRequestPromise;
+    expect(episodeRequest.postDataJSON()).toMatchObject({
+      catalogOrigin: { tvShowsSource: "TV_SHOWS_SOURCE_ALL_PROVIDERS" },
+    });
   });
 
   for (const { name, viewport } of [

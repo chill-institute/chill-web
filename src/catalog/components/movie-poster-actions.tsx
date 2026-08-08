@@ -79,7 +79,7 @@ export function MoviePosterActions({ movie }: { movie: Movie }) {
         flash("error");
         return;
       }
-      await api.addTransfer(top.link);
+      await api.addTransfer(top.link, { media: "movie", source: movie.source });
       toast.success(`sent “${top.title}” to put.io`);
       flash("success");
     } catch {

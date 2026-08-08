@@ -1,6 +1,7 @@
 import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
 import { type PropsWithChildren, useRef, useState } from "react";
 
+import type { CatalogOriginInput } from "@/api/api";
 import { Button } from "@/ui/components/ui/button";
 import { Spinner } from "@/ui/components/ui/spinner";
 import { useMountEffect } from "@/ui/hooks/use-effects";
@@ -11,6 +12,7 @@ import { toErrorMessage } from "../errors";
 type Props = PropsWithChildren<{
   ariaLabel?: string;
   className?: string;
+  catalogOrigin?: CatalogOriginInput;
   url: string;
 }>;
 
@@ -20,6 +22,7 @@ export function AddTransferButton({
   children = "send to put.io",
   ariaLabel,
   className,
+  catalogOrigin,
   url,
 }: Props) {
   const api = useApi();
@@ -58,7 +61,7 @@ export function AddTransferButton({
     setStatus("pending");
     setError(null);
     try {
-      await api.addTransfer(url);
+      await api.addTransfer(url, catalogOrigin);
       setStatus("success");
       successTimerRef.current = setTimeout(() => setViewInPutio(true), 1000);
     } catch (transferError) {
