@@ -53,14 +53,14 @@ describe("createApi request metadata", () => {
     });
     const request = api.getUserSettings().catch((error: unknown) => error);
 
-    await vi.advanceTimersByTimeAsync(8000);
+    await vi.advanceTimersByTimeAsync(20000);
     const error = await request;
 
     expect(capturedRequestId).toBeTruthy();
     expect(getClientRequestTimeoutDetails(error)).toEqual({
       operation: "Settings request",
       requestId: capturedRequestId,
-      timeoutMs: 8000,
+      timeoutMs: 20000,
     });
   });
 });

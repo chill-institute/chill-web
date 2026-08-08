@@ -46,9 +46,10 @@ function moduleLoadRecoveryTags(error: unknown) {
       attempted = "true";
     } else {
       try {
-        if (window.sessionStorage.getItem(`${tanstackReloadKeyPrefix}${message}`) === "1") {
-          attempted = "true";
-        }
+        attempted =
+          window.sessionStorage.getItem(`${tanstackReloadKeyPrefix}${message}`) === "1"
+            ? "true"
+            : "false";
       } catch {
         strategy = "vite_url";
       }

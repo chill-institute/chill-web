@@ -241,6 +241,71 @@ test.describe("catalog routing", () => {
     expect(saveCalls).toBe(1);
   });
 
+  test("new picker source wins over a slow deep-link save", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource: MoviesSource = MoviesSource.IMDB_MOVIEMETER;
+    let saveCalls = 0;
+    let releaseFirstSave!: () => void;
+    const firstSaveGate = new Promise<void>((resolve) => {
+      releaseFirstSave = resolve;
+    });
+    const savedSources: MoviesSource[] = [];
+
+    await mockRpc({
+      GetUserSettings: userSettings({ moviesSource: currentSource }),
+      GetMovies: moviesResponseForSource(currentSource, [aurora]),
+      GetTVShows: tvShowsResponse([]),
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetMovies", async (route) => {
+      const response =
+        currentSource === MoviesSource.YTS
+          ? moviesResponseForSource(MoviesSource.YTS, [nightCourier])
+          : moviesResponseForSource(MoviesSource.IMDB_MOVIEMETER, [aurora]);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCalls += 1;
+      const body = route.request().postDataJSON() as {
+        settings?: { catalog?: { moviesSource?: string | number } };
+      };
+      const rawSource = String(body.settings?.catalog?.moviesSource ?? "");
+      const nextSource = rawSource.includes("YTS")
+        ? MoviesSource.YTS
+        : MoviesSource.IMDB_MOVIEMETER;
+      if (saveCalls === 1) await firstSaveGate;
+      currentSource = nextSource;
+      savedSources.push(nextSource);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({ moviesSource: currentSource })),
+      });
+    });
+
+    await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
+    await expect.poll(() => saveCalls).toBe(1);
+
+    await authenticatedPage
+      .getByRole("combobox", { name: "Movie source" })
+      .selectOption(String(MoviesSource.IMDB_MOVIEMETER));
+    await expect.poll(() => saveCalls).toBe(1);
+
+    releaseFirstSave();
+
+    await expect.poll(() => currentSource).toBe(MoviesSource.IMDB_MOVIEMETER);
+    await expect(authenticatedPage.getByText("Aurora Protocol")).toBeVisible();
+    await expect(authenticatedPage.getByText("Night Courier")).toBeHidden();
+    expect(savedSources).toEqual([MoviesSource.YTS, MoviesSource.IMDB_MOVIEMETER]);
+  });
+
   test("deep linked movie source waits for real settings before saving", async ({
     authenticatedPage,
     mockRpc,
@@ -334,6 +399,9 @@ test.describe("catalog routing", () => {
     await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
 
     await expect.poll(() => savedBodies.length, { timeout: 300 }).toBe(0);
+    await expect(authenticatedPage.getByText("Aurora Protocol")).toBeHidden();
+    await expect(authenticatedPage.getByText("Night Courier")).toBeHidden();
+    await expect(authenticatedPage.getByText("Something went wrong.")).toHaveCount(0);
 
     allowSettingsResponse = true;
     for (const releaseSettingsResponse of releaseSettingsResponses) {
@@ -345,7 +413,7 @@ test.describe("catalog routing", () => {
     expect(savedBodies.at(-1)?.settings?.search?.rememberQuickFilters).toBe(true);
   });
 
-  test("timed-out movie settings load retries without showing the crash screen", async ({
+  test("matching movie source renders while settings refresh is slow", async ({
     authenticatedPage,
     mockRpc,
   }) => {
@@ -355,38 +423,30 @@ test.describe("catalog routing", () => {
       GetTVShows: tvShowsResponse([]),
     });
     let settingsCalls = 0;
+    let releaseSettings!: () => void;
+    const settingsGate = new Promise<void>((resolve) => {
+      releaseSettings = resolve;
+    });
     await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
       settingsCalls += 1;
-      const callNumber = settingsCalls;
-      if (callNumber === 1) {
-        await new Promise((resolve) => setTimeout(resolve, 8250));
-      }
-      try {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(userSettings({ moviesSource: MoviesSource.YTS })),
-        });
-      } catch {
-        if (callNumber !== 1) throw new Error("retry settings request could not be fulfilled");
-      }
+      await settingsGate;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({ moviesSource: MoviesSource.YTS })),
+      });
     });
 
     await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
 
+    await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 3000 });
     await expect(
       authenticatedPage.getByRole("heading", { name: "The Institute is having a moment…" }),
-    ).toBeVisible({ timeout: 10_000 });
+    ).toHaveCount(0);
     await expect(authenticatedPage.getByText("Something went wrong.")).toHaveCount(0);
+    expect(settingsCalls).toBeGreaterThan(0);
 
-    await authenticatedPage.evaluate(() => Reflect.set(window, "__retryMarker", "present"));
-    await authenticatedPage.getByRole("button", { name: "try again" }).click();
-
-    await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 3000 });
-    expect(await authenticatedPage.evaluate(() => Reflect.get(window, "__retryMarker"))).toBe(
-      "present",
-    );
-    expect(settingsCalls).toBe(2);
+    releaseSettings();
   });
 
   test("clicking a movie card navigates to /movies/:id", async ({ authenticatedPage, mockRpc }) => {

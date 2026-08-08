@@ -1,12 +1,13 @@
 import { create, equals } from "@bufbuild/protobuf";
-import type { QueryClient } from "@tanstack/react-query";
+import type { MutationOptions, QueryClient } from "@tanstack/react-query";
 import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import type { ChillApi } from "@/api/api";
 import type { UserSettings } from "@/lib/types";
 import { USER_SETTINGS_QUERY_KEY } from "@/queries/keys";
 
-export const USER_SETTINGS_MUTATION_SCOPE = { id: "user-settings" } as const;
+const USER_SETTINGS_MUTATION_SCOPE = { id: "user-settings" } as const;
+export const USER_SETTINGS_MUTATION_KEY = ["user-settings"] as const;
 export { USER_SETTINGS_QUERY_KEY };
 
 export type SettingsSaveContext = {
@@ -21,10 +22,16 @@ type SettingsCacheOptions = {
   writeCachedSettings: (settings: UserSettings) => void;
 };
 
-type SaveSettingsWithCacheOptions = SettingsCacheOptions & {
-  api: ChillApi;
+type SettingsApi = Pick<ChillApi, "getUserSettings" | "saveUserSettings">;
+
+type SaveSettingsOptions = SettingsCacheOptions & {
+  api: SettingsApi;
   update: SettingsUpdate;
-  onSuccess?: (saved: UserSettings, context: SettingsSaveContext) => void;
+};
+
+type UserSettingsMutationOptions = SettingsCacheOptions & {
+  api: SettingsApi;
+  onSaved?: (saved: UserSettings, context: SettingsSaveContext | undefined) => void;
 };
 
 function applySettingsUpdate(settings: UserSettings, update: SettingsUpdate) {
@@ -56,7 +63,7 @@ async function settingsForSave({
   api,
   queryClient,
   update,
-}: Pick<SaveSettingsWithCacheOptions, "api" | "queryClient" | "update">) {
+}: Pick<SaveSettingsOptions, "api" | "queryClient" | "update">) {
   const current = queryClient.getQueryData<UserSettings>(USER_SETTINGS_QUERY_KEY);
   if (current && hasCompleteSettingsDomains(current)) {
     const next = stagedSettingsForSave(current, update);
@@ -68,11 +75,11 @@ async function settingsForSave({
   return hasCompleteSettingsDomains(next) ? next : mergeSettingsDomains(serverSettings, next);
 }
 
-export async function saveSettings({
+async function saveSettings({
   api,
   queryClient,
   update,
-}: Pick<SaveSettingsWithCacheOptions, "api" | "queryClient" | "update">) {
+}: Pick<SaveSettingsOptions, "api" | "queryClient" | "update">) {
   const settings = await settingsForSave({ api, queryClient, update });
   return api.saveUserSettings(settings);
 }
@@ -136,24 +143,40 @@ export function invalidateFailedSettingsSave({
   }
 }
 
-export async function saveSettingsWithCache({
+export function userSettingsMutationOptions({
   api,
-  onSuccess,
+  onSaved,
   queryClient,
-  update,
   writeCachedSettings,
-}: SaveSettingsWithCacheOptions) {
-  const context = await prepareSettingsSave({ queryClient, update });
+}: UserSettingsMutationOptions): MutationOptions<
+  UserSettings,
+  Error,
+  SettingsUpdate,
+  SettingsSaveContext
+> {
+  return {
+    mutationKey: USER_SETTINGS_MUTATION_KEY,
+    mutationFn: (update) => saveSettings({ api, queryClient, update }),
+    onMutate: (update) => prepareSettingsSave({ queryClient, update }),
+    onSuccess: (saved, _update, context) => {
+      cacheSavedSettings({ context, queryClient, settings: saved, writeCachedSettings });
+      onSaved?.(saved, context);
+    },
+    onError: (_error, _update, context) => {
+      invalidateFailedSettingsSave({ context, queryClient });
+    },
+    scope: USER_SETTINGS_MUTATION_SCOPE,
+  };
+}
 
-  try {
-    const saved = await saveSettings({ api, queryClient, update });
-    cacheSavedSettings({ context, queryClient, settings: saved, writeCachedSettings });
-    onSuccess?.(saved, context);
-    return saved;
-  } catch (error) {
-    invalidateFailedSettingsSave({ context, queryClient });
-    throw error;
-  }
+export function executeUserSettingsMutation({
+  update,
+  ...options
+}: UserSettingsMutationOptions & { update: SettingsUpdate }) {
+  const mutation = options.queryClient
+    .getMutationCache()
+    .build(options.queryClient, userSettingsMutationOptions(options));
+  return mutation.execute(update);
 }
 
 export function downloadFolderChanged(previous: UserSettings | undefined, saved: UserSettings) {

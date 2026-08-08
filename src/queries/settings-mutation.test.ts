@@ -2,7 +2,9 @@ import { create } from "@bufbuild/protobuf";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vite-plus/test";
 import {
+  CatalogSettingsSchema,
   DownloadSettingsSchema,
+  SearchSettingsSchema,
   SortBy,
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
@@ -10,16 +12,26 @@ import {
 import {
   cacheSavedSettings,
   downloadFolderChanged,
+  executeUserSettingsMutation,
   invalidateFailedSettingsSave,
   prepareSettingsSave,
   settingsSaveIsCurrent,
   stagedSettingsForSave,
+  USER_SETTINGS_MUTATION_KEY,
   USER_SETTINGS_QUERY_KEY,
 } from "./settings-mutation";
 import type { UserSettings } from "@/lib/types";
 
 function settings(folderId: bigint): UserSettings {
   return create(UserSettingsSchema, {
+    download: create(DownloadSettingsSchema, { folderId }),
+  });
+}
+
+function completeSettings(folderId: bigint): UserSettings {
+  return create(UserSettingsSchema, {
+    search: create(SearchSettingsSchema),
+    catalog: create(CatalogSettingsSchema),
     download: create(DownloadSettingsSchema, { folderId }),
   });
 }
@@ -116,6 +128,53 @@ describe("settings mutation cache helpers", () => {
 
     expect(queryClient.data).toStrictEqual(second);
     expect(writeCachedSettings).not.toHaveBeenCalled();
+  });
+
+  it("serializes imperative settings mutations on the shared scope", async () => {
+    const initial = completeSettings(0n);
+    const queryClient = createQueryClientHarness(initial);
+    let releaseFirstSave!: () => void;
+    const firstSaveGate = new Promise<void>((resolve) => {
+      releaseFirstSave = resolve;
+    });
+    const savedFolders: bigint[] = [];
+    let saveCalls = 0;
+    const api = {
+      getUserSettings: vi.fn(async () => initial),
+      saveUserSettings: vi.fn(async (next: UserSettings) => {
+        saveCalls += 1;
+        if (saveCalls === 1) await firstSaveGate;
+        savedFolders.push(next.download?.folderId ?? 0n);
+        return next;
+      }),
+    };
+    const writeCachedSettings = vi.fn();
+
+    const first = executeUserSettingsMutation({
+      api,
+      queryClient: queryClient.client,
+      update: () => completeSettings(1n),
+      writeCachedSettings,
+    });
+    await vi.waitFor(() => expect(api.saveUserSettings).toHaveBeenCalledTimes(1));
+
+    const second = executeUserSettingsMutation({
+      api,
+      queryClient: queryClient.client,
+      update: () => completeSettings(2n),
+      writeCachedSettings,
+    });
+    await vi.waitFor(() =>
+      expect(queryClient.client.isMutating({ mutationKey: USER_SETTINGS_MUTATION_KEY })).toBe(2),
+    );
+    expect(api.saveUserSettings).toHaveBeenCalledTimes(1);
+
+    releaseFirstSave();
+    await Promise.all([first, second]);
+
+    expect(savedFolders).toEqual([1n, 2n]);
+    expect(queryClient.data.download?.folderId).toBe(2n);
+    expect(writeCachedSettings).toHaveBeenCalledTimes(1);
   });
 
   it("invalidates a failed current save without disturbing a newer staged update", async () => {

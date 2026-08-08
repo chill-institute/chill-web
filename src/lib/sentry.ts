@@ -86,13 +86,88 @@ function initSentry() {
   });
 }
 
+function exceptionValues(event: ErrorEvent) {
+  return event.exception?.values ?? [];
+}
+
+function exceptionText(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  const fromHint =
+    hint?.originalException instanceof Error
+      ? `${hint.originalException.name}: ${hint.originalException.message}`
+      : typeof hint?.originalException === "string"
+        ? hint.originalException
+        : "";
+  const fromEvent = exceptionValues(event)
+    .map((value) => `${value.type ?? ""}: ${value.value ?? ""}`)
+    .join("\n");
+  return `${fromHint}\n${fromEvent}\n${event.message ?? ""}`;
+}
+
+function isNoisyBrowserExtensionError(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  return exceptionText(event, hint).includes("__firefox__");
+}
+
+function hasStorageAccessEvidence(event: ErrorEvent, text: string) {
+  if (/localStorage|sessionStorage|auth-storage|Storage\.getItem/i.test(text)) {
+    return true;
+  }
+  for (const value of exceptionValues(event)) {
+    for (const frame of value.stacktrace?.frames ?? []) {
+      const location = `${frame.filename ?? ""} ${frame.abs_path ?? ""} ${frame.function ?? ""}`;
+      if (/localStorage|sessionStorage|auth-storage/i.test(location)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function isBlockedStorageAccessError(event: ErrorEvent, hint?: { originalException?: unknown }) {
+  const text = exceptionText(event, hint);
+  if (
+    /Failed to read the '(?:local|session)Storage' property from 'Window'/.test(text) ||
+    (/Access is denied for this document/.test(text) && /(?:local|session)Storage/.test(text)) ||
+    /Can't find variable: (?:local|session)Storage/.test(text) ||
+    /(?:local|session)Storage is null/.test(text)
+  ) {
+    return true;
+  }
+  // Only drop null getItem crashes that are clearly storage-related.
+  if (
+    text.includes("Cannot read properties of null (reading 'getItem')") &&
+    hasStorageAccessEvidence(event, text)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isRecoverableModuleLoadNoise(event: ErrorEvent) {
+  const tags = event.tags ?? {};
+  if (tags.module_load_failure !== "true") {
+    return false;
+  }
+  return tags.module_recovery_attempted === "false";
+}
+
 function sanitizeSentryEvent(
   event: ErrorEvent,
   hint?: { originalException?: unknown },
 ): ErrorEvent | null {
+  if (
+    isNoisyBrowserExtensionError(event, hint) ||
+    isBlockedStorageAccessError(event, hint) ||
+    isRecoverableModuleLoadNoise(event)
+  ) {
+    return null;
+  }
+
   const timeout = getClientRequestTimeoutDetails(hint?.originalException);
   return {
     ...event,
+    fingerprint: timeout
+      ? ["client-timeout", timeout.operation, timeout.surface ?? "unspecified"]
+      : event.fingerprint,
     tags: timeout
       ? {
           ...event.tags,

@@ -27,46 +27,98 @@ type AuthCallbackFailure = AuthRedirectSearch & {
   requestId: string | undefined;
 };
 
+function readBrowserStorage(kind: "localStorage" | "sessionStorage"): Storage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const storage = window[kind];
+    return storage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function readStorageItem(kind: "localStorage" | "sessionStorage", key: string): string | null {
+  const storage = readBrowserStorage(kind);
+  if (!storage) {
+    return null;
+  }
+
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorageItem(kind: "localStorage" | "sessionStorage", key: string, value: string) {
+  const storage = readBrowserStorage(kind);
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(key, value);
+  } catch {
+    /* blocked or unavailable storage */
+  }
+}
+
+function removeStorageItem(kind: "localStorage" | "sessionStorage", key: string) {
+  const storage = readBrowserStorage(kind);
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(key);
+  } catch {
+    /* blocked or unavailable storage */
+  }
+}
+
 function readStoredToken() {
-  const raw = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  const raw = readStorageItem("localStorage", AUTH_TOKEN_STORAGE_KEY);
   const token = raw?.trim() ?? "";
   return token.length > 0 ? token : null;
 }
 
 function storeAuthToken(token: string) {
-  window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  writeStorageItem("localStorage", AUTH_TOKEN_STORAGE_KEY, token);
 }
 
 function storePendingCallbackURL(url: string) {
   const normalized = normalizeCallbackPath(url);
   if (!normalized) {
-    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    removeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY);
     return;
   }
-  window.sessionStorage.setItem(AUTH_CALLBACK_STORAGE_KEY, normalized);
+  writeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY, normalized);
 }
 
 function consumePendingCallbackURL() {
-  const stored = window.sessionStorage.getItem(AUTH_CALLBACK_STORAGE_KEY)?.trim() ?? "";
-  window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+  const stored = readStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY)?.trim() ?? "";
+  removeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY);
   return stored.length > 0 ? stored : null;
 }
 
 function clearStoredAuthState() {
-  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-  window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
-  window.sessionStorage.removeItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY);
-  window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
-  window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+  removeStorageItem("localStorage", AUTH_TOKEN_STORAGE_KEY);
+  removeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY);
+  removeStorageItem("sessionStorage", AUTH_CALLBACK_FAILURE_STORAGE_KEY);
+  removeStorageItem("sessionStorage", AUTH_NONCE_STORAGE_KEY);
+  removeStorageItem("sessionStorage", AUTH_REDIRECT_STORAGE_KEY);
 }
 
 function storeAuthNonce(nonce: string) {
-  window.sessionStorage.setItem(AUTH_NONCE_STORAGE_KEY, nonce);
+  writeStorageItem("sessionStorage", AUTH_NONCE_STORAGE_KEY, nonce);
 }
 
 function consumeAuthNonce(location: Pick<Location, "search">): boolean {
-  const stored = window.sessionStorage.getItem(AUTH_NONCE_STORAGE_KEY)?.trim() ?? "";
-  window.sessionStorage.removeItem(AUTH_NONCE_STORAGE_KEY);
+  const stored = readStorageItem("sessionStorage", AUTH_NONCE_STORAGE_KEY)?.trim() ?? "";
+  removeStorageItem("sessionStorage", AUTH_NONCE_STORAGE_KEY);
   if (!stored) {
     return false;
   }
@@ -75,11 +127,12 @@ function consumeAuthNonce(location: Pick<Location, "search">): boolean {
 }
 
 function clearPendingAuthRedirectSearch() {
-  window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+  removeStorageItem("sessionStorage", AUTH_REDIRECT_STORAGE_KEY);
 }
 
 function writePendingAuthRedirectSearch(callbackUrl: string | null) {
-  window.sessionStorage.setItem(
+  writeStorageItem(
+    "sessionStorage",
     AUTH_REDIRECT_STORAGE_KEY,
     JSON.stringify({
       error: SESSION_EXPIRED_ERROR,
@@ -91,7 +144,7 @@ function writePendingAuthRedirectSearch(callbackUrl: string | null) {
 function readPendingAuthRedirectSearch(fallbackCallbackUrl: null | string): AuthRedirectSearch {
   const fallbackCallback = normalizeCallbackPath(fallbackCallbackUrl);
   const fallback = { error: undefined, callbackUrl: fallbackCallback ?? undefined };
-  const raw = window.sessionStorage.getItem(AUTH_REDIRECT_STORAGE_KEY);
+  const raw = readStorageItem("sessionStorage", AUTH_REDIRECT_STORAGE_KEY);
   if (!raw) {
     return fallback;
   }
@@ -196,10 +249,10 @@ function consumeCallbackFailure(): AuthCallbackFailure | null {
     ? (normalizeCallbackPath(consumePendingCallbackURL()) ?? undefined)
     : undefined;
   if (nonceMatched) {
-    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-    window.sessionStorage.setItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY, "1");
+    removeStorageItem("localStorage", AUTH_TOKEN_STORAGE_KEY);
+    writeStorageItem("sessionStorage", AUTH_CALLBACK_FAILURE_STORAGE_KEY, "1");
   } else {
-    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    removeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY);
   }
   window.history.replaceState(null, "", "/auth/success");
 
@@ -211,20 +264,20 @@ function consumeCallbackFailure(): AuthCallbackFailure | null {
 }
 
 function consumeCallbackFailureAuthReset(): boolean {
-  const shouldReset = window.sessionStorage.getItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY) === "1";
-  window.sessionStorage.removeItem(AUTH_CALLBACK_FAILURE_STORAGE_KEY);
+  const shouldReset = readStorageItem("sessionStorage", AUTH_CALLBACK_FAILURE_STORAGE_KEY) === "1";
+  removeStorageItem("sessionStorage", AUTH_CALLBACK_FAILURE_STORAGE_KEY);
   return shouldReset;
 }
 
 function consumeCallbackToken(): string | null {
   if (!consumeAuthNonce(window.location)) {
-    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    removeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY);
     return null;
   }
 
   const token = readAuthTokenFromLocation(window.location);
   if (!token) {
-    window.sessionStorage.removeItem(AUTH_CALLBACK_STORAGE_KEY);
+    removeStorageItem("sessionStorage", AUTH_CALLBACK_STORAGE_KEY);
     return null;
   }
 
