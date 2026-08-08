@@ -1,4 +1,5 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useIsMutating } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { match } from "ts-pattern";
 
@@ -19,6 +20,7 @@ import { InstituteFooter } from "@/ui/components/institute-footer";
 import { SortRow } from "@/ui/components/sort-row";
 import { SignInRedirect } from "@/auth/components/sign-in-redirect";
 import { useAuth } from "@/auth/auth";
+import { USER_SETTINGS_MUTATION_KEY } from "@/queries/settings-mutation";
 import { instituteLogoUrl } from "@/ui/lib/brand-assets";
 
 import { useMoviesQuery } from "@/catalog/queries/movies";
@@ -55,16 +57,17 @@ export function CatalogPage({ tab }: CatalogPageProps) {
 
   const configQuery = useSettingsQuery();
   const saveConfigMutation = useSaveSettings();
+  const settingsMutationPending = useIsMutating({ mutationKey: USER_SETTINGS_MUTATION_KEY }) > 0;
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
   // Deep-linked movie source is the render source of truth; settings sync persists it in the background.
   const effectiveMoviesSource = moviesURLSource ?? appSettings?.moviesSource;
   const effectiveTVShowsSource = tvShowsURLSource ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
   const settingsSettledForCatalog =
-    configQuery.status === "success" && !configQuery.isFetching && !saveConfigMutation.isPending;
+    configQuery.status === "success" && !configQuery.isFetching && !settingsMutationPending;
   const shouldFetchURLMovies =
     tab === "movies" &&
     moviesURLSource !== undefined &&
-    !saveConfigMutation.isPending &&
+    !settingsMutationPending &&
     (appSettings === undefined || appSettings.moviesSource === moviesURLSource);
   const shouldFetchCatalog = shouldFetchURLMovies || settingsSettledForCatalog;
   const moviesQuery = useMoviesQuery({

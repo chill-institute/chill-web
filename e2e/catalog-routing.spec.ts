@@ -241,6 +241,71 @@ test.describe("catalog routing", () => {
     expect(saveCalls).toBe(1);
   });
 
+  test("new picker source wins over a slow deep-link save", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let currentSource: MoviesSource = MoviesSource.IMDB_MOVIEMETER;
+    let saveCalls = 0;
+    let releaseFirstSave!: () => void;
+    const firstSaveGate = new Promise<void>((resolve) => {
+      releaseFirstSave = resolve;
+    });
+    const savedSources: MoviesSource[] = [];
+
+    await mockRpc({
+      GetUserSettings: userSettings({ moviesSource: currentSource }),
+      GetMovies: moviesResponseForSource(currentSource, [aurora]),
+      GetTVShows: tvShowsResponse([]),
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/GetMovies", async (route) => {
+      const response =
+        currentSource === MoviesSource.YTS
+          ? moviesResponseForSource(MoviesSource.YTS, [nightCourier])
+          : moviesResponseForSource(MoviesSource.IMDB_MOVIEMETER, [aurora]);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    });
+
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      saveCalls += 1;
+      const body = route.request().postDataJSON() as {
+        settings?: { catalog?: { moviesSource?: string | number } };
+      };
+      const rawSource = String(body.settings?.catalog?.moviesSource ?? "");
+      const nextSource = rawSource.includes("YTS")
+        ? MoviesSource.YTS
+        : MoviesSource.IMDB_MOVIEMETER;
+      if (saveCalls === 1) await firstSaveGate;
+      currentSource = nextSource;
+      savedSources.push(nextSource);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(userSettings({ moviesSource: currentSource })),
+      });
+    });
+
+    await authenticatedPage.goto(`/movies?source=${MoviesSource.YTS}`);
+    await expect.poll(() => saveCalls).toBe(1);
+
+    await authenticatedPage
+      .getByRole("combobox", { name: "Movie source" })
+      .selectOption(String(MoviesSource.IMDB_MOVIEMETER));
+    await expect.poll(() => saveCalls).toBe(1);
+
+    releaseFirstSave();
+
+    await expect.poll(() => currentSource).toBe(MoviesSource.IMDB_MOVIEMETER);
+    await expect(authenticatedPage.getByText("Aurora Protocol")).toBeVisible();
+    await expect(authenticatedPage.getByText("Night Courier")).toBeHidden();
+    expect(savedSources).toEqual([MoviesSource.YTS, MoviesSource.IMDB_MOVIEMETER]);
+  });
+
   test("deep linked movie source waits for real settings before saving", async ({
     authenticatedPage,
     mockRpc,
