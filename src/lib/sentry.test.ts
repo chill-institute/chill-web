@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { CancelledError } from "@tanstack/react-query";
 
 import { annotateClientRequestTimeout, ClientRequestTimeoutError } from "@/api/request-timeout";
 
@@ -116,6 +117,28 @@ describe("keepAppBreadcrumbOnly", () => {
 });
 
 describe("sanitizeSentryEvent", () => {
+  it("drops TanStack Query cancellation while keeping unrelated errors", () => {
+    expect(
+      sanitizeSentryEvent(
+        {
+          type: undefined,
+          exception: { values: [{ type: "Error", value: "CancelledError" }] },
+        },
+        { originalException: new CancelledError({ revert: true }) },
+      ),
+    ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent(
+        {
+          type: undefined,
+          exception: { values: [{ type: "Error", value: "CancelledError" }] },
+        },
+        { originalException: new Error("CancelledError") },
+      ),
+    ).not.toBeNull();
+  });
+
   it("removes user and request details before sending browser crash events", () => {
     const event = sanitizeSentryEvent({
       type: undefined,
