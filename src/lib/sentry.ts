@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react";
 import type { Breadcrumb, ErrorEvent } from "@sentry/react";
+import { CancelledError } from "@tanstack/react-query";
 import type { ErrorInfo } from "react";
 
 import { getClientRequestTimeoutDetails } from "@/api/request-timeout";
@@ -155,6 +156,7 @@ function sanitizeSentryEvent(
   hint?: { originalException?: unknown },
 ): ErrorEvent | null {
   if (
+    hint?.originalException instanceof CancelledError ||
     isNoisyBrowserExtensionError(event, hint) ||
     isBlockedStorageAccessError(event, hint) ||
     isRecoverableModuleLoadNoise(event)
