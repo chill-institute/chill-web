@@ -7,6 +7,7 @@ type MockRpcMethods = Record<string, unknown>;
 type MockRpc = (methods: MockRpcMethods) => Promise<void>;
 
 const SERVICE_PATTERN = /chill\.v4\.UserService\//;
+const SENTRY_ENVELOPE_PATTERN = /^https:\/\/[^/]*sentry\.io\/api\/\d+\/envelope\/?(?:\?.*)?$/;
 
 function authStorageState(baseURL: string | undefined) {
   const origin =
@@ -64,6 +65,17 @@ async function stubBackendHealth(page: Page) {
   });
 }
 
+async function stubSentryIngest(page: Page, envelopes: string[]) {
+  await page.route(SENTRY_ENVELOPE_PATTERN, async (route) => {
+    envelopes.push(route.request().postData() ?? "");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: "{}",
+    });
+  });
+}
+
 export function readSubmittedSettings(route: Route): unknown {
   const requestBody: unknown = route.request().postDataJSON();
   const settings =
@@ -86,18 +98,24 @@ export async function fulfillSubmittedSettings(route: Route) {
 export const test = base.extend<{
   authenticatedPage: Page;
   mockRpc: MockRpc;
+  sentryEnvelopes: string[];
 }>({
-  page: async ({ page }, provide) => {
+  sentryEnvelopes: async ({ baseURL: _baseURL }, provide) => {
+    await provide([]);
+  },
+  page: async ({ page, sentryEnvelopes }, provide) => {
     await stubBackendHealth(page);
+    await stubSentryIngest(page, sentryEnvelopes);
     await provide(page);
   },
-  authenticatedPage: async ({ browser, contextOptions, baseURL }, provide) => {
+  authenticatedPage: async ({ browser, contextOptions, baseURL, sentryEnvelopes }, provide) => {
     const context = await browser.newContext({
       ...contextOptions,
       storageState: authStorageState(baseURL),
     });
     const page = await context.newPage();
     await stubBackendHealth(page);
+    await stubSentryIngest(page, sentryEnvelopes);
     await provide(page);
     await context.close();
   },

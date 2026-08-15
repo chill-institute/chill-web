@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { CancelledError } from "@tanstack/react-query";
 
 import { annotateClientRequestTimeout, ClientRequestTimeoutError } from "@/api/request-timeout";
+import { annotateClientRequestEvidence } from "@/api/request-evidence";
 
 import {
   handleVitePreloadError,
@@ -193,6 +194,36 @@ describe("sanitizeSentryEvent", () => {
         request_timeout: {
           request_id: "request-123",
           timeout_ms: 20000,
+        },
+      },
+    });
+    expect(event?.request).toBeUndefined();
+  });
+
+  it("adds safe transport correlation without changing the issue fingerprint", () => {
+    const error = new TypeError("Load failed");
+    annotateClientRequestEvidence(error, {
+      operation: "Movies request",
+      requestId: "request-456",
+    });
+
+    const event = sanitizeSentryEvent(
+      {
+        type: undefined,
+        fingerprint: ["existing-fingerprint"],
+        request: { data: "private" },
+      },
+      { originalException: error },
+    );
+
+    expect(event).toMatchObject({
+      fingerprint: ["existing-fingerprint"],
+      tags: {
+        "request.operation": "Movies request",
+      },
+      contexts: {
+        request_failure: {
+          request_id: "request-456",
         },
       },
     });
