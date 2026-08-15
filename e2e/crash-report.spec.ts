@@ -1,8 +1,10 @@
 import { test, expect } from "./support/fixtures";
 import { userSettings } from "./support/seeds";
 
+const crashReportingConfigured = Boolean(process.env.VITE_PUBLIC_SENTRY_DSN);
+
 test.describe("crash report fallback", () => {
-  test("local crash fallback lets the user copy a report", async ({
+  test("crash fallback reports its delivery state and lets the user copy a report", async ({
     authenticatedPage,
     mockRpc,
   }) => {
@@ -26,12 +28,21 @@ test.describe("crash report fallback", () => {
     await expect(
       authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
     ).toBeVisible();
-    await expect(
-      authenticatedPage.getByText(
-        "The app hit a crash. Crash reporting is not configured for this build.",
-      ),
-    ).toBeVisible();
-    await expect(authenticatedPage.getByText("Sentry event:")).toHaveCount(0);
+    if (crashReportingConfigured) {
+      await expect(
+        authenticatedPage.getByText("The app hit a crash and sent a private crash report."),
+      ).toBeVisible();
+      await expect(authenticatedPage.getByText("Sentry event:").locator("xpath=..")).toHaveText(
+        /^Sentry event: [0-9a-f]{32}$/,
+      );
+    } else {
+      await expect(
+        authenticatedPage.getByText(
+          "The app hit a crash. Crash reporting is not configured for this build.",
+        ),
+      ).toBeVisible();
+      await expect(authenticatedPage.getByText("Sentry event:")).toHaveCount(0);
+    }
 
     await authenticatedPage.getByLabel("What were you doing?").fill("I opened the home page.");
     await authenticatedPage.getByRole("button", { name: "copy report" }).click();
@@ -45,6 +56,11 @@ test.describe("crash report fallback", () => {
       '"message": "Intentional debug crash for the local error fallback."',
     );
     expect(copiedReport).toContain('"notes": "I opened the home page."');
+    if (crashReportingConfigured) {
+      expect(copiedReport).toMatch(/"sentryEventId": "[0-9a-f]{32}"/);
+    } else {
+      expect(copiedReport).not.toContain('"sentryEventId"');
+    }
   });
 
   test("local crash fallback does not suggest public GitHub issues", async ({
