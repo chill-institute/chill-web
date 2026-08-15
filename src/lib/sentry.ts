@@ -3,6 +3,7 @@ import type { Breadcrumb, ErrorEvent } from "@sentry/react";
 import { CancelledError } from "@tanstack/react-query";
 import type { ErrorInfo } from "react";
 
+import { getClientRequestEvidence } from "@/api/request-evidence";
 import { getClientRequestTimeoutDetails } from "@/api/request-timeout";
 
 import { APP_NAME } from "./app-info";
@@ -165,25 +166,34 @@ function sanitizeSentryEvent(
   }
 
   const timeout = getClientRequestTimeoutDetails(hint?.originalException);
+  const requestEvidence = timeout ?? getClientRequestEvidence(hint?.originalException);
   return {
     ...event,
     fingerprint: timeout
       ? ["client-timeout", timeout.operation, timeout.surface ?? "unspecified"]
       : event.fingerprint,
-    tags: timeout
+    tags: requestEvidence
       ? {
           ...event.tags,
-          "request.operation": timeout.operation,
-          ...(timeout.surface ? { "request.surface": timeout.surface } : {}),
+          "request.operation": requestEvidence.operation,
+          ...(timeout?.surface ? { "request.surface": timeout.surface } : {}),
         }
       : event.tags,
-    contexts: timeout
+    contexts: requestEvidence
       ? {
           ...event.contexts,
-          request_timeout: {
-            request_id: timeout.requestId,
-            timeout_ms: timeout.timeoutMs,
-          },
+          ...(timeout
+            ? {
+                request_timeout: {
+                  request_id: timeout.requestId,
+                  timeout_ms: timeout.timeoutMs,
+                },
+              }
+            : {
+                request_failure: {
+                  request_id: requestEvidence.requestId,
+                },
+              }),
         }
       : event.contexts,
     user: undefined,

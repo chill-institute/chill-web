@@ -23,6 +23,7 @@ import {
 
 import { isAuthFailure } from "./auth-failure";
 import { setClientMetadata } from "./client-metadata";
+import { annotateClientRequestEvidence } from "./request-evidence";
 import { ClientRequestTimeoutError, withTimeoutSignal } from "./request-timeout";
 import {
   withSaveUserSettingsResponseDefaults,
@@ -112,6 +113,7 @@ export function createApi({
       if (timed.didTimeout()) {
         throw new ClientRequestTimeoutError(label, { requestId, timeoutMs });
       }
+      annotateClientRequestEvidence(error, { operation: label, requestId });
       if (isAuthFailure(error)) {
         onAuthFailure?.(error);
       }

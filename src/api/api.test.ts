@@ -2,6 +2,7 @@ import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createApi, toCatalogOrigin } from "./api";
+import { getClientRequestEvidence } from "./request-evidence";
 import { getClientRequestTimeoutDetails } from "./request-timeout";
 
 describe("toCatalogOrigin", () => {
@@ -141,6 +142,27 @@ describe("createApi request metadata", () => {
       operation: "Settings request",
       requestId: capturedRequestId,
       timeoutMs: 20000,
+    });
+  });
+
+  it("keeps transport failure evidence aligned with the request sent to the API", async () => {
+    let capturedRequestId: string | null = null;
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      capturedRequestId = request.headers.get("X-Request-Id");
+      throw new TypeError("Load failed");
+    });
+
+    const api = createApi({
+      authToken: "placeholder",
+      baseUrl: "https://api.example.test",
+    });
+    const error = await api.getMovies().catch((reason: unknown) => reason);
+
+    expect(capturedRequestId).toBeTruthy();
+    expect(getClientRequestEvidence(error)).toEqual({
+      operation: "Movies request",
+      requestId: capturedRequestId,
     });
   });
 });

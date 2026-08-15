@@ -7,6 +7,7 @@ test.describe("crash report fallback", () => {
   test("crash fallback reports its delivery state and lets the user copy a report", async ({
     authenticatedPage,
     mockRpc,
+    sentryEnvelopes,
   }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
@@ -35,6 +36,14 @@ test.describe("crash report fallback", () => {
       await expect(authenticatedPage.getByText("Sentry event:").locator("xpath=..")).toHaveText(
         /^Sentry event: [0-9a-f]{32}$/,
       );
+      const eventText =
+        (await authenticatedPage.getByText("Sentry event:").locator("xpath=..").textContent()) ??
+        "";
+      const eventId = eventText.match(/[0-9a-f]{32}/)?.[0];
+      expect(eventId).toBeDefined();
+      await expect
+        .poll(() => sentryEnvelopes.some((envelope) => envelope.includes(eventId ?? "")))
+        .toBe(true);
     } else {
       await expect(
         authenticatedPage.getByText(
