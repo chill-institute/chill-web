@@ -6,36 +6,22 @@ labels: bug
 assignees: ""
 ---
 
-## Summary
+## What happened?
 
-Briefly describe the problem.
+Include what you expected instead.
 
-## Steps to Reproduce
+## Reproduce
 
 1.
 2.
 3.
 
-## Evidence
-
-Add screenshots, a screen recording, or the copied crash report when available.
-
-## Expected
-
-What should have happened?
-
-## Actual
-
-What happened instead?
-
-## Environment
+## Context
 
 - URL:
 - Browser:
 - Device:
 - Commit / release:
 
-## Search Context
-
-If this is about missing or surprising search results, include the exact title,
-season, episode, filters, and sorting you used.
+Add screenshots, a recording, a copied crash report, or the exact search title,
+season, episode, filters, and sorting when relevant.

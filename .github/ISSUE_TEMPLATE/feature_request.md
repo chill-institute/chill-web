@@ -6,18 +6,10 @@ labels: enhancement
 assignees: ""
 ---
 
-## Summary
+## Idea
 
 What do you want to change?
 
-## Problem
+## Why
 
 What user or product problem does this solve?
-
-## Proposal
-
-Describe the simplest version of the change you want.
-
-## Notes
-
-Anything else we should know?

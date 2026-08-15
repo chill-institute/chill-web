@@ -1,132 +1,67 @@
 # Architecture
 
-This document describes `chill-web` as a Vite+ repo hosting the `chill.institute` web app.
-
-## System Context
+`chill-web` is a client-rendered React app. The browser calls the hosted API
+through Connect and imports public types from `@chill-institute/contracts`.
 
 ```mermaid
 graph LR
-  User --> Web["the root app"]
-  Web --> API["Connect-Web client"]
-  API --> InstituteAPI["chill.institute API"]
-  Web --> Contracts["contracts TS package"]
-  Browser["browser storage"] --> Auth["auth state"]
+  Browser --> Router["TanStack Router"]
+  Router --> Query["TanStack Query"]
+  Query --> Connect["Connect client"]
+  Connect --> API["hosted v4 API"]
+  Contracts["contract package"] --> Connect
 ```
 
-## Layout
+## Ownership
 
-| Path        | Responsibility                                                                 |
-| ----------- | ------------------------------------------------------------------------------ |
-| `./`        | `chill.institute` app: search, movies, TV shows, settings, auth, and e2e tests |
-| `src/ui/`   | presentational primitives, design tokens, pure hooks, and UI helpers           |
-| `src/api/`  | Connect-RPC client, auth-error constants, settings defaults, and timeouts      |
-| `src/auth/` | auth state, API context, auth routes, and API-coupled shared components        |
-| repo root   | Vite+ config, dependencies, hooks, SST config, and CI entrypoints              |
+| Path              | Owns                                                   |
+| ----------------- | ------------------------------------------------------ |
+| `src/routes/`     | File-route shims and route composition                 |
+| `src/api/`        | Connect transport, API helpers, defaults, and timeouts |
+| `src/auth/`       | Tokens, API context, auth routes, coupled controls     |
+| `src/catalog/`    | Movie and TV queries, routes, and modals               |
+| `src/ui/`         | Design tokens, primitives, pure hooks, presentation    |
+| `src/components/` | App shell, search, settings, cross-surface UI          |
 
-The app keeps API, auth, UI, and catalog code local so there is no workspace package graph.
-
-## Runtime Model
-
-- The app is a client-rendered React SPA.
-- The browser calls the hosted API directly.
-- Connect requests identify the client as `web` and carry the automatic,
-  SemVer-shaped deployment version in `X-Chill-Client-Version` for
-  backend-owned product analytics. The immutable commit release remains a
-  separate build value for debugging and Sentry.
-- Shared contract types come from `@chill-institute/contracts`
-- Hosted app and redirect domains are documented in [Deployment](./DEPLOYMENT.md).
-
-## Boundaries
-
-- `src/ui/` stays presentational and does not import auth or API code.
-- `src/api/` owns Connect-RPC transport and API helpers.
-- `src/auth/` owns token lifecycle, API context, auth routes, and API-coupled controls.
-- `src/catalog/` owns movie and TV catalog behavior.
-- `src/components/` owns app shell, search, settings, and cross-surface composition.
+`src/ui/` must not import auth or API code. Product behavior stays in the
+hosted API; the web repo owns browser state, requests, and rendering.
 
 ## Routes
 
-| Route                              | Responsibility                                 |
-| ---------------------------------- | ---------------------------------------------- |
-| `/`                                | search home shell                              |
-| `/search`                          | search flow, filters, and result listing       |
-| `/movies` and `/movies/$id`        | movie catalog and detail modal                 |
-| `/tv-shows` and `/tv-shows/$id`    | TV catalog and detail modal                    |
-| `/settings`                        | user settings and folder-related configuration |
-| `/sign-in`, `/sign-out`, `/auth/*` | browser and CLI-token auth lifecycle routes    |
+| Route                              | Surface                              |
+| ---------------------------------- | ------------------------------------ |
+| `/`, `/search`                     | Search shell, filters, and results   |
+| `/movies`, `/movies/$id`           | Movie catalog and detail modal       |
+| `/tv-shows`, `/tv-shows/$id`       | TV catalog and detail modal          |
+| `/settings`                        | Account and folder settings          |
+| `/sign-in`, `/sign-out`, `/auth/*` | Browser and CLI-token authentication |
 
-## Data Flow
+## Request Path
 
-```mermaid
-graph TD
-  Route["route loader / component"] --> Query["TanStack Query"]
-  Query --> UseApi["useApi()"]
-  UseApi --> CreateApi["createApi()"]
-  CreateApi --> Transport["Connect-Web transport"]
-  Transport --> Backend["/v4 API"]
-  Backend --> Transport
-  Transport --> CreateApi
-  CreateApi --> UseApi
-  UseApi --> Query
-  Query --> Route
-```
+Routes call TanStack Query hooks, which obtain the API client from auth context.
+The transport sends requests to `/v4`, identifies itself as `web`, and includes
+the deployment version in `X-Chill-Client-Version`.
 
-Key modules:
-
-| Module                | Responsibility                                     |
-| --------------------- | -------------------------------------------------- |
-| `src/telemetry.ts`    | optional Sentry crash-reporting initialization     |
-| `src/main.tsx`        | browser entrypoint and provider mounting           |
-| `src/router.tsx`      | create the app router and router context           |
-| `src/query-client.ts` | TanStack Query client configuration                |
-| `src/lib/api.tsx`     | browser API base URL bridge and React API provider |
-| `src/lib/env.ts`      | hosted API base URL resolution                     |
-| `src/components/`     | search shell, settings, and app-level components   |
-| `src/catalog/`        | movie and TV catalog routes, queries, and modals   |
-| `src/auth/`           | auth token lifecycle, auth routes, and API context |
-| `src/ui/`             | design tokens, primitives, and presentational UI   |
+Hosted response data is untrusted. Browser-side timeouts, auth failures, route
+recovery, and errors remain explicit UI states.
 
 ## Environment
 
-| Variable                         | Purpose                                                    |
-| -------------------------------- | ---------------------------------------------------------- |
-| `VITE_PUBLIC_API_BASE_URL`       | optional local override for the public API                 |
-| `VITE_PUBLIC_SENTRY_DSN`         | optional browser crash-reporting DSN                       |
-| `VITE_PUBLIC_SENTRY_ENVIRONMENT` | optional Sentry environment label                          |
-| `VITE_PUBLIC_VERSION`            | public deployment version sent as API client metadata      |
-| `VITE_PUBLIC_RELEASE`            | immutable public commit release used for debugging         |
-| `SENTRY_AUTH_TOKEN`              | build-time secret used by CI to upload Sentry source maps  |
-| `SENTRY_ORG`                     | build-time Sentry organization slug for source map uploads |
-| `SENTRY_PROJECT`                 | build-time Sentry project slug for source map uploads      |
+| Variable                         | Purpose                                 |
+| -------------------------------- | --------------------------------------- |
+| `VITE_PUBLIC_API_BASE_URL`       | Local API override                      |
+| `VITE_PUBLIC_VERSION`            | Public mainline version sent to the API |
+| `VITE_PUBLIC_RELEASE`            | Commit release used for debugging       |
+| `VITE_PUBLIC_SENTRY_DSN`         | Browser crash-reporting DSN             |
+| `VITE_PUBLIC_SENTRY_ENVIRONMENT` | Crash-reporting environment             |
+| `SENTRY_AUTH_TOKEN`              | CI-only source-map upload token         |
+| `SENTRY_ORG`, `SENTRY_PROJECT`   | Source-map destination                  |
 
-Hosted environments use `https://api.chill.institute` by default. Set
-`VITE_PUBLIC_API_BASE_URL` to point a local or preview build at a different API.
+Sentry stays off unless a public DSN is present. It excludes product analytics,
+session replay, default PII, request bodies, query strings, and default browser
+breadcrumbs. Known extension noise and recoverable module-load failures are
+dropped; terminal failures remain reportable.
 
-Sentry is disabled when `VITE_PUBLIC_SENTRY_DSN` is unset. Browser crash events
-are configured without browser-side product analytics, tracing, session replay,
-default PII, or default browser breadcrumbs. The client metadata headers do not
-identify a browser installation or capture browser events; the backend may use
-them only as bounded properties on its existing server-side product events. The
-app records only route-path breadcrumbs that exclude query strings and request
-data; event request data is removed before sending. `beforeSend` drops known
-noisy browser/extension messages (for example `__firefox__`), blocked
-`localStorage`/`sessionStorage` access failures with explicit storage evidence,
-and recoverable module-load noise before a reload retry has finished;
-intentional client request timeouts remain captured and are fingerprinted by
-operation and surface.
-
-Production and staging builds upload hidden source maps only when
-`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all available. The
-generated `.map` files are deleted from `dist/` after upload. CI runs e2e against
-that resulting `dist/`, records its SHA-256 manifest, and deploys the downloaded
-artifact only after the manifest verifies; the deploy job does not rebuild it.
-
-## Deployment
-
-Build output is `dist/`
-
-Production hosting shape:
-
-- static assets on SST-managed Cloudflare Workers
-- production redirects handled by a small Cloudflare Worker
-- API on a separate `api.chill.institute` origin
+Production and staging upload hidden source maps, delete them from `dist/`, run
+e2e against that final directory, and deploy only after its SHA-256 manifest
+verifies. See [Deployment](./DEPLOYMENT.md).

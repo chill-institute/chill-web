@@ -265,24 +265,3 @@ Prefer existing components before creating markup:
 - `ResponsiveModal`, `SettingsModal`, and shadcn dialog/drawer primitives for overlays
 
 Use lucide icons. Icons inside buttons should use component-supported sizing and `data-icon` where the component expects it. Do not use emoji as icons except the existing personality moments, such as the results-table action-column marker.
-
-## Do's and Don'ts
-
-Do:
-
-- read this file before external design work
-- inspect current code before trusting older mockups
-- use semantic tokens and existing variants
-- keep UI copy lowercase and direct
-- keep cards bordered, compact, and purposeful
-- keep `src/ui/` presentational
-- preserve the difference between search utility routes and catalog browser routes
-
-Do not:
-
-- copy raw CSS or HTML from historical Claude design exports into the app
-- introduce new palettes, gradients, glass, glow, or decorative illustration systems
-- build a landing page where a tool surface belongs
-- put app data fetching, auth, or API coupling in `src/ui/`
-- override shadcn component colors through one-off class strings when a token or variant should exist
-- re-create shared primitives without checking `src/ui/` first

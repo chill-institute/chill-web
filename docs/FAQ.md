@@ -1,61 +1,40 @@
 # Frequently Asked Questions
 
-## How can I help, contribute, or donate?
+## How can I contribute?
 
-Spread the word. 🤠
+Start with the [contributing guide](../CONTRIBUTING.md). Sharing reproducible
+bug reports is useful too.
 
-For the web client itself, please read the [contributing guide](../CONTRIBUTING.md).
+## Which browsers are supported?
 
-If you want to support the broader ecosystem, consider supporting the open-source tools you rely on most. 😉
+Current evergreen browsers on desktop and mobile. Include the browser version,
+device, and release when reporting a compatibility problem.
 
-## Can I have access to the API?
+## How should I report a bug?
 
-Sure! Just reach out and say what you have in mind.
+Use the [bug template](../.github/ISSUE_TEMPLATE/bug_report.md) and include what
+you did, what you expected, and what happened.
 
-## Which browsers and devices are supported?
+For search problems, include the title, season or episode, filters, and sorting.
+For crashes, include the displayed Sentry event ID or copied local crash report.
 
-The app is built and tested for modern evergreen browsers on desktop and mobile.
+## Is chill.institute affiliated with put.io?
 
-If something breaks on your setup, sending your browser version and device details makes debugging much easier.
+No. chill.institute is independently maintained. Contact this project for app
+problems and put.io for problems with its own service.
 
-## How should I report a problem?
+## Why is a put.io account required?
 
-Please include enough detail to reproduce or investigate the issue. Vague reports like "search is broken" or "it does not work" are hard to act on.
+The app searches and browses content before handing the selected transfer to
+put.io. It is not a standalone torrent client or self-hosted search stack.
 
-For search results, include the exact title, season, episode, and filters you used. The Institute can improve how results are searched, sorted, and displayed, but it does not own the indexed content. If a release does not exist on the connected sources, the app cannot create it.
+## Why is a transfer slow or failing?
 
-For crashes, include the Sentry event ID shown on the crash page when one is available. If the page says crash reporting is not configured, copy the local crash report and send it with your message. The report includes the route, browser, release, and error details needed to debug the failure.
-
-For non-crash bugs, use the [bug report template](../.github/ISSUE_TEMPLATE/bug_report.md) or include the same details in your message.
-
-For weird behavior that does not crash, include screenshots, a screen recording, or clear reproduction steps. The most useful format is what you did, what you expected, what happened instead, and whether it happens every time.
-
-## Are you affiliated with put.io?
-
-No, but I have been building The Institute for a long time so I am usually in touch with them.
-
-That said, please do not bother put.io support when The Institute is down. They did not break it. I probably did. 😅
-
-## Why do I need an active put.io account?
-
-The Institute app is designed to complement put.io, not act like a general-purpose torrent aggregator.
-
-If you want a fully self-managed setup, running your own search stack is probably a better fit.
-
-## I have a transfer that is slow, stuck, or failing
-
-The Institute helps you find content and send it to put.io, but it does not control transfer health on the put.io side.
-
-If only a few transfers are failing, try a different indexer or release before reporting it.
-
-If transfers are consistently failing across the board, that is worth reporting.
+The app can select and submit a transfer but does not control transfer health.
+Try another release or indexer first; report the problem when failures are
+consistent across results.
 
 ## How are settings stored?
 
-App settings are primarily stored through put.io's config support, with a small amount of local browser caching for UI preferences.
-
-## Are you the moderator of [/r/chillInstitute](https://www.reddit.com/r/chillInstitute/)?
-
-I am now! 😁
-
-It started as a community effort, and I was added as a moderator later on.
+Account settings use put.io's configuration storage. A small set of interface
+preferences is cached in the browser.
