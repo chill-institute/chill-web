@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       ref:
-        description: Git ref to deploy.
+        description: Exact commit to build and deploy.
         required: true
         type: string
       sst-state-file:
@@ -33,7 +33,77 @@ permissions:
   contents: read
 
 jobs:
+  build-app:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    environment:
+      name: ${{ inputs.environment-name }}
+      deployment: false
+    env:
+      BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
+      BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
+      CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
+      CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      VITE_PUBLIC_SENTRY_DSN: ${{ vars.VITE_PUBLIC_SENTRY_DSN }}
+      VITE_PUBLIC_SENTRY_ENVIRONMENT: ${{ inputs.environment-name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Set up Vite+
+        uses: ./.github/actions/setup-vite-plus
+
+      - name: Load Vite+ environment
+        run: vp env
+
+      - name: Stamp release
+        run: |
+          {
+            echo "VITE_PUBLIC_VERSION=0.0.$(git rev-list --count --first-parent HEAD)"
+            echo "VITE_PUBLIC_RELEASE=$(git rev-parse --short HEAD)"
+          } >>"$GITHUB_ENV"
+
+      - name: Build app artifact
+        run: vp run build
+
+      - name: Install Playwright browser
+        run: vp exec playwright install --with-deps chromium webkit
+
+      - name: Test app artifact
+        run: vp run e2e
+
+      - name: Create artifact manifest
+        run: find dist -type f -print0 | sort -z | xargs -0 sha256sum >dist.sha256
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: web-app-${{ inputs.environment-name }}-${{ github.run_id }}
+          path: |
+            dist
+            dist.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-${{ inputs.environment-name }}-${{ github.run_id }}
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
   deploy-app:
+    needs: build-app
     runs-on: blacksmith-2vcpu-ubuntu-2404
     environment:
       name: ${{ inputs.environment-name }}
@@ -51,19 +121,36 @@ jobs:
       SST_STATE_AGE_RECIPIENT: ${{ vars.SST_STATE_AGE_RECIPIENT }}
       SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
       SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
-      VITE_PUBLIC_SENTRY_DSN: ${{ vars.VITE_PUBLIC_SENTRY_DSN }}
-      VITE_PUBLIC_SENTRY_ENVIRONMENT: ${{ inputs.environment-name }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
-      - name: Build and deploy app
-        uses: ./.github/actions/build-and-deploy-app
+      - name: Set up Vite+
+        uses: ./.github/actions/setup-vite-plus
+
+      - name: Download app artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          environment-name: ${{ inputs.environment-name }}
+          name: web-app-${{ inputs.environment-name }}-${{ github.run_id }}
+          path: .
+
+      - name: Verify app artifact
+        run: sha256sum --check dist.sha256
+
+      - name: Install age
+        run: scripts/ci/install-age
+
+      - name: Restore encrypted SST local state
+        run: scripts/ci/sst-state-git restore
+
+      - name: Deploy app artifact to SST
+        env:
+          SST_STAGE: ${{ inputs.environment-name }}
+        run: vp exec sst deploy --stage "$SST_STAGE" --print-logs
+
+      - name: Save encrypted SST local state
+        if: always()
+        run: scripts/ci/sst-state-git save

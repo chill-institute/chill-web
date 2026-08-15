@@ -25,4 +25,4 @@ jobs:
           annotations: true
           min-confidence: medium
           min-severity: medium
-          version: v1.25.2
+          version: v1.29.0

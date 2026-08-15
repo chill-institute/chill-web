@@ -25,19 +25,9 @@ jobs:
     with:
       ref: ${{ github.sha }}
 
-  e2e:
-    needs: verify-app
-    if: ${{ needs.verify-app.result == 'success' }}
-    concurrency:
-      group: web-main-e2e-${{ github.ref }}
-      cancel-in-progress: true
-    uses: ./.github/workflows/_e2e.yml
-    with:
-      ref: ${{ github.sha }}
-
   deploy-app:
-    needs: [workflow-security, verify-app, e2e]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' }}
+    needs: [workflow-security, verify-app]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false

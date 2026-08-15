@@ -64,9 +64,13 @@ Build output:
 - Pull requests run `Verify`
 - `Verify` runs root app checks and functional e2e
 - Pushes to `main` run `Main`
-- `Main` verifies, runs functional e2e, builds and deploys the production web surface, and deploys the production redirect worker
+- `Main` verifies, then builds one production app artifact, runs functional e2e
+  against that artifact, and deploys those exact files after checksum validation
 - Manual deploy workflows are maintainer-only fallbacks for staging, production app, or production redirect reruns
-- App deploy jobs call the shared `Build and Deploy App` action for bundle build, Sentry source maps, SST state restore/save, and SST app deploy
+- The shared app deploy workflow uploads Sentry source maps during the single
+  build, removes them from `dist/`, records a SHA-256 manifest, and passes the
+  tested artifact to the SST deployment job without rebuilding
+- Redirect and zone deploys remain separate because they do not publish the app bundle
 - Live host monitoring and rollback are maintainer-operated outside GitHub Actions
 
 ## Verification

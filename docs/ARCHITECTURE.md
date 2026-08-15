@@ -117,7 +117,9 @@ operation and surface.
 
 Production and staging builds upload hidden source maps only when
 `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all available. The
-generated `.map` files are deleted from `dist/` after upload.
+generated `.map` files are deleted from `dist/` after upload. CI runs e2e against
+that resulting `dist/`, records its SHA-256 manifest, and deploys the downloaded
+artifact only after the manifest verifies; the deploy job does not rebuild it.
 
 ## Deployment
 

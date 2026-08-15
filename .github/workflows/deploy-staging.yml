@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Same-repo branch or full commit SHA to deploy
+        description: Default-branch name or reachable full commit SHA to deploy
         required: true
         type: string
       target:
@@ -88,6 +88,12 @@ jobs:
           fi
 
           default_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/${DEFAULT_BRANCH}" --jq '.object.sha')"
+          comparison_status="$(gh api "repos/${REPOSITORY}/compare/${sha}...${default_sha}" --jq '.status')"
+          if [ "${comparison_status}" != "ahead" ] && [ "${comparison_status}" != "identical" ]; then
+            echo "staging deploys must use a commit reachable from ${DEFAULT_BRANCH}; got ${sha}" >&2
+            exit 1
+          fi
+
           case "${TARGET}" in
             all|zones)
               if [ "${ref}" != "${DEFAULT_BRANCH}" ] && [ "${sha}" != "${default_sha}" ]; then
@@ -138,19 +144,9 @@ jobs:
     with:
       ref: ${{ needs.validate.outputs.sha }}
 
-  e2e:
-    needs: [validate, verify-app]
-    if: ${{ needs.verify-app.result == 'success' }}
-    concurrency:
-      group: web-staging-e2e-${{ github.run_id }}
-      cancel-in-progress: true
-    uses: ./.github/workflows/_e2e.yml
-    with:
-      ref: ${{ needs.validate.outputs.sha }}
-
   deploy-app:
-    needs: [validate, verify-app, e2e, deploy-zones]
-    if: ${{ always() && needs.validate.outputs.app == 'true' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') }}
+    needs: [validate, verify-app, deploy-zones]
+    if: ${{ always() && needs.validate.outputs.app == 'true' && needs.verify-app.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') }}
     uses: ./.github/workflows/_deploy-app.yml
     with:
       environment-name: staging
