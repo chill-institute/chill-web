@@ -11,8 +11,9 @@ This repo owns the client app, UI system, e2e tests, Cloudflare Workers frontend
 Install dependencies and start the app:
 
 ```bash
-vp install
-vp run dev
+pnpm install --frozen-lockfile
+pnpm exec vp run setup
+pnpm exec vp run dev
 ```
 
 ## Docs

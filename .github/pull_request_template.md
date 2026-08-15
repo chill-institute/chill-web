@@ -12,10 +12,10 @@ Name what could regress and what reviewers should verify.
 
 ## Verification
 
-- [ ] `vp run verify`
-- [ ] `vp run smoke`
-- [ ] `vp run e2e`
-- [ ] `vp run visual` when UI/layout/design snapshots should be checked
+- [ ] `pnpm exec vp run verify`
+- [ ] `pnpm exec vp run smoke`
+- [ ] `pnpm exec vp run e2e`
+- [ ] `pnpm exec vp run visual` when UI/layout/design snapshots should be checked
 
 ## Complexity
 

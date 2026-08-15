@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp test && vp build",
+    "setup": "vp exec playwright install chromium webkit",
     "dev": "vp dev --host 0.0.0.0 --port 58300",
     "build": "vp build",
     "preview": "vp preview --host 0.0.0.0 --port 58300",

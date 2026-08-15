@@ -24,30 +24,31 @@
 - Use shadcn/base project context from the relevant `components.json` before adding or updating UI primitives.
 - Translate upstream shadcn token classes back to the Institute token vocabulary in [DESIGN.md](./DESIGN.md) before committing generated UI.
 
-## Commands
+## Lifecycle
 
-- `vp install`
-- `vp run ready`
-- `vp run dev`
-- `vp run verify`
-- `vp run smoke`
-- `vp run e2e`
-- `vp run visual`
-- `vp run visual:update`
-- `vp run knip`
+- `pnpm install --frozen-lockfile`
+- `pnpm exec vp run setup` installs the browsers used by smoke and e2e checks.
+- `pnpm exec vp run dev` starts the local app.
+- `pnpm exec vp run verify` is the canonical local and CI guardrail.
+- Use `pnpm exec vp run smoke` for the fastest browser proof and
+  `pnpm exec vp run e2e` for the full functional surface.
+- Use `pnpm exec vp run visual` only for UI changes; intentional baseline
+  updates use `pnpm exec vp run visual:update`.
 
 ## Conventions
 
-- Keep repo entrypoints in the root [package.json](./package.json); they should call `vp` underneath.
-- Prefer `vp` over direct `pnpm`, `vite`, `vitest`, or `playwright` invocations.
-- Keep visual regression tests under `e2e/visual/` and run them with `vp run visual`; ordinary `vp run e2e` intentionally ignores that folder.
+- Keep repo entrypoints in the root [package.json](./package.json). Use the
+  repository-local Vite+ CLI through `pnpm exec vp`; package scripts and CI may
+  use bare `vp` because their environment supplies it.
+- Keep visual regression tests under `e2e/visual/`; ordinary functional e2e
+  intentionally ignores that folder.
 - Keep dependency versions in the root [package.json](./package.json).
 - Keep browser-side API resolution in `src/lib/env.ts`; the client takes the resolved `baseUrl` as input.
 - Keep shadcn config in `components.json`.
 - Keep presentational primitives in `src/ui/`, auth/API wiring in `src/auth/` and `src/api/`, and catalog-specific behavior in `src/catalog/`.
 - Auth flow routes (sign-out, debug.crash, auth/success, auth/cli-token) live as `*RouteOptions` objects in `src/auth/route-options/*`. App route files should stay thin shims.
 - Keep Vite and hook/config changes minimal and intentional.
-- Keep hook behavior in `.vite-hooks/`; the `.githooks/` launchers delegate to that canonical path.
+- Keep hook behavior in `.vite-hooks/`; Vite+ owns the generated dispatchers.
 - When `SST_PRODUCTION_AUTO_DEPLOY_ENABLED` is true, every push to `main` runs workflow security, app verification, functional e2e, and production app and redirect deployment.
 
 ## Read More

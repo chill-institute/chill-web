@@ -4,16 +4,11 @@ Thanks for contributing to `chill-web`.
 
 ## Setup
 
-Install [Vite+](https://viteplus.dev/guide/) and then install repo dependencies:
+Install the pinned dependencies, including the repo-local Vite+ CLI:
 
 ```bash
-vp install
-```
-
-Check the repo is ready:
-
-```bash
-vp run ready
+pnpm install --frozen-lockfile
+pnpm exec vp run setup
 ```
 
 ## Run Locally
@@ -21,7 +16,7 @@ vp run ready
 Start the app locally from the repo root:
 
 ```bash
-vp run dev
+pnpm exec vp run dev
 ```
 
 ## Validation
@@ -29,29 +24,29 @@ vp run dev
 Run the full repo checks before opening or updating a pull request:
 
 ```bash
-./scripts/verify.sh
-vp run e2e
+pnpm exec vp run verify
+pnpm exec vp run smoke
+pnpm exec vp run e2e
 ```
 
-`./scripts/verify.sh` clears Vite+'s local task cache, runs the normal verify
-gate, and then runs the smoke test. If a direct `vp run ...` command fails with
-`Unrecognized database version`, run `vp cache clean` and retry.
+If Vite+ fails with `Unrecognized database version`, run
+`pnpm exec vp cache clean` and retry.
 
 Playwright checks are split by signal. Functional coverage lives in ordinary e2e
 tests, and screenshot guardrails live under `e2e/visual/`.
 
 Visual regression snapshots cover desktop and mobile rendering in light and dark
-mode. They are intentionally excluded from ordinary `vp run e2e`; run them for
+mode. They are intentionally excluded from ordinary functional e2e; run them for
 intentional layout, token, responsive, or component-state changes:
 
 ```bash
-vp run visual
+pnpm exec vp run visual
 ```
 
 When the visual change is intended, update and review the committed baselines:
 
 ```bash
-vp run visual:update
+pnpm exec vp run visual:update
 ```
 
 Screenshot baselines are partitioned by viewport and theme project only, and CI is
@@ -62,15 +57,14 @@ CI and deploy behavior is documented in [Deployment](./docs/DEPLOYMENT.md).
 
 ## Git Hooks
 
-`vp install` runs the repo's `prepare` script, which configures Vite+ hooks from `.vite-hooks/`.
-
-The `.githooks/` launchers delegate to the same checks for clones already configured with that path.
+`pnpm install` runs the repo's `prepare` script, which configures Vite+
+hooks from `.vite-hooks/`.
 
 If your local Git config points somewhere else and hooks are not firing, re-install them with:
 
 ```bash
 git config --unset core.hooksPath
-vp config --hooks-dir .vite-hooks
+pnpm exec vp config --hooks-dir .vite-hooks
 ```
 
 ## Development Notes
@@ -78,7 +72,8 @@ vp config --hooks-dir .vite-hooks
 - [Architecture](./docs/ARCHITECTURE.md) owns the app layout and runtime boundaries.
 - [Design system](./DESIGN.md) is the design-system brief for humans and agents. The implemented tokens and UI primitives live in `src/ui/`.
 - Package versions and task entrypoints live in `package.json`.
-- Prefer `vp` commands over calling `pnpm`, `vite`, or `playwright` directly.
+- Use `pnpm exec vp` for repo tasks instead of invoking Vite, Vitest, or
+  Playwright directly.
 - Hosted environments and redirects are documented in [Deployment](./docs/DEPLOYMENT.md).
 - Localhost resolves to `https://api.chill.institute` unless you set `VITE_PUBLIC_API_BASE_URL`.
 - `VITE_PUBLIC_API_BASE_URL` is only needed as an explicit local override.
