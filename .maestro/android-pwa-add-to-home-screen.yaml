@@ -61,6 +61,12 @@ name: Add ${PWA_NAME} to Android home screen
 - tapOn: Add
 - waitForAnimationToEnd:
     timeout: 10000
+- extendedWaitUntil:
+    visible: Add to home screen
+    timeout: 30000
+- tapOn: Add to home screen
+- waitForAnimationToEnd:
+    timeout: 10000
 - takeScreenshot: ${PWA_SLUG}-after-add-to-home-screen
 - pressKey: Home
 - extendedWaitUntil:
