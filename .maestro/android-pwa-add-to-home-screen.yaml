@@ -1,6 +1,8 @@
 appId: com.android.chrome
 name: Add ${PWA_NAME} to Android home screen
 ---
+# The CI emulator has no Play Store account, so exercise Chrome's explicit
+# launcher-shortcut fallback instead of its WebAPK installation path.
 - launchApp:
     clearState: true
 - runFlow:
@@ -49,31 +51,25 @@ name: Add ${PWA_NAME} to Android home screen
     commands:
       - tapOn: Add to Home screen
 - extendedWaitUntil:
-    visible: Install
+    visible: Create shortcut
     timeout: 30000
 - takeScreenshot: ${PWA_SLUG}-install-prompt
-- tapOn: Install
+- tapOn: Create shortcut
+- extendedWaitUntil:
+    visible: Add to home screen
+    timeout: 30000
+- tapOn: Add to home screen
 - waitForAnimationToEnd:
     timeout: 10000
-- takeScreenshot: ${PWA_SLUG}-after-install-tap
-- runFlow:
-    when:
-      visible: Install app
-    commands:
-      - tapOn:
-          point: "82%,61%"
-- waitForAnimationToEnd:
-    timeout: 10000
-- takeScreenshot: ${PWA_SLUG}-after-confirm-install
-- runFlow:
-    when:
-      visible: Add to home screen
-    commands:
-      - tapOn: Add to home screen
-      - waitForAnimationToEnd:
-          timeout: 10000
-      - takeScreenshot: ${PWA_SLUG}-after-add-to-home-screen
+- takeScreenshot: ${PWA_SLUG}-after-add-to-home-screen
 - pressKey: Home
-- waitForAnimationToEnd:
-    timeout: 10000
+- extendedWaitUntil:
+    visible: ${PWA_NAME}
+    timeout: 30000
 - takeScreenshot: ${PWA_SLUG}-home-screen-after-install
+- tapOn: ${PWA_NAME}
+- extendedWaitUntil:
+    visible: ${PWA_READY_TEXT}
+    timeout: 30000
+- takeScreenshot: ${PWA_SLUG}-home-screen-launch
+- pressKey: Home
