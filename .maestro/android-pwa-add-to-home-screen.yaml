@@ -56,9 +56,9 @@ name: Add ${PWA_NAME} to Android home screen
 - takeScreenshot: ${PWA_SLUG}-install-prompt
 - tapOn: Create shortcut
 - extendedWaitUntil:
-    visible: Add to home screen
+    visible: Add
     timeout: 30000
-- tapOn: Add to home screen
+- tapOn: Add
 - waitForAnimationToEnd:
     timeout: 10000
 - takeScreenshot: ${PWA_SLUG}-after-add-to-home-screen
