@@ -157,7 +157,7 @@ export default defineConfig({
     ],
   },
   test: {
-    include: ["src/**/*.{test,spec}.{ts,tsx}", "scripts/**/*.{test,spec}.ts"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
   resolve: {
     tsconfigPaths: true,

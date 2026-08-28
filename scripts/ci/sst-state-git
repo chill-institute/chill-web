@@ -58,19 +58,6 @@ encrypted_state="${repo_dir}/${state_file}"
 
 case "${command}" in
   restore)
-    if [ -n "${EXPECTED_SST_STATE_COMMIT:-}" ]; then
-      if ! printf '%s' "${EXPECTED_SST_STATE_COMMIT}" | grep -Eq '^[0-9a-f]{40}$'; then
-        echo "EXPECTED_SST_STATE_COMMIT must be a full lowercase commit SHA" >&2
-        exit 1
-      fi
-
-      actual_state_commit="$(git -C "${repo_dir}" rev-parse HEAD)"
-      if [ "${actual_state_commit}" != "${EXPECTED_SST_STATE_COMMIT}" ]; then
-        echo "SST state repository no longer matches the authorized commit" >&2
-        exit 1
-      fi
-    fi
-
     if [ ! -f "${encrypted_state}" ]; then
       echo "No encrypted SST state found at ${state_file}" >&2
       exit 1

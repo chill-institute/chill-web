@@ -36,18 +36,7 @@ const redirectRouteGroups = [
   },
 ] as const;
 
-const zoneHardening = [
-  {
-    name: app.domain.production.name,
-    prefix: "Chill",
-  },
-  {
-    name: bingeProductionDomain,
-    prefix: "Binge",
-  },
-] as const;
-
-type DeployTarget = "app" | "redirects" | "zones";
+type DeployTarget = "app" | "redirects";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
@@ -114,11 +103,11 @@ declare const cloudflare: {
 
 function resolveDeployTarget(): DeployTarget {
   const target = process.env.WEB_DEPLOY_TARGET;
-  if (target === "app" || target === "redirects" || target === "zones") {
+  if (target === "app" || target === "redirects") {
     return target;
   }
 
-  throw new Error("WEB_DEPLOY_TARGET must be set to app, redirects, or zones");
+  throw new Error("WEB_DEPLOY_TARGET must be set to app or redirects");
 }
 
 function resolveStage(stage: string): Stage {
@@ -132,7 +121,7 @@ function resolveStage(stage: string): Stage {
 function resolveAccountId() {
   const accountId = process.env.CLOUDFLARE_DEFAULT_ACCOUNT_ID?.trim();
   if (!accountId) {
-    throw new Error("CLOUDFLARE_DEFAULT_ACCOUNT_ID is required for zone hardening");
+    throw new Error("CLOUDFLARE_DEFAULT_ACCOUNT_ID is required for Cloudflare redirects");
   }
 
   return accountId;
@@ -160,24 +149,6 @@ function resolveStaticSiteDomain(stage: Stage): StaticSiteV2Args["domain"] {
   }
 
   return app.domain.production;
-}
-
-async function configureZoneHardening() {
-  const accountId = resolveAccountId();
-  const outputs: Record<string, string> = {};
-
-  const resolvedZones = await Promise.all(
-    zoneHardening.map(async (zoneConfig) => ({
-      prefix: zoneConfig.prefix,
-      zoneId: await resolveZoneId(accountId, zoneConfig.name),
-    })),
-  );
-
-  for (const zoneConfig of resolvedZones) {
-    outputs[`${zoneConfig.prefix}ZoneId`] = zoneConfig.zoneId;
-  }
-
-  return outputs;
 }
 
 async function configureRedirects(stage: Stage) {
@@ -235,9 +206,6 @@ export default $config({
   app(input) {
     const target = resolveDeployTarget();
     const stage = resolveStage(input.stage);
-    if (target === "zones" && stage !== "staging") {
-      throw new Error("WEB_DEPLOY_TARGET=zones must use SST stage staging");
-    }
     if (target === "redirects" && stage !== "production") {
       throw new Error("WEB_DEPLOY_TARGET=redirects must use SST stage production");
     }
@@ -256,15 +224,6 @@ export default $config({
     const target = resolveDeployTarget();
     const stage = resolveStage($app.stage);
 
-    if (target === "zones") {
-      const zones = await configureZoneHardening();
-
-      return {
-        target,
-        stage,
-        zones,
-      };
-    }
     if (target === "redirects") {
       const redirects = await configureRedirects(stage);
 
