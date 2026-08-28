@@ -3,6 +3,8 @@
   "entry": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "scripts/ci/guard-sst-zone-retirement.ts",
+    "scripts/ci/**/*.test.ts",
     "src/workers/static-assets.ts",
     "e2e/**/*.ts",
     "e2e/visual/**/*.css",

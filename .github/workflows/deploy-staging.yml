@@ -10,12 +10,10 @@ on:
       target:
         description: Deployment target
         required: true
-        default: all
+        default: app
         type: choice
         options:
-          - all
           - app
-          - zones
 permissions:
   contents: read
 
@@ -35,8 +33,6 @@ jobs:
     outputs:
       ref: ${{ steps.validate.outputs.ref }}
       sha: ${{ steps.validate.outputs.sha }}
-      app: ${{ steps.select.outputs.app }}
-      zones: ${{ steps.select.outputs.zones }}
     steps:
       - name: Validate ref
         id: validate
@@ -94,49 +90,19 @@ jobs:
             exit 1
           fi
 
-          case "${TARGET}" in
-            all|zones)
-              if [ "${ref}" != "${DEFAULT_BRANCH}" ] && [ "${sha}" != "${default_sha}" ]; then
-                echo "zone deploys must use ${DEFAULT_BRANCH}; got ${ref}" >&2
-                exit 1
-              fi
-              ;;
-          esac
+          if [ "${TARGET}" != "app" ]; then
+            echo "unsupported target: ${TARGET}" >&2
+            exit 1
+          fi
 
           {
             echo "ref=${ref}"
             echo "sha=${sha}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Select deployment targets
-        id: select
-        env:
-          TARGET: ${{ inputs.target }}
-        run: |
-          set -euo pipefail
-
-          case "${TARGET}" in
-            all)
-              echo "app=true" >> "${GITHUB_OUTPUT}"
-              echo "zones=true" >> "${GITHUB_OUTPUT}"
-              ;;
-            app)
-              echo "app=true" >> "${GITHUB_OUTPUT}"
-              echo "zones=false" >> "${GITHUB_OUTPUT}"
-              ;;
-            zones)
-              echo "app=false" >> "${GITHUB_OUTPUT}"
-              echo "zones=true" >> "${GITHUB_OUTPUT}"
-              ;;
-            *)
-              echo "unsupported target: ${TARGET}" >&2
-              exit 1
-              ;;
-          esac
-
   verify-app:
     needs: [workflow-security, validate]
-    if: ${{ needs.workflow-security.result == 'success' && needs.validate.outputs.app == 'true' }}
+    if: ${{ needs.workflow-security.result == 'success' }}
     concurrency:
       group: web-staging-verify-app-${{ needs.validate.outputs.sha }}
       cancel-in-progress: true
@@ -145,8 +111,8 @@ jobs:
       ref: ${{ needs.validate.outputs.sha }}
 
   deploy-app:
-    needs: [validate, verify-app, deploy-zones]
-    if: ${{ always() && needs.validate.outputs.app == 'true' && needs.verify-app.result == 'success' && (needs.deploy-zones.result == 'success' || needs.deploy-zones.result == 'skipped') }}
+    needs: [validate, verify-app]
+    if: ${{ needs.verify-app.result == 'success' }}
     uses: ./.github/workflows/_deploy-app.yml
     with:
       environment-name: staging
@@ -158,19 +124,3 @@ jobs:
       SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
       SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-
-  deploy-zones:
-    needs: [workflow-security, validate]
-    if: ${{ needs.workflow-security.result == 'success' && needs.validate.outputs.zones == 'true' }}
-    uses: ./.github/workflows/_deploy-sst-target.yml
-    with:
-      environment-name: staging
-      environment-url: https://${{ vars.CHILL_STAGING_DOMAIN }}
-      ref: ${{ needs.validate.outputs.sha }}
-      sst-stage: staging
-      sst-state-file: ${{ vars.SST_STATE_FILE_STAGING }}
-      web-deploy-target: zones
-    secrets:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      SST_STATE_AGE_IDENTITY: ${{ secrets.SST_STATE_AGE_IDENTITY }}
-      SST_STATE_REPO_TOKEN: ${{ secrets.SST_STATE_REPO_TOKEN }}

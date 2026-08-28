@@ -47,19 +47,6 @@ const zoneHardening = [
   },
 ] as const;
 
-const zoneSettings = [
-  {
-    name: "AlwaysUseHttps",
-    settingId: "always_use_https",
-    value: "on",
-  },
-  {
-    name: "AutomaticHttpsRewrites",
-    settingId: "automatic_https_rewrites",
-    value: "on",
-  },
-] as const;
-
 type DeployTarget = "app" | "redirects" | "zones";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
@@ -75,11 +62,6 @@ type StaticSiteV2Args = {
 };
 type StaticSiteWorkerArgs = {
   handler?: string;
-};
-type ZoneSettingArgs = {
-  settingId: string;
-  value: string;
-  zoneId: string;
 };
 type ZoneLookupResult = {
   results: Array<{
@@ -126,7 +108,6 @@ declare const cloudflare: {
     maxItems: number;
     name: string;
   }): Promise<ZoneLookupResult>;
-  ZoneSetting: new (name: string, args: ZoneSettingArgs) => unknown;
   WorkersScript: new (name: string, args: WorkersScriptArgs) => unknown;
   WorkersRoute: new (name: string, args: WorkersRouteArgs, opts?: ResourceOptions) => unknown;
 };
@@ -194,14 +175,6 @@ async function configureZoneHardening() {
 
   for (const zoneConfig of resolvedZones) {
     outputs[`${zoneConfig.prefix}ZoneId`] = zoneConfig.zoneId;
-
-    for (const setting of zoneSettings) {
-      new cloudflare.ZoneSetting(`${zoneConfig.prefix}${setting.name}`, {
-        zoneId: zoneConfig.zoneId,
-        settingId: setting.settingId,
-        value: setting.value,
-      });
-    }
   }
 
   return outputs;
