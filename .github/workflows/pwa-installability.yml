@@ -14,7 +14,7 @@ on:
         default: http://127.0.0.1:58321/
         type: string
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: "41 8 * * 1"
   pull_request:
     paths:
       - ".github/workflows/pwa-installability.yml"
