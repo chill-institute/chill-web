@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: web-verify-pr-${{ github.event.pull_request.number }}
+  group: web-verify-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
   cancel-in-progress: true
 
 jobs:

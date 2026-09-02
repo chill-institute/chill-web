@@ -59,7 +59,7 @@ jobs:
 
   deploy-redirects:
     needs: [workflow-security, validate, deploy-app]
-    if: ${{ always() && needs.workflow-security.result == 'success' && (inputs.target == 'all' || inputs.target == 'redirects') && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
+    if: ${{ always() && needs.workflow-security.result == 'success' && needs.validate.result == 'success' && (inputs.target == 'all' || inputs.target == 'redirects') && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
     concurrency:
       group: web-deploy-production
       cancel-in-progress: false
