@@ -92,11 +92,11 @@ jobs:
           [ "${TARGET}" = pwa-installability ]
           [ "${WORKFLOW_FILE}" = cloudflare-pwa-schedule.yml ]
           [ "${DISPATCH_REF}" = main ]
-          [ "${SCHEDULE_CRON}" = "41 8 * * MON" ]
+          [ "${SCHEDULE_CRON}" = "0 9 * * MON" ]
           [[ "${SCHEDULED_AT}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]
           [ "$(date -u --date="${SCHEDULED_AT}" '+%Y-%m-%dT%H:%M:%SZ')" = "${SCHEDULED_AT}" ]
-          [ "${SCHEDULED_AT:11:2}" = 08 ]
-          [ "${SCHEDULED_AT:14:2}" = 41 ]
+          [ "${SCHEDULED_AT:11:2}" = 09 ]
+          [ "${SCHEDULED_AT:14:2}" = 00 ]
           [ "${SCHEDULED_AT:17:2}" = 00 ]
           [ "$(date -u --date="${SCHEDULED_AT}" '+%u')" = 1 ] || {
             echo "scheduled timestamp is not a Monday" >&2
