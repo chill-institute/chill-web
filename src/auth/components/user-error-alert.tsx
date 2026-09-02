@@ -45,7 +45,7 @@ export function UserErrorAlert({ error, className }: UserErrorAlertProps) {
   const suggestion = localized.recoverySuggestion;
 
   const handleSignInAgain = () => {
-    window.location.href = prepareSignInAgainURL(getPutioStartURL);
+    window.location.assign(prepareSignInAgainURL(getPutioStartURL));
   };
 
   return (
