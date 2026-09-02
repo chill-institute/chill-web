@@ -43,9 +43,6 @@ jobs:
       BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
       CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
       CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
       VITE_PUBLIC_SENTRY_DSN: ${{ vars.VITE_PUBLIC_SENTRY_DSN }}
       VITE_PUBLIC_SENTRY_ENVIRONMENT: ${{ inputs.environment-name }}
     steps:
@@ -70,13 +67,17 @@ jobs:
           } >>"$GITHUB_ENV"
 
       - name: Build app artifact
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
         run: vp run build
 
       - name: Install Playwright browser
         run: vp exec playwright install --with-deps chromium webkit
 
       - name: Test app artifact
-        run: vp run e2e
+        run: vp run smoke
 
       - name: Create artifact manifest
         run: find dist -type f -print0 | sort -z | xargs -0 sha256sum >dist.sha256
