@@ -14,6 +14,11 @@ if [ ! -d "${state_dir}" ]; then
   exit 0
 fi
 
+if [ -z "$(find "${state_dir}" -mindepth 1 -print -quit)" ]; then
+  echo "SST local state directory ${state_dir} is empty; refusing to pack" >&2
+  exit 1
+fi
+
 pack_dir="$(mktemp -d)"
 trap 'rm -rf "${pack_dir}"' EXIT
 

@@ -73,6 +73,7 @@ jobs:
         run: scripts/ci/install-age
 
       - name: Restore encrypted SST local state
+        id: restore-sst-state
         run: scripts/ci/sst-state-git restore
 
       - name: Deploy SST target
@@ -81,5 +82,5 @@ jobs:
           SST_STAGE: ${{ inputs.sst-stage }}
 
       - name: Save encrypted SST local state
-        if: always()
+        if: ${{ always() && steps.restore-sst-state.outcome == 'success' }}
         run: scripts/ci/sst-state-git save

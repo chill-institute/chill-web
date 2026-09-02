@@ -76,9 +76,12 @@ case "${command}" in
     fi
 
     state_dir="$(scripts/ci/sst-local-state-path)"
+    staged_dir="${state_dir}.restoring"
+    rm -rf "${staged_dir}"
+    mkdir -p "${staged_dir}"
+    cp -a "${extracted}/state/." "${staged_dir}/"
     rm -rf "${state_dir}"
-    mkdir -p "${state_dir}"
-    cp -a "${extracted}/state/." "${state_dir}/"
+    mv "${staged_dir}" "${state_dir}"
     echo "Restored encrypted SST state from ${state_file} to ${state_dir}"
     ;;
 
