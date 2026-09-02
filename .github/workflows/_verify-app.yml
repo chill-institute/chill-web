@@ -3,6 +3,11 @@ name: Verify App
 on:
   workflow_call:
     inputs:
+      artifact-name:
+        description: Name for the built dist artifact.
+        required: false
+        default: web-dist-${{ github.run_id }}
+        type: string
       ref:
         description: Git ref to verify.
         required: false
@@ -26,3 +31,11 @@ jobs:
 
       - name: Verify app
         run: vp run verify
+
+      - name: Upload built app
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 1

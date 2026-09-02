@@ -21,11 +21,15 @@ jobs:
 
   verify-app:
     uses: ./.github/workflows/_verify-app.yml
+    with:
+      artifact-name: web-dist-${{ github.run_id }}
 
   e2e:
     needs: verify-app
     if: ${{ needs.verify-app.result == 'success' }}
     uses: ./.github/workflows/_e2e.yml
+    with:
+      dist-artifact-name: web-dist-${{ github.run_id }}
 
   verify-result:
     runs-on: blacksmith-2vcpu-ubuntu-2404
