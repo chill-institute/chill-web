@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactElement } from "react";
+import { useCallback, useMemo, useState, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronLeft, House, X } from "lucide-react";
 
@@ -37,9 +37,10 @@ export function DownloadFolderPicker({
   onSave,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const pickerRootRef = useRef<HTMLSpanElement | null>(null);
-  const portalContainer =
-    pickerRootRef.current?.closest<HTMLElement>('[data-slot="drawer-content"]') ?? undefined;
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | undefined>(undefined);
+  const pickerRootRef = useCallback((node: HTMLSpanElement | null) => {
+    setPortalContainer(node?.closest<HTMLElement>('[data-slot="drawer-content"]') ?? undefined);
+  }, []);
   const nestedInDrawer = portalContainer !== undefined;
   const trigger = renderTrigger ? (
     renderTrigger(open)
