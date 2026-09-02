@@ -43,6 +43,8 @@ jobs:
       BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
       CHILL_PRODUCTION_DOMAIN: ${{ vars.CHILL_PRODUCTION_DOMAIN }}
       CHILL_STAGING_DOMAIN: ${{ vars.CHILL_STAGING_DOMAIN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
       VITE_PUBLIC_SENTRY_DSN: ${{ vars.VITE_PUBLIC_SENTRY_DSN }}
       VITE_PUBLIC_SENTRY_ENVIRONMENT: ${{ inputs.environment-name }}
     steps:
@@ -69,14 +71,16 @@ jobs:
       - name: Build app artifact
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
         run: vp run build
 
       - name: Install Playwright browser
         run: vp exec playwright install --with-deps chromium webkit
 
       - name: Test app artifact
+        # vite.config.ts re-runs under `vp preview` and asserts the Sentry
+        # deploy config whenever VITE_PUBLIC_SENTRY_ENVIRONMENT is set.
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: vp run smoke
 
       - name: Create artifact manifest
