@@ -1,5 +1,7 @@
 name: PWA Installability
 
+run-name: PWA Installability ${{ inputs.flow || github.event_name }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -13,8 +15,21 @@ on:
         required: true
         default: http://127.0.0.1:58321/
         type: string
-  schedule:
-    - cron: "41 8 * * 1"
+  workflow_call:
+    inputs:
+      run_android_emulator:
+        description: Run the experimental Android Emulator install flow
+        type: boolean
+        required: true
+      chill_url:
+        description: Local preview URL for the Android home-screen install flow
+        type: string
+        required: true
+      flow:
+        description: Human-readable dispatch origin
+        type: string
+        required: false
+        default: manual dispatch
   pull_request:
     paths:
       - ".github/workflows/pwa-installability.yml"
@@ -61,7 +76,7 @@ jobs:
         run: PLAYWRIGHT_PORT=58320 vp exec playwright test e2e/pwa.spec.ts
 
   android-home-screen-experiment:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.run_android_emulator) }}
+    if: ${{ github.event_name != 'pull_request' && inputs.run_android_emulator }}
     timeout-minutes: 25
     runs-on: blacksmith-2vcpu-ubuntu-2404
     env:

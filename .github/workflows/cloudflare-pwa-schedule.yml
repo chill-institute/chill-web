@@ -1,0 +1,118 @@
+name: Cloudflare PWA Schedule
+
+run-name: Cloudflare PWA Schedule ${{ inputs.schedule_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      schedule_origin:
+        description: Authenticated schedule owner
+        type: choice
+        required: true
+        options:
+          - cloudflare
+      target:
+        description: Exact configured scheduler target
+        type: string
+        required: true
+      workflow_file:
+        description: Exact receiving workflow filename
+        type: string
+        required: true
+      ref:
+        description: Exact dispatched Git ref
+        type: string
+        required: true
+      schedule_cron:
+        description: Exact configured UTC cron
+        type: string
+        required: true
+      schedule_id:
+        description: Durable Cloudflare schedule identity
+        type: string
+        required: true
+      scheduled_at:
+        description: Canonical UTC scheduled timestamp
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: cloudflare-pwa-schedule-receiver
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  validate-cloudflare-dispatch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate authenticated Cloudflare dispatch
+        env:
+          ACTOR_ID: ${{ github.actor_id }}
+          ACTOR_LOGIN: ${{ github.actor }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          EXPECTED_ACTOR_ID: ${{ vars.CLOUDFLARE_SCHEDULER_ACTOR_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref }}
+          SCHEDULE_ORIGIN: ${{ inputs.schedule_origin }}
+          TARGET: ${{ inputs.target }}
+          WORKFLOW_FILE: ${{ inputs.workflow_file }}
+          DISPATCH_REF: ${{ inputs.ref }}
+          SCHEDULE_CRON: ${{ inputs.schedule_cron }}
+          SCHEDULE_ID: ${{ inputs.schedule_id }}
+          SCHEDULED_AT: ${{ inputs.scheduled_at }}
+        run: |
+          set -euo pipefail
+
+          [[ "${EXPECTED_ACTOR_ID}" =~ ^[1-9][0-9]*$ ]] || {
+            echo "CLOUDFLARE_SCHEDULER_ACTOR_ID must be configured as a numeric repository variable" >&2
+            exit 1
+          }
+          [ "${ACTOR_ID}" = "${EXPECTED_ACTOR_ID}" ] || {
+            echo "dispatch actor is not the configured scheduler GitHub App" >&2
+            exit 1
+          }
+          [ "${ACTOR_LOGIN}" = 'chill-scheduler[bot]' ] || {
+            echo "dispatch actor login is not the scheduler GitHub App" >&2
+            exit 1
+          }
+          [ "${TRIGGERING_ACTOR}" = "${ACTOR_LOGIN}" ] || {
+            echo "workflow triggering actor differs from the scheduler GitHub App" >&2
+            exit 1
+          }
+          [ "${RUN_ATTEMPT}" = 1 ] || {
+            echo "Cloudflare schedule receiver runs cannot be rerun" >&2
+            exit 1
+          }
+          [ "${EVENT_NAME}" = workflow_dispatch ]
+          [ "${REF_NAME}" = refs/heads/main ]
+          [ "${SCHEDULE_ORIGIN}" = cloudflare ]
+          [ "${TARGET}" = pwa-installability ]
+          [ "${WORKFLOW_FILE}" = cloudflare-pwa-schedule.yml ]
+          [ "${DISPATCH_REF}" = main ]
+          [ "${SCHEDULE_CRON}" = "41 8 * * MON" ]
+          [[ "${SCHEDULED_AT}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]
+          [ "$(date -u --date="${SCHEDULED_AT}" '+%Y-%m-%dT%H:%M:%SZ')" = "${SCHEDULED_AT}" ]
+          [ "${SCHEDULED_AT:11:2}" = 08 ]
+          [ "${SCHEDULED_AT:14:2}" = 41 ]
+          [ "${SCHEDULED_AT:17:2}" = 00 ]
+          [ "$(date -u --date="${SCHEDULED_AT}" '+%u')" = 1 ] || {
+            echo "scheduled timestamp is not a Monday" >&2
+            exit 1
+          }
+          [ "${SCHEDULE_ID}" = "pwa-installability:${SCHEDULED_AT}" ]
+
+          echo "Validated Cloudflare PWA schedule dispatch ${SCHEDULE_ID}."
+
+  run-pwa-installability:
+    needs: validate-cloudflare-dispatch
+    if: ${{ github.run_attempt == 1 }}
+    uses: ./.github/workflows/pwa-installability.yml
+    permissions:
+      contents: read
+    with:
+      run_android_emulator: true
+      chill_url: http://127.0.0.1:58321/
+      flow: Cloudflare schedule ${{ inputs.schedule_id }}
