@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   build-app:
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     environment:
       name: ${{ inputs.environment-name }}
       deployment: false
@@ -109,7 +109,7 @@ jobs:
 
   deploy-app:
     needs: build-app
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     environment:
       name: ${{ inputs.environment-name }}
       url: ${{ inputs.environment-url }}
