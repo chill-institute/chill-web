@@ -74,7 +74,7 @@ jobs:
         run: vp run build
 
       - name: Install Playwright browser
-        run: vp exec playwright install --with-deps chromium webkit
+        run: vp exec playwright install --with-deps --only-shell chromium
 
       - name: Test app artifact
         # vite.config.ts re-runs under `vp preview` and asserts the Sentry
