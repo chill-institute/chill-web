@@ -69,7 +69,8 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     moviesURLSource !== undefined &&
     !settingsMutationPending &&
     (appSettings === undefined || appSettings.moviesSource === moviesURLSource);
-  const shouldFetchCatalog = shouldFetchURLMovies || settingsSettledForCatalog;
+  const shouldFetchCatalog =
+    tab === "tv-shows" || shouldFetchURLMovies || settingsSettledForCatalog;
   const moviesQuery = useMoviesQuery({
     enabled: shouldFetchCatalog && tab === "movies",
     source: effectiveMoviesSource,
@@ -165,6 +166,10 @@ export function CatalogPage({ tab }: CatalogPageProps) {
 
   if (!auth.isAuthenticated) {
     return <SignInRedirect />;
+  }
+
+  if (tab === "tv-shows") {
+    return renderCatalog(effectiveMoviesSource ?? moviesSources[0], effectiveTVShowsSource);
   }
 
   // A matching URL-sourced response can render without waiting on settings refresh latency.

@@ -63,5 +63,6 @@ breadcrumbs. Known extension noise and recoverable module-load failures are
 dropped; terminal failures remain reportable.
 
 Production and staging upload hidden source maps, delete them from `dist/`, run
-e2e against that final directory, and deploy only after its SHA-256 manifest
-verifies. See [Deployment](./DEPLOYMENT.md).
+sign-in and settings-shell browser smoke against that final directory, and deploy
+only after its SHA-256 manifest verifies. Pull requests run the fuller functional
+browser suite; browser fixtures mock API and health responses. See [Deployment](./DEPLOYMENT.md).

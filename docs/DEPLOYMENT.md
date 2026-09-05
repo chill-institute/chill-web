@@ -26,11 +26,12 @@ publish the upload token.
 
 ## Delivery
 
-Pull requests run app verification and functional browser tests. On `main`, the
+Pull requests run app verification and the fuller functional browser suite.
+Browser fixtures mock API and health responses. On `main`, the
 shared workflow:
 
 1. Builds `dist/` once with the production environment.
-2. Runs functional e2e against those files.
+2. Runs sign-in and settings-shell browser smoke against those files.
 3. Records and uploads a SHA-256 manifest.
 4. Downloads and verifies the artifact in the deployment job.
 5. Deploys without rebuilding.

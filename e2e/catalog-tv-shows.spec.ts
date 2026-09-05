@@ -74,6 +74,81 @@ const homeMethods = (overrides?: Record<string, unknown>) => ({
 });
 
 test.describe("tv shows home", () => {
+  test("signed-out TV browsing redirects without a catalog request", async ({ page }) => {
+    const requests: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes("chill.v4.UserService/")) requests.push(request.url());
+    });
+    await page.goto("/tv-shows");
+    await expect(page).toHaveURL(/\/sign-in/);
+    expect(requests).toEqual([]);
+  });
+
+  for (const width of [1280, 390]) {
+    test(`TV browsing continues while settings are held at ${width}px`, async ({
+      authenticatedPage,
+      mockRpc,
+    }, testInfo) => {
+      await authenticatedPage.setViewportSize({ width, height: 844 });
+      await mockRpc(homeMethods());
+      const settings = Promise.withResolvers<void>();
+      await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+        await settings.promise;
+        await route.fulfill({ json: userSettings() });
+      });
+      const tvRequested = authenticatedPage.waitForRequest("**/chill.v4.UserService/GetTVShows");
+      try {
+        await authenticatedPage.goto("/tv-shows");
+        await tvRequested;
+        await expect(authenticatedPage.getByText("Velvet Terminal")).toBeVisible();
+        const selector = authenticatedPage.getByRole("combobox", { name: "TV source" });
+        await selector.focus();
+        await expect(selector).toBeFocused();
+        await authenticatedPage.route("**/chill.v4.UserService/GetTVShows", async (route) => {
+          await route.fulfill({
+            json: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, hboShows),
+          });
+        });
+        await selector.selectOption(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
+        await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible();
+        await expect(authenticatedPage.getByText("Velvet Terminal")).toBeHidden();
+        await expect(authenticatedPage).toHaveURL(
+          new RegExp(`source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`),
+        );
+        const screenshotPath = testInfo.outputPath("tv-settings.png");
+        await authenticatedPage.screenshot({ path: screenshotPath });
+        await testInfo.attach("tv-with-settings-held", {
+          path: screenshotPath,
+          contentType: "image/png",
+        });
+      } finally {
+        settings.resolve();
+      }
+    });
+  }
+
+  test("TV posters remain available after settings fail", async ({
+    authenticatedPage,
+    mockRpc,
+  }, testInfo) => {
+    await mockRpc(homeMethods());
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 400,
+        json: { code: "invalid_argument", message: "Settings unavailable" },
+      });
+    });
+    await authenticatedPage.goto("/tv-shows");
+    await expect(authenticatedPage.getByText("Velvet Terminal")).toBeVisible();
+    await expect(authenticatedPage.getByRole("alert")).toBeVisible();
+    const screenshotPath = testInfo.outputPath("tv-settings.png");
+    await authenticatedPage.screenshot({ path: screenshotPath });
+    await testInfo.attach("tv-with-settings-error", {
+      path: screenshotPath,
+      contentType: "image/png",
+    });
+  });
+
   test("switching tabs swaps content", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({

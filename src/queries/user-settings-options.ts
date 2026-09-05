@@ -20,6 +20,6 @@ export function userSettingsQueryOptions(api: ChillApi, cache: UserSettingsCache
       return settings;
     },
     staleTime: FIVE_MINUTES,
-    placeholderData: cache.read(),
+    placeholderData: cache.read,
   });
 }
