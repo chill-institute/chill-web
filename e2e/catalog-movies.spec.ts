@@ -107,6 +107,37 @@ async function openFirstMovieModal(page: Page) {
 }
 
 test.describe("movies", () => {
+  for (const failureCount of [1, 2]) {
+    test(`handles ${failureCount} browser settings fetch failures`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await mockRpc(homeMethods());
+      await authenticatedPage.addInitScript((failures) => {
+        const fetch = window.fetch.bind(window);
+        let remaining = failures;
+        window.fetch = async (input, init) => {
+          if (new Request(input, init).url.endsWith("/GetUserSettings") && remaining > 0) {
+            remaining -= 1;
+            throw new TypeError("Load failed");
+          }
+          return fetch(input, init);
+        };
+      }, failureCount);
+
+      await authenticatedPage.goto("/movies");
+
+      if (failureCount === 1) {
+        await expect(authenticatedPage.getByText("Aurora Protocol")).toBeVisible();
+      } else {
+        await expect(authenticatedPage.getByRole("alert")).toContainText(
+          "Service temporarily unavailable. Please try again shortly.",
+        );
+        await expect(authenticatedPage.getByText("Load failed", { exact: true })).toHaveCount(0);
+      }
+    });
+  }
+
   test("renders movie cards", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({

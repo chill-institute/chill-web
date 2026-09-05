@@ -1,6 +1,9 @@
 import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
+import { Code, ConnectError } from "@connectrpc/connect";
+import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
+import { queryClient } from "@/query-client";
 import { createApi, toCatalogOrigin } from "./api";
 import { getClientRequestEvidence } from "./request-evidence";
 import { getClientRequestTimeoutDetails } from "./request-timeout";
@@ -147,10 +150,11 @@ describe("createApi request metadata", () => {
 
   it("keeps transport failure evidence aligned with the request sent to the API", async () => {
     let capturedRequestId: string | null = null;
+    const cause = new TypeError("Load failed");
     vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
       const request = new Request(input, init);
       capturedRequestId = request.headers.get("X-Request-Id");
-      throw new TypeError("Load failed");
+      throw cause;
     });
 
     const api = createApi({
@@ -159,10 +163,76 @@ describe("createApi request metadata", () => {
     });
     const error = await api.getMovies().catch((reason: unknown) => reason);
 
+    expect(error).toBeInstanceOf(ConnectError);
+    expect(error).toMatchObject({ code: Code.Unavailable, cause });
     expect(capturedRequestId).toBeTruthy();
     expect(getClientRequestEvidence(error)).toEqual({
       operation: "Movies request",
       requestId: capturedRequestId,
     });
+  });
+
+  it("recovers a settings query after one browser fetch failure", async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("Load failed"))
+      .mockResolvedValue(
+        new Response("{}", {
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { ...queryClient.getDefaultOptions().queries, retryDelay: 0 },
+      },
+    });
+    const api = createApi({ authToken: "placeholder", baseUrl: "https://api.example.test" });
+    try {
+      await expect(
+        client.fetchQuery({
+          queryKey: ["settings-network-recovery"],
+          queryFn: ({ signal }) => api.getUserSettings(signal),
+        }),
+      ).resolves.toBeDefined();
+      expect(fetch).toHaveBeenCalledTimes(2);
+    } finally {
+      client.clear();
+    }
+  });
+
+  it("preserves cancellation instead of classifying it as unavailable", async () => {
+    vi.stubGlobal("fetch", async () => {
+      throw new DOMException("Aborted", "AbortError");
+    });
+    const api = createApi({ authToken: "placeholder", baseUrl: "https://api.example.test" });
+    await expect(api.getUserSettings()).rejects.toMatchObject({ code: Code.Canceled });
+  });
+
+  it("preserves server errors and failures outside fetch", async () => {
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response('{"code":"internal","message":"server failure"}', {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
+    const api = createApi({ authToken: "placeholder", baseUrl: "https://api.example.test" });
+    await expect(api.getUserSettings()).rejects.toMatchObject({ code: Code.Internal });
+
+    vi.stubGlobal(
+      "fetch",
+      async () => new Response("{}", { headers: { "Content-Type": "application/json" } }),
+    );
+    const cause = new TypeError("settings mapping failed");
+    const mappingApi = createApi({
+      authToken: "placeholder",
+      baseUrl: "https://api.example.test",
+      normalizeSettings: () => {
+        throw cause;
+      },
+    });
+    await expect(mappingApi.getUserSettings()).rejects.toBe(cause);
   });
 });

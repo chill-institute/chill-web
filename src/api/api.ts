@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import { createClient, type Interceptor } from "@connectrpc/connect";
+import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
   CatalogOriginSchema,
@@ -93,6 +93,23 @@ export function createApi({
   const transport = createConnectTransport({
     baseUrl: `${baseUrl}/v4`,
     interceptors: [requestMetadataInterceptor],
+    fetch: async (input, init) => {
+      try {
+        return await globalThis.fetch(input, init);
+      } catch (error) {
+        // Browsers use different TypeError messages when fetch cannot get a response.
+        if (error instanceof TypeError && !init?.signal?.aborted) {
+          throw new ConnectError(
+            "Network request failed",
+            Code.Unavailable,
+            undefined,
+            undefined,
+            error,
+          );
+        }
+        throw error;
+      }
+    },
   });
   const userClient = createClient(UserService, transport);
   const headers = authHeader(authToken);
