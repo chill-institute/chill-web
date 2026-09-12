@@ -27,7 +27,7 @@ export function CatalogSourceSelect<T extends number>({
       name={name}
       value={String(value)}
       wrapperClassName={widthClassName}
-      className="h-8 text-sm"
+      className="h-8 min-w-0 py-0 text-sm"
       onChange={(event) => {
         const parsed = parse(event.currentTarget.value);
         if (parsed === undefined) {

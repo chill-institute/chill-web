@@ -4,7 +4,7 @@ import { movie, moviesResponse, tvShow, tvShowsResponse, userSettings } from "./
 const entries = [
   { title: "Aurora", rating: 8, year: 2020 },
   { title: "Harbor", rating: 9, year: 2010 },
-  { title: "Signal", rating: 7, year: 2024 },
+  { title: "Signal", rating: 7, year: 2020 },
 ];
 
 for (const path of ["movies", "tv-shows"]) {
@@ -31,7 +31,7 @@ for (const path of ["movies", "tv-shows"]) {
     for (const [value, expected] of [
       ["rating-desc", ["Harbor", "Aurora", "Signal"]],
       ["rating-asc", ["Signal", "Aurora", "Harbor"]],
-      ["year-desc", ["Signal", "Aurora", "Harbor"]],
+      ["year-desc", ["Aurora", "Signal", "Harbor"]],
       ["year-asc", ["Harbor", "Aurora", "Signal"]],
     ] as const) {
       await sort.selectOption(value);
@@ -55,12 +55,16 @@ for (const path of ["movies", "tv-shows"]) {
     await sort.press("Enter");
     await expect(sort).toHaveValue("default");
     await expect(titles).toHaveText(["Aurora", "Harbor", "Signal"]);
-    const sourceBox = await source.boundingBox();
-    const sortBox = await sort.boundingBox();
-    expect(sourceBox).not.toBeNull();
-    expect(sortBox).not.toBeNull();
-    expect(sortBox?.width).toBe(sourceBox?.width);
-    expect(sortBox?.y).toBeGreaterThan(sourceBox?.y ?? 0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+    for (const width of [320, 375, 430]) {
+      await page.setViewportSize({ width, height: 812 });
+      const sourceBox = await source.boundingBox();
+      const sortBox = await sort.boundingBox();
+      expect(sourceBox).not.toBeNull();
+      expect(sortBox).not.toBeNull();
+      expect(sortBox?.width).toBe(sourceBox?.width);
+      expect(sortBox?.y).toBe(sourceBox?.y);
+      expect(sortBox?.x).toBeGreaterThan(sourceBox?.x ?? 0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    }
   });
 }

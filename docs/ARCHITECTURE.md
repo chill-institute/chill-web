@@ -36,9 +36,10 @@ hosted API; the web repo owns browser state, requests, and rendering.
 | `/settings`                        | Account and folder settings          |
 | `/sign-in`, `/sign-out`, `/auth/*` | Browser and CLI-token authentication |
 
-Catalog listings preserve provider order by default. The `sort` URL parameter
+Catalog listings label the existing provider order as popularity. The `sort` URL parameter
 selects rating or release year in either direction, sorting only the returned
-catalog. Ties retain provider order; missing values stay last. Sorting survives
+catalog. Matching release years use highest rating first; remaining ties retain
+provider order. Missing values stay last. Sorting survives
 provider changes and detail navigation without changing account settings.
 Ratings may fall back to provider metadata; catalog dates currently contain only
 a year, not a full release date.

@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 import { playwrightPort } from "./e2e/support/port";
 
 // Playwright/webServer child processes force color in this environment.
@@ -21,6 +21,11 @@ export default defineConfig({
     {
       name: "chromium",
       use: { browserName: "chromium" },
+    },
+    {
+      name: "webkit-catalog",
+      testMatch: "catalog-sorting.spec.ts",
+      use: { ...devices["iPhone 13"], browserName: "webkit", serviceWorkers: "block" },
     },
     {
       name: "webkit-route-recovery",

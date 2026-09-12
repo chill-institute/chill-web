@@ -29,6 +29,24 @@ describe("catalog sorting", () => {
     expect(sortCatalog(items, sort).map((item) => item.title)).toEqual(expected);
   });
 
+  it.each(["year-asc", "year-desc"] as const)(
+    "breaks %s ties by highest rating, with missing ratings last",
+    (sort) => {
+      const sameYear = [
+        { title: "unrated", year: 2020, rating: 0 },
+        { title: "lower", year: 2020, rating: 7 },
+        { title: "highest", year: 2020, rating: 9 },
+        { title: "tied", year: 2020, rating: 9 },
+        { title: "invalid", year: 2020, rating: NaN },
+        { title: "older", year: 2010, rating: 10 },
+      ];
+      const sortedYear = ["highest", "tied", "lower", "unrated", "invalid"];
+      expect(sortCatalog(sameYear, sort).map((item) => item.title)).toEqual(
+        sort === "year-asc" ? ["older", ...sortedYear] : [...sortedYear, "older"],
+      );
+    },
+  );
+
   it("keeps non-finite values last in both directions", () => {
     const invalid = [{ rating: NaN, year: Infinity }, ...items];
     expect(sortCatalog(invalid, "rating-asc").slice(-2)).toEqual([invalid[0], items[1]]);
