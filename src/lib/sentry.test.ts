@@ -118,6 +118,41 @@ describe("keepAppBreadcrumbOnly", () => {
 });
 
 describe("sanitizeSentryEvent", () => {
+  it.each([
+    ["<anonymous>", "scanForForms", true],
+    ["/assets/app.js", "scanForForms", false],
+    ["<anonymous>", "render", false],
+  ])("filters Java bridge noise from %s:%s only", (filename, functionName, dropped) => {
+    const event = sanitizeSentryEvent({
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "Error invoking log: Java bridge method invocation error",
+            stacktrace: { frames: [{ filename, function: functionName }] },
+          },
+        ],
+      },
+    });
+
+    expect(event === null).toBe(dropped);
+  });
+
+  it("keeps other anonymous form errors and Java bridge errors without a stack", () => {
+    for (const exception of [
+      {
+        value: "Unable to submit form",
+        stacktrace: { frames: [{ filename: "<anonymous>", function: "scanForForms" }] },
+      },
+      { value: "Error invoking log: Java bridge method invocation error" },
+    ]) {
+      expect(
+        sanitizeSentryEvent({ type: undefined, exception: { values: [exception] } }),
+      ).not.toBeNull();
+    }
+  });
+
   it("drops TanStack Query cancellation while keeping unrelated errors", () => {
     expect(
       sanitizeSentryEvent(

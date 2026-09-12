@@ -106,7 +106,16 @@ function exceptionText(event: ErrorEvent, hint?: { originalException?: unknown }
 }
 
 function isNoisyBrowserExtensionError(event: ErrorEvent, hint?: { originalException?: unknown }) {
-  return exceptionText(event, hint).includes("__firefox__");
+  return (
+    exceptionText(event, hint).includes("__firefox__") ||
+    exceptionValues(event).some(
+      (value) =>
+        value.value === "Error invoking log: Java bridge method invocation error" &&
+        value.stacktrace?.frames?.some(
+          (frame) => frame.filename === "<anonymous>" && frame.function === "scanForForms",
+        ),
+    )
+  );
 }
 
 function hasStorageAccessEvidence(event: ErrorEvent, text: string) {
