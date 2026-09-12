@@ -1,5 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate, useRouter } from "@tanstack/react-router";
 
 import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
@@ -12,8 +12,9 @@ const routeApi = getRouteApi("/tv-shows/$id");
 
 function TVShowDetailRoute() {
   const { id } = routeApi.useParams();
-  const { season, source } = routeApi.useSearch();
+  const { season, source, sort } = routeApi.useSearch();
   const navigate = useNavigate();
+  const router = useRouter();
 
   const configQuery = useSettingsQuery();
   const activeSource = source ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
@@ -46,7 +47,7 @@ function TVShowDetailRoute() {
     return (
       <div className="fixed inset-0 z-40 overflow-y-auto bg-app">
         <NotFoundScreen
-          homeHref={source === undefined ? "/tv-shows" : `/tv-shows?source=${source}`}
+          homeHref={router.buildLocation({ to: "/tv-shows", search: { source, sort } }).href}
           homeLabel="back to tv shows"
         />
       </div>

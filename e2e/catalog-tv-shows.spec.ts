@@ -205,6 +205,7 @@ test.describe("tv shows home", () => {
 
     await expect(authenticatedPage.getByText("Velvet Terminal")).toBeVisible();
 
+    await authenticatedPage.getByRole("combobox", { name: "Sort by" }).selectOption("rating-desc");
     await authenticatedPage
       .getByRole("combobox", { name: "TV source" })
       .selectOption(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
@@ -215,6 +216,10 @@ test.describe("tv shows home", () => {
     );
     await expect(authenticatedPage.getByText("Velvet Terminal")).toBeHidden({ timeout: 500 });
     await expect(authenticatedPage.getByText("Harbor Ward")).toBeVisible({ timeout: 2000 });
+    await expect(authenticatedPage.getByRole("combobox", { name: "Sort by" })).toHaveValue(
+      "rating-desc",
+    );
+    expect(new URL(authenticatedPage.url()).searchParams.get("sort")).toBe("rating-desc");
     expect(saveCalls).toBe(0);
   });
 

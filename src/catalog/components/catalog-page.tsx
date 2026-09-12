@@ -6,6 +6,8 @@ import { match } from "ts-pattern";
 import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { MoviePosterActions } from "@/catalog/components/movie-poster-actions";
+import { CatalogSortSelect } from "@/catalog/components/catalog-sort-select";
+import { sortCatalog, type CatalogSort } from "@/catalog/lib/sort";
 import { MoviesSourceSelect } from "@/catalog/components/movies-source-select";
 import { TVShowsSourceSelect } from "@/catalog/components/tv-shows-source-select";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
@@ -45,7 +47,8 @@ type CatalogPageProps = {
 export function CatalogPage({ tab }: CatalogPageProps) {
   const auth = useAuth();
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as { source?: number };
+  const search = useSearch({ strict: false });
+  const sort = search.sort ?? "default";
   const moviesURLSource =
     tab === "movies" && typeof search.source === "number"
       ? (search.source as MoviesSource)
@@ -118,6 +121,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     ) : tab === "movies" ? (
       <MoviesContent
         query={moviesQuery}
+        sort={sort}
         source={selectedMoviesSource}
         onPickAnotherSource={() => {
           const next = cycleSource(moviesSources, selectedMoviesSource);
@@ -133,6 +137,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     ) : (
       <TVShowsContent
         query={tvShowsQuery}
+        sort={sort}
         source={selectedTVShowsSource}
         onPickAnotherSource={() => {
           const next = cycleSource(tvShowsSources, selectedTVShowsSource);
@@ -149,7 +154,19 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     return (
       <HomeShell tab={tab}>
         <PageHeading tab={tab}>
-          <SortRow className="mb-0 sm:justify-end lg:mb-0">{sourceSelector}</SortRow>
+          <SortRow className="mb-0 sm:justify-end lg:mb-0">
+            {sourceSelector}
+            <CatalogSortSelect
+              value={sort}
+              onChange={(next) => {
+                void navigate({
+                  to: tab === "movies" ? "/movies" : "/tv-shows",
+                  search: (prev) => ({ ...prev, sort: next === "default" ? undefined : next }),
+                  replace: true,
+                });
+              }}
+            />
+          </SortRow>
         </PageHeading>
 
         {activeContent}
@@ -228,10 +245,11 @@ function PageHeading({ tab, children }: { tab: CatalogTab; children?: ReactNode 
 type MoviesContentProps = {
   query: ReturnType<typeof useMoviesQuery>;
   source: CatalogAppSettings["moviesSource"];
+  sort: CatalogSort;
   onPickAnotherSource: () => void;
 };
 
-function MoviesContent({ query, source, onPickAnotherSource }: MoviesContentProps) {
+function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesContentProps) {
   return match(query)
     .with({ status: "pending" }, () => <PosterGridSkeleton />)
     .with({ status: "error" }, (movies) =>
@@ -254,7 +272,7 @@ function MoviesContent({ query, source, onPickAnotherSource }: MoviesContentProp
       }
       return (
         <PosterGrid>
-          {movies.data.movies.map((movie, index) => (
+          {sortCatalog(movies.data.movies, sort).map((movie, index) => (
             <PosterCard
               key={movie.id}
               className="animate-reveal"
@@ -286,10 +304,11 @@ function MoviesContent({ query, source, onPickAnotherSource }: MoviesContentProp
 type TVShowsContentProps = {
   query: ReturnType<typeof useTVShowsQuery>;
   source: CatalogAppSettings["tvShowsSource"];
+  sort: CatalogSort;
   onPickAnotherSource: () => void;
 };
 
-function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentProps) {
+function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsContentProps) {
   return match(query)
     .with({ status: "pending" }, () => <PosterGridSkeleton />)
     .with({ status: "error" }, (shows) =>
@@ -312,7 +331,7 @@ function TVShowsContent({ query, source, onPickAnotherSource }: TVShowsContentPr
       }
       return (
         <PosterGrid>
-          {shows.data.shows.map((show, index) => (
+          {sortCatalog(shows.data.shows, sort).map((show, index) => (
             <PosterCard
               key={show.imdbId}
               className="animate-reveal"
@@ -376,12 +395,10 @@ function PosterGridSkeleton() {
 
 function SortRowSkeleton() {
   return (
-    <div className="-mx-4 flex items-center gap-4 overflow-x-auto px-4 sm:mx-0 sm:justify-end sm:px-0">
-      <Skeleton className="h-8 w-28 shrink-0 rounded-none" />
-      <Skeleton className="h-8 w-16 shrink-0 rounded-none" />
-      <Skeleton className="h-8 w-24 shrink-0 rounded-none" />
-      <Skeleton className="h-8 w-14 shrink-0 rounded-none" />
-    </div>
+    <SortRow className="mb-0 sm:justify-end lg:mb-0">
+      <Skeleton className="h-8 w-full rounded sm:w-52" />
+      <Skeleton className="h-8 w-full rounded sm:w-52" />
+    </SortRow>
   );
 }
 

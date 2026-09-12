@@ -521,14 +521,14 @@ test.describe("catalog routing", () => {
       GetTVShows: tvShowsResponse([]),
     });
 
-    await authenticatedPage.goto("/movies/missing-movie");
+    await authenticatedPage.goto("/movies/missing-movie?sort=rating-asc");
 
     await expect(authenticatedPage.getByRole("heading", { name: "page not found" })).toBeVisible({
       timeout: 3000,
     });
     await expect(authenticatedPage.getByRole("link", { name: "back to movies" })).toHaveAttribute(
       "href",
-      "/movies",
+      "/movies?sort=rating-asc",
     );
     await expect(
       authenticatedPage.getByRole("heading", { name: "Something went wrong." }),
@@ -546,12 +546,16 @@ test.describe("catalog routing", () => {
       Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
     });
 
-    await authenticatedPage.goto("/movies");
+    await authenticatedPage.goto("/movies?sort=year-asc");
     await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
     await authenticatedPage.waitForURL(/\/movies\/m1(\?|$)/);
 
+    expect(new URL(authenticatedPage.url()).searchParams.get("sort")).toBe("year-asc");
     await authenticatedPage.goBack();
     await authenticatedPage.waitForURL(/\/movies(\?|$)/);
+    await expect(authenticatedPage.getByRole("combobox", { name: "Sort by" })).toHaveValue(
+      "year-asc",
+    );
     expect(new URL(authenticatedPage.url()).pathname).toBe("/movies");
     await expect(authenticatedPage.locator('[data-slot="poster-card"]').first()).toBeVisible();
   });
@@ -595,12 +599,15 @@ test.describe("catalog routing", () => {
       GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, [harborWard]),
     });
 
-    await authenticatedPage.goto(`/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`);
+    await authenticatedPage.goto(
+      `/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}&sort=rating-desc`,
+    );
     await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
     await authenticatedPage.waitForURL(/\/tv-shows\/tt9000003/);
 
     const url = new URL(authenticatedPage.url());
     expect(url.searchParams.get("source")).toBe(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
+    expect(url.searchParams.get("sort")).toBe("rating-desc");
     expect(url.searchParams.get("season")).toBe("1");
   });
 
@@ -652,14 +659,14 @@ test.describe("catalog routing", () => {
       GetTVShowDetail: {},
     });
 
-    await authenticatedPage.goto("/tv-shows/tt-missing-show");
+    await authenticatedPage.goto("/tv-shows/tt-missing-show?sort=rating-asc");
 
     await expect(authenticatedPage.getByRole("heading", { name: "page not found" })).toBeVisible({
       timeout: 3000,
     });
     await expect(authenticatedPage.getByRole("link", { name: "back to tv shows" })).toHaveAttribute(
       "href",
-      "/tv-shows",
+      "/tv-shows?sort=rating-asc",
     );
     await expect(
       authenticatedPage.getByRole("heading", { name: "Something went wrong." }),

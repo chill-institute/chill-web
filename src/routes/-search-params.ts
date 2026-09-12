@@ -1,6 +1,7 @@
 import * as v from "valibot";
 
 import { moviesSources, tvShowsSources } from "@/catalog/lib/types";
+import { catalogSorts } from "@/catalog/lib/sort";
 
 const numericSearchParam = v.union([
   v.number(),
@@ -32,18 +33,22 @@ const positiveIntegerSearchParam = v.fallback(
 
 const movieSourceSearchParam = numberFrom(moviesSources);
 const tvShowsSourceSearchParam = numberFrom(tvShowsSources);
+const catalogSortSearchParam = v.fallback(v.optional(v.picklist(catalogSorts)), undefined);
 
 const movieCatalogSearchSchema = v.object({
   source: movieSourceSearchParam,
+  sort: catalogSortSearchParam,
 });
 
 const tvShowsCatalogSearchSchema = v.object({
   source: tvShowsSourceSearchParam,
+  sort: catalogSortSearchParam,
 });
 
 const tvShowDetailSearchSchema = v.object({
   season: positiveIntegerSearchParam,
   source: tvShowsSourceSearchParam,
+  sort: catalogSortSearchParam,
 });
 
 const searchRouteSearchSchema = v.object({

@@ -5,10 +5,23 @@ import {
   movieCatalogSearchSchema,
   searchRouteSearchSchema,
   signInSearchSchema,
+  tvShowsCatalogSearchSchema,
   tvShowDetailSearchSchema,
 } from "./-search-params";
 
 describe("route search schemas", () => {
+  it("preserves catalog sorts across listing and detail schemas and drops invalid values", () => {
+    for (const schema of [
+      movieCatalogSearchSchema,
+      tvShowsCatalogSearchSchema,
+      tvShowDetailSearchSchema,
+    ]) {
+      expect(v.parse(schema, { sort: "year-desc" }).sort).toBe("year-desc");
+      expect(v.parse(schema, { sort: "random" }).sort).toBeUndefined();
+      expect(v.parse(schema, { sort: ["rating-asc"] }).sort).toBeUndefined();
+    }
+  });
+
   it("coerces known movie sources from URL strings", () => {
     const result = v.parse(movieCatalogSearchSchema, { source: "2" });
 
@@ -22,6 +35,7 @@ describe("route search schemas", () => {
     });
 
     expect(result).toEqual({
+      sort: undefined,
       season: undefined,
       source: undefined,
     });

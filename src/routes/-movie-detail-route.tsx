@@ -1,4 +1,4 @@
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate, useRouter } from "@tanstack/react-router";
 
 import { MovieDetailModal } from "@/catalog/components/movie-detail-modal";
 import { useMoviesQuery } from "@/catalog/queries/movies";
@@ -10,8 +10,9 @@ const routeApi = getRouteApi("/movies/$id");
 
 function MovieDetailRoute() {
   const { id } = routeApi.useParams();
-  const { source } = routeApi.useSearch();
+  const { source, sort } = routeApi.useSearch();
   const navigate = useNavigate();
+  const router = useRouter();
 
   const configQuery = useSettingsQuery();
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
@@ -32,7 +33,7 @@ function MovieDetailRoute() {
     return (
       <div className="fixed inset-0 z-40 overflow-y-auto bg-app">
         <NotFoundScreen
-          homeHref={source === undefined ? "/movies" : `/movies?source=${source}`}
+          homeHref={router.buildLocation({ to: "/movies", search: { source, sort } }).href}
           homeLabel="back to movies"
         />
       </div>

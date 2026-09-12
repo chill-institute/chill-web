@@ -209,6 +209,29 @@ test("movies catalog", async ({ authenticatedPage, mockRpc }) => {
   await expect(authenticatedPage).toHaveScreenshot("movies-catalog.png", visualOptions);
 });
 
+for (const route of ["movies", "tv-shows"]) {
+  test(`${route} catalog sorting`, async ({ authenticatedPage, mockRpc }) => {
+    await freezeVisualClock(authenticatedPage);
+    await mockRpc(
+      defaultMethods({
+        GetTVShows: tvShowsResponse([
+          tvShow({ imdbId: "tt9000001", title: "Synthetic Series Alpha", year: 2020 }),
+          tvShow({ imdbId: "tt9000002", title: "Synthetic Series Beta", year: 2024 }),
+        ]),
+      }),
+    );
+    await authenticatedPage.goto(`/${route}?sort=year-desc`);
+    await expect(authenticatedPage.getByRole("combobox", { name: "Sort by" })).toHaveValue(
+      "year-desc",
+    );
+    await expect(authenticatedPage.locator('[data-slot="poster-card"]')).toHaveCount(2);
+    await expect(authenticatedPage).toHaveScreenshot(`${route}-catalog-sorting.png`, {
+      ...visualOptions,
+      maxDiffPixelRatio: 0.003,
+    });
+  });
+}
+
 test("movies catalog error", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(defaultMethods());
