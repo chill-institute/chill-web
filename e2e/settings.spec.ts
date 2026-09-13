@@ -807,7 +807,7 @@ test.describe("settings", () => {
 
     // The sort pulldown is present and persists a change.
     const callsBeforeSort = saveCalls;
-    await prefs.getByRole("combobox", { name: "Sort results" }).selectOption({ label: "↑ SIZE" });
+    await prefs.getByRole("combobox", { name: "Sort results" }).selectOption({ label: "↑ size" });
     await expect.poll(() => saveCalls).toBeGreaterThan(callsBeforeSort);
   });
 

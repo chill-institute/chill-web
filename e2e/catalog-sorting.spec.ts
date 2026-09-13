@@ -72,7 +72,8 @@ for (const path of ["movies", "tv-shows"]) {
       const sortBox = await sort.boundingBox();
       expect(sourceBox).not.toBeNull();
       expect(sortBox).not.toBeNull();
-      expect(sortBox?.width).toBe(sourceBox?.width);
+      if (width < 375) expect(sortBox?.width).toBe(sourceBox?.width);
+      else expect(sortBox?.width).toBeLessThan(sourceBox?.width ?? 0);
       expect(sortBox?.y).toBe(sourceBox?.y);
       expect(sortBox?.x).toBeGreaterThan(sourceBox?.x ?? 0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);

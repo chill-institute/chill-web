@@ -160,7 +160,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     return (
       <HomeShell tab={tab}>
         <PageHeading tab={tab}>
-          <SortRow className="mb-0 grid grid-cols-2 gap-2 sm:flex sm:justify-end lg:mb-0">
+          <SortRow className="mb-0 grid grid-cols-2 gap-2 min-[375px]:grid-cols-[3fr_2fr] sm:flex sm:justify-end lg:mb-0">
             {sourceSelector}
             <CatalogSortSelect
               value={sort}
@@ -404,9 +404,9 @@ function PosterGridSkeleton() {
 
 function SortRowSkeleton() {
   return (
-    <SortRow className="mb-0 grid grid-cols-2 gap-2 sm:flex sm:justify-end lg:mb-0">
+    <SortRow className="mb-0 grid grid-cols-2 gap-2 min-[375px]:grid-cols-[3fr_2fr] sm:flex sm:justify-end lg:mb-0">
       <Skeleton className="h-8 w-full rounded sm:w-52" />
-      <Skeleton className="h-8 w-full rounded sm:w-52" />
+      <Skeleton className="h-8 w-full rounded sm:w-40" />
     </SortRow>
   );
 }

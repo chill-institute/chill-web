@@ -18,8 +18,8 @@ export function CatalogSortSelect({
       aria-label="Sort by"
       name="catalog-sort"
       value={value}
-      wrapperClassName="w-full sm:w-52"
-      className="h-8 min-w-0 py-0 text-sm"
+      wrapperClassName="w-full sm:w-40"
+      className="h-8 min-w-0 py-0 pr-6 pl-2 text-sm"
       onChange={(event) => {
         const sort = parseCatalogSort(event.currentTarget.value);
         if (sort !== undefined) onChange(sort);
