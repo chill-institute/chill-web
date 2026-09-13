@@ -2,6 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   CatalogSettingsSchema,
+  CatalogSort,
   DownloadSettingsSchema,
   SearchSettingsSchema,
   UserIndexerSchema,
@@ -177,5 +178,41 @@ describe("indexer cache", () => {
       "[chill] Failed to read cached indexers",
       expect.any(Error),
     );
+  });
+});
+
+describe("catalog sort cache", () => {
+  it("round-trips the shared catalog sort through later search cache writes", () => {
+    const catalog = create(CatalogSettingsSchema, {
+      moviesSource: 1,
+      tvShowsSource: 1,
+      sort: CatalogSort.RATING_DESC,
+    });
+    writeCachedSettings(
+      create(UserSettingsSchema, { catalog, download: create(DownloadSettingsSchema) }),
+    );
+    writeCachedSettings(create(UserSettingsSchema, { search: create(SearchSettingsSchema) }));
+    expect(readCachedCatalogSettings()?.catalog).toEqual(catalog);
+  });
+
+  it.each(["chill.user-settings.v1", "chill.catalog.settings.v1"])(
+    "accepts old catalog entries without sort in %s",
+    (key) => {
+      storage.set(
+        key,
+        JSON.stringify({ catalog: { moviesSource: 1, tvShowsSource: 1 }, download: {} }),
+      );
+      const settings = readCachedCatalogSettings();
+      expect(settings?.catalog?.moviesSource).toBe(1);
+      expect(settings?.catalog?.sort).toBeUndefined();
+    },
+  );
+
+  it.each([0, -1, 999, "rating-desc"])("rejects invalid cached sort %s", (sort) => {
+    storage.set(
+      "chill.user-settings.v1",
+      JSON.stringify({ catalog: { moviesSource: 1, tvShowsSource: 1, sort }, download: {} }),
+    );
+    expect(readCachedCatalogSettings()).toBeUndefined();
   });
 });

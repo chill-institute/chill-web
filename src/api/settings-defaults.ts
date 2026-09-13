@@ -1,6 +1,7 @@
 import { create, isFieldSet } from "@bufbuild/protobuf";
 import {
   CatalogSettingsSchema,
+  CatalogSort,
   DownloadSettingsSchema,
   MoviesSource,
   SearchResultDisplayBehavior,
@@ -24,6 +25,7 @@ export const SEARCH_SETTINGS_FALLBACKS = {
 } as const;
 
 export const CATALOG_SETTINGS_FALLBACKS = {
+  sort: CatalogSort.POPULARITY,
   moviesSource: MoviesSource.ROTTEN_TOMATOES,
   tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS,
 } as const;
@@ -68,6 +70,10 @@ export function withUserSettingsDefaults(settings: UserSettings): UserSettings {
   return create(UserSettingsSchema, {
     ...withSearch,
     catalog: create(CatalogSettingsSchema, {
+      sort:
+        catalog?.sort === undefined || catalog.sort === CatalogSort.UNSPECIFIED
+          ? CATALOG_SETTINGS_FALLBACKS.sort
+          : catalog.sort,
       moviesSource:
         catalog?.moviesSource === MoviesSource.UNSPECIFIED || catalog?.moviesSource === undefined
           ? CATALOG_SETTINGS_FALLBACKS.moviesSource
@@ -150,6 +156,10 @@ function mergeSaveCatalogResponse(
 ): CatalogSettings | undefined {
   if (!response) return fallback;
   return create(CatalogSettingsSchema, {
+    sort:
+      response.sort === undefined || response.sort === CatalogSort.UNSPECIFIED
+        ? fallback?.sort
+        : response.sort,
     moviesSource:
       response.moviesSource === MoviesSource.UNSPECIFIED
         ? fallback?.moviesSource

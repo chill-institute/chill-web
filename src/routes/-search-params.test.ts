@@ -16,7 +16,9 @@ describe("route search schemas", () => {
       tvShowsCatalogSearchSchema,
       tvShowDetailSearchSchema,
     ]) {
-      expect(v.parse(schema, { sort: "year-desc" }).sort).toBe("year-desc");
+      expect(v.parse(schema, { sort: "date-desc" }).sort).toBe("date-desc");
+      expect(v.parse(schema, { sort: "year-desc" }).sort).toBe("date-desc");
+      expect(v.parse(schema, { sort: "year-asc" }).sort).toBe("date-asc");
       expect(v.parse(schema, { sort: "random" }).sort).toBeUndefined();
       expect(v.parse(schema, { sort: ["rating-asc"] }).sort).toBeUndefined();
     }

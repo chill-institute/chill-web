@@ -2,6 +2,7 @@ import { create, toJsonString } from "@bufbuild/protobuf";
 import * as v from "valibot";
 import {
   CatalogSettingsSchema,
+  CatalogSort,
   DownloadSettingsSchema,
   SearchSettingsSchema,
   UserGetIndexersResponseSchema,
@@ -48,6 +49,15 @@ const cachedCatalogSettingsSchema = v.looseObject({
   catalog: v.looseObject({
     moviesSource: v.number(),
     tvShowsSource: v.number(),
+    sort: v.optional(
+      v.picklist([
+        CatalogSort.POPULARITY,
+        CatalogSort.RATING_DESC,
+        CatalogSort.RATING_ASC,
+        CatalogSort.RELEASE_DATE_DESC,
+        CatalogSort.RELEASE_DATE_ASC,
+      ]),
+    ),
   }),
   download: cachedDownloadSettingsSchema,
 });

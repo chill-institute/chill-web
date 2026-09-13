@@ -19,11 +19,11 @@ export { TVShowStatus };
 
 export type { Movie, SearchResult, TVShow, UserSettings };
 
-export type CatalogAppSettings = Omit<CatalogSettings, "$typeName"> & {
+export type CatalogAppSettings = CatalogAppSettingsDefaults & {
   download: Omit<DownloadSettings, "$typeName">;
 };
 
-type CatalogAppSettingsDefaults = Omit<CatalogSettings, "$typeName">;
+type CatalogAppSettingsDefaults = Pick<CatalogSettings, "sort" | "moviesSource" | "tvShowsSource">;
 
 export const moviesSources = [
   MoviesSource.ROTTEN_TOMATOES,
@@ -111,6 +111,7 @@ export function getTVShowStatusLabel(status: TVShowStatus): string {
 }
 
 const defaultUserSettings: CatalogAppSettingsDefaults = {
+  sort: CATALOG_SETTINGS_FALLBACKS.sort,
   moviesSource: CATALOG_SETTINGS_FALLBACKS.moviesSource,
   tvShowsSource: CATALOG_SETTINGS_FALLBACKS.tvShowsSource,
 };
@@ -135,6 +136,7 @@ export function applyCatalogAppSettingsPatch(
   const next = create(UserSettingsSchema, {
     ...settings,
     catalog: create(CatalogSettingsSchema, {
+      sort: current.sort,
       moviesSource: current.moviesSource,
       tvShowsSource: current.tvShowsSource,
       ...catalogPatch,

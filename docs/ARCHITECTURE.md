@@ -36,13 +36,15 @@ hosted API; the web repo owns browser state, requests, and rendering.
 | `/settings`                        | Account and folder settings          |
 | `/sign-in`, `/sign-out`, `/auth/*` | Browser and CLI-token authentication |
 
-Catalog listings label the existing provider order as popularity. The `sort` URL parameter
-selects rating or release year in either direction, sorting only the returned
-catalog. Matching release years use highest rating first; remaining ties retain
-provider order. Missing values stay last. Sorting survives
-provider changes and detail navigation without changing account settings.
-Ratings may fall back to provider metadata; catalog dates currently contain only
-a year, not a full release date.
+One `UserSettings.catalog.sort` preference applies across movies, TV, and all
+providers, independently of search sorting. Picker changes save to put.io through
+the existing settings mutation. A `sort` URL overrides it without changing the
+saved preference; `sort=default` explicitly selects popularity (provider order).
+
+Date sorting uses movie `releaseDate` or TV `firstAirDate`, with highest rating
+first for matching dates. Unknown values stay last; remaining ties retain provider
+order. Legacy `year-asc` and `year-desc` URLs select date order. Sorting applies to
+the returned catalog; ratings may fall back to provider metadata.
 
 ## Request Path
 

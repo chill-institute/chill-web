@@ -550,11 +550,11 @@ test.describe("catalog routing", () => {
     await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
     await authenticatedPage.waitForURL(/\/movies\/m1(\?|$)/);
 
-    expect(new URL(authenticatedPage.url()).searchParams.get("sort")).toBe("year-asc");
+    expect(new URL(authenticatedPage.url()).searchParams.get("sort")).toBe("date-asc");
     await authenticatedPage.goBack();
     await authenticatedPage.waitForURL(/\/movies(\?|$)/);
     await expect(authenticatedPage.getByRole("combobox", { name: "Sort by" })).toHaveValue(
-      "year-asc",
+      "date-asc",
     );
     expect(new URL(authenticatedPage.url()).pathname).toBe("/movies");
     await expect(authenticatedPage.locator('[data-slot="poster-card"]').first()).toBeVisible();

@@ -7,7 +7,12 @@ import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4
 
 import { MoviePosterActions } from "@/catalog/components/movie-poster-actions";
 import { CatalogSortSelect } from "@/catalog/components/catalog-sort-select";
-import { sortCatalog, type CatalogSort } from "@/catalog/lib/sort";
+import {
+  catalogSortFromProto,
+  catalogSortToProto,
+  sortCatalog,
+  type CatalogSort,
+} from "@/catalog/lib/sort";
 import { MoviesSourceSelect } from "@/catalog/components/movies-source-select";
 import { TVShowsSourceSelect } from "@/catalog/components/tv-shows-source-select";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
@@ -48,7 +53,6 @@ export function CatalogPage({ tab }: CatalogPageProps) {
   const auth = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ strict: false });
-  const sort = search.sort ?? "default";
   const moviesURLSource =
     tab === "movies" && typeof search.source === "number"
       ? (search.source as MoviesSource)
@@ -62,6 +66,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
   const saveConfigMutation = useSaveSettings();
   const settingsMutationPending = useIsMutating({ mutationKey: USER_SETTINGS_MUTATION_KEY }) > 0;
   const appSettings = configQuery.data ? toCatalogAppSettings(configQuery.data) : undefined;
+  const sort = search.sort ?? catalogSortFromProto(appSettings?.sort);
   // Deep-linked movie source is the render source of truth; settings sync persists it in the background.
   const effectiveMoviesSource = moviesURLSource ?? appSettings?.moviesSource;
   const effectiveTVShowsSource = tvShowsURLSource ?? TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS;
@@ -84,7 +89,6 @@ export function CatalogPage({ tab }: CatalogPageProps) {
   });
 
   function patchConfig(patch: Partial<CatalogAppSettings>) {
-    if (!configQuery.data) return;
     saveConfigMutation.mutate((settings) => applyCatalogAppSettingsPatch(settings, patch));
   }
 
@@ -116,7 +120,9 @@ export function CatalogPage({ tab }: CatalogPageProps) {
         />
       );
 
-    const activeContent = !shouldFetchCatalog ? (
+    const waitingForMovies =
+      !shouldFetchCatalog && moviesQuery.data?.source !== selectedMoviesSource;
+    const activeContent = waitingForMovies ? (
       <PosterGridSkeleton />
     ) : tab === "movies" ? (
       <MoviesContent
@@ -159,9 +165,10 @@ export function CatalogPage({ tab }: CatalogPageProps) {
             <CatalogSortSelect
               value={sort}
               onChange={(next) => {
+                patchConfig({ sort: catalogSortToProto(next) });
                 void navigate({
                   to: tab === "movies" ? "/movies" : "/tv-shows",
-                  search: (prev) => ({ ...prev, sort: next === "default" ? undefined : next }),
+                  search: (prev) => ({ ...prev, sort: next }),
                   replace: true,
                 });
               }}
@@ -272,29 +279,31 @@ function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesConte
       }
       return (
         <PosterGrid>
-          {sortCatalog(movies.data.movies, sort).map((movie, index) => (
-            <PosterCard
-              key={movie.id}
-              className="animate-reveal"
-              style={staggerDelay(index)}
-              title={movie.title}
-              image={movie.posterUrl ?? null}
-              imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
-              imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
-              rating={movie.rating != null ? movie.rating.toFixed(1) : null}
-              ratingHref={movie.externalUrl || undefined}
-              year={movie.year != null ? String(movie.year) : null}
-              render={
-                <Link
-                  to="/movies/$id"
-                  params={{ id: movie.id }}
-                  search={(prev) => prev}
-                  resetScroll={false}
-                />
-              }
-              footer={<MoviePosterActions movie={movie} />}
-            />
-          ))}
+          {sortCatalog(movies.data.movies, sort, (movie) => movie.releaseDate).map(
+            (movie, index) => (
+              <PosterCard
+                key={movie.id}
+                className="animate-reveal"
+                style={staggerDelay(index)}
+                title={movie.title}
+                image={movie.posterUrl ?? null}
+                imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
+                imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
+                rating={movie.rating != null ? movie.rating.toFixed(1) : null}
+                ratingHref={movie.externalUrl || undefined}
+                year={movie.year != null ? String(movie.year) : null}
+                render={
+                  <Link
+                    to="/movies/$id"
+                    params={{ id: movie.id }}
+                    search={(prev) => prev}
+                    resetScroll={false}
+                  />
+                }
+                footer={<MoviePosterActions movie={movie} />}
+              />
+            ),
+          )}
         </PosterGrid>
       );
     })
@@ -331,7 +340,7 @@ function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsCon
       }
       return (
         <PosterGrid>
-          {sortCatalog(shows.data.shows, sort).map((show, index) => (
+          {sortCatalog(shows.data.shows, sort, (show) => show.firstAirDate).map((show, index) => (
             <PosterCard
               key={show.imdbId}
               className="animate-reveal"

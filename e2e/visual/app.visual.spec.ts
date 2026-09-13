@@ -214,17 +214,36 @@ for (const route of ["movies", "tv-shows"]) {
     await freezeVisualClock(authenticatedPage);
     await mockRpc(
       defaultMethods({
+        GetMovies: moviesResponse([
+          movie({ ...movies[0], year: 2024, releaseDate: "2024-02-01" }),
+          movie({ ...movies[1], year: 2024, releaseDate: "2024-10-01" }),
+        ]),
         GetTVShows: tvShowsResponse([
-          tvShow({ imdbId: "tt9000001", title: "Synthetic Series Alpha", year: 2020 }),
-          tvShow({ imdbId: "tt9000002", title: "Synthetic Series Beta", year: 2024 }),
+          tvShow({
+            imdbId: "tt9000001",
+            title: "Synthetic Series Alpha",
+            year: 2024,
+            firstAirDate: "2024-02-01",
+          }),
+          tvShow({
+            imdbId: "tt9000002",
+            title: "Synthetic Series Beta",
+            year: 2024,
+            firstAirDate: "2024-10-01",
+          }),
         ]),
       }),
     );
-    await authenticatedPage.goto(`/${route}?sort=year-desc`);
+    await authenticatedPage.goto(`/${route}?sort=date-desc`);
     await expect(authenticatedPage.getByRole("combobox", { name: "Sort by" })).toHaveValue(
-      "year-desc",
+      "date-desc",
     );
     await expect(authenticatedPage.locator('[data-slot="poster-card"]')).toHaveCount(2);
+    await expect(authenticatedPage.locator('[data-slot="poster-card"] h2')).toHaveText(
+      route === "movies"
+        ? ["Synthetic Feature Beta", "Synthetic Feature Alpha"]
+        : ["Synthetic Series Beta", "Synthetic Series Alpha"],
+    );
     await expect(authenticatedPage).toHaveScreenshot(`${route}-catalog-sorting.png`, {
       ...visualOptions,
       maxDiffPixelRatio: 0.003,

@@ -2,6 +2,7 @@ import { create, isFieldSet } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vite-plus/test";
 import {
   CatalogSettingsSchema,
+  CatalogSort,
   DownloadSettingsSchema,
   MoviesSource,
   SearchResultDisplayBehavior,
@@ -225,5 +226,58 @@ describe("withSaveUserSettingsResponseDefaults", () => {
 
     expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
     expect(out.catalog?.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX);
+  });
+});
+
+describe("catalog sort defaults", () => {
+  it.each([undefined, CatalogSort.UNSPECIFIED])(
+    "defaults missing or unspecified shared sort (%s)",
+    (sort) => {
+      const settings = withUserSettingsDefaults(
+        create(UserSettingsSchema, {
+          catalog: create(CatalogSettingsSchema, { sort }),
+        }),
+      );
+      expect(settings.catalog?.sort).toBe(CatalogSort.POPULARITY);
+      expect(withUserSettingsDefaults(create(UserSettingsSchema)).catalog?.sort).toBe(
+        CatalogSort.POPULARITY,
+      );
+    },
+  );
+
+  it("preserves an explicit shared sort", () => {
+    const settings = withUserSettingsDefaults(
+      create(UserSettingsSchema, {
+        catalog: create(CatalogSettingsSchema, { sort: CatalogSort.RELEASE_DATE_ASC }),
+      }),
+    );
+    expect(settings.catalog?.sort).toBe(CatalogSort.RELEASE_DATE_ASC);
+  });
+
+  it.each([
+    create(UserSettingsSchema),
+    create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { moviesSource: MoviesSource.YTS }),
+    }),
+    create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { sort: CatalogSort.UNSPECIFIED }),
+    }),
+  ])("preserves the saved sort when an old or partial response omits it", (response) => {
+    const fallback = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { sort: CatalogSort.RATING_DESC }),
+    });
+    const result = withSaveUserSettingsResponseDefaults({ fallback, response });
+    expect(result.catalog?.sort).toBe(CatalogSort.RATING_DESC);
+  });
+
+  it("honors an explicit popularity reset", () => {
+    const fallback = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { sort: CatalogSort.RATING_DESC }),
+    });
+    const response = create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { sort: CatalogSort.POPULARITY }),
+    });
+    const result = withSaveUserSettingsResponseDefaults({ fallback, response });
+    expect(result.catalog?.sort).toBe(CatalogSort.POPULARITY);
   });
 });

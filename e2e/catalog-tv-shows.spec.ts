@@ -206,6 +206,7 @@ test.describe("tv shows home", () => {
     await expect(authenticatedPage.getByText("Velvet Terminal")).toBeVisible();
 
     await authenticatedPage.getByRole("combobox", { name: "Sort by" }).selectOption("rating-desc");
+    await expect.poll(() => saveCalls).toBe(1);
     await authenticatedPage
       .getByRole("combobox", { name: "TV source" })
       .selectOption(String(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX));
@@ -220,7 +221,7 @@ test.describe("tv shows home", () => {
       "rating-desc",
     );
     expect(new URL(authenticatedPage.url()).searchParams.get("sort")).toBe("rating-desc");
-    expect(saveCalls).toBe(0);
+    expect(saveCalls).toBe(1);
   });
 
   test("tv source select does not render a mismatched source response", async ({

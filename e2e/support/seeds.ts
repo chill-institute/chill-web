@@ -130,6 +130,7 @@ export function userSettings(init?: ConfigInit) {
         sortDirection: sortDirection ?? search?.sortDirection ?? SortDirection.DESC,
       }),
       catalog: create(CatalogSettingsSchema, {
+        sort: catalog?.sort,
         moviesSource: moviesSource ?? catalog?.moviesSource ?? MoviesSource.IMDB_MOVIEMETER,
         tvShowsSource:
           tvShowsSource ?? catalog?.tvShowsSource ?? TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
