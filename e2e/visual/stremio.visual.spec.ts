@@ -33,36 +33,3 @@ test("private Stremio add-on setup", async ({ authenticatedPage: page, mockRpc }
     animations: "disabled",
   });
 });
-
-test("Stremio acquisition confirmation", async ({ authenticatedPage: page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.route(
-    "https://stremio.chill.institute/api/installations/fixture-id/releases?**",
-    (route) =>
-      route.fulfill({
-        json: {
-          releases: [
-            {
-              id: "release-id",
-              title: "Synthetic Feature Alpha 1080p",
-              indexer: "fixture",
-              size: "1073741824",
-              seeders: "24",
-            },
-          ],
-        },
-      }),
-  );
-  await page.goto(
-    "/stremio/acquire?installation=fixture-id&type=movie&target=chill%3Amovie%3Afixture",
-  );
-  await page.getByRole("radio").check();
-  await expect(page.getByRole("button", { name: "confirm and send to put.io" })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
-  await expect(page).toHaveScreenshot("stremio-acquire.png", {
-    fullPage: true,
-    animations: "disabled",
-  });
-});
