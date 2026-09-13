@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { create } from "@bufbuild/protobuf";
 import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
@@ -88,6 +89,9 @@ export function SettingsPanel() {
       </fieldset>
       {saveMutation.error ? <UserErrorAlert error={saveMutation.error} /> : null}
       <ThemeSection theme={theme} setTheme={setTheme} systemDark={systemDark} />
+      <Link to="/stremio" className="text-fg-1 underline underline-offset-2">
+        watch with Stremio
+      </Link>
       <SettingsFooter />
     </div>
   );

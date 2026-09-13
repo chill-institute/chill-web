@@ -72,3 +72,27 @@ dropped; terminal failures remain reportable. Filters live in
 
 Build, smoke, and artifact verification are described in
 [Deployment](./DEPLOYMENT.md).
+
+## Stremio setup
+
+`/stremio` manages private installations through the hosted adapter. The browser
+sends its ordinary chill token only in an Authorization header. Installation
+links carry a separate revocable capability: never include them in telemetry,
+public screenshots, or support reports. The folder picker uses read-only
+`GetFolder`; selecting a folder here does not change download settings.
+
+`/stremio/acquire` accepts an installation ID and discovery target from the
+add-on. It searches releases without starting a transfer. Only explicit
+confirmation submits an acquisition; a failed submission disables resubmission
+and offers a status check because the provider may have accepted it. Reloads
+recover a previously submitted operation. Ready files link to Stremio Web;
+playback authorization remains with the adapter. Status refresh is manual.
+
+`VITE_PUBLIC_STREMIO_BASE_URL` configures the hosted adapter origin at build time
+(default `https://stremio.chill.institute`). Use HTTPS; local HTTP is accepted
+only in development on localhost. Hosting, capability persistence, provider
+transfers, and revocation belong to `chill-stremio`.
+
+Fixture browser coverage is `pnpm exec vp exec playwright test e2e/stremio.spec.ts`;
+visual coverage is under `e2e/visual/stremio.visual.spec.ts`. These tests never use
+real credentials or start provider transfers.

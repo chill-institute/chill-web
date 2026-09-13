@@ -15,12 +15,14 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignOutRouteImport } from './routes/sign-out'
+import { Route as StremioRouteImport } from './routes/stremio'
 import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 import { Route as MoviesIndexRouteImport } from './routes/movies/index'
 import { Route as MoviesIdRouteImport } from './routes/movies/$id'
+import { Route as StremioAcquireRouteImport } from './routes/stremio_.acquire'
 import { Route as TvShowsIndexRouteImport } from './routes/tv-shows/index'
 import { Route as TvShowsIdRouteImport } from './routes/tv-shows/$id'
 
@@ -54,6 +56,11 @@ const SignOutRoute = SignOutRouteImport.update({
   path: '/sign-out',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StremioRoute = StremioRouteImport.update({
+  id: '/stremio',
+  path: '/stremio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TvShowsRouteRoute = TvShowsRouteRouteImport.update({
   id: '/tv-shows',
   path: '/tv-shows',
@@ -84,6 +91,11 @@ const MoviesIdRoute = MoviesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MoviesRouteRoute,
 } as any)
+const StremioAcquireRoute = StremioAcquireRouteImport.update({
+  id: '/stremio_/acquire',
+  path: '/stremio/acquire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TvShowsIndexRoute = TvShowsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -103,10 +115,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
+  '/stremio': typeof StremioRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
+  '/stremio/acquire': typeof StremioAcquireRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
   '/movies/': typeof MoviesIndexRoute
   '/tv-shows/': typeof TvShowsIndexRoute
@@ -117,10 +131,12 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
+  '/stremio': typeof StremioRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
+  '/stremio/acquire': typeof StremioAcquireRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
   '/movies': typeof MoviesIndexRoute
   '/tv-shows': typeof TvShowsIndexRoute
@@ -134,10 +150,12 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
+  '/stremio': typeof StremioRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
+  '/stremio_/acquire': typeof StremioAcquireRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
   '/movies/': typeof MoviesIndexRoute
   '/tv-shows/': typeof TvShowsIndexRoute
@@ -152,10 +170,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sign-in'
     | '/sign-out'
+    | '/stremio'
     | '/auth/cli-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
+    | '/stremio/acquire'
     | '/tv-shows/$id'
     | '/movies/'
     | '/tv-shows/'
@@ -166,10 +186,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sign-in'
     | '/sign-out'
+    | '/stremio'
     | '/auth/cli-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
+    | '/stremio/acquire'
     | '/tv-shows/$id'
     | '/movies'
     | '/tv-shows'
@@ -182,10 +204,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sign-in'
     | '/sign-out'
+    | '/stremio'
     | '/auth/cli-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
+    | '/stremio_/acquire'
     | '/tv-shows/$id'
     | '/movies/'
     | '/tv-shows/'
@@ -199,9 +223,11 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
+  StremioRoute: typeof StremioRoute
   AuthCliTokenRoute: typeof AuthCliTokenRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
+  StremioAcquireRoute: typeof StremioAcquireRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -248,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignOutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stremio': {
+      id: '/stremio'
+      path: '/stremio'
+      fullPath: '/stremio'
+      preLoaderRoute: typeof StremioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tv-shows': {
       id: '/tv-shows'
       path: '/tv-shows'
@@ -289,6 +322,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/movies/$id'
       preLoaderRoute: typeof MoviesIdRouteImport
       parentRoute: typeof MoviesRouteRoute
+    }
+    '/stremio_/acquire': {
+      id: '/stremio_/acquire'
+      path: '/stremio/acquire'
+      fullPath: '/stremio/acquire'
+      preLoaderRoute: typeof StremioAcquireRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/tv-shows/': {
       id: '/tv-shows/'
@@ -343,9 +383,11 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
+  StremioRoute: StremioRoute,
   AuthCliTokenRoute: AuthCliTokenRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,
+  StremioAcquireRoute: StremioAcquireRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

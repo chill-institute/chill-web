@@ -27,6 +27,7 @@ type Props = {
   initialFolder?: FolderCrumb | null;
   renderTrigger?: (open: boolean) => ReactElement;
   triggerLabel?: string;
+  purpose?: string;
   onSave: (id: bigint) => void;
 };
 
@@ -34,6 +35,7 @@ export function DownloadFolderPicker({
   initialFolder,
   renderTrigger,
   triggerLabel = "change",
+  purpose = "download folder",
   onSave,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -57,7 +59,7 @@ export function DownloadFolderPicker({
 
         <PopoverContent
           align="center"
-          aria-label="choose download folder"
+          aria-label={`choose ${purpose}`}
           className="w-[296px] min-w-[296px] max-w-[296px] overflow-hidden p-0 shadow-[0_12px_32px_rgba(0,0,0,0.18),var(--shadow-press)]"
           portalContainer={portalContainer}
           role="dialog"
@@ -73,6 +75,7 @@ export function DownloadFolderPicker({
         >
           <PickerBody
             key={open ? "open" : "closed"}
+            purpose={purpose}
             initialFolder={initialFolder ?? null}
             open={open}
             onSave={(id) => {
@@ -90,11 +93,13 @@ export function DownloadFolderPicker({
 }
 
 function PickerBody({
+  purpose,
   initialFolder,
   open,
   onClose,
   onSave,
 }: {
+  purpose: string;
   initialFolder: FolderCrumb | null;
   open: boolean;
   onClose: () => void;
@@ -180,7 +185,7 @@ function PickerBody({
 
       <div className="bg-surface-2 flex justify-end px-2.5 py-2">
         <Button
-          aria-label={`Use ${currentFolder.name} as download folder`}
+          aria-label={`Use ${currentFolder.name} as ${purpose}`}
           disabled={folderQuery.status !== "success"}
           onClick={() => onSave(currentFolder.id)}
           size="sm"
