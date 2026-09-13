@@ -30,7 +30,7 @@ export default defineConfig({
     {
       name: "webkit-loading",
       testMatch: ["*-loading-layout.spec.ts", "settings.spec.ts"],
-      grep: /loading keeps|poster rows|drawer keeps|transfer feedback|keeps settings sections|keeps the mobile folder picker/,
+      grep: /loading keeps|poster rows|drawer keeps|transfer feedback|keeps tracker controls|keeps settings sections|keeps the mobile folder picker/,
       use: { ...devices["iPhone 13"], browserName: "webkit", serviceWorkers: "block" },
     },
     {

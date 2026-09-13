@@ -1,6 +1,7 @@
 import { CheckboxField } from "../checkbox-field";
 
 type Props = {
+  disabled?: boolean;
   onChange: (value: string[]) => void;
   options: {
     id: string;
@@ -9,7 +10,7 @@ type Props = {
   uncheckedItems: string[];
 };
 
-export function CheckboxGroup({ onChange, options, uncheckedItems }: Props) {
+export function CheckboxGroup({ onChange, options, uncheckedItems, disabled = false }: Props) {
   const handleOnChange = (id: string) => {
     const next = uncheckedItems.includes(id)
       ? uncheckedItems.filter((item) => item !== id)
@@ -22,6 +23,7 @@ export function CheckboxGroup({ onChange, options, uncheckedItems }: Props) {
     <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
       {options.map((option) => (
         <CheckboxField
+          disabled={disabled}
           checked={!uncheckedItems.includes(option.id)}
           id={option.id}
           key={option.id}

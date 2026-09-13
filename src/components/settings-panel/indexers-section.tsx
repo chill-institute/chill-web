@@ -10,8 +10,10 @@ function IndexersSection({
   indexerOptions,
   persistPatch,
   pending,
+  disabled,
 }: {
   pending: boolean;
+  disabled: boolean;
   effective: ChillSettings;
   indexerOptions: IndexerOption[];
   persistPatch: PersistPatch;
@@ -27,6 +29,7 @@ function IndexersSection({
           </div>
         ) : (
           <CheckboxGroup
+            disabled={disabled}
             options={indexerOptions}
             uncheckedItems={effective.disabledIndexerIds}
             onChange={(disabledIndexerIds) => persistPatch({ disabledIndexerIds })}

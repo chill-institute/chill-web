@@ -67,6 +67,42 @@ async function fulfillPutioProviderUnavailable(route: Route) {
 }
 
 test.describe("settings", () => {
+  for (const outcome of ["success", "error"] as const) {
+    test(`keeps tracker controls disabled until settings resolve (${outcome})`, async ({
+      authenticatedPage: page,
+      mockRpc,
+    }) => {
+      await page.setViewportSize({ width: 375, height: 900 });
+      await mockRpc(baseSettingsMethods());
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+        await gate;
+        if (outcome === "error") return fulfillPutioProviderUnavailable(route);
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify(userSettings()),
+        });
+      });
+      await page.goto("/settings");
+      const tracker = page.getByRole("checkbox", { name: "YTS", exact: true });
+      await expect(tracker).toBeVisible();
+      await expect(tracker).toBeDisabled();
+      await expect(tracker).toHaveAttribute("tabindex", "-1");
+      release();
+      if (outcome === "success") {
+        await expect(tracker).toBeEnabled();
+        await expect(tracker).toHaveAttribute("tabindex", "0");
+      } else {
+        await expect(page.getByRole("alert")).toBeVisible();
+        await expect(tracker).toBeDisabled();
+        await expect(tracker).toHaveAttribute("tabindex", "-1");
+      }
+    });
+  }
+
   for (const width of [375, 1280]) {
     for (const outcome of ["success", "error"] as const) {
       for (const surface of ["page", "modal"] as const) {

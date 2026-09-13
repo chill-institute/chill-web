@@ -74,6 +74,7 @@ export function SettingsPanel() {
           disabled={disabled}
         />
         <IndexersSection
+          disabled={disabled}
           effective={effective}
           indexerOptions={indexerOptions}
           persistPatch={persistPatch}
