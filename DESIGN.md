@@ -269,8 +269,9 @@ Use lucide icons. Icons inside buttons should use component-supported sizing and
 ## Loading transitions
 
 Keep known controls mounted and disabled while their settings load. Skeletons must match
-loaded card geometry at each breakpoint, including metadata and action rows. Detail and
-settings overlays keep a viewport-bounded frame with a scrolling body across loading,
-empty, and error states. Search and catalog content reserve at least one viewport so a
-short response does not pull the footer into the first screen. Result counts and long
-content may still grow the document.
+loaded card geometry at each breakpoint, including metadata and action rows. Movie and
+TV details keep a viewport-bounded frame with a scrolling body. Settings size to their
+content, with a viewport height limit; do not add fixed-height gaps between sections.
+Keep errors with the failing section and leave the settings footer for links and version.
+Search and catalog content reserve at least one viewport so a short response does not
+pull the footer into the first screen. Result counts and long content may still grow the document.

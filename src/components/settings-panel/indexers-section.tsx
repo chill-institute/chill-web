@@ -20,7 +20,7 @@ function IndexersSection({
 }) {
   return (
     <SettingsSection title="Search using the following trackers">
-      <div className="h-24 overflow-y-auto" aria-busy={pending}>
+      <div className="min-h-5" aria-busy={pending}>
         {pending ? (
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3" aria-hidden="true">
             {Array.from({ length: 6 }, (_, index) => (

@@ -52,10 +52,11 @@ export function SettingsPanel() {
     return null;
   }
 
+  const error = configQuery.error ?? indexersQuery.error;
+  if (error) return <UserErrorAlert error={error} />;
+
   const disabled = !configQuery.data;
   const effective = toChillSettings(configQuery.data ?? create(UserSettingsSchema));
-  const error =
-    configQuery.error ?? indexersQuery.error ?? downloadFolderQuery.error ?? saveMutation.error;
 
   return (
     <div className="flex flex-col gap-6" aria-busy={configQuery.isPending}>
@@ -85,9 +86,9 @@ export function SettingsPanel() {
           <SearchResultTitleBehaviorSection effective={effective} persistPatch={persistPatch} />
         </SettingsTwoColumnGrid>
       </fieldset>
+      {saveMutation.error ? <UserErrorAlert error={saveMutation.error} /> : null}
       <ThemeSection theme={theme} setTheme={setTheme} systemDark={systemDark} />
       <SettingsFooter />
-      {error ? <UserErrorAlert error={error} /> : null}
     </div>
   );
 }

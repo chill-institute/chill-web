@@ -5,6 +5,7 @@ import {
   SearchResultTitleBehavior,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 import { expect, readSubmittedSettings, test } from "./support/fixtures";
+import { expectNoExcessBottomSpace, stableElementBox } from "./support/layout";
 import {
   downloadFolderResponse,
   folderResponse,
@@ -97,8 +98,7 @@ test.describe("settings", () => {
         await expect(tracker).toHaveAttribute("tabindex", "0");
       } else {
         await expect(page.getByRole("alert")).toBeVisible();
-        await expect(tracker).toBeDisabled();
-        await expect(tracker).toHaveAttribute("tabindex", "-1");
+        await expect(tracker).toHaveCount(0);
       }
     });
   }
@@ -137,15 +137,7 @@ test.describe("settings", () => {
             await authenticatedPage.getByRole("button", { name: "settings" }).click();
           }
           const panel = settingsPage(authenticatedPage);
-          const titles = [
-            "Signed in as",
-            "Download folder",
-            "Search preferences",
-            "Search using the following trackers",
-            "Search result display behavior",
-            "Search result name behavior",
-            "User-interface theme",
-          ];
+          const titles = ["Signed in as", "Download folder", "Search preferences"];
           await expect(panel.getByText("Search preferences", { exact: true })).toBeVisible();
           await authenticatedPage.evaluate(() => document.fonts.ready);
           await panel.evaluate(async (element) => {
@@ -154,9 +146,12 @@ test.describe("settings", () => {
               (drawer?.getAnimations() ?? []).map((animation) => animation.finished),
             );
           });
-          const frame = await panel.boundingBox();
+          const frame = await stableElementBox(panel);
           const positions = await Promise.all(
-            titles.map((title) => panel.getByText(title, { exact: true }).boundingBox()),
+            titles.map(async (title) => {
+              const box = await stableElementBox(panel.getByText(title, { exact: true }));
+              return box.y - frame.y;
+            }),
           );
           await expect(panel.getByRole("combobox", { name: "Sort results" })).toBeDisabled();
           release();
@@ -164,16 +159,26 @@ test.describe("settings", () => {
             await expect(panel.getByRole("combobox", { name: "Sort results" })).toBeEnabled();
             await expect(panel.getByText("YTS", { exact: true })).toBeVisible();
             await expect(panel.getByText("your files", { exact: true })).toBeVisible();
+            const afterFrame = await stableElementBox(panel);
+            for (const [index, title] of titles.entries()) {
+              const after = await stableElementBox(panel.getByText(title, { exact: true }));
+              expect(after.y - afterFrame.y, title).toBeCloseTo(positions[index], 0);
+            }
           } else {
-            await expect(panel.getByRole("alert")).toHaveCount(1);
-            await expect(panel.getByRole("combobox", { name: "Sort results" })).toBeDisabled();
+            const alert = panel.getByRole("alert");
+            await expect(alert).toHaveCount(1);
+            await expect(alert.getByRole("button", { name: "retry" })).toBeVisible();
+            await expect(alert.getByRole("button", { name: "sign in again" })).toBeVisible();
+            await expect(panel.getByRole("combobox", { name: "Sort results" })).toHaveCount(0);
+            await expect(panel.getByRole("navigation", { name: "contact" })).toHaveCount(0);
           }
           if (surface === "modal") {
-            expect(await panel.boundingBox()).toEqual(frame);
-          }
-          for (const [index, title] of titles.entries()) {
-            const after = await panel.getByText(title, { exact: true }).boundingBox();
-            expect(after?.y, title).toBeCloseTo(positions[index]?.y ?? -1, 0);
+            if (width >= 1280) {
+              const content = panel.locator("> div").last().locator("> :last-child");
+              await expectNoExcessBottomSpace(panel, content, 25);
+            }
+            await panel.getByRole("button", { name: "Close settings" }).click();
+            await expect(panel).toHaveCount(0);
           }
         });
       }
@@ -548,6 +553,8 @@ test.describe("settings", () => {
 
     await expect(
       settingsPage(authenticatedPage)
+        .locator("section")
+        .filter({ has: authenticatedPage.getByText("Download folder", { exact: true }) })
         .getByRole("alert")
         .filter({ hasText: "Service temporarily unavailable. Please try again shortly." }),
     ).toBeVisible({ timeout: 5000 });
