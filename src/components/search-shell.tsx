@@ -32,7 +32,7 @@ export function SearchShell({
   return (
     <div className="flex min-h-dvh flex-col">
       <StickyHeader brand={headerBrand} tabs={headerTabs} right={headerRight} />
-      <main className="flex-1">
+      <main className="min-h-svh flex-1">
         <div className="border-border-strong bg-surface border-b py-4">
           <ResponsiveBox>
             <div className="mx-auto w-full max-w-lg">

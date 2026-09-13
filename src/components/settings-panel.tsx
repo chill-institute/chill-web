@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { match } from "ts-pattern";
+import { create } from "@bufbuild/protobuf";
+import { UserSettingsSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { useAuth } from "@/auth/auth";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { combineQueries } from "@/queries/combine";
 import { useSettingsQuery, useSaveSettings } from "@/queries/settings";
 import { useDownloadFolderQuery } from "@/auth/queries/download-folder";
 import { useIndexersQuery } from "@/queries/indexers";
@@ -18,7 +18,6 @@ import { SearchResultDisplayBehaviorSection } from "./settings-panel/search-resu
 import { SearchResultTitleBehaviorSection } from "./settings-panel/search-result-title-behavior-section";
 import { SearchSettingsSection } from "./settings-panel/search-settings-section";
 import { SettingsFooter } from "./settings-panel/settings-footer";
-import { SettingsSkeleton } from "./settings-panel/settings-skeleton";
 import { SettingsTwoColumnGrid } from "./settings-panel/settings-two-column-grid";
 import { ThemeSection } from "./settings-panel/theme-section";
 import type { ChillSettings } from "@/lib/types";
@@ -53,39 +52,41 @@ export function SettingsPanel() {
     return null;
   }
 
-  const combined = combineQueries(configQuery, indexersQuery);
+  const disabled = !configQuery.data;
+  const effective = toChillSettings(configQuery.data ?? create(UserSettingsSchema));
+  const error =
+    configQuery.error ?? indexersQuery.error ?? downloadFolderQuery.error ?? saveMutation.error;
 
-  return match(combined)
-    .with({ status: "pending" }, () => <SettingsSkeleton />)
-    .with({ status: "error" }, (q) => <UserErrorAlert error={q.error} />)
-    .with({ status: "success" }, ({ data: [config] }) => {
-      const effective = toChillSettings(config);
-
-      return (
-        <div className="flex flex-col gap-6">
-          <SettingsTwoColumnGrid>
-            <AccountSection profileQuery={profileQuery} onReset={resetSettings} />
-            <DownloadFolderSection
-              effective={effective}
-              downloadFolderQuery={downloadFolderQuery}
-              persistPatch={persistPatch}
-            />
-          </SettingsTwoColumnGrid>
-          <SearchSettingsSection effective={effective} persistPatch={persistPatch} />
-          <IndexersSection
+  return (
+    <div className="flex flex-col gap-6" aria-busy={configQuery.isPending}>
+      <fieldset disabled={disabled} className="m-0 flex min-w-0 flex-col gap-6 border-0 p-0">
+        <SettingsTwoColumnGrid>
+          <AccountSection profileQuery={profileQuery} onReset={resetSettings} />
+          <DownloadFolderSection
             effective={effective}
-            indexerOptions={indexerOptions}
+            downloadFolderQuery={downloadFolderQuery}
             persistPatch={persistPatch}
           />
-          <SettingsTwoColumnGrid>
-            <SearchResultDisplayBehaviorSection effective={effective} persistPatch={persistPatch} />
-            <SearchResultTitleBehaviorSection effective={effective} persistPatch={persistPatch} />
-          </SettingsTwoColumnGrid>
-          {saveMutation.error ? <UserErrorAlert error={saveMutation.error} /> : null}
-          <ThemeSection theme={theme} setTheme={setTheme} systemDark={systemDark} />
-          <SettingsFooter />
-        </div>
-      );
-    })
-    .exhaustive();
+        </SettingsTwoColumnGrid>
+        <SearchSettingsSection
+          effective={effective}
+          persistPatch={persistPatch}
+          disabled={disabled}
+        />
+        <IndexersSection
+          effective={effective}
+          indexerOptions={indexerOptions}
+          persistPatch={persistPatch}
+          pending={indexersQuery.isPending}
+        />
+        <SettingsTwoColumnGrid>
+          <SearchResultDisplayBehaviorSection effective={effective} persistPatch={persistPatch} />
+          <SearchResultTitleBehaviorSection effective={effective} persistPatch={persistPatch} />
+        </SettingsTwoColumnGrid>
+      </fieldset>
+      <ThemeSection theme={theme} setTheme={setTheme} systemDark={systemDark} />
+      <SettingsFooter />
+      {error ? <UserErrorAlert error={error} /> : null}
+    </div>
+  );
 }

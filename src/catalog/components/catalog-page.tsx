@@ -123,7 +123,7 @@ export function CatalogPage({ tab }: CatalogPageProps) {
     const waitingForMovies =
       !shouldFetchCatalog && moviesQuery.data?.source !== selectedMoviesSource;
     const activeContent = waitingForMovies ? (
-      <PosterGridSkeleton />
+      <PosterGridSkeleton tab={tab} />
     ) : tab === "movies" ? (
       <MoviesContent
         query={moviesQuery}
@@ -207,12 +207,15 @@ export function CatalogPage({ tab }: CatalogPageProps) {
         <PageHeading tab={tab}>
           <SortRowSkeleton />
         </PageHeading>
-        <PosterGridSkeleton />
+        <PosterGridSkeleton tab={tab} />
       </HomeShell>
     ))
     .with({ status: "error" }, (query) => (
       <HomeShell tab={tab}>
-        <div className="my-6">
+        <PageHeading tab={tab}>
+          <div className="h-8" />
+        </PageHeading>
+        <div className="mt-2">
           <UserErrorAlert error={query.error} />
         </div>
       </HomeShell>
@@ -232,7 +235,9 @@ function HomeShell({ tab, children }: { tab: CatalogTab; children: ReactNode }) 
   return (
     <div className="flex min-h-dvh flex-col">
       <StickyHeader brand={brand} tabs={tabs} right={right} />
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-5">{children}</main>
+      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-1 flex-col px-4 sm:px-5">
+        {children}
+      </main>
       <InstituteFooter />
     </div>
   );
@@ -258,18 +263,18 @@ type MoviesContentProps = {
 
 function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesContentProps) {
   return match(query)
-    .with({ status: "pending" }, () => <PosterGridSkeleton />)
+    .with({ status: "pending" }, () => <PosterGridSkeleton tab="movies" />)
     .with({ status: "error" }, (movies) =>
       movies.isFetching ? (
-        <PosterGridSkeleton />
+        <PosterGridSkeleton tab="movies" />
       ) : (
         <UserErrorAlert className="mt-2" error={movies.error} />
       ),
     )
     .with({ status: "success" }, (movies) => {
-      if (movies.data.source !== source) return <PosterGridSkeleton />;
+      if (movies.data.source !== source) return <PosterGridSkeleton tab="movies" />;
       if (movies.data.movies.length === 0) {
-        if (movies.isFetching) return <PosterGridSkeleton />;
+        if (movies.isFetching) return <PosterGridSkeleton tab="movies" />;
         return (
           <EmptyState
             message="couldn't fetch any movies from the selected source, please try another one."
@@ -319,18 +324,18 @@ type TVShowsContentProps = {
 
 function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsContentProps) {
   return match(query)
-    .with({ status: "pending" }, () => <PosterGridSkeleton />)
+    .with({ status: "pending" }, () => <PosterGridSkeleton tab="tv-shows" />)
     .with({ status: "error" }, (shows) =>
       shows.isFetching ? (
-        <PosterGridSkeleton />
+        <PosterGridSkeleton tab="tv-shows" />
       ) : (
         <UserErrorAlert className="mt-2" error={shows.error} />
       ),
     )
     .with({ status: "success" }, (shows) => {
-      if (shows.data.source !== source) return <PosterGridSkeleton />;
+      if (shows.data.source !== source) return <PosterGridSkeleton tab="tv-shows" />;
       if (shows.data.shows.length === 0) {
-        if (shows.isFetching) return <PosterGridSkeleton />;
+        if (shows.isFetching) return <PosterGridSkeleton tab="tv-shows" />;
         return (
           <EmptyState
             message="couldn't fetch any tv shows from the selected source, please try another one."
@@ -383,7 +388,7 @@ function staggerDelay(index: number): CSSProperties {
 
 const POSTER_SKELETON_SLOTS = Array.from({ length: 18 }, (_, i) => `poster-skel-${i}`);
 
-function PosterGridSkeleton() {
+function PosterGridSkeleton({ tab }: { tab: CatalogTab }) {
   return (
     <div className="grid grid-cols-2 gap-3 pb-8 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
       {POSTER_SKELETON_SLOTS.map((slot) => (
@@ -392,9 +397,14 @@ function PosterGridSkeleton() {
           className="border-border-strong bg-surface flex flex-col overflow-hidden rounded border"
         >
           <Skeleton className="border-border-strong aspect-[2/3] w-full rounded-none border-b" />
-          <div className="flex flex-col gap-2 px-3 py-2.5">
-            <Skeleton className="h-3.5 w-3/4" />
-            <Skeleton className="h-3 w-1/3" />
+          <div className="flex flex-col gap-2 px-3 pt-2.5 pb-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <Skeleton className="h-5 w-3/4 sm:h-[22.5px]" />
+              <Skeleton className="h-6 w-full sm:h-5" />
+            </div>
+            {tab === "movies" ? (
+              <Skeleton className="h-6 w-full rounded sm:size-7 sm:shrink-0" />
+            ) : null}
           </div>
         </article>
       ))}

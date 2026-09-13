@@ -28,6 +28,12 @@ export default defineConfig({
       use: { ...devices["iPhone 13"], browserName: "webkit", serviceWorkers: "block" },
     },
     {
+      name: "webkit-loading",
+      testMatch: ["*-loading-layout.spec.ts", "settings.spec.ts"],
+      grep: /loading keeps|poster rows|drawer keeps|transfer feedback|keeps settings sections|keeps the mobile folder picker/,
+      use: { ...devices["iPhone 13"], browserName: "webkit", serviceWorkers: "block" },
+    },
+    {
       name: "webkit-route-recovery",
       grep: /surfaces a persistent route chunk failure/,
       use: { browserName: "webkit" },

@@ -524,6 +524,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  [data-vaul-drawer],
+  [data-vaul-overlay] {
+    animation: none !important;
+    transition: none !important;
+  }
+
   .btn:active {
     transform: none;
   }

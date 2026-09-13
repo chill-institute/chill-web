@@ -67,6 +67,139 @@ async function fulfillPutioProviderUnavailable(route: Route) {
 }
 
 test.describe("settings", () => {
+  for (const width of [375, 1280]) {
+    for (const outcome of ["success", "error"] as const) {
+      for (const surface of ["page", "modal"] as const) {
+        test(`keeps settings sections in place after delayed ${outcome} at ${width}px in ${surface}`, async ({
+          authenticatedPage,
+          mockRpc,
+        }) => {
+          await authenticatedPage.setViewportSize({ width, height: 900 });
+          await mockRpc(baseSettingsMethods());
+          let release = () => {};
+          const responseReady = new Promise<void>((resolve) => {
+            release = resolve;
+          });
+          for (const method of ["GetUserSettings", "GetIndexers", "GetDownloadFolder"] as const) {
+            await authenticatedPage.route(`**/chill.v4.*Service/${method}`, async (route) => {
+              await responseReady;
+              if (outcome === "error") {
+                await fulfillPutioProviderUnavailable(route);
+              } else {
+                const responses = baseSettingsMethods();
+                await route.fulfill({
+                  status: 200,
+                  contentType: "application/json",
+                  body: JSON.stringify(responses[method]),
+                });
+              }
+            });
+          }
+          await authenticatedPage.emulateMedia({ reducedMotion: "reduce" });
+          await authenticatedPage.goto(surface === "page" ? "/settings" : "/");
+          if (surface === "modal") {
+            await authenticatedPage.getByRole("button", { name: "settings" }).click();
+          }
+          const panel = settingsPage(authenticatedPage);
+          const titles = [
+            "Signed in as",
+            "Download folder",
+            "Search preferences",
+            "Search using the following trackers",
+            "Search result display behavior",
+            "Search result name behavior",
+            "User-interface theme",
+          ];
+          await expect(panel.getByText("Search preferences", { exact: true })).toBeVisible();
+          await authenticatedPage.evaluate(() => document.fonts.ready);
+          await panel.evaluate(async (element) => {
+            const drawer = element.closest('[data-slot="drawer-content"]');
+            await Promise.all(
+              (drawer?.getAnimations() ?? []).map((animation) => animation.finished),
+            );
+          });
+          const frame = await panel.boundingBox();
+          const positions = await Promise.all(
+            titles.map((title) => panel.getByText(title, { exact: true }).boundingBox()),
+          );
+          await expect(panel.getByRole("combobox", { name: "Sort results" })).toBeDisabled();
+          release();
+          if (outcome === "success") {
+            await expect(panel.getByRole("combobox", { name: "Sort results" })).toBeEnabled();
+            await expect(panel.getByText("YTS", { exact: true })).toBeVisible();
+            await expect(panel.getByText("your files", { exact: true })).toBeVisible();
+          } else {
+            await expect(panel.getByRole("alert")).toHaveCount(1);
+            await expect(panel.getByRole("combobox", { name: "Sort results" })).toBeDisabled();
+          }
+          if (surface === "modal") {
+            expect(await panel.boundingBox()).toEqual(frame);
+          }
+          for (const [index, title] of titles.entries()) {
+            const after = await panel.getByText(title, { exact: true }).boundingBox();
+            expect(after?.y, title).toBeCloseTo(positions[index]?.y ?? -1, 0);
+          }
+        });
+      }
+    }
+  }
+
+  for (const outcome of ["success", "empty", "error"] as const) {
+    test(`keeps the mobile folder picker frame after delayed ${outcome}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize({ width: 375, height: 900 });
+      await authenticatedPage.emulateMedia({ reducedMotion: "reduce" });
+      await mockRpc(baseSettingsMethods());
+      let release = () => {};
+      const responseReady = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/GetFolder", async (route) => {
+        await responseReady;
+        if (outcome === "error") {
+          await fulfillPutioProviderUnavailable(route);
+        } else {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(
+              folderResponse(
+                userFile({ id: 0n, name: "your files" }),
+                outcome === "empty" ? [] : [userFile({ id: 10n, name: "Movies" })],
+              ),
+            ),
+          });
+        }
+      });
+      await authenticatedPage.goto("/settings");
+      await settingsPage(authenticatedPage)
+        .getByRole("button", { name: "change", exact: true })
+        .click();
+      const picker = folderPicker(authenticatedPage);
+      const confirm = picker.getByRole("button", { name: "Use your files as download folder" });
+      await expect(confirm).toBeDisabled();
+      await authenticatedPage.evaluate(() => document.fonts.ready);
+      const frame = await picker.boundingBox();
+      const confirmPosition = await confirm.boundingBox();
+      release();
+      if (outcome === "error") {
+        await expect(picker.getByText("couldn't load folder", { exact: true })).toBeVisible();
+        await expect(picker.getByRole("button", { name: "retry" })).toBeVisible();
+      } else {
+        await expect(confirm).toBeEnabled();
+        await expect(
+          picker.getByText(outcome === "empty" ? "nothing inside this folder" : "Movies", {
+            exact: true,
+          }),
+        ).toBeVisible();
+      }
+      expect(await picker.boundingBox()).toEqual(frame);
+      expect(await confirm.boundingBox()).toEqual(confirmPosition);
+    });
+  }
+
   test("folder picker loads via GetFolder and saves selected folder id", async ({
     authenticatedPage,
     mockRpc,

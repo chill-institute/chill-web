@@ -24,6 +24,7 @@ type Props = {
   onSortChange: (next: QuickFilterSort) => void;
   className?: string;
   inlineOnDesktop?: boolean;
+  disabled?: boolean;
 };
 
 // Each option pins both a field and a direction; both directions are offered so the
@@ -85,6 +86,7 @@ export function QuickFilters({
   onSortChange,
   className,
   inlineOnDesktop = false,
+  disabled = false,
 }: Props) {
   const activeSortValue = sortOptionValue(filters.sortBy, filters.sortDirection);
 
@@ -103,6 +105,7 @@ export function QuickFilters({
             <CheckboxField
               key={String(filter)}
               id={`qf-res-${String(filter)}`}
+              disabled={disabled}
               checked={filters.resolution.includes(filter)}
               onCheckedChange={(checked) =>
                 onResolutionChange(toggle(filters.resolution, filter, checked))
@@ -126,6 +129,7 @@ export function QuickFilters({
             <CheckboxField
               key={String(filter)}
               id={`qf-codec-${String(filter)}`}
+              disabled={disabled}
               checked={filters.codec.includes(filter)}
               onCheckedChange={(checked) => onCodecChange(toggle(filters.codec, filter, checked))}
             >
@@ -151,6 +155,7 @@ export function QuickFilters({
             sort by
           </span>
           <NativeSelect
+            disabled={disabled}
             aria-label="Sort results"
             wrapperClassName="w-32"
             className="h-[1.875rem] py-1 pr-7 pl-2 text-xs sm:text-xs"

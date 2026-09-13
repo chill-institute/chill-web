@@ -9,6 +9,21 @@ const authenticatedShellMethods = () => ({
 });
 
 test.describe("sign-in page", () => {
+  test("retrying sign-in keeps the error and button in place while redirecting", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/sign-in?error=SessionExpired");
+    await page.route(/\/auth\/putio\/start/, (route) => route.fulfill({ status: 204 }));
+    const button = page.getByRole("button", { name: "sign in again" });
+    const before = await button.boundingBox();
+    await button.click();
+    await expect(button).toBeDisabled();
+    await expect(page.getByText("your session expired")).toBeVisible();
+    expect(await button.boundingBox()).toEqual(before);
+  });
+
   test("shows access denied error with learn more action", async ({ page }) => {
     await page.goto("/sign-in?error=AccessDenied");
 

@@ -1,12 +1,7 @@
 import { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import { expect, test } from "./support/fixtures";
-import {
-  expectNoExcessBottomSpace,
-  expectStableBox,
-  expectStablePosition,
-  stableElementBox,
-} from "./support/layout";
+import { expectStableBox, stableElementBox } from "./support/layout";
 import {
   movie,
   moviesResponse,
@@ -566,11 +561,11 @@ test.describe("tv shows home", () => {
       const afterShell = await stableElementBox(modalShell);
       const afterBody = await stableElementBox(modalBody);
 
-      expectStablePosition(beforeShell, afterShell);
-      expectStablePosition(beforeBody, afterBody);
+      expectStableBox(beforeShell, afterShell);
+      expectStableBox(beforeBody, afterBody);
     });
 
-    test(`tv detail avoids excess bottom space while details load on ${name}`, async ({
+    test(`tv detail keeps short season frame stable while details load on ${name}`, async ({
       authenticatedPage,
       mockRpc,
     }) => {
@@ -621,13 +616,11 @@ test.describe("tv shows home", () => {
 
       const modal = authenticatedPage.getByRole("dialog", { name: "Harbor Ward" });
       const modalBody = modal.locator("[data-detail-modal-body]");
-      const modalBodyContent = modalBody.locator("> div").first();
-
-      await expectNoExcessBottomSpace(modalBody, modalBodyContent);
+      const beforeBody = await stableElementBox(modalBody);
 
       releaseDetail();
       await expect(modal.getByRole("tab", { name: "Season 8", exact: true })).toBeVisible();
-      await expectNoExcessBottomSpace(modalBody, modalBodyContent);
+      expectStableBox(beforeBody, await stableElementBox(modalBody));
     });
 
     test(`tv detail keeps IMDb link stable while downloads load on ${name}`, async ({
@@ -710,8 +703,8 @@ test.describe("tv shows home", () => {
       const afterBody = await stableElementBox(modalBody);
       const afterLink = await stableElementBox(imdbLink);
 
-      expectStablePosition(beforeShell, afterShell);
-      expectStablePosition(beforeBody, afterBody);
+      expectStableBox(beforeShell, afterShell);
+      expectStableBox(beforeBody, afterBody);
       expectStableBox(beforeLink, afterLink);
     });
   }

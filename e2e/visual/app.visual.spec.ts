@@ -496,6 +496,23 @@ test("tv show detail modal error", async ({ authenticatedPage, mockRpc }, testIn
   );
 });
 
+test("search loading", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods({ Search: searchResponse("synthetic", []) }));
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+    await gate;
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(userSettings()) });
+  });
+  await authenticatedPage.goto("/search?q=synthetic");
+  await expect(authenticatedPage.getByRole("combobox", { name: "Sort results" })).toBeDisabled();
+  await expect(authenticatedPage).toHaveScreenshot("search-loading.png", visualOptions);
+  release();
+});
+
 test("search results", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(

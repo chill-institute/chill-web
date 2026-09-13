@@ -95,7 +95,6 @@ export function SignInPage() {
       type: UNKNOWN_AUTH_ERROR,
     };
   }, [search.error]);
-  const visibleError = loading === "sign-in" ? null : error;
 
   if (isAuthenticated && !error) {
     return (
@@ -122,23 +121,21 @@ export function SignInPage() {
 
   return (
     <AuthPage title="Welcome to The Institute">
-      {visibleError ? (
-        <p className="text-fg-2 m-0 text-sm leading-relaxed">{visibleError.message}</p>
-      ) : null}
+      {error ? <p className="text-fg-2 m-0 text-sm leading-relaxed">{error.message}</p> : null}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
-        {visibleError?.actionURL ? (
+        {error?.actionURL ? (
           <Button
             disabled={loading === "help"}
             onClick={() => {
               setLoading("help");
-              window.location.href = visibleError.actionURL ?? publicLinks.about;
+              window.location.href = error.actionURL ?? publicLinks.about;
             }}
           >
             {loading === "help" ? (
               <Loader className="motion-safe:animate-spin" data-icon="inline-start" />
             ) : null}
-            {visibleError.actionLabel ?? "learn more"}
+            {error.actionLabel ?? "learn more"}
           </Button>
         ) : null}
         <Button
@@ -153,9 +150,9 @@ export function SignInPage() {
             <ExternalLink data-icon="inline-start" />
           )}
           <span>
-            {visibleError?.type === SESSION_EXPIRED_ERROR
+            {error?.type === SESSION_EXPIRED_ERROR
               ? "sign in again"
-              : visibleError
+              : error
                 ? "try again"
                 : "sign in with put.io"}
           </span>

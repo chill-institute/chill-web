@@ -66,7 +66,7 @@ function formatAirDate(value?: string) {
 }
 
 function EpisodeActionSkeleton() {
-  return <Skeleton className="size-8 shrink-0 rounded" />;
+  return <Skeleton className="h-[var(--control-h)] w-[34px] shrink-0 rounded" />;
 }
 
 function SeasonSummarySkeleton() {
@@ -75,11 +75,11 @@ function SeasonSummarySkeleton() {
       className="border-border-soft bg-surface-2 mb-4 flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between"
       aria-hidden="true"
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-48" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-8 w-48 max-w-full" />
       </div>
-      <Skeleton className="h-8 w-full rounded sm:w-40" />
+      <Skeleton className="h-[var(--control-h)] w-full rounded sm:w-40" />
     </div>
   );
 }
@@ -182,7 +182,7 @@ function TvShowDetailContent({
             seasonRefreshing ? "opacity-75" : "opacity-100",
           )}
         >
-          {seasons.length > 1 ? (
+          {seasons.length > 0 ? (
             <Tabs
               value={String(resolvedSeasonNumber)}
               onValueChange={(value) => {
@@ -208,7 +208,9 @@ function TvShowDetailContent({
                 <Skeleton key={slot} className="h-7 w-16 rounded" />
               ))}
             </div>
-          ) : null}
+          ) : (
+            <div className="mb-4 h-7" aria-hidden="true" />
+          )}
 
           {selectedSeason ? (
             <div className="border-border-soft bg-surface-2 mb-4 flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -216,7 +218,7 @@ function TvShowDetailContent({
                 <div className="text-sm font-normal">
                   {selectedSeason.name || `Season ${selectedSeason.seasonNumber}`}
                 </div>
-                <div className="mt-1 text-xs text-fg-3">
+                <div className="mt-1 min-h-8 text-xs text-fg-3">
                   {selectedSeason.episodeCount} episodes
                   <span className="mx-1.5">·</span>
                   {formatAirDate(selectedSeason.airDate)}
@@ -235,7 +237,7 @@ function TvShowDetailContent({
                 </div>
               </div>
 
-              <div className="flex w-full shrink-0 flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap">
+              <div className="flex min-h-[var(--control-h)] w-full shrink-0 flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap">
                 {downloadsQuery.isPending ? (
                   <Button disabled className="w-full sm:w-auto">
                     <Loader2 data-icon="inline-start" className="motion-safe:animate-spin" />
@@ -267,22 +269,18 @@ function TvShowDetailContent({
             <SeasonSummarySkeleton />
           ) : null}
 
-          {downloadsQuery.status === "error" ? (
-            <UserErrorAlert className="mb-3" error={downloadsQuery.error} />
-          ) : null}
-
           {seasonQuery.status === "error" ? (
             <UserErrorAlert error={seasonQuery.error} />
-          ) : seasonQuery.isPending ? (
+          ) : seasonQuery.isPending && !detailQuery.isError ? (
             <div className="border-border-soft bg-surface-2 overflow-hidden rounded border">
               {EPISODE_SKELETON_SLOTS.map((slot) => (
                 <div
                   key={slot}
                   className="border-border-faint flex items-center gap-3 border-t px-3 py-2.5 first:border-t-0"
                 >
-                  <div className="flex flex-1 flex-col gap-1">
-                    <Skeleton className="h-4 w-44" />
-                    <Skeleton className="h-3 w-28" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <Skeleton className="h-5 w-44 max-w-full" />
+                    <Skeleton className="h-12 w-28 sm:h-8" />
                   </div>
                   <EpisodeActionSkeleton />
                 </div>
@@ -303,7 +301,7 @@ function TvShowDetailContent({
                       <div className="truncate text-sm font-normal text-fg-1">
                         {episode.name || `episode ${episode.episodeNumber}`}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-fg-4">
+                      <div className="mt-0.5 flex min-h-12 flex-wrap content-start gap-x-2 text-xs sm:min-h-8 text-fg-4">
                         <span className="tabular-nums">E{paddedEpisode}</span>
                         <span>· {formatAirDate(episode.airDate)}</span>
                         {episode.runtime ? <span>· {episode.runtime}m</span> : null}
@@ -319,7 +317,7 @@ function TvShowDetailContent({
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex min-w-[34px] shrink-0 gap-1">
                       {downloadsQuery.isPending ? (
                         <EpisodeActionSkeleton />
                       ) : downloadsQuery.status === "error" ? null : episodeDownload?.link ? (
@@ -345,6 +343,9 @@ function TvShowDetailContent({
               })}
             </div>
           )}
+          {downloadsQuery.status === "error" ? (
+            <UserErrorAlert className="mt-3" error={downloadsQuery.error} />
+          ) : null}
         </div>
       </DetailModalBody>
     </DetailModalShell>

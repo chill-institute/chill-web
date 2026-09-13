@@ -2,7 +2,6 @@ import { Folder } from "lucide-react";
 import { match } from "ts-pattern";
 
 import { DownloadFolderPicker } from "@/auth/components/download-folder-picker";
-import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { SettingsSection } from "@/ui/components/settings-section";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import type { ChillSettings } from "@/lib/types";
@@ -20,7 +19,9 @@ function DownloadFolderSection({
 }) {
   const content = match(downloadFolderQuery)
     .with({ status: "pending" }, () => <Skeleton className="h-9 w-full rounded" />)
-    .with({ status: "error" }, (dq) => <UserErrorAlert error={dq.error} />)
+    .with({ status: "error" }, () => (
+      <div className="flex h-9 items-center text-sm text-error-text">couldn’t load folder</div>
+    ))
     .with({ status: "success" }, (dq) => {
       const hasMatchingFolder =
         effective.download.folderId === undefined ||

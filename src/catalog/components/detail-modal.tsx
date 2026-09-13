@@ -62,8 +62,8 @@ export function DetailModalShell({
       data-detail-modal-shell
       className={
         isDesktop
-          ? "max-h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border border-border-strong bg-surface p-0 text-fg-1 shadow-modal flex flex-col"
-          : "max-h-[92dvh] min-h-0 w-full overflow-hidden bg-surface p-0 text-fg-1 flex flex-col"
+          ? "h-[min(calc(100dvh-48px),760px)] min-h-0 w-full max-w-[760px] overflow-hidden rounded-xl border border-border-strong bg-surface p-0 text-fg-1 shadow-modal flex flex-col"
+          : "h-[92dvh] min-h-0 w-full overflow-hidden bg-surface p-0 text-fg-1 flex flex-col"
       }
     >
       {children}
@@ -198,9 +198,9 @@ export function DetailGenreBadges({
 export function DetailModalHeaderSkeleton() {
   return (
     <div className="flex flex-col gap-2">
-      <Skeleton className="h-8 w-56" />
-      <Skeleton className="h-4 w-40" />
-      <Skeleton className="h-6 w-52" />
+      <Skeleton className="h-8 w-56 max-w-full" />
+      <Skeleton className="h-4 w-40 max-w-full" />
+      <Skeleton className="h-6 w-52 max-w-full" />
     </div>
   );
 }

@@ -25,8 +25,8 @@ function SettingsModalBody({
       data-page="settings"
       className={
         isDesktop
-          ? "border-border-strong bg-surface text-fg-1 shadow-modal relative flex max-h-[min(85dvh,900px)] flex-col overflow-hidden rounded-xl border border-solid"
-          : "bg-surface text-fg-1 relative flex max-h-[92dvh] flex-col overflow-hidden"
+          ? "border-border-strong bg-surface text-fg-1 shadow-modal relative flex h-[min(85dvh,900px)] flex-col overflow-hidden rounded-xl border border-solid"
+          : "bg-surface text-fg-1 relative flex h-[92dvh] flex-col overflow-hidden"
       }
     >
       <div className="border-border-faint flex shrink-0 items-center justify-between gap-4 border-b px-5 py-4 sm:px-6">

@@ -104,11 +104,26 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
       </DetailModalHeader>
 
       <DetailModalBody movieScroll>
+        <QuickFilters
+          filters={filters}
+          inlineOnDesktop
+          disabled={searchQuery.status === "pending"}
+          onResolutionChange={(next) => {
+            setResolution(next);
+            if (appSettings?.rememberQuickFilters) patchConfig({ resolutionFilters: next });
+          }}
+          onCodecChange={(next) => {
+            setCodec(next);
+            if (appSettings?.rememberQuickFilters) patchConfig({ codecFilters: next });
+          }}
+          onSortChange={(next) => {
+            setSort(next);
+            patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
+          }}
+        />
+
         {searchQuery.status === "pending" ? (
-          <>
-            <ResultsToolbarSkeleton />
-            <ResultsListSkeleton />
-          </>
+          <ResultsListSkeleton />
         ) : searchQuery.status === "error" ? (
           <div className="flex flex-col gap-2">
             <p className="text-sm text-fg-2">
@@ -123,23 +138,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
           />
         ) : (
           <>
-            <QuickFilters
-              filters={filters}
-              inlineOnDesktop
-              onResolutionChange={(next) => {
-                setResolution(next);
-                if (appSettings?.rememberQuickFilters) patchConfig({ resolutionFilters: next });
-              }}
-              onCodecChange={(next) => {
-                setCodec(next);
-                if (appSettings?.rememberQuickFilters) patchConfig({ codecFilters: next });
-              }}
-              onSortChange={(next) => {
-                setSort(next);
-                patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
-              }}
-            />
-
             {visibleResults.length === 0 ? (
               <TorrentResultsEmpty
                 title="no results match these filters"
@@ -156,16 +154,6 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         )}
       </DetailModalBody>
     </DetailModalShell>
-  );
-}
-
-function ResultsToolbarSkeleton() {
-  return (
-    <div className="flex flex-wrap items-end gap-2" aria-hidden="true">
-      <Skeleton className="h-8 w-[9.75rem] rounded" />
-      <Skeleton className="h-8 w-[7.5rem] rounded" />
-      <Skeleton className="h-8 w-[8.75rem] rounded" />
-    </div>
   );
 }
 

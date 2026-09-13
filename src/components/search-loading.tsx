@@ -6,17 +6,17 @@ const metaSkeletonSlots = ["source", "size", "seeders", "age"];
 
 function SearchResultCardLoading() {
   return (
-    <div className="border-border-strong bg-surface my-4 overflow-hidden rounded border">
+    <div className="border-border-strong bg-surface mb-4 overflow-hidden rounded border">
       <div className="px-6 py-5">
-        <Skeleton className="h-4 w-full" />
-        <div className="border-border-strong my-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5">
+        <Skeleton className="h-[2.45rem] w-full" />
+        <div className="border-border-strong my-3 flex min-h-15 flex-wrap items-center gap-x-3 gap-y-1.5 border-y py-2.5">
           {metaSkeletonSlots.map((slot) => (
             <Skeleton key={slot} className="h-3 w-14" />
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Skeleton className="h-8 w-20 rounded" />
-          <Skeleton className="h-8 w-28" />
+          <Skeleton className="h-[1.875rem] w-8 rounded" />
+          <Skeleton className="h-[1.875rem] w-28" />
         </div>
       </div>
     </div>
@@ -78,47 +78,6 @@ function SearchResultRowLoading() {
         <Skeleton className="h-7 w-[130px] rounded" />
       </td>
     </tr>
-  );
-}
-
-export function FilterBarLoading() {
-  return (
-    <div className="flex flex-col gap-4 lg:items-center lg:gap-6">
-      <div className="flex flex-col items-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-          <div className="flex flex-row gap-2">
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-10" />
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-12" />
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-10" />
-          </div>
-          <div className="bg-border-hairline h-4 w-px" />
-          <div className="flex flex-row gap-2">
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-10" />
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-10" />
-          </div>
-          <div className="bg-border-hairline h-4 w-px" />
-          <div className="flex flex-row gap-2">
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-10" />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col items-start lg:hidden lg:items-center">
-        <div className="flex flex-row gap-x-2">
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-14" />
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-10" />
-        </div>
-      </div>
-    </div>
   );
 }
 

@@ -11,7 +11,9 @@ const NO_OTHER_FILTERS: FilterState["other"] = [];
 function SearchSettingsSection({
   effective,
   persistPatch,
+  disabled = false,
 }: {
+  disabled?: boolean;
   effective: ChillSettings;
   persistPatch: PersistPatch;
 }) {
@@ -27,6 +29,7 @@ function SearchSettingsSection({
     <SettingsSection title="Search preferences">
       <QuickFilters
         className="mb-3"
+        disabled={disabled}
         filters={filters}
         inlineOnDesktop
         // These are the persisted preferences, so remembering is implied.
@@ -40,6 +43,7 @@ function SearchSettingsSection({
       />
       <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
         <CheckboxField
+          disabled={disabled}
           id="filter-nasty"
           checked={effective.filterNastyResults}
           onCheckedChange={(checked) => persistPatch({ filterNastyResults: checked === true })}
@@ -47,6 +51,7 @@ function SearchSettingsSection({
           Try to filter out nasty stuff
         </CheckboxField>
         <CheckboxField
+          disabled={disabled}
           id="filter-no-seeders"
           checked={effective.filterResultsWithNoSeeders}
           onCheckedChange={(checked) =>

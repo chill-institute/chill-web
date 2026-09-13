@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
 import { type PropsWithChildren, useRef, useState } from "react";
 
@@ -37,6 +38,7 @@ export function AddTransferButton({
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
   });
 
+  const iconOnly = typeof children !== "string";
   const phase = viewInPutio ? "view" : status;
   const { icon, text } = (() => {
     if (viewInPutio)
@@ -44,15 +46,19 @@ export function AddTransferButton({
     if (status === "pending") return { icon: <Spinner />, text: "sending" };
     if (status === "success")
       return { icon: <CheckCircle2 className="text-success" />, text: "sent!" };
-    if (status === "error")
-      return { icon: <XCircle className="text-error" />, text: toErrorMessage(error) };
+    if (status === "error") return { icon: <XCircle className="text-error" />, text: "failed" };
     return { icon: null, text: children };
   })();
-  const accessibleLabel = typeof text === "string" ? text : (ariaLabel ?? "send to put.io");
+  const accessibleLabel =
+    status === "error"
+      ? toErrorMessage(error)
+      : typeof text === "string"
+        ? text
+        : (ariaLabel ?? "send to put.io");
 
   async function sendOrOpenTransfer() {
     if (viewInPutio) {
-      window.open("https://put.io/transfers", "_blank");
+      window.open("https://put.io/transfers", "_blank", "noopener,noreferrer");
       return;
     }
     if (status !== "idle") {
@@ -66,6 +72,7 @@ export function AddTransferButton({
       successTimerRef.current = setTimeout(() => setViewInPutio(true), 1000);
     } catch (transferError) {
       setError(transferError);
+      toast.error(toErrorMessage(transferError));
       setStatus("error");
       errorTimerRef.current = setTimeout(() => {
         setStatus("idle");
@@ -84,9 +91,26 @@ export function AddTransferButton({
       aria-label={accessibleLabel}
       aria-live="polite"
     >
-      <span key={phase} className="animate-feedback-in flex items-center gap-1">
-        {icon ? <span data-icon="inline-start">{icon}</span> : null}
-        <span>{text}</span>
+      <span className="grid items-center justify-items-center">
+        <span aria-hidden="true" className="invisible col-start-1 row-start-1">
+          {children}
+        </span>
+        {!iconOnly ? (
+          <span
+            aria-hidden="true"
+            className="invisible col-start-1 row-start-1 flex items-center gap-1"
+          >
+            <ExternalLink />
+            see in put.io
+          </span>
+        ) : null}
+        <span
+          key={phase}
+          className="animate-feedback-in col-start-1 row-start-1 flex items-center gap-1"
+        >
+          {icon ? <span data-icon="inline-start">{icon}</span> : null}
+          {!iconOnly || !icon ? <span>{text}</span> : null}
+        </span>
       </span>
     </Button>
   );

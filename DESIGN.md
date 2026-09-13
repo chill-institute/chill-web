@@ -265,3 +265,12 @@ Prefer existing components before creating markup:
 - `ResponsiveModal`, `SettingsModal`, and shadcn dialog/drawer primitives for overlays
 
 Use lucide icons. Icons inside buttons should use component-supported sizing and `data-icon` where the component expects it. Do not use emoji as icons except the existing personality moments, such as the results-table action-column marker.
+
+## Loading transitions
+
+Keep known controls mounted and disabled while their settings load. Skeletons must match
+loaded card geometry at each breakpoint, including metadata and action rows. Detail and
+settings overlays keep a viewport-bounded frame with a scrolling body across loading,
+empty, and error states. Search and catalog content reserve at least one viewport so a
+short response does not pull the footer into the first screen. Result counts and long
+content may still grow the document.

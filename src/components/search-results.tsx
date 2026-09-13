@@ -56,7 +56,7 @@ function TitleCell({
     );
 
   const titleSpan = (
-    <span className="text-fg-1 block text-sm leading-[1.4] break-words [overflow-wrap:anywhere]">
+    <span className="text-fg-1 block min-h-[2lh] text-sm leading-[1.4] lg:min-h-0 break-words [overflow-wrap:anywhere]">
       {wrap(result.title)}
     </span>
   );
@@ -195,7 +195,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
             <div className="px-6 py-5">
               <TitleCell result={result} titleBehavior={titleBehavior} />
 
-              <div className="border-border-strong text-fg-2 my-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-y py-2.5 text-xs">
+              <div className="border-border-strong text-fg-2 my-3 flex min-h-15 flex-wrap items-center gap-x-3 gap-y-1.5 border-y py-2.5 text-xs">
                 <span className="text-fg-1">{result.source}</span>
                 <span className="inline-flex items-center gap-1 tabular-nums">
                   <HardDrive className="size-3" />

@@ -68,7 +68,7 @@ function PosterCard({
               )}
             </div>
             <div className="flex flex-col gap-2 px-3 pt-2.5 pb-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="text-fg-3 flex min-w-0 flex-col gap-1 text-base sm:text-sm">
+              <div className="text-fg-3 flex min-h-12 min-w-0 flex-col gap-1 text-base sm:min-h-[46.5px] sm:text-sm">
                 <h2
                   title={title}
                   className="text-fg-1 m-0 truncate text-base leading-tight sm:text-lg"

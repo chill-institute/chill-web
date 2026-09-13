@@ -5,7 +5,7 @@ import { match } from "ts-pattern";
 import { SignInRedirect } from "@/auth/components/sign-in-redirect";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { QuickFilters } from "@/components/quick-filters";
-import { FilterBarLoading, SearchLoading } from "@/components/search-loading";
+import { SearchLoading } from "@/components/search-loading";
 import { SearchResults } from "@/components/search-results";
 import { SearchShell } from "@/components/search-shell";
 import { useAuth } from "@/auth/auth";
@@ -166,18 +166,9 @@ export function SearchPage() {
   const combined = combineQueries(configQuery, indexersQuery);
 
   const content = match(combined)
-    .with({ status: "pending" }, () =>
-      submittedQuery.length > 0 ? (
-        <>
-          <FilterBarLoading />
-          <SearchLoading />
-        </>
-      ) : null,
-    )
+    .with({ status: "pending" }, () => (submittedQuery.length > 0 ? <SearchLoading /> : null))
     .with({ status: "error" }, (q) => (
-      <div className="mx-auto mt-6 w-full max-w-2xl">
-        <UserErrorAlert error={q.error} />
-      </div>
+      <UserErrorAlert className="mx-auto w-full max-w-2xl" error={q.error} />
     ))
     .with({ status: "success" }, ({ data: [config] }) => {
       const effective = toChillSettings(config);
@@ -223,26 +214,7 @@ export function SearchPage() {
         .exhaustive();
 
       return (
-        <section data-page="search" className="flex flex-col gap-3 lg:gap-6">
-          <h1 className="sr-only">Search results</h1>
-          {submittedQuery.length > 0 ? (
-            <QuickFilters
-              filters={filters}
-              onResolutionChange={(next) => {
-                setResolution(next);
-                if (effective.rememberQuickFilters) patchConfig({ resolutionFilters: next });
-              }}
-              onCodecChange={(next) => {
-                setCodec(next);
-                if (effective.rememberQuickFilters) patchConfig({ codecFilters: next });
-              }}
-              onSortChange={(next) => {
-                setLocalSort(next);
-                patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
-              }}
-            />
-          ) : null}
-
+        <>
           {renderContent}
 
           {searchState.firstError ? (
@@ -257,10 +229,39 @@ export function SearchPage() {
               error={saveConfigMutation.error}
             />
           ) : null}
-        </section>
+        </>
       );
     })
     .exhaustive();
 
-  return <SearchShell contentWidth="wide">{content}</SearchShell>;
+  return (
+    <SearchShell contentWidth="wide">
+      <section
+        data-page="search"
+        className="flex flex-col gap-3 lg:gap-6"
+        aria-busy={combined.status === "pending"}
+      >
+        <h1 className="sr-only">Search results</h1>
+        {submittedQuery.length > 0 ? (
+          <QuickFilters
+            filters={filters}
+            disabled={combined.status !== "success"}
+            onResolutionChange={(next) => {
+              setResolution(next);
+              if (appSettings?.rememberQuickFilters) patchConfig({ resolutionFilters: next });
+            }}
+            onCodecChange={(next) => {
+              setCodec(next);
+              if (appSettings?.rememberQuickFilters) patchConfig({ codecFilters: next });
+            }}
+            onSortChange={(next) => {
+              setLocalSort(next);
+              patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
+            }}
+          />
+        ) : null}
+        {content}
+      </section>
+    </SearchShell>
+  );
 }

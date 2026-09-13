@@ -16,7 +16,7 @@ import {
   tvShowsResponse,
   userSettings,
 } from "./support/seeds";
-import { expectStableBox, expectStablePosition, stableElementBox } from "./support/layout";
+import { expectStableBox, stableElementBox } from "./support/layout";
 
 const movies = [
   movie({
@@ -430,8 +430,8 @@ test.describe("movies", () => {
       const afterBody = await stableElementBox(modalBody);
       const afterLink = await stableElementBox(imdbLink);
 
-      expectStablePosition(beforeShell, afterShell);
-      expectStablePosition(beforeBody, afterBody);
+      expectStableBox(beforeShell, afterShell);
+      expectStableBox(beforeBody, afterBody);
       expectStableBox(beforeLink, afterLink);
     });
   }
