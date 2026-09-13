@@ -22,7 +22,6 @@ import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 import { Route as MoviesIndexRouteImport } from './routes/movies/index'
 import { Route as MoviesIdRouteImport } from './routes/movies/$id'
-import { Route as StremioAcquireRouteImport } from './routes/stremio_.acquire'
 import { Route as TvShowsIndexRouteImport } from './routes/tv-shows/index'
 import { Route as TvShowsIdRouteImport } from './routes/tv-shows/$id'
 
@@ -91,11 +90,6 @@ const MoviesIdRoute = MoviesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MoviesRouteRoute,
 } as any)
-const StremioAcquireRoute = StremioAcquireRouteImport.update({
-  id: '/stremio_/acquire',
-  path: '/stremio/acquire',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TvShowsIndexRoute = TvShowsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -120,7 +114,6 @@ export interface FileRoutesByFullPath {
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
-  '/stremio/acquire': typeof StremioAcquireRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
   '/movies/': typeof MoviesIndexRoute
   '/tv-shows/': typeof TvShowsIndexRoute
@@ -136,7 +129,6 @@ export interface FileRoutesByTo {
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
-  '/stremio/acquire': typeof StremioAcquireRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
   '/movies': typeof MoviesIndexRoute
   '/tv-shows': typeof TvShowsIndexRoute
@@ -155,7 +147,6 @@ export interface FileRoutesById {
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
-  '/stremio_/acquire': typeof StremioAcquireRoute
   '/tv-shows/$id': typeof TvShowsIdRoute
   '/movies/': typeof MoviesIndexRoute
   '/tv-shows/': typeof TvShowsIndexRoute
@@ -175,7 +166,6 @@ export interface FileRouteTypes {
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
-    | '/stremio/acquire'
     | '/tv-shows/$id'
     | '/movies/'
     | '/tv-shows/'
@@ -191,7 +181,6 @@ export interface FileRouteTypes {
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
-    | '/stremio/acquire'
     | '/tv-shows/$id'
     | '/movies'
     | '/tv-shows'
@@ -209,7 +198,6 @@ export interface FileRouteTypes {
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
-    | '/stremio_/acquire'
     | '/tv-shows/$id'
     | '/movies/'
     | '/tv-shows/'
@@ -227,7 +215,6 @@ export interface RootRouteChildren {
   AuthCliTokenRoute: typeof AuthCliTokenRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
-  StremioAcquireRoute: typeof StremioAcquireRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,13 +310,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoviesIdRouteImport
       parentRoute: typeof MoviesRouteRoute
     }
-    '/stremio_/acquire': {
-      id: '/stremio_/acquire'
-      path: '/stremio/acquire'
-      fullPath: '/stremio/acquire'
-      preLoaderRoute: typeof StremioAcquireRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/tv-shows/': {
       id: '/tv-shows/'
       path: '/'
@@ -387,7 +367,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCliTokenRoute: AuthCliTokenRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,
-  StremioAcquireRoute: StremioAcquireRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

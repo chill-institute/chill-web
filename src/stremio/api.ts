@@ -29,7 +29,7 @@ function validateInstallation(value: unknown): Installation {
   return result.output;
 }
 
-export async function installationRequest(
+async function installationRequest(
   token: string,
   path: string,
   method: string,

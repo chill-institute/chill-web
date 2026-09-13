@@ -85,12 +85,11 @@ links carry a separate revocable capability: never include them in telemetry,
 public screenshots, or support reports. The folder picker uses read-only
 `GetFolder`; selecting a folder here does not change download settings.
 
-`/stremio/acquire` accepts an installation ID and discovery target from the
-add-on. It searches releases without starting a transfer. Only explicit
-confirmation submits an acquisition; a failed submission disables resubmission
-and offers a status check because the provider may have accepted it. Reloads
-recover a previously submitted operation. Ready files link to Stremio Web;
-playback authorization remains with the adapter. Status refresh is manual.
+Account setup, installation and revocation are the only Web responsibilities.
+Discovery, release selection, downloads to put.io, progress and playback stay in
+Stremio. The installation capability delegates library playback and selected-release
+downloads to the linked put.io account. Revocation stops future requests, but does
+not cancel transfers already started or invalidate playback URLs already issued.
 
 `VITE_PUBLIC_STREMIO_BASE_URL` configures the hosted adapter origin at build time
 (default `https://stremio.chill.institute`). Use HTTPS; local HTTP is accepted

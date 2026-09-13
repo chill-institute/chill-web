@@ -57,7 +57,7 @@ function StremioSetup({ token }: { token: string }) {
     try {
       await navigator.clipboard.writeText(url);
       setNotice(
-        "Installation link copied. Keep it private: anyone with it can browse your add-on’s library, discovery and acquired videos, and play available files.",
+        "Installation link copied. Keep it private: anyone with it can play your library and download selected releases to your put.io account.",
       );
     } catch {
       setNotice("Couldn't copy the link. Select the installation link below and copy it manually.");
@@ -71,8 +71,8 @@ function StremioSetup({ token }: { token: string }) {
           Choose a put.io folder, then install your private chill.institute add-on in Stremio.
         </p>
         <p className="text-fg-3 text-sm">
-          Browse your folder, discover Movies and Series, or search Releases in Stremio. Choose a
-          release, then confirm on chill.institute before it is sent to put.io.
+          Browse and search in Stremio, select releases to download to put.io, check their progress,
+          and play them when ready.
         </p>
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
@@ -161,9 +161,9 @@ function StremioSetup({ token }: { token: string }) {
                 />
               </label>
               <p className="text-fg-3 text-sm">
-                Keep this link private. Anyone with it can browse this add-on’s library and
-                discovery catalogs, and play library or acquired videos. Revoking stops new
-                requests; a video already playing may continue.
+                Keep this link private. Anyone with it can play your library and download selected
+                releases to your put.io account. Revoking stops future requests; transfers already
+                started and playback links already issued may continue.
               </p>
             </article>
           ))}
@@ -174,13 +174,16 @@ function StremioSetup({ token }: { token: string }) {
           if (!open && !revoke.isPending) setRevoking(null);
         }}
         title="Revoke this add-on?"
-        description="Its installation link will stop working. You can create a new add-on later."
+        description="Its installation link will stop working. Transfers already started and playback links already issued may continue."
         desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,448px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-surface p-6 shadow-modal"
         drawerContentClassName="bg-surface p-6"
       >
         <div className="flex flex-col gap-4">
           <h2 className="font-serif text-2xl">Revoke this add-on?</h2>
-          <p>Its installation link will stop working. You can create a new add-on later.</p>
+          <p>
+            Its installation link will stop working. Transfers already started and playback links
+            already issued may continue.
+          </p>
           {revoke.error ? <InstallationError error={revoke.error} /> : null}
           <div className="flex justify-end gap-3">
             <Button disabled={revoke.isPending} onClick={() => setRevoking(null)}>
@@ -206,7 +209,7 @@ export function AuthenticatedStremioSetup() {
   return authToken ? <StremioSetup key={authToken} token={authToken} /> : null;
 }
 
-export function InstallationError({ error }: { error: unknown }) {
+function InstallationError({ error }: { error: unknown }) {
   const getPutioStartURL = useGetPutioStartURL();
   return (
     <div className="flex flex-col gap-2">
