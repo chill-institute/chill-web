@@ -18,7 +18,7 @@ test("private Stremio add-on setup", async ({ authenticatedPage: page, mockRpc }
     }),
   );
   await page.goto("/stremio");
-  await expect(page.getByRole("link", { name: "install in Stremio" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "install chill" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
@@ -27,7 +27,7 @@ test("private Stremio add-on setup", async ({ authenticatedPage: page, mockRpc }
     animations: "disabled",
   });
   await page.getByRole("button", { name: "revoke", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Revoke this add-on?" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Revoke this connection?" })).toBeVisible();
   await expect(page).toHaveScreenshot("stremio-revoke.png", {
     fullPage: true,
     animations: "disabled",

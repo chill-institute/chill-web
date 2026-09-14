@@ -40,7 +40,7 @@ function StremioSetup({ token }: { token: string }) {
         ...(current ?? []),
         installation,
       ]);
-      setNotice("Your add-on is ready. Install it in Stremio or copy the link.");
+      setNotice("Account connected. Install chill in Stremio or copy the link.");
     },
   });
   const revoke = useMutation({
@@ -50,7 +50,9 @@ function StremioSetup({ token }: { token: string }) {
         current?.filter((item) => item.id !== id),
       );
       setRevoking(null);
-      setNotice("Add-on revoked. Remove it from Stremio; its link no longer works.");
+      setNotice(
+        "Connection revoked. Remove chill from Stremio; this installation link no longer works.",
+      );
     },
   });
   const copy = async (url: string) => {
@@ -67,16 +69,15 @@ function StremioSetup({ token }: { token: string }) {
     <section data-page="stremio" className="mx-auto flex max-w-xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="font-serif text-3xl">Watch with Stremio</h1>
-        <p className="text-fg-2">
-          Choose a put.io folder, then install your private chill.institute add-on in Stremio.
-        </p>
+        <p className="text-fg-2">Connect your account, then install chill in Stremio.</p>
         <p className="text-fg-3 text-sm">
           Browse and search in Stremio, select releases to download to put.io, check their progress,
           and play them when ready.
         </p>
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
-        <h2 className="font-serif text-xl">Your folder</h2>
+        <h2 className="font-serif text-xl">1. Connect account</h2>
+        <p className="text-fg-3 text-sm">Choose the put.io folder chill will use in Stremio.</p>
         {folder.error ? <InstallationError error={folder.error} /> : null}
         <p aria-live="polite">
           {folder.isPending
@@ -85,7 +86,16 @@ function StremioSetup({ token }: { token: string }) {
         </p>
         <div className="flex flex-wrap gap-3">
           <DownloadFolderPicker
-            triggerLabel="choose folder"
+            renderTrigger={(open) => (
+              <Button
+                aria-expanded={open}
+                aria-haspopup="dialog"
+                size="sm"
+                disabled={create.isPending || revoke.isPending}
+              >
+                choose folder
+              </Button>
+            )}
             purpose="Stremio folder"
             initialFolder={folder.data?.parent}
             onSave={(id) => {
@@ -100,7 +110,7 @@ function StremioSetup({ token }: { token: string }) {
             }
             onClick={() => create.mutate()}
           >
-            {create.isPending ? "creating…" : "create add-on"}
+            {create.isPending ? "connecting…" : "connect account"}
           </Button>
         </div>
         {create.error ? <InstallationError error={create.error} /> : null}
@@ -109,15 +119,17 @@ function StremioSetup({ token }: { token: string }) {
         {notice}
       </p>
       <div className="flex flex-col gap-4" aria-busy={installations.isPending}>
-        <h2 className="font-serif text-xl">Your add-ons</h2>
-        {installations.isPending ? <p>Loading add-ons…</p> : null}
+        <h2 className="font-serif text-xl">2. Install chill</h2>
+        {installations.isPending ? <p>Loading connections…</p> : null}
         {installations.error ? (
           <>
             <InstallationError error={installations.error} />
             <Button onClick={() => void installations.refetch()}>retry</Button>
           </>
         ) : null}
-        {installations.data?.length === 0 ? <p className="text-fg-3">No add-ons yet.</p> : null}
+        {installations.data?.length === 0 ? (
+          <p className="text-fg-3">Connect your account to get a private installation link.</p>
+        ) : null}
         {!installations.isError &&
           installations.data?.map((installation) => (
             <article
@@ -128,7 +140,7 @@ function StremioSetup({ token }: { token: string }) {
                 {installation.folderId === "0" ? "Your Files" : `Folder ${installation.folderId}`}
               </h3>
               <p className="text-fg-3 text-sm">
-                Created {new Date(installation.createdAt).toLocaleDateString()}
+                Connected {new Date(installation.createdAt).toLocaleDateString()}
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -136,7 +148,7 @@ function StremioSetup({ token }: { token: string }) {
                   nativeButton={false}
                   role="link"
                 >
-                  install in Stremio
+                  install chill
                 </Button>
                 <Button onClick={() => void copy(installation.manifestUrl)}>copy link</Button>
                 <Button
@@ -150,6 +162,10 @@ function StremioSetup({ token }: { token: string }) {
                   revoke
                 </Button>
               </div>
+              <p className="text-fg-3 text-sm">
+                Using Stremio Web or another device? Copy the link and paste it into Stremio’s
+                add-on search.
+              </p>
               <label className="flex min-w-0 flex-col gap-1 text-sm text-fg-3">
                 Private installation link
                 <input
@@ -173,13 +189,13 @@ function StremioSetup({ token }: { token: string }) {
         onOpenChange={(open) => {
           if (!open && !revoke.isPending) setRevoking(null);
         }}
-        title="Revoke this add-on?"
+        title="Revoke this connection?"
         description="Its installation link will stop working. Transfers already started and playback links already issued may continue."
         desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,448px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-surface p-6 shadow-modal"
         drawerContentClassName="bg-surface p-6"
       >
         <div className="flex flex-col gap-4">
-          <h2 className="font-serif text-2xl">Revoke this add-on?</h2>
+          <h2 className="font-serif text-2xl">Revoke this connection?</h2>
           <p>
             Its installation link will stop working. Transfers already started and playback links
             already issued may continue.
@@ -195,7 +211,7 @@ function StremioSetup({ token }: { token: string }) {
                 if (revoking) revoke.mutate(revoking.id);
               }}
             >
-              {revoke.isPending ? "revoking…" : "revoke add-on"}
+              {revoke.isPending ? "revoking…" : "revoke connection"}
             </Button>
           </div>
         </div>

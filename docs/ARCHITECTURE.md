@@ -85,6 +85,12 @@ links carry a separate revocable capability: never include them in telemetry,
 public screenshots, or support reports. The folder picker uses read-only
 `GetFolder`; selecting a folder here does not change download settings.
 
+Setup presents **Connect account → Install chill**. Connecting creates a private
+installation for the selected folder; existing connections retain install, copy
+and revoke actions. Stremio Web and other devices can install by pasting the link
+into their add-on search. Clipboard failures leave a selectable link for manual
+copying. The chosen folder survives connection errors.
+
 Account setup, installation and revocation are the only Web responsibilities.
 Discovery, release selection, downloads to put.io, progress and playback stay in
 Stremio. The installation capability delegates library playback and selected-release
