@@ -3,6 +3,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
 import { isIgnorableAbortError } from "@/auth/errors";
+import { searchResultKey } from "@/lib/search";
 import type { SearchResult, UserIndexer } from "@/lib/types";
 
 export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) {
@@ -27,7 +28,7 @@ export function useSearchQueries(query: string, enabledIndexers: UserIndexer[]) 
       const results: SearchResult[] = [];
       for (const q of queries) {
         for (const r of q.data?.results ?? []) {
-          const key = `${r.id}:${r.link}`;
+          const key = searchResultKey(r);
           if (!seen.has(key)) {
             seen.add(key);
             results.push(r);

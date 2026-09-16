@@ -15,6 +15,13 @@ export function normalizeQuery(query: string): string {
   return trimmed;
 }
 
+// Engine result IDs identify a release, so one release served by several
+// indexers shares an ID while each indexer contributes its own link. Lists key
+// on this composite so merged results never collide as React keys.
+export function searchResultKey(result: Pick<SearchResult, "id" | "link">): string {
+  return `${result.id}:${result.link}`;
+}
+
 export function defaultSortDirection(sortBy: SortBy): SortDirection {
   switch (sortBy) {
     case SortBy.TITLE:

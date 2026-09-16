@@ -7,6 +7,7 @@ import { Button } from "@/ui/components/ui/button";
 import { CopyButton } from "@/ui/components/copy-button";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
+import { searchResultKey } from "@/lib/search";
 import type { SearchResult } from "@/lib/types";
 
 const RESOLUTION_FILTER_OPTIONS = ["all", "2160p", "1080p", "720p"] as const;
@@ -119,7 +120,7 @@ export function TorrentResultList({
 
           return (
             <li
-              key={result.id || `${result.title}-${result.link}`}
+              key={searchResultKey(result)}
               className={cn(
                 "border-border-faint flex flex-col gap-3 border-t px-3 py-3 first:border-t-0 sm:flex-row sm:items-center sm:justify-between",
                 columns &&

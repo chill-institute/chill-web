@@ -137,6 +137,49 @@ test.describe("search page", () => {
     await expect(rows.nth(1)).toContainText("Ubuntu 22.04 LTS 720p");
   });
 
+  test("keeps filters and transfer feedback stable when indexers share release ids", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    // The engine identifies a release by its magnet hash, so two indexers can return
+    // the same id with different links. Rendering must not collapse or duplicate rows.
+    await mockRpc(defaultMethods({ AddTransfer: { status: "OK" } }));
+    await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+      const body = route.request().postDataJSON();
+      const indexerId = typeof body?.indexerId === "string" ? body.indexerId : "yts";
+      const results = [1, 2, 3, 4].map((n) =>
+        searchResult({
+          id: `rel-${n}`,
+          title: `Ubuntu ${n} ${n % 2 ? "1080p x264" : "2160p x265"}`,
+          indexer: indexerId,
+          source: indexerId.toUpperCase(),
+          link: `https://${indexerId}.example/dl/${n}`,
+          seeders: BigInt(100 - n),
+        }),
+      );
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(searchResponse("ubuntu", results)),
+      });
+    });
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(8);
+
+    const quickFilters = authenticatedPage.getByRole("group", { name: "Quick filters" });
+    await quickFilters.getByRole("checkbox", { name: "1080p" }).click();
+    await expect(rows).toHaveCount(4);
+    await quickFilters.getByRole("checkbox", { name: "1080p" }).click();
+    await expect(rows).toHaveCount(8);
+
+    const button = rows.nth(2).getByRole("button", { name: "send to put.io" });
+    await button.click();
+    await expect(rows.nth(2).getByRole("button").last()).toHaveAccessibleName("sent!");
+    await expect(authenticatedPage.getByRole("button", { name: "sent!" })).toHaveCount(1);
+  });
+
   test("fastest mode freezes early results until update", async ({
     authenticatedPage,
     mockRpc,

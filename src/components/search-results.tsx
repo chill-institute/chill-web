@@ -6,6 +6,7 @@ import { CopyButton } from "@/ui/components/copy-button";
 import { useMediaQuery } from "@/ui/hooks/use-is-desktop";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
+import { searchResultKey } from "@/lib/search";
 import type { ChillSettings, SearchResult } from "@/lib/types";
 import { SearchResultTitleBehavior, SortBy, SortDirection } from "@/lib/types";
 
@@ -151,7 +152,10 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
           <tbody>
             {results.map((result) => {
               return (
-                <tr key={result.id} className="border-border-faint border-b last:border-b-0">
+                <tr
+                  key={searchResultKey(result)}
+                  className="border-border-faint border-b last:border-b-0"
+                >
                   <td className="py-2.5 pr-2 pl-0 align-middle">
                     <TitleCell result={result} titleBehavior={titleBehavior} />
                   </td>
@@ -189,7 +193,7 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
       {results.map((result) => {
         return (
           <li
-            key={result.id}
+            key={searchResultKey(result)}
             className="border-border-strong bg-surface mb-4 overflow-hidden rounded border"
           >
             <div className="px-6 py-5">

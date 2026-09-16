@@ -2,7 +2,12 @@ import { create } from "@bufbuild/protobuf";
 import { ReleaseInfoSchema, SearchResultSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
 
-import { defaultSortDirection, formatSearchResults, normalizeQuery } from "./search";
+import {
+  defaultSortDirection,
+  formatSearchResults,
+  normalizeQuery,
+  searchResultKey,
+} from "./search";
 import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } from "./types";
 
 function release(overrides: Partial<{ resolution: string; codec: string; hdr: string }>) {
@@ -158,5 +163,17 @@ describe("normalizeQuery", () => {
   it("returns empty string for empty input", () => {
     expect(normalizeQuery("")).toBe("");
     expect(normalizeQuery("   ")).toBe("");
+  });
+});
+
+describe("searchResultKey", () => {
+  it("separates one release served by several indexers", () => {
+    const shared = { id: "rel-1" };
+    expect(searchResultKey({ ...shared, link: "https://tpb.example/dl/1" })).not.toBe(
+      searchResultKey({ ...shared, link: "https://tgx.example/dl/1" }),
+    );
+    expect(searchResultKey({ ...shared, link: "https://tpb.example/dl/1" })).toBe(
+      searchResultKey({ id: "rel-1", link: "https://tpb.example/dl/1" }),
+    );
   });
 });
