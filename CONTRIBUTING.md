@@ -34,9 +34,8 @@ If Vite+ reports `Unrecognized database version`, run
 ## Work in the Repo
 
 - Read [DESIGN.md](./DESIGN.md) before changing UI.
-- Keep API transport in `src/api/`, auth in `src/auth/`, catalog behavior in
-  `src/catalog/`, and presentation in `src/ui/`.
-- Run shadcn from the repo root so `components.json` resolves correctly.
+- Ownership by directory is in [Architecture](./docs/ARCHITECTURE.md#ownership).
+- Run shadcn from the repo root so `components.json` resolves.
 - Check `playwright-report/` and `test-results/` after browser failures.
 - Update docs and tests with user-visible behavior.
 

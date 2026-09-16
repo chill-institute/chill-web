@@ -153,12 +153,12 @@ components:
 
 ## Overview
 
-`chill.institute` uses the same stone-and-paper material, Metric and Family typography, hard 1px borders, compact controls, and stamped button motion across search and catalog browsing.
+`chill.institute` uses stone-and-paper surfaces, Metric and Family typography, hard 1px borders, compact controls, and stamped button motion across search and catalog browsing.
 
 - Search is compact, table-first on desktop, and card-first on mobile.
-- Catalog browsing is image-first, warmer, and built around poster grids and detail modals.
+- Catalog browsing is image-first and built around poster grids and detail modals.
 
-This file is for agents and external design tools. The implementation source of truth is still the code:
+This file is for agents and external design tools. The code is the source of truth:
 
 - Tokens, fonts, theme colors, motion, heading styles: `src/ui/styles.css`
 - shadcn/base components: `src/ui/components/ui/`
@@ -166,11 +166,11 @@ This file is for agents and external design tools. The implementation source of 
 - chill-only surfaces: `src/components/`
 - catalog surfaces: `src/catalog/components/`
 
-If this file conflicts with current code, trust the current code and update this file deliberately.
+If this file conflicts with the code, trust the code and update this file.
 
 ## Colors
 
-Stone neutrals do almost all the work. Light mode uses a stone-300 app background, stone-100 surfaces, stone-950 text, and a hard stone-950 border. Dark mode uses stone-800 app background, stone-900 surfaces, stone-100 text, and stone-700 borders.
+Stone neutrals carry the palette. Light mode uses a stone-300 app background, stone-100 surfaces, stone-950 text, and a hard stone-950 border. Dark mode uses stone-800 app background, stone-900 surfaces, stone-100 text, and stone-700 borders.
 
 Use semantic utilities from `src/ui/styles.css`, such as `bg-app`, `bg-surface`, `text-fg-1`, `text-fg-3`, `border-border-strong`, `border-border-faint`, `text-success`, and `text-error`. Do not introduce raw blue, indigo, gray, slate, purple, or marketing-gradient palettes.
 
@@ -178,7 +178,7 @@ Accents are sparse and semantic:
 
 - amber only for ratings and filled star icons
 - green only for successful transfer states or put.io follow-up actions
-- red only for destructive, error, and matrix-loader states
+- red only for destructive and error states
 - hot pink and purple are brand reserve for assets or special moments, not product chrome
 
 Use gradients only for movie and TV detail image scrims. Use blur only for the catalog sticky header, image scrims, and overlay primitives that already own it.
@@ -199,7 +199,7 @@ When importing or updating upstream shadcn components, treat those aliases as a 
 - `border` and `input` map to `border-strong`
 - `ring` maps to `ring-focus`
 
-Run the shadcn CLI from the directory that owns the target `components.json`, inspect generated diffs, and adapt class names to the Institute vocabulary before shipping. Do not run `--overwrite` unless the user explicitly asks for a full upstream reset.
+Run the shadcn CLI from the repo root, inspect generated diffs, and adapt class names to the Institute vocabulary before shipping. Do not run `--overwrite` unless the user asks for a full upstream reset.
 
 ## Typography
 
@@ -207,13 +207,13 @@ Metric is the UI and body font. Family is the serif display font for app names, 
 
 Form controls use body typography. Inputs, textareas, and native selects should stay `0.875rem` across mobile and desktop; do not enlarge them on mobile unless a specific product surface intentionally opts out.
 
-Use lowercase for most product labels: `movies`, `tv shows`, `source`, `seeders`, `and chill`, `send to put.io`, `settings`. Longer human-facing headings can use sentence case. The voice should sound like one operator running a useful thing, not a SaaS brand.
+Use lowercase for most product labels: `movies`, `tv shows`, `source`, `seeders`, `and chill`, `send to put.io`, `settings`. Longer headings can use sentence case. The voice is one operator running a useful thing, not a SaaS brand.
 
 Do not add a third font. Do not bold serif headings. Keep `tracking-[-0.01em]` behavior aligned with the existing `font-serif` and heading styles in `src/ui/styles.css`.
 
 ## Layout
 
-Keep the app utilitarian and dense. Search and result scanning should stay central on search routes; catalog browsing should stay central on movie and TV routes. Avoid marketing sections, testimonial blocks, oversized hero layouts, and decorative filler.
+Keep the app utilitarian and dense. Search routes center on results; movie and TV routes center on browsing. No marketing sections, hero layouts, or decorative filler.
 
 Use the lightest surface that works:
 
@@ -226,11 +226,11 @@ Shared layout vocabulary lives in app-local shells and `src/ui/`. Keep API, auth
 
 ## Elevation & Depth
 
-The signature depth is the press stamp: `shadow-press`, a 1px by 1px hard shadow. It belongs on default and primary buttons, active tab-like controls, popovers, tooltips, and toasts that need the stamped Institute feel.
+Depth comes from the press stamp: `shadow-press`, a 1px by 1px hard shadow on default and primary buttons, active tab-like controls, popovers, tooltips, and toasts.
 
 Cards usually have borders, not shadows. Modals use `shadow-modal`. Poster images inside detail modals use `shadow-poster`. Drawers use `shadow-drawer`.
 
-Press behavior matters: stamped controls translate by 1px and drop the stamp shadow. Circular icon controls may scale slightly instead.
+On press, stamped controls translate by 1px and drop the stamp shadow. Circular icon controls may scale slightly instead.
 
 ## Shapes
 
@@ -243,20 +243,17 @@ The default radius is compact:
 - 12px for desktop modals and drawer tops
 - full radius only for circular icon controls and intentional pills
 
-Do not drift into soft rounded SaaS cards. Keep cards at 8px or less unless they are modal-scale surfaces.
+Keep cards at 8px or less unless they are modal-scale surfaces.
 
 ## Components
 
-The repo uses shadcn/base with Tailwind v4, lucide icons, and source-owned components. Run shadcn commands from `./` so `components.json` matches the work:
-
-- `components.json` owns reusable UI primitives under `src/ui/components/ui`
-- app-level surfaces live under `src/components/` or `src/catalog/components/`
+The repo uses shadcn/base with Tailwind v4, lucide icons, and source-owned components. `components.json` owns reusable primitives under `src/ui/components/ui`; app-level surfaces live under `src/components/` or `src/catalog/components/`.
 
 Prefer existing components before creating markup:
 
 - `Button` for actions
 - `IconButton` for icon-only actions
-- `Tabs`, `TabsList`, `TabsTrigger`, `SortPill`, and `SortRow` for compact mode and sort controls
+- `Tabs`, `TabsList`, `TabsTrigger`, and `SortRow` for compact mode and sort controls
 - `NativeSelect` for option menus
 - `Empty` or `EmptyState` for empty states
 - `Alert` and `UserErrorAlert` for errors
@@ -264,14 +261,14 @@ Prefer existing components before creating markup:
 - `PosterCard` for catalog tiles
 - `ResponsiveModal`, `SettingsModal`, and shadcn dialog/drawer primitives for overlays
 
-Use lucide icons. Icons inside buttons should use component-supported sizing and `data-icon` where the component expects it. Do not use emoji as icons except the existing personality moments, such as the results-table action-column marker.
+Use lucide icons with component-supported sizing and `data-icon` where the component expects it. Do not use emoji as icons except existing personality moments, such as the results-table action-column marker.
 
 ## Loading transitions
 
-Keep known controls mounted and disabled while their settings load. Skeletons must match
+Keep known controls mounted and disabled while their settings load. Skeletons match
 loaded card geometry at each breakpoint, including metadata and action rows. Movie and
 TV details keep a viewport-bounded frame with a scrolling body. Settings size to their
-content, with a viewport height limit; do not add fixed-height gaps between sections.
-Keep errors with the failing section and leave the settings footer for links and version.
+content under a viewport height limit, without fixed-height gaps between sections.
+Errors stay with the failing section; the settings footer holds links and version.
 Search and catalog content reserve at least one viewport so a short response does not
-pull the footer into the first screen. Result counts and long content may still grow the document.
+pull the footer into the first screen.

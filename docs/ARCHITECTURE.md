@@ -38,13 +38,10 @@ hosted API; the web repo owns browser state, requests, and rendering.
 
 One `UserSettings.catalog.sort` preference applies across movies, TV, and all
 providers, independently of search sorting. Picker changes save to put.io through
-the existing settings mutation. A `sort` URL overrides it without changing the
-saved preference; `sort=default` explicitly selects popularity (provider order).
-
-Date sorting uses movie `releaseDate` or TV `firstAirDate`, with highest rating
-first for matching dates. Unknown values stay last; remaining ties retain provider
-order. Legacy `year-asc` and `year-desc` URLs select date order. Sorting applies to
-the returned catalog; ratings may fall back to provider metadata.
+the settings mutation. A `sort` search param overrides it for that URL without
+changing the saved preference. Sort values, legacy `year-*` aliases, and tie
+rules live in [`src/catalog/lib/sort.ts`](../src/catalog/lib/sort.ts) and its
+tests.
 
 ## Request Path
 
@@ -52,8 +49,8 @@ Routes call TanStack Query hooks, which obtain the API client from auth context.
 The transport sends requests to `/v4`, identifies itself as `web`, and includes
 the deployment version in `X-Chill-Client-Version`.
 
-Hosted response data is untrusted. Browser-side timeouts, auth failures, route
-recovery, and errors remain explicit UI states.
+Hosted response data is untrusted. Timeouts, auth failures, route recovery,
+and errors are explicit UI states.
 
 ## Environment
 
@@ -70,9 +67,8 @@ recovery, and errors remain explicit UI states.
 Sentry stays off unless a public DSN is present. It excludes product analytics,
 session replay, default PII, request bodies, query strings, and default browser
 breadcrumbs. Known extension noise and recoverable module-load failures are
-dropped; terminal failures remain reportable.
+dropped; terminal failures remain reportable. Filters live in
+[`src/lib/sentry.ts`](../src/lib/sentry.ts).
 
-Production and staging upload hidden source maps, delete them from `dist/`, run
-sign-in and settings-shell browser smoke against that final directory, and deploy
-only after its SHA-256 manifest verifies. Pull requests run the fuller functional
-browser suite; browser fixtures mock API and health responses. See [Deployment](./DEPLOYMENT.md).
+Build, smoke, and artifact verification are described in
+[Deployment](./DEPLOYMENT.md).

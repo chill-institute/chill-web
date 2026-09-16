@@ -26,9 +26,8 @@ publish the upload token.
 
 ## Delivery
 
-Pull requests run app verification and the fuller functional browser suite.
-Browser fixtures mock API and health responses. On `main`, the
-shared workflow:
+Pull requests run app verification and the functional browser suite with
+mocked API and health responses. On `main`, the shared workflow:
 
 1. Builds `dist/` once with the production environment.
 2. Runs sign-in and settings-shell browser smoke against those files.
