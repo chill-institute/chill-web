@@ -9,6 +9,8 @@ import { registerSW } from "virtual:pwa-register";
 import { getRouter } from "./router";
 import {
   applyServiceWorkerUpdateWhenHidden,
+  bindNavigationUpdate,
+  navigationUpdate,
   startServiceWorkerUpdateChecks,
 } from "./lib/pwa-update";
 import { resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution } from "./lib/runtime-errors";
@@ -24,11 +26,16 @@ const updateServiceWorker = registerSW({
   },
   onNeedRefresh() {
     showPwaUpdateToast(updateServiceWorker);
+    navigationUpdate.markWaiting();
     applyServiceWorkerUpdateWhenHidden(updateServiceWorker, {
       canApply: () => queryClient.isMutating() === 0,
     });
   },
+  onNeedReload() {
+    navigationUpdate.reload();
+  },
 });
+bindNavigationUpdate(updateServiceWorker);
 
 if (import.meta.env.VITE_PUBLIC_RELEASE === "visual-test") {
   window.addEventListener("chill:visual-pwa-update", () => {

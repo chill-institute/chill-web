@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { applyServiceWorkerUpdateWhenHidden, startServiceWorkerUpdateChecks } from "./pwa-update";
+import {
+  applyServiceWorkerUpdateWhenHidden,
+  createNavigationUpdateApplier,
+  startServiceWorkerUpdateChecks,
+} from "./pwa-update";
 
 type Listener = () => void;
 
@@ -130,5 +134,98 @@ describe("applyServiceWorkerUpdateWhenHidden", () => {
     cancel();
     visibility.setVisibility("hidden");
     expect(updateServiceWorker).not.toHaveBeenCalled();
+  });
+});
+
+describe("createNavigationUpdateApplier", () => {
+  function createLocation(href: string) {
+    return { href, assign: vi.fn(), reload: vi.fn() };
+  }
+
+  function nav(pathname: string, search = "") {
+    return { preload: false, location: { pathname, href: `${pathname}${search}` } };
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("holds the first path change after an update is waiting, once", () => {
+    const updateServiceWorker = vi.fn(() => Promise.resolve());
+    const applier = createNavigationUpdateApplier(updateServiceWorker, {
+      location: () => createLocation("https://app.test/search?q=x"),
+    });
+
+    expect(applier.beforeLoad(nav("/search", "?q=x"))).toBeUndefined();
+    expect(applier.beforeLoad(nav("/movies/1"))).toBeUndefined();
+    expect(updateServiceWorker).not.toHaveBeenCalled();
+
+    applier.markWaiting();
+    expect(applier.beforeLoad(nav("/movies/1", "?source=a"))).toBeUndefined();
+    expect(
+      applier.beforeLoad({ preload: true, location: { pathname: "/", href: "/" } }),
+    ).toBeUndefined();
+    expect(updateServiceWorker).not.toHaveBeenCalled();
+
+    expect(applier.beforeLoad(nav("/"))).toBeInstanceOf(Promise);
+    expect(applier.beforeLoad(nav("/movies/2"))).toBeUndefined();
+    expect(updateServiceWorker).toHaveBeenCalledTimes(1);
+    expect(updateServiceWorker).toHaveBeenCalledWith(true);
+  });
+
+  it("releases the hold after the ceiling", async () => {
+    const applier = createNavigationUpdateApplier(() => Promise.resolve(), {
+      location: () => createLocation("https://app.test/search"),
+      holdMs: 1000,
+    });
+    applier.markWaiting();
+    applier.beforeLoad(nav("/search"));
+    let released = false;
+    void applier.beforeLoad(nav("/movies/1"))?.then(() => {
+      released = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(999);
+    expect(released).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(released).toBe(true);
+  });
+
+  it("skips navigation apply while a mutation is in flight", () => {
+    const updateServiceWorker = vi.fn(() => Promise.resolve());
+    const applier = createNavigationUpdateApplier(updateServiceWorker, {
+      canApply: () => false,
+      location: () => createLocation("https://app.test/"),
+    });
+
+    applier.markWaiting();
+    applier.beforeLoad(nav("/"));
+    expect(applier.beforeLoad(nav("/movies/1"))).toBeUndefined();
+    expect(updateServiceWorker).not.toHaveBeenCalled();
+  });
+
+  it("reloads onto the navigation target, or in place when already there", () => {
+    const location = createLocation("https://app.test/search");
+    const applier = createNavigationUpdateApplier(() => Promise.resolve(), {
+      location: () => location,
+    });
+
+    applier.reload();
+    expect(location.reload).toHaveBeenCalledTimes(1);
+    expect(location.assign).not.toHaveBeenCalled();
+
+    applier.markWaiting();
+    applier.beforeLoad(nav("/search"));
+    applier.beforeLoad(nav("/movies/1", "?source=a"));
+    applier.reload();
+    expect(location.assign).toHaveBeenCalledWith("https://app.test/movies/1?source=a");
+
+    location.href = "https://app.test/movies/1?source=a";
+    applier.reload();
+    expect(location.reload).toHaveBeenCalledTimes(2);
   });
 });

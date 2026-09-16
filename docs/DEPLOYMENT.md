@@ -19,7 +19,8 @@ it.
 - Fingerprinted `/assets/*` responses are immutable; missing assets return 404.
 - The service worker waits and asks before activating an update. Open apps
   check for updates on foreground and hourly; a waiting update applies and
-  reloads while the app is hidden and no mutation is in flight.
+  reloads while the app is hidden or on the next route change, when no
+  mutation is in flight.
 - `public/_headers` and the static-asset Worker apply browser security headers.
 
 Sentry is enabled only when the build receives its public DSN and environment.
