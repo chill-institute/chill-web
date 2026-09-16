@@ -109,7 +109,7 @@ test("keeps the chosen folder through a failed connection and disables edits whi
   await page.getByRole("button", { name: "Use Movies as Stremio folder" }).click();
   await page.getByRole("button", { name: "connect account", exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
-  await expect(page.getByText("Movies", { exact: true })).toBeVisible();
+  await expect(page.locator('p[aria-live="polite"]', { hasText: "Movies" })).toBeVisible();
   await page.getByRole("button", { name: "connect account", exact: true }).click();
   await expect(page.getByRole("button", { name: "connecting…" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "choose folder" })).toBeDisabled();
