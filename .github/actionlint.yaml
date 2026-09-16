@@ -1,4 +1,4 @@
-self-hosted-runner:
-  labels:
-    - blacksmith-2vcpu-ubuntu-2404
-    - blacksmith-6vcpu-macos-latest
+paths:
+  .github/workflows/cloudflare-*-schedule.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
