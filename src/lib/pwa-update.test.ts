@@ -25,7 +25,7 @@ function createVisibilityTarget(initial: DocumentVisibilityState = "visible") {
     listenerCount: () => listeners.size,
     setVisibility(state: DocumentVisibilityState) {
       target.visibilityState = state;
-      for (const listener of [...listeners]) listener();
+      for (const listener of listeners) listener();
     },
   };
 }
@@ -183,7 +183,7 @@ describe("createNavigationUpdateApplier", () => {
       holdMs: 1000,
     });
     applier.markWaiting();
-    applier.beforeLoad(nav("/search"));
+    void applier.beforeLoad(nav("/search"));
     let released = false;
     void applier.beforeLoad(nav("/movies/1"))?.then(() => {
       released = true;
@@ -203,7 +203,7 @@ describe("createNavigationUpdateApplier", () => {
     });
 
     applier.markWaiting();
-    applier.beforeLoad(nav("/"));
+    void applier.beforeLoad(nav("/"));
     expect(applier.beforeLoad(nav("/movies/1"))).toBeUndefined();
     expect(updateServiceWorker).not.toHaveBeenCalled();
   });
@@ -219,8 +219,8 @@ describe("createNavigationUpdateApplier", () => {
     expect(location.assign).not.toHaveBeenCalled();
 
     applier.markWaiting();
-    applier.beforeLoad(nav("/search"));
-    applier.beforeLoad(nav("/movies/1", "?source=a"));
+    void applier.beforeLoad(nav("/search"));
+    void applier.beforeLoad(nav("/movies/1", "?source=a"));
     applier.reload();
     expect(location.assign).toHaveBeenCalledWith("https://app.test/movies/1?source=a");
 
