@@ -17,7 +17,9 @@ it.
   client metadata.
 - `VITE_PUBLIC_RELEASE` is the short commit SHA used for debugging and Sentry.
 - Fingerprinted `/assets/*` responses are immutable; missing assets return 404.
-- The service worker waits and asks before activating an update.
+- The service worker waits and asks before activating an update. Open apps
+  check for updates on foreground and hourly; a waiting update applies and
+  reloads while the app is hidden and no mutation is in flight.
 - `public/_headers` and the static-asset Worker apply browser security headers.
 
 Sentry is enabled only when the build receives its public DSN and environment.

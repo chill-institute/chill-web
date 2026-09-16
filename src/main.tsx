@@ -7,6 +7,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { registerSW } from "virtual:pwa-register";
 
 import { getRouter } from "./router";
+import {
+  applyServiceWorkerUpdateWhenHidden,
+  startServiceWorkerUpdateChecks,
+} from "./lib/pwa-update";
 import { resetPreloadRecoveryFallbackAfterSuccessfulRouteResolution } from "./lib/runtime-errors";
 import { addAppBreadcrumb, createSentryReactErrorHandler } from "./lib/sentry";
 import { queryClient } from "./query-client";
@@ -15,8 +19,14 @@ import "./styles.css";
 
 const updateServiceWorker = registerSW({
   immediate: true,
+  onRegisteredSW(_url, registration) {
+    if (registration) startServiceWorkerUpdateChecks(registration);
+  },
   onNeedRefresh() {
     showPwaUpdateToast(updateServiceWorker);
+    applyServiceWorkerUpdateWhenHidden(updateServiceWorker, {
+      canApply: () => queryClient.isMutating() === 0,
+    });
   },
 });
 
