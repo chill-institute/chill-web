@@ -74,6 +74,10 @@ function StremioSetup({ token }: { token: string }) {
           Browse and search in Stremio, select releases to download to put.io, check their progress,
           and play them when ready.
         </p>
+        <p role="note" className="rounded border border-border-strong bg-surface p-3 text-sm">
+          Early access: chill for Stremio is a work in progress. Expect rough edges, and refresh
+          sources or restart Stremio if a download or playback stalls.
+        </p>
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
         <h2 className="font-serif text-xl">1. Connect account</h2>
