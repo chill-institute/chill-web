@@ -50,16 +50,14 @@ function StremioSetup({ token }: { token: string }) {
         current?.filter((item) => item.id !== id),
       );
       setRevoking(null);
-      setNotice(
-        "Connection revoked. Remove chill from Stremio; this installation link no longer works.",
-      );
+      setNotice("Connection revoked. The link no longer works; remove chill from Stremio.");
     },
   });
   const copy = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
       setNotice(
-        "Installation link copied. Keep it private: anyone with it can play your library and download selected releases to your put.io account.",
+        "Link copied. Keep it private: it can play your library and download to your put.io account.",
       );
     } catch {
       setNotice("Couldn't copy the link. Select the installation link below and copy it manually.");
@@ -69,19 +67,17 @@ function StremioSetup({ token }: { token: string }) {
     <section data-page="stremio" className="mx-auto flex max-w-xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="font-serif text-3xl">Watch with Stremio</h1>
-        <p className="text-fg-2">Connect your account, then install chill in Stremio.</p>
-        <p className="text-fg-3 text-sm">
-          Browse and search in Stremio, select releases to download to put.io, check their progress,
-          and play them when ready.
+        <p className="text-fg-2">
+          Browse, pick releases, download to put.io and play, all inside Stremio.
         </p>
-        <p role="note" className="rounded border border-border-strong bg-surface p-3 text-sm">
-          Early access: chill for Stremio is a work in progress. Expect rough edges, and refresh
-          sources or restart Stremio if a download or playback stalls.
+        <p role="note" className="text-fg-3 text-sm">
+          Early access. Things will break. If playback stalls, refresh the sources or restart
+          Stremio.
         </p>
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
         <h2 className="font-serif text-xl">1. Connect account</h2>
-        <p className="text-fg-3 text-sm">Choose the put.io folder chill will use in Stremio.</p>
+        <p className="text-fg-3 text-sm">Pick the put.io folder chill shows in Stremio.</p>
         {folder.error ? <InstallationError error={folder.error} /> : null}
         <p aria-live="polite">
           {folder.isPending
@@ -167,8 +163,7 @@ function StremioSetup({ token }: { token: string }) {
                 </Button>
               </div>
               <p className="text-fg-3 text-sm">
-                Using Stremio Web or another device? Copy the link and paste it into Stremio’s
-                add-on search.
+                On Stremio Web or another device, paste the link into Stremio’s add-on search.
               </p>
               <label className="flex min-w-0 flex-col gap-1 text-sm text-fg-3">
                 Private installation link
@@ -181,9 +176,9 @@ function StremioSetup({ token }: { token: string }) {
                 />
               </label>
               <p className="text-fg-3 text-sm">
-                Keep this link private. Anyone with it can play your library and download selected
-                releases to your put.io account. Revoking stops future requests; transfers already
-                started and playback links already issued may continue.
+                Keep this link private: anyone with it can play your library and download to your
+                put.io account. Revoking stops new requests; transfers and playback links already
+                issued keep working.
               </p>
             </article>
           ))}
@@ -194,7 +189,7 @@ function StremioSetup({ token }: { token: string }) {
           if (!open && !revoke.isPending) setRevoking(null);
         }}
         title="Revoke this connection?"
-        description="Its installation link will stop working. Transfers already started and playback links already issued may continue."
+        description="The link stops working. Transfers and playback links already issued keep going."
         desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,448px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-surface p-6 shadow-modal"
         drawerContentClassName="bg-surface p-6"
       >
