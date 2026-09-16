@@ -117,7 +117,7 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    ignorePatterns: ["src/routeTree.gen.ts", "dist/**"],
+    ignorePatterns: ["src/routeTree.gen.ts", "dist/**", ".agents/skills/**"],
   },
   lint: {
     plugins: ["eslint", "unicorn", "typescript", "oxc", "react"],
