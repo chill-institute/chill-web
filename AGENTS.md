@@ -30,20 +30,6 @@ Read [DESIGN.md](./DESIGN.md) before UI work. Existing tokens and primitives are
 the source of truth. Run shadcn from the repo root and translate generated
 classes into the repository's semantic token vocabulary.
 
-## Skills
-
-Repo-local skills live in `.agents/skills/` (Claude Code reads the same tree
-through `.claude/skills/`). Load the owner before the work it governs:
-
-- Query keys, caching, invalidation, mutations, or `useQuery` options:
-  [tanstack-query](./.agents/skills/tanstack-query/SKILL.md)
-- Route definitions, loaders, search params, navigation, or route context:
-  [tanstack-router](./.agents/skills/tanstack-router/SKILL.md)
-- Adding or restyling shadcn components, registries, or `components.json`:
-  [shadcn](./.agents/skills/shadcn/SKILL.md)
-
-Reinstall from `skills-lock.json` with `npx skills experimental_install`.
-
 ## Contracts
 
 - Use the local Vite+ CLI through `pnpm exec vp`.
