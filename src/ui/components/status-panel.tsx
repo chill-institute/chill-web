@@ -42,7 +42,7 @@ function StatusPanel({
           <div
             aria-hidden="true"
             className={cn(
-              "flex size-10 items-center justify-center rounded-full border [&_svg]:size-5",
+              "flex size-14 items-center justify-center rounded-full border [&_svg]:size-7",
               toneClassName[tone],
             )}
           >
