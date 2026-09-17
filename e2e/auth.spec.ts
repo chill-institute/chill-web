@@ -269,18 +269,20 @@ test.describe("sign-in page", () => {
   });
 });
 
-test.describe("Setup token page", () => {
+test.describe("Chilly token page", () => {
   test("authenticated users can reveal and hide the token", async ({
     authenticatedPage,
     mockRpc,
   }) => {
     await mockRpc({});
 
-    await authenticatedPage.goto("/auth/setup-token");
+    await authenticatedPage.goto("/auth/chilly-token");
 
-    await expect(authenticatedPage.getByRole("heading", { name: "Setup token" })).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole("heading", { name: "Get your chilly token!" }),
+    ).toBeVisible();
 
-    const tokenInput = authenticatedPage.getByLabel("Setup token");
+    const tokenInput = authenticatedPage.getByLabel("chill-institute-token");
     await expect(tokenInput).toHaveValue("test-token");
     await expect(tokenInput).toHaveAttribute("type", "password");
 
@@ -291,10 +293,21 @@ test.describe("Setup token page", () => {
     await expect(tokenInput).toHaveAttribute("type", "password");
   });
 
+  for (const legacy of ["/auth/cli-token", "/auth/mcp-token", "/auth/setup-token"]) {
+    test(`${legacy} redirects to the chilly token page`, async ({ authenticatedPage, mockRpc }) => {
+      await mockRpc({});
+      await authenticatedPage.goto(legacy);
+      await authenticatedPage.waitForURL("**/auth/chilly-token");
+      await expect(
+        authenticatedPage.getByRole("heading", { name: "Get your chilly token!" }),
+      ).toBeVisible();
+    });
+  }
+
   test("unauthenticated users are redirected to sign-in without storing auth-route callbacks", async ({
     page,
   }) => {
-    await page.goto("/auth/setup-token");
+    await page.goto("/auth/chilly-token");
 
     await page.waitForURL("**/sign-in**");
     const url = new URL(page.url());

@@ -17,7 +17,9 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as StremioRouteImport } from './routes/stremio'
 import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
+import { Route as AuthChillyTokenRouteImport } from './routes/auth/chilly-token'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
+import { Route as AuthMcpTokenRouteImport } from './routes/auth/mcp-token'
 import { Route as AuthSetupTokenRouteImport } from './routes/auth/setup-token'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
@@ -66,9 +68,19 @@ const TvShowsRouteRoute = TvShowsRouteRouteImport.update({
   path: '/tv-shows',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthChillyTokenRoute = AuthChillyTokenRouteImport.update({
+  id: '/auth/chilly-token',
+  path: '/auth/chilly-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
   id: '/auth/cli-token',
   path: '/auth/cli-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthMcpTokenRoute = AuthMcpTokenRouteImport.update({
+  id: '/auth/mcp-token',
+  path: '/auth/mcp-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSetupTokenRoute = AuthSetupTokenRouteImport.update({
@@ -116,7 +128,9 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/stremio': typeof StremioRoute
+  '/auth/chilly-token': typeof AuthChillyTokenRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/mcp-token': typeof AuthMcpTokenRoute
   '/auth/setup-token': typeof AuthSetupTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
@@ -132,7 +146,9 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/stremio': typeof StremioRoute
+  '/auth/chilly-token': typeof AuthChillyTokenRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/mcp-token': typeof AuthMcpTokenRoute
   '/auth/setup-token': typeof AuthSetupTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
@@ -151,7 +167,9 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/stremio': typeof StremioRoute
+  '/auth/chilly-token': typeof AuthChillyTokenRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/mcp-token': typeof AuthMcpTokenRoute
   '/auth/setup-token': typeof AuthSetupTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
@@ -171,7 +189,9 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/stremio'
+    | '/auth/chilly-token'
     | '/auth/cli-token'
+    | '/auth/mcp-token'
     | '/auth/setup-token'
     | '/auth/success'
     | '/debug/crash'
@@ -187,7 +207,9 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/stremio'
+    | '/auth/chilly-token'
     | '/auth/cli-token'
+    | '/auth/mcp-token'
     | '/auth/setup-token'
     | '/auth/success'
     | '/debug/crash'
@@ -205,7 +227,9 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/stremio'
+    | '/auth/chilly-token'
     | '/auth/cli-token'
+    | '/auth/mcp-token'
     | '/auth/setup-token'
     | '/auth/success'
     | '/debug/crash'
@@ -224,7 +248,9 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
   StremioRoute: typeof StremioRoute
+  AuthChillyTokenRoute: typeof AuthChillyTokenRoute
   AuthCliTokenRoute: typeof AuthCliTokenRoute
+  AuthMcpTokenRoute: typeof AuthMcpTokenRoute
   AuthSetupTokenRoute: typeof AuthSetupTokenRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
@@ -288,11 +314,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TvShowsRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/chilly-token': {
+      id: '/auth/chilly-token'
+      path: '/auth/chilly-token'
+      fullPath: '/auth/chilly-token'
+      preLoaderRoute: typeof AuthChillyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/cli-token': {
       id: '/auth/cli-token'
       path: '/auth/cli-token'
       fullPath: '/auth/cli-token'
       preLoaderRoute: typeof AuthCliTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/mcp-token': {
+      id: '/auth/mcp-token'
+      path: '/auth/mcp-token'
+      fullPath: '/auth/mcp-token'
+      preLoaderRoute: typeof AuthMcpTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/setup-token': {
@@ -384,7 +424,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
   StremioRoute: StremioRoute,
+  AuthChillyTokenRoute: AuthChillyTokenRoute,
   AuthCliTokenRoute: AuthCliTokenRoute,
+  AuthMcpTokenRoute: AuthMcpTokenRoute,
   AuthSetupTokenRoute: AuthSetupTokenRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,

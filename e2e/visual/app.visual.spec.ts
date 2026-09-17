@@ -127,12 +127,14 @@ test("sign-in session expired", async ({ page }) => {
   await expect(page).toHaveScreenshot("sign-in-session-expired.png", visualOptions);
 });
 
-test("setup token page", async ({ authenticatedPage }) => {
+test("chilly token page", async ({ authenticatedPage }) => {
   await freezeVisualClock(authenticatedPage);
-  await authenticatedPage.goto("/auth/setup-token");
-  await expect(authenticatedPage.getByRole("heading", { name: "Setup token" })).toBeVisible();
-  await expect(authenticatedPage.getByLabel("Setup token")).toBeVisible();
-  await expect(authenticatedPage).toHaveScreenshot("setup-token-page.png", visualOptions);
+  await authenticatedPage.goto("/auth/chilly-token");
+  await expect(
+    authenticatedPage.getByRole("heading", { name: "Get your chilly token!" }),
+  ).toBeVisible();
+  await expect(authenticatedPage.getByLabel("chill-institute-token")).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("chilly-token-page.png", visualOptions);
 });
 
 test("backend unavailable screen", async ({ page }) => {

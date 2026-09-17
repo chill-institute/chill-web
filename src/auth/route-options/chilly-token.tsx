@@ -10,7 +10,7 @@ import { Input } from "@/ui/components/ui/input";
 
 import { readCurrentCallbackPath, useAuth } from "../auth";
 
-function SetupTokenPage() {
+function ChillyTokenPage() {
   const auth = useAuth();
   const callbackURL = readCurrentCallbackPath();
   const [revealed, setRevealed] = useState(false);
@@ -27,7 +27,7 @@ function SetupTokenPage() {
 
   return (
     <AuthPage
-      title="Setup token"
+      title="Get your chilly token!"
       description="Connect the chilly CLI, the MCP server, or your own scripts to this account."
     >
       <div className="border-warn-border bg-warn-bg text-warn-text flex items-start gap-3 rounded border px-4 py-3 text-sm leading-[1.25]">
@@ -53,17 +53,17 @@ function SetupTokenPage() {
 
       <FieldGroup className="gap-2">
         <Field>
-          <FieldLabel htmlFor="setup-token" className="text-fg-1 text-sm font-medium md:text-base">
-            Setup token
+          <FieldLabel htmlFor="chilly-token" className="text-fg-1 text-sm font-medium md:text-base">
+            chill-institute-token
           </FieldLabel>
           <div className="flex items-center gap-2">
             <Input
-              id="setup-token"
+              id="chilly-token"
               readOnly
               type={revealed ? "text" : "password"}
               value={auth.authToken}
               className="flex-1"
-              aria-label="Setup token"
+              aria-label="chill-institute-token"
             />
             <Button
               variant="outline"
@@ -81,6 +81,6 @@ function SetupTokenPage() {
   );
 }
 
-export const setupTokenRouteOptions = {
-  component: SetupTokenPage,
+export const chillyTokenRouteOptions = {
+  component: ChillyTokenPage,
 };
