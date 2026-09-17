@@ -36,10 +36,20 @@ function SetupTokenPage() {
         </span>
         <p className="m-0">
           Treat this token like a password. Anyone with it can act as your account until you sign
-          out or replace the token. Paste it into <code>chilly auth login</code> or send it as{" "}
-          <code>Authorization: Bearer</code> to the MCP server.
+          out or replace it.
         </p>
       </div>
+
+      <ul className="text-fg-3 m-0 flex list-disc flex-col gap-1 pl-5 text-sm leading-[1.25]">
+        <li>
+          <span className="text-fg-1 font-medium">chilly CLI:</span> run{" "}
+          <span className="text-fg-1 font-medium">chilly auth login</span> and paste the token.
+        </li>
+        <li>
+          <span className="text-fg-1 font-medium">MCP server or scripts:</span> send it as an{" "}
+          <span className="text-fg-1 font-medium">Authorization: Bearer</span> header.
+        </li>
+      </ul>
 
       <FieldGroup className="gap-2">
         <Field>
