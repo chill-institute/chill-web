@@ -63,7 +63,7 @@ describe("Cloudflare receiver contract", () => {
       "  validate-cloudflare-dispatch:",
       "EXPECTED_ACTOR_ID: ${{ vars.CLOUDFLARE_SCHEDULER_ACTOR_ID }}",
       `[ "\${ACTOR_ID}" = "\${EXPECTED_ACTOR_ID}" ]`,
-      `[ "\${ACTOR_LOGIN}" = 'chill-scheduler[bot]' ]`,
+      `[ "\${ACTOR_LOGIN}" = 'chill-ci[bot]' ]`,
       `[ "\${TRIGGERING_ACTOR}" = "\${ACTOR_LOGIN}" ]`,
       `[ "\${RUN_ATTEMPT}" = 1 ]`,
       `[ "\${EVENT_NAME}" = workflow_dispatch ]`,

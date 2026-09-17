@@ -74,7 +74,7 @@ jobs:
             echo "dispatch actor is not the configured scheduler GitHub App" >&2
             exit 1
           }
-          [ "${ACTOR_LOGIN}" = 'chill-scheduler[bot]' ] || {
+          [ "${ACTOR_LOGIN}" = 'chill-ci[bot]' ] || {
             echo "dispatch actor login is not the scheduler GitHub App" >&2
             exit 1
           }
