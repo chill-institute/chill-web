@@ -28,13 +28,13 @@ hosted API; the web repo owns browser state, requests, and rendering.
 
 ## Routes
 
-| Route                              | Surface                              |
-| ---------------------------------- | ------------------------------------ |
-| `/`, `/search`                     | Search shell, filters, and results   |
-| `/movies`, `/movies/$id`           | Movie catalog and detail modal       |
-| `/tv-shows`, `/tv-shows/$id`       | TV catalog and detail modal          |
-| `/settings`                        | Account and folder settings          |
-| `/sign-in`, `/sign-out`, `/auth/*` | Browser and CLI-token authentication |
+| Route                              | Surface                                                                 |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `/`, `/search`                     | Search shell, filters, and results                                      |
+| `/movies`, `/movies/$id`           | Movie catalog and detail modal                                          |
+| `/tv-shows`, `/tv-shows/$id`       | TV catalog and detail modal                                             |
+| `/settings`                        | Account and folder settings                                             |
+| `/sign-in`, `/sign-out`, `/auth/*` | Browser sign-in and the chilly-token page for the CLI, MCP, and scripts |
 
 One `UserSettings.catalog.sort` preference applies across movies, TV, and all
 providers, independently of search sorting. Picker changes save to put.io through

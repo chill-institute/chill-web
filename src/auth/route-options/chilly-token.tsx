@@ -63,7 +63,6 @@ function ChillyTokenPage() {
               type={revealed ? "text" : "password"}
               value={auth.authToken}
               className="flex-1"
-              aria-label="chill-institute-token"
             />
             <Button
               variant="outline"

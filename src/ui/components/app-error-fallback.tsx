@@ -67,37 +67,31 @@ function AppErrorFallback({
     copyState === "copied" ? <ClipboardCheck /> : copyState === "error" ? <ClipboardX /> : <Copy />;
 
   return (
-    <StatusPanel>
-      <div className="flex items-start gap-3">
-        <div className="border-error-border bg-error-bg text-error-text rounded-full border p-2">
-          <TriangleAlert />
-        </div>
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl leading-7">Something went wrong.</h1>
-          <p className="text-fg-2 text-sm">
-            {sentryEventId
-              ? "The app hit a crash and sent a private crash report."
-              : "The app hit a crash. Crash reporting is not configured for this build."}
-          </p>
-        </div>
-      </div>
-
-      <div className="border-border-soft bg-surface-2 rounded border p-3 text-sm">
-        <div>
-          <strong>Message:</strong> {report.error.message}
-        </div>
-        <div>
-          <strong>Route:</strong> {report.routePath}
-        </div>
-        <div>
-          <strong>Release:</strong> {report.release}
-        </div>
+    <StatusPanel
+      icon={<TriangleAlert />}
+      tone="error"
+      title="Something went wrong."
+      description={
+        sentryEventId
+          ? "The app hit a crash and sent a private crash report."
+          : "The app hit a crash. Crash reporting is not configured for this build."
+      }
+      contentClassName="max-w-2xl"
+    >
+      <dl className="border-border-soft bg-surface-2 m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded border p-3 text-sm">
+        <dt className="font-medium">Message</dt>
+        <dd className="m-0 min-w-0 break-words">{report.error.message}</dd>
+        <dt className="font-medium">Route</dt>
+        <dd className="m-0 min-w-0 break-words">{report.routePath}</dd>
+        <dt className="font-medium">Release</dt>
+        <dd className="m-0 min-w-0 break-words">{report.release}</dd>
         {sentryEventId ? (
-          <div>
-            <strong>Sentry event:</strong> {sentryEventId}
-          </div>
+          <>
+            <dt className="font-medium">Sentry event</dt>
+            <dd className="m-0 min-w-0 break-words">{sentryEventId}</dd>
+          </>
         ) : null}
-      </div>
+      </dl>
 
       <Field>
         <FieldLabel htmlFor={notesId} className="text-sm font-medium">

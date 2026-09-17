@@ -13,36 +13,20 @@ function BackendUnavailableScreen({
   reloadAfterRetry = true,
 }: BackendUnavailableScreenProps) {
   return (
-    <StatusPanel>
-      <div className="flex items-start gap-3">
-        <div className="border-error-border bg-error-bg text-error-text rounded-full border p-2">
-          <ServerCrash />
-        </div>
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl leading-7">The Institute is having a moment…</h1>
-          <p className="text-fg-2 text-sm">
-            We could not reach the API cleanly. This is usually a brief deploy blip or a temporary
-            outage, not a sign-out.
-          </p>
-        </div>
-      </div>
-
-      <div className="border-border-soft bg-surface-2 rounded border p-3 text-sm">
-        <div>Try again in a moment.</div>
-        <div className="text-fg-3">
-          If this keeps happening, a page reload usually confirms whether the backend is back.
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
+    <StatusPanel
+      icon={<ServerCrash />}
+      tone="error"
+      title="The Institute is having a moment…"
+      description="We could not reach the API. This is usually a brief deploy blip, not a sign-out. Try again in a moment."
+    >
+      <div className="flex flex-wrap justify-center gap-2">
         <Button
-          variant="outline"
           onClick={() => {
             void onRetry?.();
             if (reloadAfterRetry) window.location.reload();
           }}
         >
-          <RefreshCw />
+          <RefreshCw data-icon="inline-start" />
           {reloadAfterRetry ? "reload page" : "try again"}
         </Button>
         <a
