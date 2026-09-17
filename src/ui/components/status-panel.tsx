@@ -49,9 +49,9 @@ function StatusPanel({
             {icon}
           </div>
           <div className="min-w-0 w-full">
-            <h1 className="m-0 text-[1.625rem] leading-none sm:text-4xl">{title}</h1>
+            <h1 className="m-0 text-2xl leading-tight sm:text-3xl">{title}</h1>
             {description ? (
-              <p className="text-fg-3 mx-auto mt-2 max-w-prose text-sm leading-[1.25]">
+              <p className="text-fg-3 mx-auto mt-3 max-w-prose text-sm leading-[1.35]">
                 {description}
               </p>
             ) : null}
