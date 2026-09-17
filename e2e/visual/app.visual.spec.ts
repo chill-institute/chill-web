@@ -127,12 +127,12 @@ test("sign-in session expired", async ({ page }) => {
   await expect(page).toHaveScreenshot("sign-in-session-expired.png", visualOptions);
 });
 
-test("cli token page", async ({ authenticatedPage }) => {
+test("setup token page", async ({ authenticatedPage }) => {
   await freezeVisualClock(authenticatedPage);
-  await authenticatedPage.goto("/auth/cli-token");
-  await expect(authenticatedPage.getByRole("heading", { name: "CLI token" })).toBeVisible();
-  await expect(authenticatedPage.getByLabel("CLI auth token")).toBeVisible();
-  await expect(authenticatedPage).toHaveScreenshot("cli-token-page.png", visualOptions);
+  await authenticatedPage.goto("/auth/setup-token");
+  await expect(authenticatedPage.getByRole("heading", { name: "Setup token" })).toBeVisible();
+  await expect(authenticatedPage.getByLabel("Setup token")).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("setup-token-page.png", visualOptions);
 });
 
 test("backend unavailable screen", async ({ page }) => {

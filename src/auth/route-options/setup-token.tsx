@@ -10,7 +10,7 @@ import { Input } from "@/ui/components/ui/input";
 
 import { readCurrentCallbackPath, useAuth } from "../auth";
 
-function CliTokenPage() {
+function SetupTokenPage() {
   const auth = useAuth();
   const callbackURL = readCurrentCallbackPath();
   const [revealed, setRevealed] = useState(false);
@@ -26,30 +26,34 @@ function CliTokenPage() {
   }
 
   return (
-    <AuthPage title="CLI token" description="Use this to sign in from the CLI.">
+    <AuthPage
+      title="Setup token"
+      description="Connect the chilly CLI, the MCP server, or your own scripts to this account."
+    >
       <div className="border-warn-border bg-warn-bg text-warn-text flex items-start gap-3 rounded border px-4 py-3 text-sm leading-[1.25]">
         <span className="flex h-[1.25em] shrink-0 items-center">
           <ShieldAlert className="size-4" />
         </span>
         <p className="m-0">
           Treat this token like a password. Anyone with it can act as your account until you sign
-          out or replace the token.
+          out or replace the token. Paste it into <code>chilly auth login</code> or send it as{" "}
+          <code>Authorization: Bearer</code> to the MCP server.
         </p>
       </div>
 
       <FieldGroup className="gap-2">
         <Field>
-          <FieldLabel htmlFor="cli-token" className="text-fg-1 text-sm font-medium md:text-base">
-            Access token
+          <FieldLabel htmlFor="setup-token" className="text-fg-1 text-sm font-medium md:text-base">
+            Setup token
           </FieldLabel>
           <div className="flex items-center gap-2">
             <Input
-              id="cli-token"
+              id="setup-token"
               readOnly
               type={revealed ? "text" : "password"}
               value={auth.authToken}
               className="flex-1"
-              aria-label="CLI auth token"
+              aria-label="Setup token"
             />
             <Button
               variant="outline"
@@ -67,6 +71,6 @@ function CliTokenPage() {
   );
 }
 
-export const cliTokenRouteOptions = {
-  component: CliTokenPage,
+export const setupTokenRouteOptions = {
+  component: SetupTokenPage,
 };

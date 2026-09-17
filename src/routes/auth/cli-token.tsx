@@ -1,5 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { cliTokenRouteOptions } from "@/auth/route-options/cli-token";
-
-export const Route = createFileRoute("/auth/cli-token")(cliTokenRouteOptions);
+// Legacy address printed by older chilly releases.
+export const Route = createFileRoute("/auth/cli-token")({
+  beforeLoad: () => {
+    throw redirect({ to: "/auth/setup-token", replace: true });
+  },
+});

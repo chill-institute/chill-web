@@ -269,18 +269,18 @@ test.describe("sign-in page", () => {
   });
 });
 
-test.describe("CLI token page", () => {
+test.describe("Setup token page", () => {
   test("authenticated users can reveal and hide the token", async ({
     authenticatedPage,
     mockRpc,
   }) => {
     await mockRpc({});
 
-    await authenticatedPage.goto("/auth/cli-token");
+    await authenticatedPage.goto("/auth/setup-token");
 
-    await expect(authenticatedPage.getByRole("heading", { name: "CLI token" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("heading", { name: "Setup token" })).toBeVisible();
 
-    const tokenInput = authenticatedPage.getByLabel("CLI auth token");
+    const tokenInput = authenticatedPage.getByLabel("Setup token");
     await expect(tokenInput).toHaveValue("test-token");
     await expect(tokenInput).toHaveAttribute("type", "password");
 
@@ -294,7 +294,7 @@ test.describe("CLI token page", () => {
   test("unauthenticated users are redirected to sign-in without storing auth-route callbacks", async ({
     page,
   }) => {
-    await page.goto("/auth/cli-token");
+    await page.goto("/auth/setup-token");
 
     await page.waitForURL("**/sign-in**");
     const url = new URL(page.url());

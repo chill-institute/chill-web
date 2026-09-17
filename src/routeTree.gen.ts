@@ -18,6 +18,7 @@ import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as StremioRouteImport } from './routes/stremio'
 import { Route as TvShowsRouteRouteImport } from './routes/tv-shows/route'
 import { Route as AuthCliTokenRouteImport } from './routes/auth/cli-token'
+import { Route as AuthSetupTokenRouteImport } from './routes/auth/setup-token'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 import { Route as MoviesIndexRouteImport } from './routes/movies/index'
@@ -70,6 +71,11 @@ const AuthCliTokenRoute = AuthCliTokenRouteImport.update({
   path: '/auth/cli-token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthSetupTokenRoute = AuthSetupTokenRouteImport.update({
+  id: '/auth/setup-token',
+  path: '/auth/setup-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSuccessRoute = AuthSuccessRouteImport.update({
   id: '/auth/success',
   path: '/auth/success',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/sign-out': typeof SignOutRoute
   '/stremio': typeof StremioRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/setup-token': typeof AuthSetupTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/sign-out': typeof SignOutRoute
   '/stremio': typeof StremioRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/setup-token': typeof AuthSetupTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/sign-out': typeof SignOutRoute
   '/stremio': typeof StremioRoute
   '/auth/cli-token': typeof AuthCliTokenRoute
+  '/auth/setup-token': typeof AuthSetupTokenRoute
   '/auth/success': typeof AuthSuccessRoute
   '/debug/crash': typeof DebugCrashRoute
   '/movies/$id': typeof MoviesIdRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/stremio'
     | '/auth/cli-token'
+    | '/auth/setup-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/stremio'
     | '/auth/cli-token'
+    | '/auth/setup-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/stremio'
     | '/auth/cli-token'
+    | '/auth/setup-token'
     | '/auth/success'
     | '/debug/crash'
     | '/movies/$id'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   SignOutRoute: typeof SignOutRoute
   StremioRoute: typeof StremioRoute
   AuthCliTokenRoute: typeof AuthCliTokenRoute
+  AuthSetupTokenRoute: typeof AuthSetupTokenRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   DebugCrashRoute: typeof DebugCrashRoute
 }
@@ -280,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/cli-token'
       fullPath: '/auth/cli-token'
       preLoaderRoute: typeof AuthCliTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/setup-token': {
+      id: '/auth/setup-token'
+      path: '/auth/setup-token'
+      fullPath: '/auth/setup-token'
+      preLoaderRoute: typeof AuthSetupTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/success': {
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignOutRoute: SignOutRoute,
   StremioRoute: StremioRoute,
   AuthCliTokenRoute: AuthCliTokenRoute,
+  AuthSetupTokenRoute: AuthSetupTokenRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   DebugCrashRoute: DebugCrashRoute,
 }
