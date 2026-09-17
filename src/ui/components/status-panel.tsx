@@ -38,11 +38,11 @@ function StatusPanel({
           className,
         )}
       >
-        <div className="border-border-strong flex flex-col items-center gap-5 border-b px-7 py-6 text-center sm:gap-6">
+        <div className="border-border-strong flex flex-col items-center gap-4 border-b px-7 py-6 text-center">
           <div
             aria-hidden="true"
             className={cn(
-              "flex size-16 items-center justify-center rounded-full border [&_svg]:size-7 sm:size-20 sm:[&_svg]:size-8",
+              "flex size-10 items-center justify-center rounded-full border [&_svg]:size-5",
               toneClassName[tone],
             )}
           >
