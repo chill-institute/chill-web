@@ -2,7 +2,7 @@ import { expect, test } from "../support/fixtures";
 
 test("private Stremio add-on setup", async ({ authenticatedPage: page, mockRpc }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await mockRpc({ GetFolder: { parent: { id: "0", name: "Your Files" }, files: [] } });
+  await mockRpc({});
   await page.route("https://stremio.chill.institute/api/installations", (route) =>
     route.fulfill({
       json: {

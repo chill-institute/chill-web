@@ -7,7 +7,7 @@ test("connects an account, copies its link and revokes its connection without pu
   authenticatedPage: page,
   mockRpc,
 }) => {
-  await mockRpc({ GetFolder: { parent: { id: "0", name: "Your Files" }, files: [] } });
+  await mockRpc({});
   const requests: { method: string; url: string; auth: string | undefined }[] = [];
   await page.route("https://stremio.chill.institute/api/installations**", async (route) => {
     const request = route.request();
@@ -18,7 +18,7 @@ test("connects an account, copies its link and revokes its connection without pu
     });
     if (request.method() === "GET") await route.fulfill({ json: { installations: [] } });
     else if (request.method() === "POST") {
-      expect(request.postDataJSON()).toEqual({ folderId: "0" });
+      expect(request.postDataJSON()).toEqual({});
       await route.fulfill({ status: 201, json: installation });
     } else await route.fulfill({ status: 204 });
   });
@@ -66,7 +66,7 @@ test("shows a reconnect action for an expired session", async ({
   authenticatedPage: page,
   mockRpc,
 }) => {
-  await mockRpc({ GetFolder: { parent: { id: "0", name: "Your Files" }, files: [] } });
+  await mockRpc({});
   await page.route("https://stremio.chill.institute/api/installations", (route) =>
     route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } } }),
   );
@@ -75,60 +75,53 @@ test("shows a reconnect action for an expired session", async ({
   await expect(page.getByRole("button", { name: "connect account", exact: true })).toBeDisabled();
 });
 
-test("keeps the chosen folder through a failed connection and disables edits while connecting", async ({
+test("retries connecting the whole library and disables duplicate submissions", async ({
   authenticatedPage: page,
   mockRpc,
 }) => {
-  await mockRpc({
-    GetFolder: {
-      parent: { id: "0", name: "Your Files" },
-      files: [{ id: "42", name: "Movies", fileType: "FOLDER", isShared: false }],
-    },
-  });
+  await mockRpc({});
   let attempts = 0;
-  const submittedFolders: unknown[] = [];
+  const submissions: unknown[] = [];
   const pending = Promise.withResolvers<void>();
   await page.route("https://stremio.chill.institute/api/installations", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({ json: { installations: [] } });
       return;
     }
-    submittedFolders.push(route.request().postDataJSON());
+    submissions.push(route.request().postDataJSON());
     attempts += 1;
     if (attempts === 1) {
       await route.fulfill({ status: 503, json: {} });
       return;
     }
     await pending.promise;
-    await route.fulfill({ status: 201, json: { ...installation, folderId: "42" } });
+    await route.fulfill({ status: 201, json: installation });
   });
   await page.goto("/stremio");
-  await page.getByRole("button", { name: "choose folder" }).click();
-  await mockRpc({ GetFolder: { parent: { id: "42", name: "Movies" }, files: [] } });
-  await page.getByRole("button", { name: "Open folder Movies" }).click();
-  await page.getByRole("button", { name: "Use Movies as Stremio folder" }).click();
+  await expect(page.getByRole("button", { name: "choose folder" })).toHaveCount(0);
+  await expect(
+    page.getByText("Browse videos across your put.io library, including subfolders."),
+  ).toBeVisible();
   await page.getByRole("button", { name: "connect account", exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
-  await expect(page.locator('p[aria-live="polite"]', { hasText: "Movies" })).toBeVisible();
   await page.getByRole("button", { name: "connect account", exact: true }).click();
   await expect(page.getByRole("button", { name: "connecting…" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "choose folder" })).toBeDisabled();
   pending.resolve();
   await expect(page.getByRole("status")).toContainText("Account connected");
   await expect(page.getByRole("alert")).toHaveCount(0);
-  expect(submittedFolders).toEqual([{ folderId: "42" }, { folderId: "42" }]);
+  expect(submissions).toEqual([{}, {}]);
 });
 
-test("offers manual copy and keyboard revoke recovery with reduced motion", async ({
+test("preserves folder-scoped connections with manual copy and keyboard revoke recovery", async ({
   authenticatedPage: page,
   mockRpc,
   sentryEnvelopes,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await mockRpc({ GetFolder: { parent: { id: "0", name: "Your Files" }, files: [] } });
+  await mockRpc({});
   await page.route("https://stremio.chill.institute/api/installations**", (route) =>
     route.request().method() === "GET"
-      ? route.fulfill({ json: { installations: [installation] } })
+      ? route.fulfill({ json: { installations: [{ ...installation, folderId: "42" }] } })
       : route.fulfill({ status: 503, json: {} }),
   );
   await page.addInitScript(() => {
@@ -141,6 +134,7 @@ test("offers manual copy and keyboard revoke recovery with reduced motion", asyn
     });
   });
   await page.goto("/stremio");
+  await expect(page.getByRole("heading", { name: "Folder 42", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "copy link" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("status")).toContainText("copy it manually");
@@ -172,7 +166,7 @@ test("retries loading connections before enabling account connection", async ({
   authenticatedPage: page,
   mockRpc,
 }) => {
-  await mockRpc({ GetFolder: { parent: { id: "0", name: "Your Files" }, files: [] } });
+  await mockRpc({});
   let attempts = 0;
   await page.route("https://stremio.chill.institute/api/installations", async (route) => {
     attempts += 1;

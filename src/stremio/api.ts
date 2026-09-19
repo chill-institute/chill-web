@@ -64,8 +64,8 @@ export async function listInstallations(token: string, signal?: AbortSignal) {
   return result.output.installations.map(validateInstallation);
 }
 
-export async function createInstallation(token: string, folderId: string) {
-  const response = await installationRequest(token, "", "POST", undefined, { folderId });
+export async function createInstallation(token: string) {
+  const response = await installationRequest(token, "", "POST", undefined, {});
   return validateInstallation(await response.json());
 }
 

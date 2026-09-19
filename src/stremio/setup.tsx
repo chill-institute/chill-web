@@ -3,11 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { useGetPutioStartURL } from "@/auth/api-context";
 import { prepareSignInAgainURL } from "@/auth/auth";
-import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
-import { DownloadFolderPicker } from "@/auth/components/download-folder-picker";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { folderQueryOptions } from "@/auth/queries/options";
 import { Button } from "@/ui/components/ui/button";
 import { ResponsiveModal } from "@/ui/components/responsive-modal";
 import {
@@ -22,11 +19,8 @@ const installationKey = ["stremio-installations"] as const;
 
 function StremioSetup({ token }: { token: string }) {
   const queryClient = useQueryClient();
-  const api = useApi();
-  const [folderId, setFolderId] = useState(0n);
   const [revoking, setRevoking] = useState<Installation | null>(null);
   const [notice, setNotice] = useState("");
-  const folder = useQuery(folderQueryOptions(api, folderId));
   const installations = useQuery({
     queryKey: installationKey,
     queryFn: ({ signal }) => listInstallations(token, signal),
@@ -34,7 +28,7 @@ function StremioSetup({ token }: { token: string }) {
     gcTime: 0,
   });
   const create = useMutation({
-    mutationFn: () => createInstallation(token, String(folderId)),
+    mutationFn: () => createInstallation(token),
     onSuccess: (installation) => {
       queryClient.setQueryData<Installation[]>(installationKey, (current) => [
         ...(current ?? []),
@@ -77,37 +71,13 @@ function StremioSetup({ token }: { token: string }) {
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
         <h2 className="font-serif text-xl">1. Connect account</h2>
-        <p className="text-fg-3 text-sm">Pick the put.io folder chill shows in Stremio.</p>
-        {folder.error ? <InstallationError error={folder.error} /> : null}
-        <p aria-live="polite">
-          {folder.isPending
-            ? "Loading folder…"
-            : folder.data?.parent?.name || (folderId === 0n ? "Your Files" : `Folder ${folderId}`)}
+        <p className="text-fg-3 text-sm">
+          Browse videos across your put.io library, including subfolders.
         </p>
         <div className="flex flex-wrap gap-3">
-          <DownloadFolderPicker
-            renderTrigger={(open) => (
-              <Button
-                aria-expanded={open}
-                aria-haspopup="dialog"
-                size="sm"
-                disabled={create.isPending || revoke.isPending}
-              >
-                choose folder
-              </Button>
-            )}
-            purpose="Stremio folder"
-            initialFolder={folder.data?.parent}
-            onSave={(id) => {
-              setFolderId(id);
-              create.reset();
-            }}
-          />
           <Button
             variant="primary"
-            disabled={
-              !folder.isSuccess || !installations.isSuccess || create.isPending || revoke.isPending
-            }
+            disabled={!installations.isSuccess || create.isPending || revoke.isPending}
             onClick={() => create.mutate()}
           >
             {create.isPending ? "connecting…" : "connect account"}
@@ -137,7 +107,9 @@ function StremioSetup({ token }: { token: string }) {
               className="flex min-w-0 flex-col gap-3 rounded border border-border-strong bg-surface p-4"
             >
               <h3 className="font-serif text-lg">
-                {installation.folderId === "0" ? "Your Files" : `Folder ${installation.folderId}`}
+                {installation.folderId === "0"
+                  ? "Your put.io library"
+                  : `Folder ${installation.folderId}`}
               </h3>
               <p className="text-fg-3 text-sm">
                 Connected {new Date(installation.createdAt).toLocaleDateString()}

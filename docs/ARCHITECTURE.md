@@ -78,14 +78,16 @@ Build, smoke, and artifact verification are described in
 `/stremio` manages private installations through the hosted adapter. The browser
 sends its ordinary chill token only in an Authorization header. Installation
 links carry a separate revocable capability: never include them in telemetry,
-public screenshots, or support reports. The folder picker uses read-only
-`GetFolder`; selecting a folder here does not change download settings.
+public screenshots, or support reports. Setup does not list folders or change
+download settings.
 
 Setup presents **Connect account → Install chill**. Connecting creates a private
-installation for the selected folder; existing connections retain install, copy
-and revoke actions. Stremio Web and other devices can install by pasting the link
-into their add-on search. Clipboard failures leave a selectable link for manual
-copying. The chosen folder survives connection errors.
+installation with an empty JSON request body, covering videos across the put.io
+library and its subfolders. Existing connections retain install, copy and revoke
+actions; older folder-scoped connections keep their scope. Stremio Web and other
+devices can install by pasting the link into their add-on search. Clipboard
+failures leave a selectable link for manual copying. Failed connections can be
+retried.
 
 Account setup, installation and revocation are the only Web responsibilities.
 Discovery, release selection, downloads to put.io, progress and playback stay in

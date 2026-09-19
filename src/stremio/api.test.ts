@@ -23,7 +23,7 @@ describe("private installation boundary", () => {
   it("sends auth only in headers and refuses redirects", async () => {
     const fetch = vi.fn().mockResolvedValue(Response.json(valid));
     vi.stubGlobal("fetch", fetch);
-    await createInstallation("fixture-token", "0");
+    await createInstallation("fixture-token");
     expect(fetch).toHaveBeenCalledWith(
       "https://stremio.chill.institute/api/installations",
       expect.objectContaining({
@@ -31,7 +31,7 @@ describe("private installation boundary", () => {
         credentials: "omit",
         cache: "no-store",
         headers: { Authorization: "Bearer fixture-token", "Content-Type": "application/json" },
-        body: '{"folderId":"0"}',
+        body: "{}",
       }),
     );
   });
