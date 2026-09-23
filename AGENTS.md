@@ -35,12 +35,8 @@ Gaps:
 
 ## Ownership
 
-- `src/routes/`: thin TanStack route files
-- `src/api/`: Connect transport and API helpers
-- `src/auth/`: token lifecycle, API context, and auth routes
-- `src/catalog/`: movie and TV behavior
-- `src/ui/`: tokens, primitives, pure hooks, and presentation
-- `src/components/`: app-shell and cross-surface composition
+Directory ownership and the `src/ui/` import rule live in
+[Architecture](./docs/ARCHITECTURE.md#ownership).
 
 ## UI
 
