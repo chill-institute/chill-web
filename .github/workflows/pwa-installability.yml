@@ -115,6 +115,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+        with:
+          # The default adds the retired `tools` package, which current cmdline-tools reject.
+          packages: platform-tools
 
       - name: Install Maestro
         run: |
