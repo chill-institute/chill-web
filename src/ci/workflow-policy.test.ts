@@ -105,7 +105,7 @@ describe("Cloudflare receiver contract", () => {
   });
 });
 
-describe("plan 002/003 expression pins", () => {
+describe("workflow gate expressions", () => {
   test("deploy.yml gates deploy-redirects on the validate job", () => {
     const w = readFileSync(join(workflowsDir, "deploy.yml"), "utf8");
     expect(w.includes("needs.validate.result == 'success'")).toBe(true);

@@ -346,7 +346,6 @@ test.describe("search page", () => {
   });
 
   test("redirects to sign-in when unauthenticated", async ({ page }) => {
-    // Use plain `page` (no auth token in storage)
     await page.goto("/search");
     await page.waitForURL("**/sign-in**");
     const url = new URL(page.url());
@@ -526,7 +525,6 @@ test.describe("search page", () => {
 
     await authenticatedPage.goto("/search");
 
-    // No results, no empty state, no loading — just idle
     await expect(authenticatedPage.locator("table")).toBeHidden();
     await expect(authenticatedPage.getByText("we found absolutely nothing")).toBeHidden();
     await expect(authenticatedPage.getByRole("group", { name: /quick filters/i })).toBeHidden();
@@ -675,7 +673,7 @@ test.describe("search page", () => {
 
     await authenticatedPage.goto("/search?q=movie");
 
-    // The removed title sort falls back to the default (most peers, descending).
+    // A saved title sort falls back to the default (most peers, descending).
     const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
     await expect(sortSelect.locator("option:checked")).toHaveText("↓ peers");
 

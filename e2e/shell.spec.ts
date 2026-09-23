@@ -104,11 +104,9 @@ test.describe("shell search form", () => {
     const searchInput = authenticatedPage.locator("#search-global");
     await expect(searchInput).toBeVisible();
 
-    // Try submitting empty form via Enter
     await searchInput.focus();
     await authenticatedPage.keyboard.press("Enter");
 
-    // Should still be on the home page
     expect(authenticatedPage.url()).not.toContain("/search");
   });
 });
