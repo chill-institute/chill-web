@@ -28,7 +28,7 @@ type Props = {
   renderTrigger?: (open: boolean) => ReactElement;
   triggerLabel?: string;
   purpose?: string;
-  onSave: (id: bigint) => void;
+  onSave: (id: bigint, folder: FolderCrumb) => void;
 };
 
 export function DownloadFolderPicker({
@@ -78,8 +78,8 @@ export function DownloadFolderPicker({
             purpose={purpose}
             initialFolder={initialFolder ?? null}
             open={open}
-            onSave={(id) => {
-              onSave(id);
+            onSave={(folder) => {
+              onSave(folder.id, folder);
               setOpen(false);
             }}
             onClose={() => setOpen(false)}
@@ -103,7 +103,7 @@ function PickerBody({
   initialFolder: FolderCrumb | null;
   open: boolean;
   onClose: () => void;
-  onSave: (id: bigint) => void;
+  onSave: (folder: FolderCrumb) => void;
 }) {
   const api = useApi();
   const [path, setPath] = useState<FolderCrumb[]>(() => initialFolderPath(initialFolder));
@@ -187,7 +187,7 @@ function PickerBody({
         <Button
           aria-label={`Use ${currentFolder.name} as ${purpose}`}
           disabled={folderQuery.status !== "success"}
-          onClick={() => onSave(currentFolder.id)}
+          onClick={() => onSave(currentFolder)}
           size="sm"
         >
           <Check data-icon="inline-start" />
