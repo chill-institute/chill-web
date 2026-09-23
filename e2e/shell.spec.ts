@@ -97,6 +97,8 @@ test.describe("shell search form", () => {
   test("empty search is not submitted", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      GetIndexers: indexersResponse([indexer()]),
+      Search: searchResponse("test query", []),
     });
 
     await authenticatedPage.goto("/");
@@ -106,7 +108,13 @@ test.describe("shell search form", () => {
 
     await searchInput.focus();
     await authenticatedPage.keyboard.press("Enter");
+    await searchInput.fill("   ");
+    await authenticatedPage.keyboard.press("Enter");
+    await searchInput.fill("test query");
+    await authenticatedPage.keyboard.press("Enter");
+    await authenticatedPage.waitForURL("**/search**");
 
-    expect(authenticatedPage.url()).not.toContain("/search");
+    await authenticatedPage.goBack();
+    await expect.poll(() => new URL(authenticatedPage.url()).pathname).toBe("/");
   });
 });
