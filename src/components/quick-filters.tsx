@@ -38,8 +38,8 @@ const sortOptions = [
   { label: "↑ age", sortBy: SortBy.UPLOADED_AT, sortDirection: SortDirection.ASC },
 ] as const;
 
-// Value carries the direction too, so the select reflects the active sort honestly and
-// re-selecting the same field in the opposite direction still fires onChange.
+// The value includes the direction so the select shows the active sort and
+// switching the same field to the opposite direction still fires onChange.
 function sortOptionValue(
   sortBy: ChillSettings["sortBy"],
   sortDirection: ChillSettings["sortDirection"],
@@ -47,7 +47,7 @@ function sortOptionValue(
   return `${String(sortBy)}:${String(sortDirection)}`;
 }
 
-// Descending resolution and codec order to match the agreed layout (2160p → 720p, x265 → x264).
+// Highest first: 2160p → 720p, x265 → x264.
 const resolutionOrder = [...resolutionFilters].reverse();
 const codecOrder = [...codecFilters].reverse();
 

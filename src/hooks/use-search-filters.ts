@@ -40,8 +40,8 @@ const emptyQuickFilters = {
   other: [],
 };
 
-// Results can only be sorted by these fields now (seeders/size/uploaded, either direction);
-// title/source sorting was removed. A stale saved title/source sort falls back to the default.
+// Results sort only by these fields, in either direction. A saved title or source
+// sort falls back to the default.
 const quickSortFields = new Set<ChillSettings["sortBy"]>([
   SortBy.SEEDERS,
   SortBy.SIZE,
@@ -62,8 +62,8 @@ function savedQuickFilters(settingsData: ChillSettings | undefined) {
   return {
     resolution: settingsData.resolutionFilters,
     codec: settingsData.codecFilters,
-    // The HDR/other filter has no UI control anymore, so a previously saved
-    // otherFilters value would otherwise apply as an invisible, unclearable filter.
+    // The HDR/other filter has no UI control, so a saved otherFilters value
+    // would apply as an invisible, unclearable filter.
     // Reuse the stable empty reference so filters.other keeps its identity across
     // renders and does not rerun the result-formatting memos.
     other: emptyQuickFilters.other,
