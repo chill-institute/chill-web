@@ -75,30 +75,30 @@ Build, smoke, and artifact verification are described in
 
 ## Stremio setup
 
-`/stremio` manages private installations through the hosted adapter. The browser
-sends its ordinary chill token only in an Authorization header. Installation
-links carry a separate revocable capability: never include them in telemetry,
-public screenshots, or support reports. Setup does not list folders or change
-download settings.
+`/stremio` gets private add-on links from the chill API. The browser sends its
+chill token only in an Authorization header:
 
-Setup presents **Connect account → Install chill**. Connecting creates a private
-installation with an empty JSON request body, covering videos across the put.io
-library and its subfolders. Existing connections retain install, copy and revoke
-actions; older folder-scoped connections keep their scope. Stremio Web and other
-devices can install by pasting the link into their add-on search. Clipboard
-failures leave a selectable link for manual copying. Failed connections can be
-retried.
+- `POST /stremio/credential` with `{}` or `{"folder_id":"<decimal>"}` returns
+  `{"credential":"…"}`. The add-on link is
+  `${VITE_PUBLIC_STREMIO_BASE_URL}/s/<credential>/manifest.json`; responses that
+  would build any other link are rejected.
+- `POST /stremio/disconnect` stops every add-on link for the account.
 
-Account setup, installation and revocation are the only Web responsibilities.
+Setup shows the current download folder, which the folder picker can change for
+the next link, and **get add-on link**. A new link appears once, masked, with
+install, copy and show actions; clipboard failures reveal and select it for
+manual copying. The link stays in component state only: never in storage, URLs,
+telemetry, public screenshots, or support reports. Errors cover a missing
+download folder, an unavailable add-on, an expired session, and network failures.
+Disconnect asks for confirmation and leaves the website and CLI signed in.
+
 Discovery, release selection, downloads to put.io, progress and playback stay in
-Stremio. The installation capability delegates library playback and selected-release
-downloads to the linked put.io account. Revocation stops future requests, but does
-not cancel transfers already started or invalidate playback URLs already issued.
+Stremio.
 
 `VITE_PUBLIC_STREMIO_BASE_URL` configures the hosted adapter origin at build time
 (default `https://stremio.chill.institute`). Use HTTPS; local HTTP is accepted
-only in development on localhost. Hosting, capability persistence, provider
-transfers, and revocation belong to `chill-stremio`.
+only in development on localhost. Credentials and disconnection belong to the
+chill API; the hosted adapter belongs to `chill-stremio`.
 
 Fixture browser coverage is `pnpm exec vp exec playwright test e2e/stremio.spec.ts`;
 visual coverage is under `e2e/visual/stremio.visual.spec.ts`. These tests never use
