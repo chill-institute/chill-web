@@ -129,6 +129,13 @@ test("gets a link for a chosen folder", async ({ authenticatedPage: page, mockRp
   await page.getByRole("button", { name: "get add-on link" }).click();
   await expect(page.getByRole("link", { name: "install chill" })).toBeVisible();
   expect(requests.map((request) => request.body)).toEqual(['{"folder_id":"2"}']);
+
+  await page.getByRole("button", { name: "change download folder" }).click();
+  await page.getByRole("button", { name: "Open folder Movies" }).click();
+  await page.getByRole("button", { name: "Use Movies as download folder" }).click();
+  await expect(page.getByRole("dialog", { name: "choose download folder" })).toBeHidden();
+  await expect(page.getByRole("link", { name: "install chill" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "get add-on link" })).toBeVisible();
 });
 
 test("reveals and selects the link when copying fails", async ({

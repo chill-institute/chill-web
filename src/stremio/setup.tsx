@@ -105,7 +105,13 @@ function StremioSetup({ token }: { token: string }) {
             </span>
             <DownloadFolderPicker
               initialFolder={folder}
-              onSave={(_, selected) => setChosenFolder(selected)}
+              onSave={(_, selected) => {
+                setChosenFolder(selected);
+                create.reset();
+                setManifestUrl(null);
+                setRevealed(false);
+                setNotice("");
+              }}
               renderTrigger={(open) => (
                 <button
                   aria-expanded={open}
