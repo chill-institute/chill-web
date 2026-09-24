@@ -90,6 +90,31 @@ test("gets a masked add-on link, copies it and keeps it out of storage, URLs and
   );
   expect(stored).not.toContain(credential);
   expect(sentryEnvelopes.join("\n")).not.toContain(credential);
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "get add-on link" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "install chill" })).toHaveCount(0);
+});
+
+test("blocks a second link request while one is pending", async ({
+  authenticatedPage: page,
+  mockRpc,
+}) => {
+  await mockRpc(folderMethods());
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requests = await routeEngine(page, async (route) => {
+    await held;
+    await route.fulfill({ json: { credential } });
+  });
+  await page.goto("/stremio");
+  await page.getByRole("button", { name: "get add-on link" }).click();
+  await expect(page.getByRole("button", { name: "getting link…" })).toBeDisabled();
+  release();
+  await expect(page.getByRole("link", { name: "install chill" })).toBeVisible();
+  expect(requests).toHaveLength(1);
 });
 
 test("gets a link for a chosen folder", async ({ authenticatedPage: page, mockRpc }) => {
