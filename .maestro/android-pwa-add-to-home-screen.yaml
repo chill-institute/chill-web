@@ -5,6 +5,7 @@ name: Add ${PWA_NAME} to Android home screen
 # launcher-shortcut fallback instead of its WebAPK installation path.
 - launchApp:
     clearState: true
+- runFlow: subflows/dismiss-anr.yaml
 - runFlow:
     when:
       visible: Accept & continue
@@ -27,6 +28,7 @@ name: Add ${PWA_NAME} to Android home screen
       - tapOn: Got it
 - openLink:
     link: ${PWA_URL}
+- runFlow: subflows/dismiss-anr.yaml
 - runFlow:
     when:
       visible: Got it
@@ -69,6 +71,7 @@ name: Add ${PWA_NAME} to Android home screen
     timeout: 10000
 - takeScreenshot: ${PWA_SLUG}-after-add-to-home-screen
 - pressKey: Home
+- runFlow: subflows/dismiss-anr.yaml
 - extendedWaitUntil:
     visible: ${PWA_NAME}
     timeout: 30000

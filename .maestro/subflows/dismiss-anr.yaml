@@ -1,0 +1,9 @@
+appId: com.android.chrome
+---
+# A cold-booted emulator can raise a system "isn't responding" dialog that
+# covers every app window until it is answered.
+- runFlow:
+    when:
+      visible: ".*isn.t responding"
+    commands:
+      - tapOn: Wait
