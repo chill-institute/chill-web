@@ -1,0 +1,19 @@
+name: Feature request
+description: Propose an improvement for the web client
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What do you want to change?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What user or product problem does this solve?
+    validations:
+      required: true

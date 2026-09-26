@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a bug in the web client
+title: "[bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduce
+      description: Steps, plus the exact search title, season, episode, filters, and sorting when relevant.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: Safari 19, iPhone
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Release
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or crash report
+      description: Paste or drag in screenshots or a recording. For crashes, include the displayed Sentry event ID or copied local crash report. Never include tokens.
