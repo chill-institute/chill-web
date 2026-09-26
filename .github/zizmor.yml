@@ -1,0 +1,4 @@
+# actionlint 1.7.12 rejects $/ references: https://github.com/rhysd/actionlint/issues/711
+rules:
+  self-repository:
+    disable: true

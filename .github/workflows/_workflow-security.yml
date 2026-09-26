@@ -10,7 +10,6 @@ jobs:
   workflow-security:
     runs-on: ubuntu-24.04
     permissions:
-      actions: read
       contents: read
     steps:
       - name: Check out repository
@@ -18,11 +17,5 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Scan GitHub Actions security
-        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
-        with:
-          advanced-security: false
-          annotations: true
-          min-confidence: medium
-          min-severity: medium
-          version: v1.29.0
+      - name: Scan pushed range
+        uses: chill-institute/.github/.github/actions/scan@04bad7d160da50b0509abfd5ff2e382aaf7d1aef # v1.0.0
