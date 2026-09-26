@@ -12,8 +12,9 @@ device, and release when reporting a compatibility problem.
 
 ## How should I report a bug?
 
-Use the [bug template](../.github/ISSUE_TEMPLATE/bug_report.md) and include what
-you did, what you expected, and what happened.
+Use the
+[bug report form](https://github.com/chill-institute/chill-web/issues/new?template=bug_report.yml)
+and include what you did, what you expected, and what happened.
 
 For search problems, include the title, season or episode, filters, and sorting.
 For crashes, include the displayed Sentry event ID or copied local crash report.
