@@ -29,14 +29,17 @@ publish the upload token.
 
 ## Delivery
 
-Pull requests and `main` pushes run app verification and the functional
-browser suite with mocked API and health responses against the verified `dist/`
-artifact. A `main` push deploys only after both pass. The deploy workflow then:
+Pull requests run app verification and the functional browser suite with
+mocked API and health responses against the verified `dist/` artifact. A `main`
+push verifies the app, then the deploy workflow:
 
-1. Builds `dist/` once with the production environment.
-2. Runs sign-in and settings-shell browser smoke against those files.
-3. Records and uploads a SHA-256 manifest.
-4. Downloads and verifies the artifact in the deployment job.
+1. Builds `dist/` once with the environment's Sentry DSN and release stamp,
+   uploading source maps with the only job that holds the Sentry token.
+2. Records and uploads a SHA-256 manifest of `dist/`.
+3. Runs the functional browser suite, without secrets, against that artifact
+   and records the manifest checksum it tested.
+4. Downloads the artifact in the deployment job and fails unless its files
+   match the manifest and the manifest matches the tested checksum.
 5. Deploys without rebuilding.
 
 Redirects deploy separately because they do not contain the app bundle. App and

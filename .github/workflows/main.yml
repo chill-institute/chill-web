@@ -26,14 +26,15 @@ jobs:
 
   e2e:
     needs: verify-app
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED != 'true' }}
     uses: ./.github/workflows/_e2e.yml
     with:
       dist-artifact-name: web-dist-${{ github.run_id }}
       ref: ${{ github.sha }}
 
   deploy-app:
-    needs: [workflow-security, verify-app, e2e]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' }}
+    needs: [workflow-security, verify-app]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' }}
     concurrency:
       group: web-deploy-production
       queue: max

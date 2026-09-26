@@ -38,6 +38,8 @@ jobs:
     environment:
       name: ${{ inputs.environment-name }}
       deployment: false
+    outputs:
+      sentry-dsn: ${{ steps.sentry.outputs.dsn }}
     env:
       BINGE_PRODUCTION_DOMAIN: ${{ vars.BINGE_PRODUCTION_DOMAIN }}
       BINGE_PRODUCTION_REDIRECT_DOMAIN: ${{ vars.BINGE_PRODUCTION_REDIRECT_DOMAIN }}
@@ -73,15 +75,9 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: vp run build
 
-      - name: Install Playwright browser
-        run: vp exec playwright install --with-deps --only-shell chromium
-
-      - name: Test app artifact
-        # vite.config.ts re-runs under `vp preview` and asserts the Sentry
-        # deploy config whenever VITE_PUBLIC_SENTRY_ENVIRONMENT is set.
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        run: vp run smoke
+      - name: Record public Sentry DSN
+        id: sentry
+        run: echo "dsn=${VITE_PUBLIC_SENTRY_DSN}" >>"$GITHUB_OUTPUT"
 
       - name: Create artifact manifest
         run: find dist -type f -print0 | sort -z | xargs -0 sha256sum >dist.sha256
@@ -96,19 +92,17 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Upload Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-${{ inputs.environment-name }}-${{ github.run_id }}
-          path: |
-            playwright-report
-            test-results
-          if-no-files-found: ignore
-          retention-days: 7
+  e2e:
+    needs: build-app
+    uses: ./.github/workflows/_e2e.yml
+    with:
+      artifact-name: playwright-${{ inputs.environment-name }}-${{ github.run_id }}
+      dist-artifact-name: web-app-${{ inputs.environment-name }}-${{ github.run_id }}
+      ref: ${{ inputs.ref }}
+      sentry-dsn: ${{ needs.build-app.outputs.sentry-dsn }}
 
   deploy-app:
-    needs: build-app
+    needs: e2e
     runs-on: ubuntu-24.04
     environment:
       name: ${{ inputs.environment-name }}
@@ -142,8 +136,13 @@ jobs:
           name: web-app-${{ inputs.environment-name }}-${{ github.run_id }}
           path: .
 
-      - name: Verify app artifact
-        run: sha256sum --check dist.sha256
+      - name: Verify tested app artifact
+        env:
+          TESTED_SHA256: ${{ needs.e2e.outputs.artifact-sha256 }}
+        run: |
+          set -euo pipefail
+          sha256sum --check --quiet dist.sha256
+          echo "${TESTED_SHA256}  dist.sha256" | sha256sum --check
 
       - name: Install age
         run: scripts/ci/install-age

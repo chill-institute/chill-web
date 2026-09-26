@@ -33,16 +33,14 @@ test.describe("crash report fallback", () => {
       await expect(
         authenticatedPage.getByText("The app hit a crash and sent a private crash report."),
       ).toBeVisible();
-      await expect(authenticatedPage.getByText("Sentry event:").locator("xpath=..")).toHaveText(
-        /^Sentry event: [0-9a-f]{32}$/,
-      );
-      const eventText =
-        (await authenticatedPage.getByText("Sentry event:").locator("xpath=..").textContent()) ??
-        "";
-      const eventId = eventText.match(/[0-9a-f]{32}/)?.[0];
-      expect(eventId).toBeDefined();
+      const eventId = authenticatedPage
+        .getByRole("term")
+        .filter({ hasText: /^Sentry event$/ })
+        .locator("xpath=following-sibling::dd[1]");
+      await expect(eventId).toHaveText(/^[0-9a-f]{32}$/);
+      const eventIdText = (await eventId.textContent()) ?? "";
       await expect
-        .poll(() => sentryEnvelopes.some((envelope) => envelope.includes(eventId ?? "")))
+        .poll(() => sentryEnvelopes.some((envelope) => envelope.includes(eventIdText)))
         .toBe(true);
     } else {
       await expect(
@@ -50,7 +48,9 @@ test.describe("crash report fallback", () => {
           "The app hit a crash. Crash reporting is not configured for this build.",
         ),
       ).toBeVisible();
-      await expect(authenticatedPage.getByText("Sentry event:")).toHaveCount(0);
+      await expect(
+        authenticatedPage.getByRole("term").filter({ hasText: "Sentry event" }),
+      ).toHaveCount(0);
     }
 
     await authenticatedPage.getByLabel("What were you doing?").fill("I opened the home page.");
