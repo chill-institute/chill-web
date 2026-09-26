@@ -29,8 +29,9 @@ publish the upload token.
 
 ## Delivery
 
-Pull requests run app verification and the functional browser suite with
-mocked API and health responses. On `main`, the shared workflow:
+Pull requests and `main` pushes run app verification and the functional
+browser suite with mocked API and health responses against the verified `dist/`
+artifact. A `main` push deploys only after both pass. The deploy workflow then:
 
 1. Builds `dist/` once with the production environment.
 2. Runs sign-in and settings-shell browser smoke against those files.
@@ -38,7 +39,9 @@ mocked API and health responses. On `main`, the shared workflow:
 4. Downloads and verifies the artifact in the deployment job.
 5. Deploys without rebuilding.
 
-Redirects deploy separately because they do not contain the app bundle. Manual
+Redirects deploy separately because they do not contain the app bundle. App and
+redirect deploys from `main` and manual runs share one production concurrency
+queue, so pending deploys wait instead of replacing each other. Manual
 staging, app, and redirect workflows are maintainer recovery paths.
 
 ## Routes
