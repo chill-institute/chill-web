@@ -44,6 +44,7 @@ jobs:
     if: ${{ needs.workflow-security.result == 'success' && (inputs.target == 'all' || inputs.target == 'app') }}
     concurrency:
       group: web-deploy-production
+      queue: max
       cancel-in-progress: false
     uses: ./.github/workflows/_deploy-app.yml
     with:
@@ -62,6 +63,7 @@ jobs:
     if: ${{ always() && needs.workflow-security.result == 'success' && needs.validate.result == 'success' && (inputs.target == 'all' || inputs.target == 'redirects') && (needs.deploy-app.result == 'success' || needs.deploy-app.result == 'skipped') }}
     concurrency:
       group: web-deploy-production
+      queue: max
       cancel-in-progress: false
     uses: ./.github/workflows/_deploy-sst-target.yml
     with:

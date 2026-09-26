@@ -16,20 +16,27 @@ jobs:
       contents: read
 
   verify-app:
-    needs: workflow-security
-    if: ${{ needs.workflow-security.result == 'success' }}
     concurrency:
       group: web-main-verify-app-${{ github.ref }}
       cancel-in-progress: true
     uses: ./.github/workflows/_verify-app.yml
     with:
+      artifact-name: web-dist-${{ github.run_id }}
+      ref: ${{ github.sha }}
+
+  e2e:
+    needs: verify-app
+    uses: ./.github/workflows/_e2e.yml
+    with:
+      dist-artifact-name: web-dist-${{ github.run_id }}
       ref: ${{ github.sha }}
 
   deploy-app:
-    needs: [workflow-security, verify-app]
-    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' }}
+    needs: [workflow-security, verify-app, e2e]
+    if: ${{ vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.verify-app.result == 'success' && needs.e2e.result == 'success' }}
     concurrency:
       group: web-deploy-production
+      queue: max
       cancel-in-progress: false
     uses: ./.github/workflows/_deploy-app.yml
     with:
@@ -48,6 +55,7 @@ jobs:
     if: ${{ always() && vars.SST_PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' && needs.workflow-security.result == 'success' && needs.deploy-app.result == 'success' }}
     concurrency:
       group: web-deploy-production
+      queue: max
       cancel-in-progress: false
     uses: ./.github/workflows/_deploy-sst-target.yml
     with:
