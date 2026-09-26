@@ -34,9 +34,10 @@ test.describe("crash report fallback", () => {
         authenticatedPage.getByText("The app hit a crash and sent a private crash report."),
       ).toBeVisible();
       const eventId = authenticatedPage
-        .getByRole("definition")
-        .filter({ hasText: /^[0-9a-f]{32}$/ });
-      await expect(eventId).toHaveCount(1);
+        .getByRole("term")
+        .filter({ hasText: /^Sentry event$/ })
+        .locator("xpath=following-sibling::dd[1]");
+      await expect(eventId).toHaveText(/^[0-9a-f]{32}$/);
       const eventIdText = (await eventId.textContent()) ?? "";
       await expect
         .poll(() => sentryEnvelopes.some((envelope) => envelope.includes(eventIdText)))
