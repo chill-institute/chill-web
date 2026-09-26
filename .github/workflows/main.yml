@@ -18,7 +18,7 @@ jobs:
   verify-app:
     concurrency:
       group: web-main-verify-app-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     uses: ./.github/workflows/_verify-app.yml
     with:
       artifact-name: web-dist-${{ github.run_id }}

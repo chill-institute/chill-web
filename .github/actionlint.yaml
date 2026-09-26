@@ -2,3 +2,9 @@ paths:
   .github/workflows/cloudflare-*-schedule.yml:
     ignore:
       - 'unexpected key "queue" for "concurrency" section'
+  .github/workflows/deploy.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
+  .github/workflows/main.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
