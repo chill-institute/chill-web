@@ -82,13 +82,14 @@ async function setupFastestModeSearch(
     }),
   );
 
+  const heldSlowSearches: Array<() => void> = [];
   await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
     const body = route.request().postDataJSON();
     const indexerId = typeof body?.indexerId === "string" ? body.indexerId : undefined;
     const query = typeof body?.query === "string" ? body.query : "unknown";
 
     if (indexerId === "slow") {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise<void>((resolve) => heldSlowSearches.push(resolve));
       onSlowResolved?.();
     }
 
@@ -98,6 +99,11 @@ async function setupFastestModeSearch(
       body: JSON.stringify(searchResponse(query, await getResults({ indexerId, query }))),
     });
   });
+
+  return async function releaseSlowSearch() {
+    await expect.poll(() => heldSlowSearches.length).toBeGreaterThan(0);
+    heldSlowSearches.shift()?.();
+  };
 }
 
 test.describe("search page", () => {
@@ -184,7 +190,7 @@ test.describe("search page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+    const releaseSlowSearch = await setupFastestModeSearch(authenticatedPage, mockRpc, {
       getResults: ({ indexerId }) =>
         indexerId === "slow"
           ? [
@@ -201,10 +207,11 @@ test.describe("search page", () => {
     await authenticatedPage.goto("/search?q=ubuntu");
 
     const rows = authenticatedPage.locator("table tbody tr");
-    await expect(rows.first()).toBeVisible({ timeout: 5000 });
+    await expect(rows).toHaveCount(2);
 
     await expect(authenticatedPage.getByText("Fetching more from 1 indexer")).toBeHidden();
     await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeHidden();
+    await releaseSlowSearch();
     const readyToastText = authenticatedPage.getByText("Found 1 more result");
     await expect(readyToastText).toBeVisible({
       timeout: 5000,
@@ -226,7 +233,7 @@ test.describe("search page", () => {
   }) => {
     let slowResolved = false;
 
-    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+    const releaseSlowSearch = await setupFastestModeSearch(authenticatedPage, mockRpc, {
       getResults: ({ indexerId }) =>
         indexerId === "slow" ? [] : [fastestIndexerResult({ indexerId })],
       onSlowResolved: () => {
@@ -238,6 +245,7 @@ test.describe("search page", () => {
 
     await expect(authenticatedPage.locator("table tbody tr")).toHaveCount(2);
     await expect(authenticatedPage.getByText("Fetching more from 1 indexer")).toBeHidden();
+    await releaseSlowSearch();
     await expect.poll(() => slowResolved).toBe(true);
     await expect(authenticatedPage.getByText("Found 1 more result")).toBeHidden();
     await expect(authenticatedPage.locator("[data-sonner-toast]")).toHaveCount(0);
@@ -247,18 +255,20 @@ test.describe("search page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+    const releaseSlowSearch = await setupFastestModeSearch(authenticatedPage, mockRpc, {
       getResults: ({ indexerId }) => [fastestIndexerResult({ indexerId })],
     });
 
     await authenticatedPage.goto("/search?q=ubuntu");
 
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(2);
+    await releaseSlowSearch();
     const toastLocator = authenticatedPage.getByText("Found 1 more result");
     await expect(toastLocator).toBeVisible({ timeout: 5000 });
     await authenticatedPage.getByRole("button", { name: "Update" }).click();
     await expect(toastLocator).toBeHidden();
 
-    const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(3);
     await expect(authenticatedPage.getByText("Ubuntu from slow")).toBeVisible({
       timeout: 5000,
@@ -269,7 +279,7 @@ test.describe("search page", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    await setupFastestModeSearch(authenticatedPage, mockRpc, {
+    const releaseSlowSearch = await setupFastestModeSearch(authenticatedPage, mockRpc, {
       getResults: ({ indexerId, query }) => [
         fastestIndexerResult({
           id: `${query}-${indexerId ?? "unknown"}`,
@@ -279,13 +289,18 @@ test.describe("search page", () => {
       ],
     });
 
+    const rows = authenticatedPage.locator("table tbody tr");
     await authenticatedPage.goto("/search?q=ubuntu");
+    await expect(rows).toHaveCount(2);
+    await releaseSlowSearch();
     const toastLocator = authenticatedPage.getByText("Found 1 more result");
     await expect(toastLocator).toBeVisible({ timeout: 5000 });
     await authenticatedPage.getByRole("button", { name: "Update" }).click();
     await expect(toastLocator).toBeHidden();
 
     await authenticatedPage.goto("/search?q=fedora");
+    await expect(rows).toHaveCount(2);
+    await releaseSlowSearch();
     await expect(toastLocator).toBeVisible({ timeout: 5000 });
   });
 
