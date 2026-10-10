@@ -553,6 +553,54 @@ test("search results", async ({ authenticatedPage, mockRpc }) => {
   await expect(authenticatedPage).toHaveScreenshot("search-results.png", visualOptions);
 });
 
+test("search results grouped", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await authenticatedPage.addInitScript(() => {
+    window.localStorage.setItem("chill.search.groupReleases", "1");
+  });
+  await mockRpc(
+    defaultMethods({
+      Search: searchResponse("synthetic", [
+        searchResult({
+          id: "r1",
+          title: "Synthetic.Feature.Alpha.2010.1080p.BluRay.x264-FIXTURE",
+          seeders: 150n,
+          size: 2147483648n,
+          indexer: "Tracker One",
+          source: "Tracker One",
+        }),
+        searchResult({
+          id: "r2",
+          title: "Synthetic.Feature.Alpha.2010.2160p.WEB-DL.x265.HDR-FIXTURE",
+          seeders: 80n,
+          size: 8589934592n,
+          indexer: "Tracker Two",
+          source: "Tracker Two",
+        }),
+        searchResult({
+          id: "r3",
+          title: "Synthetic.Feature.Alpha.1941.DVDRip.x264-FIXTURE",
+          seeders: 3n,
+          size: 734003200n,
+          indexer: "Tracker One",
+          source: "Tracker One",
+        }),
+      ]),
+    }),
+  );
+
+  await authenticatedPage.goto("/search?q=synthetic");
+  await authenticatedPage
+    .getByRole("button", { name: /Synthetic Feature Alpha 2010 2 releases/ })
+    .click();
+  await expect(
+    authenticatedPage
+      .getByText("Synthetic.Feature.Alpha.2010.2160p.WEB-DL.x265.HDR-FIXTURE")
+      .first(),
+  ).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("search-results-grouped.png", visualOptions);
+});
+
 test("settings modal", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
   await mockRpc(defaultMethods());
