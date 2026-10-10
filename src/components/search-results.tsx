@@ -315,7 +315,7 @@ export function SearchResults({
                   key={`group:${row.group.key}`}
                   className="border-border-faint border-b last:border-b-0"
                 >
-                  <td className="py-2.5 pr-2 pl-0 align-middle">
+                  <td colSpan={columns.length + 2} className="py-2.5 pr-2 pl-0 align-middle">
                     <GroupToggle
                       hangChevron
                       group={row.group}
@@ -323,7 +323,6 @@ export function SearchResults({
                       onToggle={() => toggleGroup(row.group.key)}
                     />
                   </td>
-                  <DesktopResultCells result={row.group.releases[0]} />
                 </tr>
               ) : (
                 <tr
@@ -369,21 +368,23 @@ export function SearchResults({
         const isExpanded = expanded.has(group.key);
         return (
           <li key={`group:${group.key}`} className={MOBILE_CARD_CLASS}>
-            <div className="border-border-faint border-b px-6 py-3">
+            <div className={cn("px-6 py-4", isExpanded && "border-border-faint border-b")}>
               <GroupToggle
                 group={group}
                 expanded={isExpanded}
                 onToggle={() => toggleGroup(group.key)}
               />
             </div>
-            {(isExpanded ? group.releases : [best]).map((result) => (
-              <div
-                key={searchResultKey(result)}
-                className="border-border-faint border-b last:border-b-0"
-              >
-                <MobileResultBody result={result} titleBehavior={titleBehavior} />
-              </div>
-            ))}
+            {isExpanded
+              ? group.releases.map((result) => (
+                  <div
+                    key={searchResultKey(result)}
+                    className="border-border-faint border-b last:border-b-0"
+                  >
+                    <MobileResultBody result={result} titleBehavior={titleBehavior} />
+                  </div>
+                ))
+              : null}
           </li>
         );
       })}

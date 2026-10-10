@@ -915,7 +915,7 @@ test.describe("search page", () => {
         id: "film",
         title: "Sample.Show.1941.DVDRip-GRP",
         link: "magnet:?xt=urn:btih:film",
-        seeders: 3n,
+        seeders: 200n,
         releaseInfo: { title: "Sample Show", year: 1941 },
       }),
     ];
@@ -925,6 +925,7 @@ test.describe("search page", () => {
 
     const rows = authenticatedPage.locator("table tbody tr");
     await expect(rows).toHaveCount(3);
+    await expect(rows.first()).toContainText("Sample.Show.1941.DVDRip-GRP");
 
     const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
     await quickFilters.getByRole("checkbox", { name: /group releases/ }).check();
@@ -932,6 +933,7 @@ test.describe("search page", () => {
     const group = authenticatedPage.getByRole("button", { name: /Sample Show S03E01 2 releases/ });
     await expect(rows).toHaveCount(2);
     await expect(group).toHaveAttribute("aria-expanded", "false");
+    await expect(rows.first().getByRole("button", { name: "send to put.io" })).toHaveCount(0);
     await expect(rows.nth(1)).toContainText("Sample.Show.1941.DVDRip-GRP");
 
     await group.click();
