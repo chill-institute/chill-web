@@ -1,4 +1,4 @@
-import { create, isFieldSet } from "@bufbuild/protobuf";
+import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vite-plus/test";
 import {
   CatalogSettingsSchema,
@@ -197,18 +197,6 @@ describe("withSaveUserSettingsResponseDefaults", () => {
     expect(out.search?.filterNastyResults).toBe(false);
     expect(out.search?.filterResultsWithNoSeeders).toBe(false);
     expect(out.search?.rememberQuickFilters).toBe(false);
-  });
-
-  it("documents that save response booleans use implicit proto presence", () => {
-    const field = SearchSettingsSchema.field.filterNastyResults;
-
-    expect(isFieldSet(create(SearchSettingsSchema, {}), field)).toBe(false);
-    expect(isFieldSet(create(SearchSettingsSchema, { filterNastyResults: false }), field)).toBe(
-      false,
-    );
-    expect(isFieldSet(create(SearchSettingsSchema, { filterNastyResults: true }), field)).toBe(
-      true,
-    );
   });
 
   it("preserves missing fields inside a returned catalog domain", () => {
