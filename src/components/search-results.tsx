@@ -16,7 +16,6 @@ import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { searchResultKey } from "@/lib/search";
 import {
-  groupFormatSummary,
   groupIdentityLabel,
   groupSearchResults,
   type SearchResultGroup,
@@ -86,35 +85,38 @@ function GroupToggle({
   group,
   expanded,
   onToggle,
+  hangChevron = false,
 }: {
   group: SearchResultGroup;
   expanded: boolean;
   onToggle: () => void;
+  // Desktop hangs the chevron in the margin so group and release titles share one edge.
+  hangChevron?: boolean;
 }) {
   const identity = groupIdentityLabel(group);
-  const formats = groupFormatSummary(group);
+  const count = `${group.releases.length} releases`;
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <div>
-      <button
-        type="button"
-        aria-expanded={expanded}
-        aria-label={[group.title, identity, `${group.releases.length} releases`]
-          .filter(Boolean)
-          .join(" ")}
-        onClick={onToggle}
-        className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 text-left text-sm leading-[1.4]"
-      >
-        <Chevron className="text-fg-3 size-4 shrink-0" aria-hidden="true" />
-        <span className="text-fg-1 font-medium">{group.title}</span>
-        {identity ? <span className="text-fg-3 text-xs tabular-nums">{identity}</span> : null}
-        <span className="border-border-hairline text-fg-2 rounded border px-1.5 text-xs tabular-nums">
-          {group.releases.length} releases
-        </span>
-      </button>
-      {formats ? <p className="text-fg-4 m-0 mt-0.5 ml-6 text-xs">{formats}</p> : null}
-    </div>
+    <button
+      type="button"
+      aria-expanded={expanded}
+      aria-label={[group.title, identity, count].filter(Boolean).join(" ")}
+      onClick={onToggle}
+      className={cn(
+        "group/toggle flex cursor-pointer items-baseline gap-1.5 text-left text-sm leading-[1.4]",
+        hangChevron && "-ml-5",
+      )}
+    >
+      <Chevron
+        className="text-fg-4 hover-hover:group-hover/toggle:text-fg-1 size-3.5 shrink-0 self-center transition-colors"
+        aria-hidden="true"
+      />
+      <span className="text-fg-1 break-words [overflow-wrap:anywhere]">{group.title}</span>
+      <span className="text-fg-4 shrink-0 whitespace-nowrap tabular-nums">
+        {[identity, count].filter(Boolean).join(" · ")}
+      </span>
+    </button>
   );
 }
 
@@ -315,6 +317,7 @@ export function SearchResults({
                 >
                   <td className="py-2.5 pr-2 pl-0 align-middle">
                     <GroupToggle
+                      hangChevron
                       group={row.group}
                       expanded={expanded.has(row.group.key)}
                       onToggle={() => toggleGroup(row.group.key)}
@@ -325,12 +328,9 @@ export function SearchResults({
               ) : (
                 <tr
                   key={searchResultKey(row.result)}
-                  className={cn(
-                    "border-border-faint border-b last:border-b-0",
-                    row.nested && "bg-surface-2",
-                  )}
+                  className="border-border-faint border-b last:border-b-0"
                 >
-                  <td className={cn("py-2.5 pr-2 align-middle", row.nested ? "pl-6" : "pl-0")}>
+                  <td className={cn("py-2.5 pr-2 align-middle", row.nested ? "pl-5" : "pl-0")}>
                     <TitleCell result={row.result} titleBehavior={titleBehavior} />
                   </td>
                   <DesktopResultCells result={row.result} />
