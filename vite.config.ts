@@ -175,7 +175,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         globPatterns: pwaPrecachePatterns,
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/assets\//],
+        navigateFallbackDenylist: [/^\/assets\//, /^\/\.well-known\//, /^\/security\.txt$/],
       },
     }),
     viteReact(),

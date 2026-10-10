@@ -1,5 +1,5 @@
 Contact: mailto:chillardinho@chill.institute
 Policy: https://github.com/chill-institute/chill-web/blob/main/SECURITY.md
-Canonical: https://chill.institute/security.txt
+Canonical: https://chill.institute/.well-known/security.txt
 Preferred-Languages: en
 Expires: 2027-03-20T00:00:00.000Z

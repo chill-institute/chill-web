@@ -1,7 +1,9 @@
 # Security
 
 Report security or privacy problems privately with **Report a vulnerability**
-in this repository's Security tab. Do not open a public issue.
+in this repository's Security tab, or email the contact in
+[security.txt](https://chill.institute/.well-known/security.txt). Do not open a
+public issue.
 
 Useful reports include authentication failures, token exposure, cross-site
 scripting, request forgery, privilege bypass, or private data appearing in the

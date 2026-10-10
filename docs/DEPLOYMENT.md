@@ -22,6 +22,10 @@ it.
   reloads while the app is hidden or on the next route change, when no
   mutation is in flight.
 - `public/_headers` and the static-asset Worker apply browser security headers.
+- `public/.well-known/security.txt` is the only `security.txt`;
+  `public/_redirects` sends `/security.txt` to it, and the service worker leaves
+  both paths to the network. Artifact uploads include hidden files so
+  `.well-known/` reaches the deploy.
 
 Sentry is enabled only when the build receives its public DSN and environment.
 Deploy builds upload hidden source maps, remove them from `dist/`, and never

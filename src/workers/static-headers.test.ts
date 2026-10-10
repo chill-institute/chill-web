@@ -32,4 +32,10 @@ describe("Cloudflare static response headers", () => {
       "x-content-type-options": "nosniff",
     });
   });
+
+  it("serves security.txt as UTF-8 plain text", () => {
+    expect(headersFor("/.well-known/security.txt")).toMatchObject({
+      "content-type": "text/plain; charset=utf-8",
+    });
+  });
 });
