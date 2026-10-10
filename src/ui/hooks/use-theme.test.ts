@@ -1,6 +1,16 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { isThemePreference } from "./use-theme";
+
+const bootScript = readFileSync(new URL("../../../index.html", import.meta.url), "utf8");
+
+// index.html paints the theme before the app loads; the store must repaint the same colors.
+function bootColor(name: "darkColor" | "lightColor") {
+  const color = bootScript.match(new RegExp(`const ${name} = "([^"]+)"`))?.[1];
+  if (!color) throw new Error(`index.html boot script has no ${name}`);
+  return color;
+}
 
 function createMapStorage() {
   const storage = new Map<string, string>();
@@ -119,8 +129,16 @@ describe("themeStore", () => {
 
     expect(dom.localStorage.getItem("chill.theme")).toBe("dark");
     expect(dom.root.classList.toggle).toHaveBeenLastCalledWith("dark", true);
-    expect(dom.root.style.cssText).toBe("color-scheme: dark; background-color: #292524;");
-    expect(dom.meta.setAttribute).toHaveBeenLastCalledWith("content", "#292524");
+    expect(dom.root.style.cssText).toContain("color-scheme: dark");
+    expect(dom.root.style.cssText).toContain(`background-color: ${bootColor("darkColor")}`);
+    expect(dom.meta.setAttribute).toHaveBeenLastCalledWith("content", bootColor("darkColor"));
+
+    themeStore.setThemeStore("light");
+
+    expect(dom.root.classList.toggle).toHaveBeenLastCalledWith("dark", false);
+    expect(dom.root.style.cssText).toContain("color-scheme: light");
+    expect(dom.root.style.cssText).toContain(`background-color: ${bootColor("lightColor")}`);
+    expect(dom.meta.setAttribute).toHaveBeenLastCalledWith("content", bootColor("lightColor"));
   });
 
   it("syncs storage events into the preference snapshot", async () => {
@@ -146,7 +164,7 @@ describe("themeStore", () => {
     const unsubscribe = themeStore.subscribeSystemTheme(listener);
 
     expect(dom.root.classList.toggle).toHaveBeenLastCalledWith("dark", true);
-    expect(dom.root.style.cssText).toBe("color-scheme: dark; background-color: #292524;");
+    expect(dom.root.style.cssText).toContain("color-scheme: dark");
 
     dom.emitSystemThemeChange();
 
