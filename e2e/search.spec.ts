@@ -896,6 +896,54 @@ test.describe("search page", () => {
     await expect(rows.first()).toContainText("x265 HEVC");
   });
 
+  test("group releases folds one episode's formats behind an expander and is remembered", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const episode = (id: string, resolution: string, seeders: bigint) =>
+      searchResult({
+        id,
+        title: `Sample.Show.S03E01.${resolution}.WEB-GRP`,
+        link: `magnet:?xt=urn:btih:${id}`,
+        seeders,
+        releaseInfo: { title: "Sample Show", season: 3, episode: 1, resolution },
+      });
+    const results = [
+      episode("ep-1080", "1080p", 90n),
+      episode("ep-720", "720p", 60n),
+      searchResult({
+        id: "film",
+        title: "Sample.Show.1941.DVDRip-GRP",
+        link: "magnet:?xt=urn:btih:film",
+        seeders: 3n,
+        releaseInfo: { title: "Sample Show", year: 1941 },
+      }),
+    ];
+
+    await mockRpc(allModeMethods({ Search: searchResponse("sample show", results) }));
+    await authenticatedPage.goto("/search?q=sample%20show");
+
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(3);
+
+    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
+    await quickFilters.getByRole("checkbox", { name: /group releases/ }).check();
+
+    const group = authenticatedPage.getByRole("button", { name: /Sample Show S03E01 2 releases/ });
+    await expect(rows).toHaveCount(2);
+    await expect(group).toHaveAttribute("aria-expanded", "false");
+    await expect(rows.nth(1)).toContainText("Sample.Show.1941.DVDRip-GRP");
+
+    await group.click();
+    await expect(rows).toHaveCount(4);
+    await expect(rows.nth(1)).toContainText("Sample.Show.S03E01.1080p.WEB-GRP");
+    await expect(rows.nth(2)).toContainText("Sample.Show.S03E01.720p.WEB-GRP");
+
+    await authenticatedPage.reload();
+    await expect(quickFilters.getByRole("checkbox", { name: /group releases/ })).toBeChecked();
+    await expect(rows).toHaveCount(2);
+  });
+
   test("mobile quick filters and metadata stay compact", async ({ authenticatedPage, mockRpc }) => {
     const results = [
       searchResult({

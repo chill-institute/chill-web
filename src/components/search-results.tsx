@@ -1,5 +1,13 @@
-import { ArrowDown, ArrowUp, CalendarDays, HardDrive, Users } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  HardDrive,
+  Users,
+} from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { CopyButton } from "@/ui/components/copy-button";
@@ -7,6 +15,12 @@ import { useMediaQuery } from "@/ui/hooks/use-is-desktop";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
 import { searchResultKey } from "@/lib/search";
+import {
+  groupFormatSummary,
+  groupIdentityLabel,
+  groupSearchResults,
+  type SearchResultGroup,
+} from "@/lib/search-groups";
 import type { ChillSettings, SearchResult } from "@/lib/types";
 import { SearchResultTitleBehavior, SortBy, SortDirection } from "@/lib/types";
 
@@ -15,6 +29,7 @@ type Props = {
   sortBy: ChillSettings["sortBy"];
   sortDirection: ChillSettings["sortDirection"];
   titleBehavior: ChillSettings["searchResultTitleBehavior"];
+  groupReleases?: boolean;
   onSort: (sortBy: ChillSettings["sortBy"]) => void;
 };
 
@@ -32,6 +47,8 @@ const columns = [
 ];
 
 const LARGE_RESULTS_QUERY = "(min-width: 1024px)";
+
+const MOBILE_CARD_CLASS = "border-border-strong bg-surface mb-4 overflow-hidden rounded border";
 
 function TitleCell({
   result,
@@ -65,10 +82,150 @@ function TitleCell({
   return <div>{titleSpan}</div>;
 }
 
-export function SearchResults({ results, sortBy, sortDirection, titleBehavior, onSort }: Props) {
+function GroupToggle({
+  group,
+  expanded,
+  onToggle,
+}: {
+  group: SearchResultGroup;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const identity = groupIdentityLabel(group);
+  const formats = groupFormatSummary(group);
+  const Chevron = expanded ? ChevronDown : ChevronRight;
+
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-label={[group.title, identity, `${group.releases.length} releases`]
+          .filter(Boolean)
+          .join(" ")}
+        onClick={onToggle}
+        className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 text-left text-sm leading-[1.4]"
+      >
+        <Chevron className="text-fg-3 size-4 shrink-0" aria-hidden="true" />
+        <span className="text-fg-1 font-medium">{group.title}</span>
+        {identity ? <span className="text-fg-3 text-xs tabular-nums">{identity}</span> : null}
+        <span className="border-border-hairline text-fg-2 rounded border px-1.5 text-xs tabular-nums">
+          {group.releases.length} releases
+        </span>
+      </button>
+      {formats ? <p className="text-fg-4 m-0 mt-0.5 ml-6 text-xs">{formats}</p> : null}
+    </div>
+  );
+}
+
+type Row =
+  | { kind: "result"; result: SearchResult; nested: boolean }
+  | { kind: "group"; group: SearchResultGroup };
+
+function buildRows(
+  results: SearchResult[],
+  groups: SearchResultGroup[] | null,
+  expanded: ReadonlySet<string>,
+): Row[] {
+  if (!groups) return results.map((result) => ({ kind: "result", result, nested: false }));
+  return groups.flatMap((group): Row[] => {
+    const [best] = group.releases;
+    if (group.releases.length === 1) return [{ kind: "result", result: best, nested: false }];
+    if (!expanded.has(group.key)) return [{ kind: "group", group }];
+    return [
+      { kind: "group", group },
+      ...group.releases.map((result): Row => ({ kind: "result", result, nested: true })),
+    ];
+  });
+}
+
+function DesktopResultCells({ result }: { result: SearchResult }) {
+  return (
+    <>
+      <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+        {result.source}
+      </td>
+      <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+        {formatBytes(result.size)}
+      </td>
+      <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+        {result.seeders}
+      </td>
+      <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
+        {formatAge(result.uploadedAt)}
+      </td>
+      <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
+        <CopyButton variant="icon" value={result.link} />
+      </td>
+      <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
+        <AddTransferButton className="w-full" url={result.link}>
+          send to put.io
+        </AddTransferButton>
+      </td>
+    </>
+  );
+}
+
+function MobileResultBody({
+  result,
+  titleBehavior,
+}: {
+  result: SearchResult;
+  titleBehavior: Props["titleBehavior"];
+}) {
+  return (
+    <div className="px-6 py-5">
+      <TitleCell result={result} titleBehavior={titleBehavior} />
+
+      <div className="border-border-strong text-fg-2 my-3 flex min-h-15 flex-wrap items-center gap-x-3 gap-y-1.5 border-y py-2.5 text-xs">
+        <span className="text-fg-1">{result.source}</span>
+        <span className="inline-flex items-center gap-1 tabular-nums">
+          <HardDrive className="size-3" />
+          {formatBytes(result.size)}
+        </span>
+        <span className="inline-flex items-center gap-1 tabular-nums">
+          <Users className="size-3" />
+          {result.seeders} seeders
+        </span>
+        <span className="inline-flex items-center gap-1 tabular-nums">
+          <CalendarDays className="size-3" />
+          {formatAge(result.uploadedAt)}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CopyButton value={result.link} />
+        <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
+      </div>
+    </div>
+  );
+}
+
+export function SearchResults({
+  results,
+  sortBy,
+  sortDirection,
+  titleBehavior,
+  groupReleases = false,
+  onSort,
+}: Props) {
   const isLargeLayout = useMediaQuery(LARGE_RESULTS_QUERY);
+  const groups = useMemo(
+    () => (groupReleases ? groupSearchResults(results) : null),
+    [groupReleases, results],
+  );
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+
+  function toggleGroup(key: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  }
 
   if (isLargeLayout) {
+    const rows = buildRows(results, groups, expanded);
     return (
       <div className="mx-auto w-full max-w-7xl">
         <table className="w-full min-w-full border-collapse">
@@ -150,76 +307,83 @@ export function SearchResults({ results, sortBy, sortDirection, titleBehavior, o
           </thead>
 
           <tbody>
-            {results.map((result) => {
-              return (
+            {rows.map((row) =>
+              row.kind === "group" ? (
                 <tr
-                  key={searchResultKey(result)}
+                  key={`group:${row.group.key}`}
                   className="border-border-faint border-b last:border-b-0"
                 >
                   <td className="py-2.5 pr-2 pl-0 align-middle">
-                    <TitleCell result={result} titleBehavior={titleBehavior} />
+                    <GroupToggle
+                      group={row.group}
+                      expanded={expanded.has(row.group.key)}
+                      onToggle={() => toggleGroup(row.group.key)}
+                    />
                   </td>
-                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
-                    {result.source}
-                  </td>
-                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
-                    {formatBytes(result.size)}
-                  </td>
-                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
-                    {result.seeders}
-                  </td>
-                  <td className="px-2 py-2.5 text-center align-middle text-sm whitespace-nowrap tabular-nums">
-                    {formatAge(result.uploadedAt)}
-                  </td>
-                  <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
-                    <CopyButton variant="icon" value={result.link} />
-                  </td>
-                  <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
-                    <AddTransferButton className="w-full" url={result.link}>
-                      send to put.io
-                    </AddTransferButton>
-                  </td>
+                  <DesktopResultCells result={row.group.releases[0]} />
                 </tr>
-              );
-            })}
+              ) : (
+                <tr
+                  key={searchResultKey(row.result)}
+                  className={cn(
+                    "border-border-faint border-b last:border-b-0",
+                    row.nested && "bg-surface-2",
+                  )}
+                >
+                  <td className={cn("py-2.5 pr-2 align-middle", row.nested ? "pl-6" : "pl-0")}>
+                    <TitleCell result={row.result} titleBehavior={titleBehavior} />
+                  </td>
+                  <DesktopResultCells result={row.result} />
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>
     );
   }
 
+  if (!groups) {
+    return (
+      <ul className="m-0 list-none p-0 lg:hidden" aria-label="Search results">
+        {results.map((result) => (
+          <li key={searchResultKey(result)} className={MOBILE_CARD_CLASS}>
+            <MobileResultBody result={result} titleBehavior={titleBehavior} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <ul className="m-0 list-none p-0 lg:hidden" aria-label="Search results">
-      {results.map((result) => {
+      {groups.map((group) => {
+        const [best] = group.releases;
+        if (group.releases.length === 1) {
+          return (
+            <li key={searchResultKey(best)} className={MOBILE_CARD_CLASS}>
+              <MobileResultBody result={best} titleBehavior={titleBehavior} />
+            </li>
+          );
+        }
+        const isExpanded = expanded.has(group.key);
         return (
-          <li
-            key={searchResultKey(result)}
-            className="border-border-strong bg-surface mb-4 overflow-hidden rounded border"
-          >
-            <div className="px-6 py-5">
-              <TitleCell result={result} titleBehavior={titleBehavior} />
-
-              <div className="border-border-strong text-fg-2 my-3 flex min-h-15 flex-wrap items-center gap-x-3 gap-y-1.5 border-y py-2.5 text-xs">
-                <span className="text-fg-1">{result.source}</span>
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <HardDrive className="size-3" />
-                  {formatBytes(result.size)}
-                </span>
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <Users className="size-3" />
-                  {result.seeders} seeders
-                </span>
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <CalendarDays className="size-3" />
-                  {formatAge(result.uploadedAt)}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <CopyButton value={result.link} />
-                <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
-              </div>
+          <li key={`group:${group.key}`} className={MOBILE_CARD_CLASS}>
+            <div className="border-border-faint border-b px-6 py-3">
+              <GroupToggle
+                group={group}
+                expanded={isExpanded}
+                onToggle={() => toggleGroup(group.key)}
+              />
             </div>
+            {(isExpanded ? group.releases : [best]).map((result) => (
+              <div
+                key={searchResultKey(result)}
+                className="border-border-faint border-b last:border-b-0"
+              >
+                <MobileResultBody result={result} titleBehavior={titleBehavior} />
+              </div>
+            ))}
           </li>
         );
       })}
