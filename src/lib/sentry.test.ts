@@ -76,6 +76,7 @@ describe("configureCrashReportingIntegrations", () => {
     const integrations = configureCrashReportingIntegrations([
       defaultGlobalHandlers,
       { name: "Breadcrumbs" },
+      { name: "Console" },
       { name: "BrowserSession" },
       { name: "Dedupe" },
     ]);

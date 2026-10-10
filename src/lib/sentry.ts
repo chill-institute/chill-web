@@ -10,7 +10,7 @@ import { APP_NAME } from "./app-info";
 import { isPreloadRecoveryPending, moduleLoadRecoveryTags } from "./runtime-errors";
 
 const sentryEventIds = new WeakMap<object, string>();
-const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession"]);
+const disabledDefaultIntegrationNames = new Set(["Breadcrumbs", "BrowserSession", "Console"]);
 
 type AppBreadcrumbData = Record<string, boolean | number | string | null | undefined>;
 
@@ -72,10 +72,14 @@ function initSentry() {
     dsn: import.meta.env.VITE_PUBLIC_SENTRY_DSN,
     environment,
     release,
-    sendDefaultPii: false,
+    // Sentry collects user info, cookies, bodies and query params unless disabled.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpBodies: [],
+      urlQueryParams: false,
+    },
     sendClientReports: false,
-    enableLogs: false,
-    enableMetrics: false,
     maxBreadcrumbs: 20,
     integrations: configureCrashReportingIntegrations,
     initialScope: {
