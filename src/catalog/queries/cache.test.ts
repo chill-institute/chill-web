@@ -1,14 +1,17 @@
 import { create } from "@bufbuild/protobuf";
 import { QueryClient } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 import {
   CatalogSettingsSchema,
+  GetMoviesResponseSchema,
+  GetTVShowsResponseSchema,
   MoviesSource,
   TVShowsSource,
   UserSettingsSchema,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
-import { MOVIES_QUERY_KEY } from "@/catalog/queries/options";
+import { createApi } from "@/api/api";
+import { moviesQueryOptions, tvShowsQueryOptions } from "@/catalog/queries/options";
 import type { SettingsSaveContext } from "@/queries/settings-mutation";
 
 import { resetChangedMovieSourceQueries } from "./cache";
@@ -28,10 +31,19 @@ function settings({
   });
 }
 
+function cachedCatalogLists() {
+  const api = createApi({ authToken: "placeholder", baseUrl: "https://api.example.test" });
+  const queryClient = new QueryClient();
+  const movies = moviesQueryOptions(api, MoviesSource.ROTTEN_TOMATOES).queryKey;
+  const tvShows = tvShowsQueryOptions(api, TVShowsSource.TV_SHOWS_SOURCE_NETFLIX).queryKey;
+  queryClient.setQueryData(movies, create(GetMoviesResponseSchema));
+  queryClient.setQueryData(tvShows, create(GetTVShowsResponseSchema));
+  return { queryClient, movies, tvShows };
+}
+
 describe("catalog query cache resets", () => {
   it("resets movies when the saved movie source changes", () => {
-    const queryClient = new QueryClient();
-    const resetQueries = vi.spyOn(queryClient, "resetQueries");
+    const { queryClient, movies, tvShows } = cachedCatalogLists();
     const context: SettingsSaveContext = {
       previousSettings: settings({
         moviesSource: MoviesSource.ROTTEN_TOMATOES,
@@ -48,12 +60,12 @@ describe("catalog query cache resets", () => {
       }),
     );
 
-    expect(resetQueries).toHaveBeenCalledWith({ queryKey: MOVIES_QUERY_KEY });
+    expect(queryClient.getQueryData(movies)).toBeUndefined();
+    expect(queryClient.getQueryData(tvShows)).toBeDefined();
   });
 
   it("keeps URL-driven TV show queries when only the saved TV source changes", () => {
-    const queryClient = new QueryClient();
-    const resetQueries = vi.spyOn(queryClient, "resetQueries");
+    const { queryClient, movies, tvShows } = cachedCatalogLists();
     const context: SettingsSaveContext = {
       previousSettings: settings({
         moviesSource: MoviesSource.ROTTEN_TOMATOES,
@@ -70,6 +82,7 @@ describe("catalog query cache resets", () => {
       }),
     );
 
-    expect(resetQueries).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData(movies)).toBeDefined();
+    expect(queryClient.getQueryData(tvShows)).toBeDefined();
   });
 });

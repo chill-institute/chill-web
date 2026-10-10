@@ -38,15 +38,14 @@ function createQueryClient() {
 }
 
 describe("auth query options", () => {
-  it("keys and gates user profile queries by auth token", async () => {
+  it("gates user profile queries by auth token and keeps signed-out data apart", async () => {
     const api = createApiStub();
     const disabled = userProfileQueryOptions(api, null);
     const enabled = userProfileQueryOptions(api, "token");
 
-    expect(disabled.queryKey).toEqual(["user-profile", false]);
     expect(disabled.enabled).toBe(false);
-    expect(enabled.queryKey).toEqual(["user-profile", true]);
     expect(enabled.enabled).toBe(true);
+    expect(disabled.queryKey).not.toEqual(enabled.queryKey);
 
     const client = createQueryClient();
     await client.fetchQuery(enabled);
@@ -54,15 +53,16 @@ describe("auth query options", () => {
     expect(api.getUserProfile).toHaveBeenCalledWith(expect.any(AbortSignal));
   });
 
-  it("uses stable keys and API args for download folder queries", async () => {
+  it("loads the download folder and caches each browsed folder apart", async () => {
     const api = createApiStub();
     const client = createQueryClient();
 
     await client.fetchQuery(downloadFolderQueryOptions(api));
     await client.fetchQuery(folderQueryOptions(api, 42n));
 
-    expect(downloadFolderQueryOptions(api).queryKey).toEqual(["download-folder"]);
-    expect(folderQueryOptions(api, 42n).queryKey).toEqual(["folder", "42"]);
+    expect(folderQueryOptions(api, 42n).queryKey).not.toEqual(
+      folderQueryOptions(api, 43n).queryKey,
+    );
     expect(api.getDownloadFolder).toHaveBeenCalledWith(expect.any(AbortSignal));
     expect(api.getFolder).toHaveBeenCalledWith(42n, expect.any(AbortSignal));
   });
