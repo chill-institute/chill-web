@@ -104,7 +104,7 @@ function GroupToggle({
       aria-label={[group.title, identity, count].filter(Boolean).join(" ")}
       onClick={onToggle}
       className={cn(
-        "group/toggle flex cursor-pointer items-baseline gap-1.5 text-left text-sm leading-[1.4]",
+        "group/toggle flex min-h-[1.875rem] cursor-pointer items-center gap-1.5 text-left text-sm leading-[1.4]",
         hangChevron && "-ml-5",
       )}
     >
