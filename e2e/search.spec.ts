@@ -224,6 +224,7 @@ test.describe("search page", () => {
     await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeHidden();
     await authenticatedPage.getByRole("button", { name: "Update" }).click();
     await expect(authenticatedPage.getByText("Found 1 more result")).toBeHidden();
+    await expect(rows).toHaveCount(3);
     await expect(authenticatedPage.getByText("Ubuntu Slow Result")).toBeVisible();
   });
 
@@ -249,30 +250,6 @@ test.describe("search page", () => {
     await expect.poll(() => slowResolved).toBe(true);
     await expect(authenticatedPage.getByText("Found 1 more result")).toBeHidden();
     await expect(authenticatedPage.locator("[data-sonner-toast]")).toHaveCount(0);
-  });
-
-  test("fastest mode update action switches to all results and dismisses the toast", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
-    const releaseSlowSearch = await setupFastestModeSearch(authenticatedPage, mockRpc, {
-      getResults: ({ indexerId }) => [fastestIndexerResult({ indexerId })],
-    });
-
-    await authenticatedPage.goto("/search?q=ubuntu");
-
-    const rows = authenticatedPage.locator("table tbody tr");
-    await expect(rows).toHaveCount(2);
-    await releaseSlowSearch();
-    const toastLocator = authenticatedPage.getByText("Found 1 more result");
-    await expect(toastLocator).toBeVisible({ timeout: 5000 });
-    await authenticatedPage.getByRole("button", { name: "Update" }).click();
-    await expect(toastLocator).toBeHidden();
-
-    await expect(rows).toHaveCount(3);
-    await expect(authenticatedPage.getByText("Ubuntu from slow")).toBeVisible({
-      timeout: 5000,
-    });
   });
 
   test("fastest mode toast reappears for a subsequent search", async ({

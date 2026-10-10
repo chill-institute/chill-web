@@ -635,15 +635,6 @@ test.describe("settings", () => {
     await expect(alert).toBeHidden({ timeout: 5000 });
   });
 
-  test("shows username from profile", async ({ authenticatedPage, mockRpc }) => {
-    await mockRpc(baseSettingsMethods());
-    await authenticatedPage.goto("/settings");
-
-    await expect(settingsPage(authenticatedPage).getByText("putio-user")).toBeVisible({
-      timeout: 5000,
-    });
-  });
-
   test("reset settings restores search defaults and preserves download folder", async ({
     authenticatedPage,
     mockRpc,

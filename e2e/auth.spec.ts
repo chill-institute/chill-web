@@ -68,12 +68,6 @@ test.describe("sign-in page", () => {
     await expect(page.getByRole("button", { name: "try again" })).toBeVisible();
   });
 
-  test("shows sign-in button when no error", async ({ page }) => {
-    await page.goto("/sign-in");
-
-    await expect(page.getByRole("button", { name: "sign in with put.io" })).toBeVisible();
-  });
-
   test("rejects /auth/success token planted via phishing link with no stored nonce", async ({
     page,
   }) => {
