@@ -80,7 +80,11 @@ export function groupSearchResults(results: readonly SearchResult[]): SearchResu
     groups.push(group);
   });
 
-  return groups;
+  // Groups lead and single releases follow; each part keeps the active sort order.
+  return [
+    ...groups.filter((group) => group.releases.length > 1),
+    ...groups.filter((group) => group.releases.length === 1),
+  ];
 }
 
 function pad(value: number): string {

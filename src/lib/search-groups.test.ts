@@ -39,6 +39,17 @@ describe("groupSearchResults", () => {
     expect(groupIdentityLabel(groups[1])).toBe("1941");
   });
 
+  it("lists groups before single releases, keeping the sort order within each", () => {
+    const groups = groupSearchResults([
+      result("single-top", { title: "Other Film", year: 1999 }),
+      result("ep-a", { title: "Sample Show", season: 1, episode: 1 }),
+      result("single-next", { title: "Third Film", year: 2001 }),
+      result("ep-b", { title: "Sample Show", season: 1, episode: 1 }),
+    ]);
+
+    expect(ids(groups)).toEqual([["ep-a", "ep-b"], ["single-top"], ["single-next"]]);
+  });
+
   it("leaves results without a parsed identity ungrouped", () => {
     const groups = groupSearchResults([
       result("bare-a", { title: "Sample Collection" }),
