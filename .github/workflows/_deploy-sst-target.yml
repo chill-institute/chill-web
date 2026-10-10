@@ -40,7 +40,7 @@ permissions:
 
 jobs:
   deploy-sst-target:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment:
       name: ${{ inputs.environment-name }}
       url: ${{ inputs.environment-url }}

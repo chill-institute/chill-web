@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   e2e:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       artifact-sha256: ${{ steps.artifact.outputs.sha256 }}
     steps:
