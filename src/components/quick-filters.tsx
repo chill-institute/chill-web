@@ -22,6 +22,7 @@ type Props = {
   onResolutionChange: (next: FilterState["resolution"]) => void;
   onCodecChange: (next: FilterState["codec"]) => void;
   onSortChange: (next: QuickFilterSort) => void;
+  groupReleases?: { enabled: boolean; onChange: (next: boolean) => void };
   className?: string;
   inlineOnDesktop?: boolean;
   disabled?: boolean;
@@ -84,6 +85,7 @@ export function QuickFilters({
   onResolutionChange,
   onCodecChange,
   onSortChange,
+  groupReleases,
   className,
   inlineOnDesktop = false,
   disabled = false,
@@ -137,6 +139,29 @@ export function QuickFilters({
             </CheckboxField>
           ))}
         </FilterGroup>
+
+        {groupReleases ? (
+          <>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "bg-border-hairline hidden h-3.5 w-px",
+                inlineOnDesktop ? "md:block" : "@2xl:block",
+              )}
+            />
+            <CheckboxField
+              id="qf-group-releases"
+              disabled={disabled}
+              checked={groupReleases.enabled}
+              onCheckedChange={groupReleases.onChange}
+            >
+              group releases
+              <span className="border-border-hairline text-fg-4 ml-1 rounded-xs border px-1 text-[10px] leading-4">
+                beta
+              </span>
+            </CheckboxField>
+          </>
+        ) : null}
 
         <div
           className={cn(

@@ -11,6 +11,7 @@ import { SearchShell } from "@/components/search-shell";
 import { useAuth } from "@/auth/auth";
 import { EmptyState } from "@/ui/components/empty-state";
 import { useFastestMode } from "@/hooks/use-fastest-mode";
+import { useGroupReleases } from "@/hooks/use-group-releases";
 import { useSearchFilters } from "@/hooks/use-search-filters";
 import { defaultSortDirection, formatSearchResults, normalizeQuery } from "@/lib/search";
 import {
@@ -46,6 +47,7 @@ export function SearchPage() {
     setSort: setLocalSort,
   } = useSearchFilters(appSettings, submittedQuery);
   const saveConfigMutation = useSaveSettings();
+  const [groupReleases, setGroupReleases] = useGroupReleases();
 
   function patchConfig(patch: Partial<ChillSettings>) {
     if (!configQuery.data) return;
@@ -208,6 +210,7 @@ export function SearchPage() {
             sortBy={filters.sortBy}
             sortDirection={filters.sortDirection}
             titleBehavior={effective.searchResultTitleBehavior}
+            groupReleases={groupReleases}
             onSort={setSort}
           />
         ))
@@ -258,6 +261,7 @@ export function SearchPage() {
               setLocalSort(next);
               patchConfig({ sortBy: next.sortBy, sortDirection: next.sortDirection });
             }}
+            groupReleases={{ enabled: groupReleases, onChange: setGroupReleases }}
           />
         ) : null}
         {content}
