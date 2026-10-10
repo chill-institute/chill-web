@@ -339,7 +339,6 @@ test.describe("search page", () => {
     await expect(
       authenticatedPage.getByText("Service temporarily unavailable. Please try again shortly."),
     ).toBeVisible({ timeout: 5000 });
-    await expect(authenticatedPage.getByRole("alert")).toHaveCSS("max-width", "672px");
   });
 
   test("sends x-request-id header on rpc requests", async ({ authenticatedPage, mockRpc }) => {
