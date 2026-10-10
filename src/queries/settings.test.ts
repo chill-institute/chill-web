@@ -23,6 +23,14 @@ describe("settings save payloads", () => {
       ),
     ).toBe(true);
     expect(hasCompleteSettingsDomains(create(UserSettingsSchema, {}))).toBe(false);
+    expect(
+      hasCompleteSettingsDomains(
+        create(UserSettingsSchema, {
+          catalog: create(CatalogSettingsSchema),
+          download: create(DownloadSettingsSchema),
+        }),
+      ),
+    ).toBe(false);
   });
 
   it("merges cached chill domains onto canonical server settings", () => {
@@ -41,5 +49,16 @@ describe("settings save payloads", () => {
     expect(out.search?.sortBy).toBe(SortBy.SIZE);
     expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
     expect(out.download?.folderId).toBe(99n);
+
+    const catalogOnly = mergeSettingsDomains(
+      base,
+      create(UserSettingsSchema, {
+        catalog: create(CatalogSettingsSchema, { moviesSource: MoviesSource.TRAKT }),
+      }),
+    );
+
+    expect(catalogOnly.search?.sortBy).toBe(SortBy.SEEDERS);
+    expect(catalogOnly.catalog?.moviesSource).toBe(MoviesSource.TRAKT);
+    expect(catalogOnly.download?.folderId).toBe(42n);
   });
 });
