@@ -22,15 +22,12 @@ function identity(result: SearchResult): Identity | undefined {
   const info = result.releaseInfo;
   if (!info) return undefined;
   const { year = 0, season = 0 } = info;
-  // A dated release with no season is a film; an episode number there comes
-  // from size or 3D tokens ("700mb", "3D") the parser misreads.
-  const film = year > 0 && season === 0;
   return {
     title: info.title.replace(SITE_PREFIX, "").trim(),
     year,
     season,
-    episode: film ? 0 : (info.episode ?? 0),
-    episodeEnd: film ? 0 : (info.episodeEnd ?? 0),
+    episode: info.episode ?? 0,
+    episodeEnd: info.episodeEnd ?? 0,
   };
 }
 
