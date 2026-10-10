@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { ReleaseInfoSchema, SearchResultSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
 
-import { groupFormatSummary, groupIdentityLabel, groupSearchResults } from "./search-groups";
+import { groupIdentityLabel, groupSearchResults } from "./search-groups";
 
 type Info = Partial<{
   title: string;
@@ -50,13 +50,15 @@ describe("groupSearchResults", () => {
     expect(ids(groups)).toEqual([["bare-a"], ["bare-b"], ["unparsed-a"], ["unparsed-b"]]);
   });
 
-  it("summarizes distinct formats with codec aliases normalized", () => {
-    const [group] = groupSearchResults([
-      result("a", { title: "Sample Film", year: 2001, resolution: "1080p", codec: "H.264" }),
-      result("b", { title: "Sample Film", year: 2001, resolution: "720p", codec: "x264" }),
-      result("c", { title: "Sample Film", year: 2001, resolution: "1080p", codec: "HEVC" }),
+  it("merges film releases despite uploader tags, articles, and misparsed episodes", () => {
+    const groups = groupSearchResults([
+      result("plain", { title: "Sample The Dark Film", year: 2013 }),
+      result("tagged", { title: "www.example.org - Sample The Dark Film", year: 2013 }),
+      result("no-article", { title: "Sample Dark Film", year: 2013 }),
+      result("size-as-episode", { title: "Sample The Dark Film", year: 2013, episode: 700 }),
     ]);
 
-    expect(groupFormatSummary(group)).toBe("1080p · 720p · x264 · x265");
+    expect(ids(groups)).toEqual([["plain", "tagged", "no-article", "size-as-episode"]]);
+    expect(groups[0].title).toBe("Sample The Dark Film");
   });
 });
