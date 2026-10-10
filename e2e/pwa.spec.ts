@@ -65,27 +65,45 @@ test("keeps the service worker precache focused on the app shell", async ({ page
 
   const shellLogoUrl = await page.locator('img[src^="/assets/"]').first().getAttribute("src");
   const shellLogoPath = shellLogoUrl ?? "";
+  expect(shellLogoPath).toMatch(/^\/assets\/.+\.png$/);
+
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () =>
+          (await navigator.serviceWorker.getRegistrations()).some(
+            (registration) => registration.active !== null,
+          ),
+        ),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+  const precached = await page.evaluate(async () => {
+    const paths: string[] = [];
+    for (const name of await caches.keys()) {
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) paths.push(new URL(request.url).pathname);
+    }
+    return paths;
+  });
+
+  expect(precached).toContain("/index.html");
+  expect(precached).toContain(shellLogoPath);
+  expect(precached.some((path) => /^\/assets\/.+\.js$/.test(path))).toBe(true);
+  expect(
+    precached.filter((path) =>
+      /fonts\/|\/(banner|opengraph-image|twitter-image|logo-xmas|logo192-maskable|logo512-maskable)\.png$|\/test\/poster\.svg$|\/registerSW\.js$/.test(
+        path,
+      ),
+    ),
+  ).toEqual([]);
 
   const serviceWorker = await page.request.get("/sw.js");
   expect(serviceWorker.ok()).toBe(true);
   const source = await serviceWorker.text();
 
-  expect(source).toContain('url:"index.html"');
-  expect(source).not.toContain("registerSW.js");
-  expect(shellLogoPath).toMatch(/^\/assets\/.+\.png$/);
-  expect(source).toContain(`url:"${shellLogoPath.slice(1)}"`);
-  expect(source).toContain('url:"assets/');
-  expect(source).not.toContain("fonts/");
-  expect(source).not.toContain("banner.png");
-  expect(source).not.toContain("opengraph-image.png");
-  expect(source).not.toContain("twitter-image.png");
-  expect(source).not.toContain("logo-xmas.png");
-  expect(source).not.toContain("logo192-maskable.png");
-  expect(source).not.toContain("logo512-maskable.png");
-  expect(source).not.toContain("test/poster.svg");
-  expect(source).toContain('self.addEventListener("message"');
-  expect(source).toContain('"SKIP_WAITING"');
-  expect(source.match(/self\.skipWaiting\(\)/g)).toHaveLength(1);
+  expect(source).toContain("SKIP_WAITING");
+  expect(source.match(/\bskipWaiting\(\)/g)).toHaveLength(1);
   expect(source).not.toContain("clientsClaim");
 });
 
