@@ -138,6 +138,61 @@ test("gets a link for a chosen folder", async ({ authenticatedPage: page, mockRp
   await expect(page.getByRole("button", { name: "get add-on link" })).toBeVisible();
 });
 
+function hidePage(page: Page) {
+  return page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+    Reflect.deleteProperty(document, "visibilityState");
+  });
+}
+
+function workerMessagesWhileHidden(page: Page) {
+  return page.evaluate(async () => {
+    const { waiting } = await navigator.serviceWorker.ready;
+    if (!waiting) throw new Error("No app update is waiting");
+    const sent: unknown[] = [];
+    Object.defineProperty(waiting, "postMessage", {
+      configurable: true,
+      value: (message: unknown) => sent.push(message),
+    });
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+    Reflect.deleteProperty(document, "visibilityState");
+    await new Promise((resolve) => setTimeout(resolve));
+    Reflect.deleteProperty(waiting, "postMessage");
+    return sent;
+  });
+}
+
+test("keeps a shown link when an app update waits in the background", async ({
+  authenticatedPage: page,
+  mockRpc,
+}) => {
+  await mockRpc(folderMethods());
+  await routeEngine(page, (route) => route.fulfill({ json: { credential } }));
+  await page.goto("/.well-known/security.txt");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.register("/sw.js?release=previous");
+    await navigator.serviceWorker.ready;
+  });
+  await page.goto("/stremio");
+  await page.getByRole("button", { name: "get add-on link" }).click();
+  await expect(page.getByRole("link", { name: "install chill" })).toBeVisible();
+  await expect(page.getByText("new version available")).toBeVisible();
+
+  expect(await workerMessagesWhileHidden(page)).toEqual([]);
+  await expect(page.getByRole("link", { name: "install chill" })).toBeVisible();
+
+  await page.getByRole("button", { name: "change download folder" }).click();
+  await page.getByRole("button", { name: "Open folder Movies" }).click();
+  await page.getByRole("button", { name: "Use Movies as download folder" }).click();
+  await expect(page.getByRole("link", { name: "install chill" })).toHaveCount(0);
+  const reloaded = page.waitForEvent("load");
+  await hidePage(page);
+  await reloaded;
+  await expect(page.getByRole("button", { name: "get add-on link" })).toBeVisible();
+});
+
 test("reveals and selects the link when copying fails", async ({
   authenticatedPage: page,
   mockRpc,

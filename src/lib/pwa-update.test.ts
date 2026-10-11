@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 
 import {
   applyServiceWorkerUpdateWhenHidden,
+  canApplyBackgroundUpdate,
   createNavigationUpdateApplier,
+  holdBackgroundUpdates,
   startServiceWorkerUpdateChecks,
 } from "./pwa-update";
 
@@ -122,6 +124,28 @@ describe("applyServiceWorkerUpdateWhenHidden", () => {
     expect(updateServiceWorker).toHaveBeenCalledTimes(1);
     expect(updateServiceWorker).toHaveBeenCalledWith(true);
     expect(visibility.listenerCount()).toBe(0);
+  });
+
+  it("waits while a mounted element holds background updates", () => {
+    const updateServiceWorker = vi.fn(() => Promise.resolve());
+    const visibility = createVisibilityTarget("visible");
+    applyServiceWorkerUpdateWhenHidden(updateServiceWorker, {
+      target: visibility.target,
+      canApply: canApplyBackgroundUpdate,
+    });
+
+    const releaseFirst = holdBackgroundUpdates();
+    const releaseSecond = holdBackgroundUpdates();
+    visibility.setVisibility("hidden");
+    releaseFirst();
+    visibility.setVisibility("visible");
+    visibility.setVisibility("hidden");
+    expect(updateServiceWorker).not.toHaveBeenCalled();
+
+    releaseSecond();
+    visibility.setVisibility("visible");
+    visibility.setVisibility("hidden");
+    expect(updateServiceWorker).toHaveBeenCalledExactlyOnceWith(true);
   });
 
   it("does nothing after cancel", () => {

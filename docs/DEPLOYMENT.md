@@ -20,7 +20,8 @@ it.
 - The service worker waits and asks before activating an update. Open apps
   check for updates on foreground and hourly; a waiting update applies and
   reloads while the app is hidden or on the next route change, when no
-  mutation is in flight.
+  mutation is in flight. While a new Stremio link is on screen, the hidden
+  apply waits until the link is gone.
 - `public/_headers` and the static-asset Worker apply browser security headers.
 - `public/.well-known/security.txt` is the only `security.txt`;
   `public/_redirects` sends `/security.txt` to it, and the service worker leaves

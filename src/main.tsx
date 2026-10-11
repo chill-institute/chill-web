@@ -10,6 +10,7 @@ import { getRouter } from "./router";
 import {
   applyServiceWorkerUpdateWhenHidden,
   bindNavigationUpdate,
+  canApplyBackgroundUpdate,
   navigationUpdate,
   startServiceWorkerUpdateChecks,
 } from "./lib/pwa-update";
@@ -28,7 +29,7 @@ const updateServiceWorker = registerSW({
     showPwaUpdateToast(updateServiceWorker);
     navigationUpdate.markWaiting();
     applyServiceWorkerUpdateWhenHidden(updateServiceWorker, {
-      canApply: () => queryClient.isMutating() === 0,
+      canApply: canApplyBackgroundUpdate,
     });
   },
   onNeedReload() {

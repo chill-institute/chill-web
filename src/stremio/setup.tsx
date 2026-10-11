@@ -8,6 +8,7 @@ import { DownloadFolderPicker } from "@/auth/components/download-folder-picker";
 import type { FolderCrumb } from "@/auth/components/download-folder-picker-model";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { useDownloadFolderQuery } from "@/auth/queries/download-folder";
+import { holdBackgroundUpdates } from "@/lib/pwa-update";
 import { Alert, AlertDescription, AlertTitle } from "@/ui/components/ui/alert";
 import { Button } from "@/ui/components/ui/button";
 import { ResponsiveModal } from "@/ui/components/responsive-modal";
@@ -142,7 +143,10 @@ function StremioSetup({ token }: { token: string }) {
         {notice}
       </p>
       {manifestUrl ? (
-        <article className="flex min-w-0 flex-col gap-3 rounded border border-border-strong bg-surface p-4">
+        <article
+          ref={holdBackgroundUpdates}
+          className="flex min-w-0 flex-col gap-3 rounded border border-border-strong bg-surface p-4"
+        >
           <h2 className="font-serif text-xl">2. Install chill</h2>
           <div className="flex flex-wrap gap-3">
             <Button

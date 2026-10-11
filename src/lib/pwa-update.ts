@@ -2,7 +2,8 @@
 // stays open (home-screen PWA, pinned tab) never learns about a deploy. These
 // helpers poll on foreground and on a timer, and apply a waiting update while
 // the app is hidden or on the next route change, moments where a reload does
-// not interrupt the user.
+// not interrupt the user. Something on screen that a reload would lose, such as
+// a Stremio link shown once, holds back the hidden apply while it is mounted.
 
 import { queryClient } from "@/query-client";
 
@@ -56,6 +57,20 @@ function startServiceWorkerUpdateChecks(
     clearInterval(timer);
     target.removeEventListener("visibilitychange", check);
   };
+}
+
+let backgroundUpdateHolds = 0;
+
+// Pass as a React ref; React runs the returned cleanup when the element unmounts.
+function holdBackgroundUpdates() {
+  backgroundUpdateHolds += 1;
+  return () => {
+    backgroundUpdateHolds -= 1;
+  };
+}
+
+function canApplyBackgroundUpdate() {
+  return backgroundUpdateHolds === 0 && queryClient.isMutating() === 0;
 }
 
 function applyServiceWorkerUpdateWhenHidden(
@@ -145,7 +160,9 @@ function bindNavigationUpdate(updateServiceWorker: UpdateServiceWorker) {
 export {
   applyServiceWorkerUpdateWhenHidden,
   bindNavigationUpdate,
+  canApplyBackgroundUpdate,
   createNavigationUpdateApplier,
+  holdBackgroundUpdates,
   navigationUpdate,
   startServiceWorkerUpdateChecks,
 };
