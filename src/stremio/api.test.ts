@@ -54,6 +54,10 @@ describe("createStremioLink", () => {
   it.each([
     [409, { code: "download_folder_missing", message: "x" }, "folder-missing"],
     [409, { code: "conflict", message: "x" }, "failed"],
+    [404, { code: "folder_not_found", message: "x" }, "folder-missing"],
+    [400, { code: "not_a_folder", message: "x" }, "folder-missing"],
+    [503, { code: "putio_provider_unavailable", message: "x" }, "putio-unavailable"],
+    [502, { code: "putio_invalid_payload", message: "x" }, "putio-unavailable"],
     [503, { code: "stremio_not_configured", message: "x" }, "unavailable"],
     [401, { code: "unauthenticated", message: "x" }, "unauthenticated"],
     [500, "secret", "failed"],

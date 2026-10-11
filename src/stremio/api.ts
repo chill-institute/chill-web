@@ -3,6 +3,7 @@ import { getPublicAPIBaseURL, getPublicStremioBaseURL } from "@/lib/env";
 
 export type StremioErrorKind =
   | "folder-missing"
+  | "putio-unavailable"
   | "unavailable"
   | "unauthenticated"
   | "network"
@@ -10,7 +11,8 @@ export type StremioErrorKind =
 
 const errorMessages: Record<StremioErrorKind, string> = {
   "folder-missing": "Pick a download folder first.",
-  unavailable: "The Stremio add-on isn't available yet. Please try again later.",
+  "putio-unavailable": "Could not connect to put.io. Please try again.",
+  unavailable: "Can't manage Stremio links right now. Please try again later.",
   unauthenticated: "Session expired. Please sign in again.",
   network: "Couldn't reach chill.institute. Check your connection and try again.",
   failed: "Couldn't update your Stremio add-on. Please try again.",
@@ -60,14 +62,19 @@ export function stremioInstallURL(manifestUrl: string) {
 
 const errorBodySchema = v.object({ code: v.string() });
 
+const errorCodeKinds = new Map<string, StremioErrorKind>([
+  ["download_folder_missing", "folder-missing"],
+  ["folder_not_found", "folder-missing"],
+  ["not_a_folder", "folder-missing"],
+  ["putio_provider_unavailable", "putio-unavailable"],
+  ["putio_invalid_payload", "putio-unavailable"],
+]);
+
 async function errorKind(response: Response): Promise<StremioErrorKind> {
   if (response.status === 401) return "unauthenticated";
-  if (response.status === 503) return "unavailable";
   const body = v.safeParse(errorBodySchema, await response.json().catch(() => null));
-  if (response.status === 409 && body.success && body.output.code === "download_folder_missing") {
-    return "folder-missing";
-  }
-  return "failed";
+  const kind = body.success ? errorCodeKinds.get(body.output.code) : undefined;
+  return kind ?? (response.status === 503 ? "unavailable" : "failed");
 }
 
 async function engineRequest(token: string, path: string, body?: object) {

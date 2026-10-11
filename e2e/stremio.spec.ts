@@ -167,7 +167,7 @@ for (const { name, response, message } of [
   {
     name: "an unconfigured add-on",
     response: { status: 503, json: { code: "stremio_not_configured", message: "x" } },
-    message: "isn't available yet",
+    message: "Can't manage Stremio links right now.",
   },
   {
     name: "an expired session",
@@ -244,7 +244,7 @@ test("disconnects after confirmation and recovers from a failed attempt", async 
 
   await open.click();
   await dialog.getByRole("button", { name: "disconnect", exact: true }).click();
-  await expect(dialog.getByRole("alert")).toContainText("isn't available yet");
+  await expect(dialog.getByRole("alert")).toContainText("Can't manage Stremio links right now.");
   await dialog.getByRole("button", { name: "disconnect", exact: true }).click();
   await expect(dialog.getByRole("button", { name: "disconnecting…" })).toBeDisabled();
   await expect(dialog.getByRole("button", { name: "cancel" })).toBeDisabled();

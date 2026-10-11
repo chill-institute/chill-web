@@ -88,8 +88,9 @@ Setup shows the current download folder, which the folder picker can change for
 the next link, and **get add-on link**. A new link appears once, masked, with
 install, copy and show actions; clipboard failures reveal and select it for
 manual copying. The link stays in component state only: never in storage, URLs,
-telemetry, public screenshots, or support reports. Errors cover a missing
-download folder, an unavailable add-on, an expired session, and network failures.
+telemetry, public screenshots, or support reports. Errors cover a missing or
+invalid download folder, a put.io outage, an unavailable add-on, an expired
+session, and network failures.
 Disconnect asks for confirmation and leaves the website and CLI signed in.
 
 Discovery, release selection, downloads to put.io, progress and playback stay in
