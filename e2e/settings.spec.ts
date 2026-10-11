@@ -695,6 +695,18 @@ test.describe("settings", () => {
     expect(authenticatedPage.url()).toContain("/sign-in");
   });
 
+  test("settings link opens Stremio setup", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc(baseSettingsMethods());
+    await authenticatedPage.goto("/");
+    await authenticatedPage.getByRole("button", { name: "settings" }).click();
+
+    await settingsPage(authenticatedPage).getByRole("link", { name: "watch with Stremio" }).click();
+
+    await expect(authenticatedPage).toHaveURL(/\/stremio$/);
+    await expect(authenticatedPage.getByRole("dialog", { name: "Settings" })).toBeHidden();
+    await expect(authenticatedPage.getByRole("button", { name: "get add-on link" })).toBeVisible();
+  });
+
   test("toggling indexer checkbox saves disabled indexer ids", async ({
     authenticatedPage,
     mockRpc,

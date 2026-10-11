@@ -81,8 +81,7 @@ function StremioSetup({ token }: { token: string }) {
           Browse, pick releases, download to put.io and play, all inside Stremio.
         </p>
         <p role="note" className="text-fg-3 text-sm">
-          Early access. Things will break. If playback stalls, refresh the sources or restart
-          Stremio.
+          Tested in Stremio Web and Stremio for Linux. Other Stremio apps are unverified.
         </p>
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
@@ -181,14 +180,16 @@ function StremioSetup({ token }: { token: string }) {
             On Stremio Web or another device, paste the link into Stremio’s add-on search.
           </p>
           <p className="text-fg-3 text-sm">
-            This link is shown once. Get a new link to install chill on another device.{" "}
-            {privacyNote}
+            This link is shown once. Stremio syncs it to devices signed in to the same Stremio
+            account; for any other device, get a new link. {privacyNote}
           </p>
         </article>
       ) : null}
       <div className="flex flex-col items-start gap-3">
         <h2 className="font-serif text-xl">Disconnect</h2>
-        <p className="text-fg-3 text-sm">{disconnectEffect}</p>
+        <p className="text-fg-3 text-sm">
+          {disconnectEffect} Signing out doesn’t stop add-on links.
+        </p>
         <Button
           disabled={busy}
           onClick={() => {
