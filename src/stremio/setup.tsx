@@ -87,7 +87,10 @@ function StremioSetup({ token }: { token: string }) {
       </div>
       <div className="flex flex-col gap-3 border-y border-border-faint py-4">
         <h2 className="font-serif text-xl">1. Get your add-on link</h2>
-        <p className="text-fg-3 text-sm">Stremio downloads go to this put.io folder.</p>
+        <p className="text-fg-3 text-sm">
+          New links send downloads to this put.io folder. Installed links keep the folder they were
+          made with.
+        </p>
         {downloadFolder.isError && !chosenFolder ? (
           <UserErrorAlert error={downloadFolder.error} />
         ) : null}
