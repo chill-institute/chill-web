@@ -33,8 +33,8 @@ put.io. It is not a standalone torrent client or self-hosted search stack.
 
 Yes. Open [chill.institute/stremio](https://chill.institute/stremio), get an
 add-on link and select **install chill**. In Stremio you can browse movies and
-shows, download a release to put.io, play it when it's ready, and play anything
-in your put.io library.
+shows, download a release to put.io, play it when it's ready, and play videos
+from your put.io library.
 
 It is tested in Stremio Web and Stremio for Linux. Other Stremio apps, including
 Android TV, macOS and Windows, are unverified.
