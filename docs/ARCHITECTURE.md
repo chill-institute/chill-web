@@ -34,6 +34,7 @@ hosted API; the web repo owns browser state, requests, and rendering.
 | `/movies`, `/movies/$id`           | Movie catalog and detail modal                                          |
 | `/tv-shows`, `/tv-shows/$id`       | TV catalog and detail modal                                             |
 | `/settings`                        | Account and folder settings                                             |
+| `/stremio`                         | Stremio add-on links and disconnect                                     |
 | `/sign-in`, `/sign-out`, `/auth/*` | Browser sign-in and the chilly-token page for the CLI, MCP, and scripts |
 
 One `UserSettings.catalog.sort` preference applies across movies, TV, and all

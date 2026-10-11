@@ -4,8 +4,9 @@
 companion for searching releases, browsing movies and TV shows, and sending a
 selection to a user's put.io account.
 
-It also supports account settings and RSS shortcuts for compatible catalog
-feeds. The project is not affiliated with the services it connects to.
+It also supports account settings, RSS shortcuts for compatible catalog feeds,
+and a [Stremio add-on](https://chill.institute/stremio). The project is not
+affiliated with the services it connects to.
 
 ## Privacy
 
@@ -17,6 +18,13 @@ feeds. The project is not affiliated with the services it connects to.
   stack. It excludes tokens, cookies, request bodies, user IDs, request URLs,
   and query strings.
 - Without crash reporting, a crash report stays local until the user copies it.
+- The Stremio add-on link is a private credential: anyone with it can play the
+  user's put.io library and download to that account. Stremio saves installed
+  add-ons, including the link, on the device and in the user's Stremio account
+  when they are signed in. Error reports from chill.institute redact it.
+  Signing out of chill.institute does not stop it; **disconnect Stremio** at
+  [chill.institute/stremio](https://chill.institute/stremio) stops every link
+  within a minute.
 
 For help, read the [FAQ](./FAQ.md). Report sensitive problems through the
 [private security route](../SECURITY.md).
