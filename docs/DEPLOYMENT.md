@@ -30,7 +30,9 @@ it.
 
 Sentry is enabled only when the build receives its public DSN and environment.
 Deploy builds upload hidden source maps, remove them from `dist/`, and never
-publish the upload token.
+publish the upload token. Generated service-worker and Workbox source maps are
+disabled because they are written after the upload cleanup. The build fails if
+any source map remains in `dist/` before the artifact is packaged.
 
 ## Delivery
 

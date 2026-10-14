@@ -172,6 +172,7 @@ export default defineConfig({
       registerType: "prompt",
       manifest: false,
       workbox: {
+        sourcemap: false,
         cleanupOutdatedCaches: true,
         globPatterns: pwaPrecachePatterns,
         navigateFallback: "/index.html",
