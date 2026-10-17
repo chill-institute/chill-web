@@ -14,28 +14,29 @@ graph LR
 
 ## Ownership
 
-| Path              | Owns                                                   |
-| ----------------- | ------------------------------------------------------ |
-| `src/routes/`     | File-route shims and route composition                 |
-| `src/api/`        | Connect transport, API helpers, defaults, and timeouts |
-| `src/auth/`       | Tokens, API context, auth routes, coupled controls     |
-| `src/catalog/`    | Movie and TV queries, routes, and modals               |
-| `src/ui/`         | Design tokens, primitives, pure hooks, presentation    |
-| `src/components/` | App shell, search, settings, cross-surface UI          |
+| Path                         | Owns                                                   |
+| ---------------------------- | ------------------------------------------------------ |
+| `src/routes/`                | File-route shims and route composition                 |
+| `src/api/`                   | Connect transport, API helpers, defaults, and timeouts |
+| `src/auth/`                  | Tokens, API context, auth routes, coupled controls     |
+| `src/catalog/`               | Movie and TV queries, routes, and modals               |
+| `src/queries/`, `src/hooks/` | Search and settings queries and hooks                  |
+| `src/stremio/`               | Stremio add-on link setup                              |
+| `src/lib/`                   | Environment, crash reporting, PWA updates, search data |
+| `src/workers/`               | Static-asset Worker; header and redirect tests         |
+| `src/ui/`                    | Design tokens, primitives, pure hooks, presentation    |
+| `src/components/`            | App shell, search, settings, cross-surface UI          |
 
 `src/ui/` must not import auth or API code. Product behavior stays in the
 hosted API; the web repo owns browser state, requests, and rendering.
 
 ## Routes
 
-| Route                              | Surface                                                                 |
-| ---------------------------------- | ----------------------------------------------------------------------- |
-| `/`, `/search`                     | Search shell, filters, and results                                      |
-| `/movies`, `/movies/$id`           | Movie catalog and detail modal                                          |
-| `/tv-shows`, `/tv-shows/$id`       | TV catalog and detail modal                                             |
-| `/settings`                        | Account and folder settings                                             |
-| `/stremio`                         | Stremio add-on links and disconnect                                     |
-| `/sign-in`, `/sign-out`, `/auth/*` | Browser sign-in and the chilly-token page for the CLI, MCP, and scripts |
+Route files in [`src/routes/`](../src/routes) stay thin; auth route behavior
+lives in [`src/auth/route-options/`](../src/auth/route-options). `/auth/*` also
+serves the chilly-token page for the CLI, MCP, and scripts.
+
+## Catalog Sort
 
 One `UserSettings.catalog.sort` preference applies across movies, TV, and all
 providers, independently of search sorting. Picker changes save to put.io through
@@ -55,56 +56,40 @@ and errors are explicit UI states.
 
 ## Environment
 
-| Variable                         | Purpose                                 |
-| -------------------------------- | --------------------------------------- |
-| `VITE_PUBLIC_API_BASE_URL`       | Local API override                      |
-| `VITE_PUBLIC_VERSION`            | Public mainline version sent to the API |
-| `VITE_PUBLIC_RELEASE`            | Commit release used for debugging       |
-| `VITE_PUBLIC_SENTRY_DSN`         | Browser crash-reporting DSN             |
-| `VITE_PUBLIC_SENTRY_ENVIRONMENT` | Crash-reporting environment             |
-| `SENTRY_AUTH_TOKEN`              | CI-only source-map upload token         |
-| `SENTRY_ORG`, `SENTRY_PROJECT`   | Source-map destination                  |
+Browser build variables are typed in [`src/env.d.ts`](../src/env.d.ts); API and
+Stremio origin defaults live in [`src/lib/env.ts`](../src/lib/env.ts).
+[`vite.config.ts`](../vite.config.ts) stamps the version and release and reads
+the CI-only `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` for
+source-map upload.
 
-Sentry stays off unless a public DSN is present. It excludes product analytics,
+Sentry stays off unless the build receives a public DSN and environment. It excludes product analytics,
 session replay, default PII, request bodies, query strings, and default browser
 breadcrumbs. Known extension noise and recoverable module-load failures are
 dropped; terminal failures remain reportable. Filters live in
 [`src/lib/sentry.ts`](../src/lib/sentry.ts).
 
-Build, smoke, and artifact verification are described in
-[Deployment](./DEPLOYMENT.md).
+Build and artifact checks are described in [Deployment](./DEPLOYMENT.md).
 
 ## Stremio setup
 
-`/stremio` gets private add-on links from the chill API. The browser sends its
-chill token only in an Authorization header:
+`/stremio` gets private add-on links from the chill API, sending the chill
+token only in an Authorization header. Requests, link validation, and error
+mapping live in [`src/stremio/api.ts`](../src/stremio/api.ts).
 
-- `POST /stremio/credential` with `{}` or `{"folder_id":"<decimal>"}` returns
-  `{"credential":"…"}`. The add-on link is
-  `${VITE_PUBLIC_STREMIO_BASE_URL}/s/<credential>/manifest.json`; responses that
-  would build any other link are rejected.
-- `POST /stremio/disconnect` stops every add-on link for the account.
+- Each link keeps the download folder it was issued with; later folder changes,
+  here or in settings, do not move it.
+- A new link appears once, masked, with install, copy, and show actions.
+  Clipboard failures reveal and select it for manual copying.
+- The link stays in component state only: never in storage, URLs, telemetry,
+  public screenshots, or support reports.
+- Disconnect asks for confirmation, stops every link for the account, and
+  leaves the website and CLI signed in.
 
-Setup shows the current download folder, which the folder picker can change for
-the next link, and **get add-on link**. Each link keeps the folder it was issued
-with; later folder changes, here or in settings, do not move it. A new link
-appears once, masked, with install, copy and show actions; clipboard failures
-reveal and select it for manual copying. The link stays in component state only:
-never in storage, URLs, telemetry, public screenshots, or support reports. While
-it is shown, a waiting app update does not reload the hidden page; an update
-applied from another open tab still does. Errors cover a missing or invalid
-download folder, a put.io outage, an unavailable add-on, an expired session, and
-network failures.
-Disconnect asks for confirmation and leaves the website and CLI signed in.
+Discovery, release selection, downloads to put.io, progress, and playback stay
+in Stremio. Credentials and disconnection belong to the chill API; the hosted
+adapter belongs to `chill-stremio`. `VITE_PUBLIC_STREMIO_BASE_URL` sets the
+adapter origin at build time; it must be HTTPS except localhost in development.
 
-Discovery, release selection, downloads to put.io, progress and playback stay in
-Stremio.
-
-`VITE_PUBLIC_STREMIO_BASE_URL` configures the hosted adapter origin at build time
-(default `https://stremio.chill.institute`). Use HTTPS; local HTTP is accepted
-only in development on localhost. Credentials and disconnection belong to the
-chill API; the hosted adapter belongs to `chill-stremio`.
-
-Fixture browser coverage is `pnpm exec vp exec playwright test e2e/stremio.spec.ts`;
-visual coverage is under `e2e/visual/stremio.visual.spec.ts`. These tests never use
-real credentials or start provider transfers.
+Fixture coverage is `pnpm exec vp exec playwright test e2e/stremio.spec.ts` and
+[`e2e/visual/stremio.visual.spec.ts`](../e2e/visual/stremio.visual.spec.ts).
+These tests never use real credentials or start provider transfers.
