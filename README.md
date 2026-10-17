@@ -15,11 +15,10 @@ pnpm exec vp run dev
 
 ## Read
 
-- [Product and privacy](./docs/ABOUT.md)
+- [About, privacy, and help](./docs/about.md)
 - [Design system](./DESIGN.md)
-- [Architecture](./docs/ARCHITECTURE.md)
-- [Deployment](./docs/DEPLOYMENT.md)
-- [Support](./docs/FAQ.md)
+- [Architecture](./docs/architecture.md)
+- [Deployment](./docs/deployment.md)
 - [Security](./SECURITY.md)
 
 [Contributing](./CONTRIBUTING.md) · [MIT License](./LICENSE)

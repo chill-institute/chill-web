@@ -1,7 +1,7 @@
 # Web
 
-`chill-web` is the React SPA and Cloudflare Workers frontend for
-`chill.institute`.
+`chill-web` is the React SPA for `chill.institute`, deployed to Cloudflare
+Workers with SST. Product behavior stays in the hosted API.
 
 ## Work
 
@@ -9,51 +9,37 @@
 pnpm install --frozen-lockfile
 pnpm exec vp run setup
 pnpm exec vp run dev
+pnpm exec vp run verify
 ```
+
+## Rules
+
+- Use the local Vite+ CLI through `pnpm exec vp`.
+- Read [DESIGN.md](./DESIGN.md) before UI work. Run shadcn from the repo root
+  and map generated classes to the semantic tokens.
+- `src/ui/` must not import auth or API code; directory owners are in
+  [architecture](./docs/architecture.md#ownership).
+- Keep API resolution in `src/lib/env.ts`, auth route behavior in
+  `src/auth/route-options/`, and hook behavior in `.vite-hooks/`.
+- With production auto-deploy enabled, every `main` push deploys after verify
+  and e2e pass on that commit.
 
 ## Proof map
 
-Browser lanes serve `dist/` with mocked API and health responses. Failures leave
-`playwright-report/` and `test-results/`.
+Browser lanes use mocked API responses and leave `playwright-report/`.
 
-| Change                      | Check                                                                                                                                                                 | Runs                                                                                                                                                   | Leaves                                                                          |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| Docs, copy, config          | `pnpm exec vp run verify` (check, knip, unit, build)                                                                                                                  | local, [CI](./.github/workflows/_verify-app.yml) on PRs and `main`                                                                                     | exit status; `dist/` artifact `web-dist-<run>`                                  |
-| Pure logic in `src/`        | `pnpm exec vp test`                                                                                                                                                   | local, inside `verify`                                                                                                                                 | exit status                                                                     |
-| User workflows              | `pnpm exec vp run e2e`                                                                                                                                                | local, [CI](./.github/workflows/_e2e.yml) on PRs; on the deploy artifact before deploy                                                                 | Playwright report; artifact `playwright-artifacts`                              |
-| UI, tokens, layout          | `pnpm exec vp run visual`; `visual:update` for intentional baselines                                                                                                  | local, [CI](./.github/workflows/visual.yml) on UI paths                                                                                                | `e2e/visual/__screenshots__/`; artifact `visual-regression-artifacts`           |
-| PWA metadata                | `PLAYWRIGHT_PORT=58320 pnpm exec vp exec playwright test e2e/pwa.spec.ts`                                                                                             | local, [CI](./.github/workflows/pwa-installability.yml) on PWA paths                                                                                   | exit status                                                                     |
-| Android home-screen install | Maestro [flow](./.maestro/android-pwa-add-to-home-screen.yaml) on an emulator                                                                                         | [CI](./.github/workflows/pwa-installability.yml) via dispatch or the weekly [Cloudflare schedule](./.github/workflows/cloudflare-pwa-schedule.yml)     | junit, screenshots, logs; artifact `android-pwa-home-screen-experiment`         |
-| Workflows                   | [shared scan](https://github.com/chill-institute/.github/tree/main/.github/actions/scan): Actionlint and Zizmor when a pushed range touches workflows or their config | [Main](./.github/workflows/main.yml) `workflow-security` on push, gating deploys; [Verify](./.github/workflows/verify.yml) dispatch scans full history | exit status                                                                     |
-| Deploy                      | `main` push: verify, build, SHA-256 manifest, e2e, `sst deploy`                                                                                                       | [CI](./.github/workflows/main.yml)                                                                                                                     | artifacts `web-app-<env>-<run>`, `playwright-<env>-<run>`; deployed release SHA |
+| Change             | Check                                                                         | CI                                                                  |
+| ------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Docs, copy, config | `pnpm exec vp run verify`                                                     | [verify](./.github/workflows/_verify-app.yml): PRs, `main`          |
+| Pure logic         | `pnpm exec vp test`                                                           | inside verify                                                       |
+| User workflows     | `pnpm exec vp run e2e`                                                        | [e2e](./.github/workflows/_e2e.yml): PRs, before deploy             |
+| UI, tokens, layout | `pnpm exec vp run visual`; `visual:update` for intended baselines             | [visual](./.github/workflows/visual.yml)                            |
+| PWA metadata       | `PLAYWRIGHT_PORT=58320 pnpm exec vp exec playwright test e2e/pwa.spec.ts`     | [PWA](./.github/workflows/pwa-installability.yml)                   |
+| Android install    | [Maestro flow](./.maestro/android-pwa-add-to-home-screen.yaml) on an emulator | [PWA](./.github/workflows/pwa-installability.yml): dispatch, weekly |
+| Workflows          | shared Actionlint and Zizmor scan                                             | [Main](./.github/workflows/main.yml): `main` push, before deploy    |
 
 Gaps:
 
-- Pull requests and merge groups get no workflow lint; the push to `main` does, before deploy. Owner: chill-institute/chill-web.
-- No lane runs the app against a live API. Owner: chill-institute/chill-web.
-- No automated check of deployed hosts; [post-deploy checks](./docs/DEPLOYMENT.md#routes) are manual. Owner: operator.
-
-## Ownership
-
-Directory ownership and the `src/ui/` import rule live in
-[Architecture](./docs/ARCHITECTURE.md#ownership).
-
-## UI
-
-Read [DESIGN.md](./DESIGN.md) before UI work. Existing tokens and primitives are
-the source of truth. Run shadcn from the repo root and translate generated
-classes into the repository's semantic token vocabulary.
-
-## Contracts
-
-- Use the local Vite+ CLI through `pnpm exec vp`.
-- Keep API resolution in `src/lib/env.ts`.
-- Keep route-specific visual tests under `e2e/visual/`.
-- Keep auth route behavior in `src/auth/route-options/`; route files stay thin.
-- Keep hook behavior in `.vite-hooks/`; Vite+ owns dispatchers.
-- With production auto-deploy enabled, every `main` push deploys only after
-  verify and the e2e suite pass on that commit. Pending production deploys
-  queue instead of replacing each other.
-
-[Architecture](./docs/ARCHITECTURE.md) · [Deployment](./docs/DEPLOYMENT.md) ·
-[Contributing](./CONTRIBUTING.md)
+- Pull requests get no workflow lint; only the `main` push does.
+- No lane runs against a live API or checks deployed hosts; run the
+  [post-deploy checks](./docs/deployment.md#delivery) by hand.

@@ -153,122 +153,116 @@ components:
 
 ## Overview
 
-`chill.institute` uses stone-and-paper surfaces, Metric and Family typography, hard 1px borders, compact controls, and stamped button motion across search and catalog browsing.
+`chill.institute` uses stone-and-paper surfaces, Metric and Family type, hard
+1px borders, compact controls, and stamped button motion. Search is dense:
+table-first on desktop, card-first on mobile. Catalog browsing is image-first:
+poster grids and detail modals.
 
-- Search is compact, table-first on desktop, and card-first on mobile.
-- Catalog browsing is image-first and built around poster grids and detail modals.
+The code wins when this file disagrees; update this file to match.
 
-This file is for agents and external design tools. The code is the source of truth:
-
-- Tokens, fonts, theme colors, motion, heading styles: `src/ui/styles.css`
-- shadcn/base components: `src/ui/components/ui/`
-- shared Institute components: `src/ui/components/`
-- chill-only surfaces: `src/components/`
-- catalog surfaces: `src/catalog/components/`
-
-If this file conflicts with the code, trust the code and update this file.
+- Tokens, fonts, motion, heading styles: `src/ui/styles.css`
+- shadcn/base primitives: `src/ui/components/ui/`
+- Shared components: `src/ui/components/`
+- App and catalog surfaces: `src/components/`, `src/catalog/components/`
 
 ## Colors
 
-Stone neutrals carry the palette. Light mode uses a stone-300 app background, stone-100 surfaces, stone-950 text, and a hard stone-950 border. Dark mode uses stone-800 app background, stone-900 surfaces, stone-100 text, and stone-700 borders.
+Stone neutrals carry the palette. Light: stone-300 app, stone-100 surfaces,
+stone-950 text and hard border. Dark: stone-800 app, stone-900 surfaces,
+stone-100 text, stone-700 borders.
 
-Use semantic utilities from `src/ui/styles.css`, such as `bg-app`, `bg-surface`, `text-fg-1`, `text-fg-3`, `border-border-strong`, `border-border-faint`, `text-success`, and `text-error`. Do not introduce raw blue, indigo, gray, slate, purple, or marketing-gradient palettes.
+Use the semantic utilities in `src/ui/styles.css`, such as `bg-app`,
+`bg-surface`, `text-fg-1`, `text-fg-3`, `border-border-strong`,
+`border-border-faint`, `text-success`, and `text-error`. No raw blue, indigo,
+gray, slate, purple, or marketing gradients.
 
 Accents are sparse and semantic:
 
-- amber only for ratings and filled star icons
-- green only for successful transfer states or put.io follow-up actions
-- red only for destructive and error states
-- hot pink and purple are brand reserve for assets or special moments, not product chrome
+- amber: ratings and filled stars only
+- green: successful transfers and put.io follow-up actions only
+- red: destructive and error states only
+- hot pink and purple: brand assets and special moments, never product chrome
 
-Use gradients only for movie and TV detail image scrims. Use blur only for the catalog sticky header, image scrims, and overlay primitives that already own it.
+Gradients only for movie and TV detail image scrims. Blur only for the catalog
+sticky header, image scrims, and overlay primitives that already have it.
 
 ## shadcn Compatibility
 
-The repo uses source-owned shadcn/base components with Tailwind v4. `components.json` has `cssVariables` enabled, and `src/ui/styles.css` exposes shadcn-compatible aliases (`background`, `foreground`, `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, and `ring`) that resolve back to the Institute tokens.
+`components.json` enables `cssVariables`, and `src/ui/styles.css` maps the
+shadcn aliases to Institute tokens. Treat the aliases as a bridge; committed
+code uses the Institute utility:
 
-When importing or updating upstream shadcn components, treat those aliases as a bridge, not a second design language. Prefer the Institute utilities in committed code:
+| shadcn               | Institute                |
+| -------------------- | ------------------------ |
+| `background`         | `app`                    |
+| `foreground`         | `fg-1`                   |
+| `card`, `popover`    | `surface`                |
+| `secondary`, `muted` | `surface-2`              |
+| `accent`             | `hover`                  |
+| `primary`            | `fg-1` with `fg-inverse` |
+| `destructive`        | `error`                  |
+| `border`, `input`    | `border-strong`          |
+| `ring`               | `ring-focus`             |
 
-- `background` maps to `app`
-- `foreground` maps to `fg-1`
-- `card` and `popover` map to `surface`
-- `secondary` and `muted` map to `surface-2`
-- `accent` maps to `hover`
-- `primary` maps to `fg-1` with `fg-inverse`
-- `destructive` maps to `error`
-- `border` and `input` map to `border-strong`
-- `ring` maps to `ring-focus`
-
-Run the shadcn CLI from the repo root, inspect generated diffs, and adapt class names to the Institute vocabulary before shipping. Do not run `--overwrite` unless the user asks for a full upstream reset.
+Run the shadcn CLI from the repo root, review the diff, and translate classes
+before shipping. Use `--overwrite` only when the user asks for an upstream
+reset.
 
 ## Typography
 
-Metric is the UI and body font. Family is the serif display font for app names, headings, table narration, and movie or show titles. Family only uses regular weight. Do not use monospace fonts in product UI, including metadata, keyboard hints, token fields, footers, and empty-state details.
-
-Form controls use body typography. Inputs, textareas, and native selects should stay `0.875rem` across mobile and desktop; do not enlarge them on mobile unless a specific product surface intentionally opts out.
-
-Use lowercase for most product labels: `movies`, `tv shows`, `source`, `seeders`, `and chill`, `send to put.io`, `settings`. Longer headings can use sentence case. The voice is one operator running a useful thing, not a SaaS brand.
-
-Do not add a third font. Do not bold serif headings. Keep `tracking-[-0.01em]` behavior aligned with the existing `font-serif` and heading styles in `src/ui/styles.css`.
+- Metric is the UI and body font. Family, regular weight only, is the serif for
+  app names, headings, table narration, and titles. No third font, no bold
+  serif, no monospace anywhere in product UI.
+- Inputs, textareas, and native selects stay `0.875rem` on every breakpoint.
+- Keep `tracking-[-0.01em]` aligned with `font-serif` and the heading styles.
+- Labels are mostly lowercase (`movies`, `tv shows`, `seeders`, `send to
+  put.io`); longer headings may use sentence case. The voice is one operator
+  running a useful thing, not a SaaS brand.
 
 ## Layout
 
-Keep the app utilitarian and dense. Search routes center on results; movie and TV routes center on browsing. No marketing sections, hero layouts, or decorative filler.
-
-Use the lightest surface that works:
-
-- whitespace for related groups
-- borders and separators for sibling groups
-- recessed or faint surfaces for secondary panels
-- bordered cards only for independent objects, interactive items, modals, and mobile result cards
-
-Shared layout vocabulary lives in app-local shells and `src/ui/`. Keep API, auth, queries, and app-specific behavior out of `src/ui/`.
+Utilitarian and dense: search routes center on results, catalog routes on
+browsing. No marketing sections, heroes, or decorative filler. Use the lightest
+separation that works: whitespace for related groups, borders for siblings,
+faint surfaces for secondary panels, bordered cards only for independent or
+interactive objects, modals, and mobile result cards.
 
 ## Elevation & Depth
 
-Depth comes from the press stamp: `shadow-press`, a 1px by 1px hard shadow on default and primary buttons, active tab-like controls, popovers, tooltips, and toasts.
-
-Cards usually have borders, not shadows. Modals use `shadow-modal`. Poster images inside detail modals use `shadow-poster`. Drawers use `shadow-drawer`.
-
-On press, stamped controls translate by 1px and drop the stamp shadow. Circular icon controls may scale slightly instead.
+- `shadow-press`, a 1px hard stamp, marks default and primary buttons, active
+  tab-like controls, popovers, tooltips, and toasts. On press, stamped controls
+  shift 1px and drop it; circular icon controls may scale instead.
+- Cards use borders, not shadows. Modals use `shadow-modal`, detail posters
+  `shadow-poster`, drawers `shadow-drawer`.
 
 ## Shapes
 
-The default radius is compact:
-
-- 2px for checkbox indicators and tiny marks
-- 4px for buttons, inputs, cards, and result cards
-- 6px for tab triggers and select-like controls
-- 8px for nested detail rows
-- 12px for desktop modals and drawer tops
-- full radius only for circular icon controls and intentional pills
-
-Keep cards at 8px or less unless they are modal-scale surfaces.
+- 2px: checkbox indicators and tiny marks
+- 4px: buttons, inputs, cards, result cards
+- 6px: tab triggers and select-like controls
+- 8px: nested detail rows; the maximum for non-modal cards
+- 12px: desktop modals and drawer tops
+- full: circular icon controls and intentional pills
 
 ## Components
 
-The repo uses shadcn/base with Tailwind v4, lucide icons, and source-owned components. `components.json` owns reusable primitives under `src/ui/components/ui`; app-level surfaces live under `src/components/` or `src/catalog/components/`.
+Reuse before writing markup: `Button`, `IconButton`, `Tabs`/`TabsList`/
+`TabsTrigger` and `SortRow` for mode and sort controls, `NativeSelect`,
+`Empty` or `EmptyState`, `Alert` and `UserErrorAlert`, `Skeleton`,
+`PosterCard`, and `ResponsiveModal`, `SettingsModal`, or the shadcn dialog and
+drawer primitives for overlays.
 
-Prefer existing components before creating markup:
-
-- `Button` for actions
-- `IconButton` for icon-only actions
-- `Tabs`, `TabsList`, `TabsTrigger`, and `SortRow` for compact mode and sort controls
-- `NativeSelect` for option menus
-- `Empty` or `EmptyState` for empty states
-- `Alert` and `UserErrorAlert` for errors
-- `Skeleton` for loading placeholders
-- `PosterCard` for catalog tiles
-- `ResponsiveModal`, `SettingsModal`, and shadcn dialog/drawer primitives for overlays
-
-Use lucide icons with component-supported sizing and `data-icon` where the component expects it. Do not use emoji as icons except existing personality moments, such as the results-table action-column marker.
+Use lucide icons with component-supported sizing and `data-icon` where
+expected. No emoji icons beyond existing moments such as the results-table
+action-column marker.
 
 ## Loading transitions
 
-Keep known controls mounted and disabled while their settings load. Skeletons match
-loaded card geometry at each breakpoint, including metadata and action rows. Movie and
-TV details keep a viewport-bounded frame with a scrolling body. Settings size to their
-content under a viewport height limit, without fixed-height gaps between sections.
-Errors stay with the failing section; the settings footer holds links and version.
-Search and catalog content reserve at least one viewport so a short response does not
-pull the footer into the first screen.
+- Keep known controls mounted and disabled while settings load.
+- Skeletons match loaded card geometry at each breakpoint, including metadata
+  and action rows.
+- Movie and TV details keep a viewport-bounded frame with a scrolling body.
+- Settings size to content under a viewport limit, with no fixed-height gaps;
+  errors stay with the failing section, and the footer holds links and version.
+- Search and catalog content reserve at least one viewport so a short response
+  does not pull the footer up.

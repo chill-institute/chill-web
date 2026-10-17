@@ -1,49 +1,21 @@
 # Contributing
 
-## Start
-
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec vp run setup
 pnpm exec vp run dev
-```
-
-Use the repository-local Vite+ CLI through `pnpm exec vp`.
-
-## Verify
-
-```bash
 pnpm exec vp run verify
-pnpm exec vp run smoke
 pnpm exec vp run e2e
+pnpm exec vp run visual  # visual:update only for intended baseline changes
 ```
 
-For visual changes, compare desktop and mobile snapshots in both themes:
-
-```bash
-pnpm exec vp run visual
-pnpm exec vp run visual:update  # intentional baseline changes only
-```
-
-Functional tests live in `e2e/*.spec.ts`; screenshot tests live in
-`e2e/visual/*.visual.spec.ts`. CI owns the canonical screenshots.
-
-If Vite+ reports `Unrecognized database version`, run
-`pnpm exec vp cache clean` and retry.
-
-## Work in the Repo
-
-- Read [DESIGN.md](./DESIGN.md) before changing UI.
-- Ownership by directory is in [Architecture](./docs/ARCHITECTURE.md#ownership).
-- Run shadcn from the repo root so `components.json` resolves.
-- Check `playwright-report/` and `test-results/` after browser failures.
+- Read [DESIGN.md](./DESIGN.md) before changing UI. Visual tests cover desktop
+  and mobile in both themes; CI owns the canonical screenshots.
+- Functional tests live in `e2e/*.spec.ts`, screenshot tests in `e2e/visual/`.
 - Update docs and tests with user-visible behavior.
+- If Vite+ reports `Unrecognized database version`, run
+  `pnpm exec vp cache clean` and retry.
+- If hooks do not run, reset the hooks path:
+  `git config --unset core.hooksPath && pnpm exec vp config --hooks-dir .vite-hooks`.
 
-`pnpm install` configures hooks from `.vite-hooks/`. If another hooks path wins:
-
-```bash
-git config --unset core.hooksPath
-pnpm exec vp config --hooks-dir .vite-hooks
-```
-
-Deployment credentials and production operations remain maintainer-managed.
+Maintainers handle deployment credentials and production operations.
