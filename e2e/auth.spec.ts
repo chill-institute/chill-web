@@ -18,7 +18,8 @@ test.describe("sign-in page", () => {
     await page.route(/\/auth\/putio\/start/, (route) => route.fulfill({ status: 204 }));
     const button = page.getByRole("button", { name: "sign in again" });
     const before = await button.boundingBox();
-    await button.click();
+    // Check the current page while the mocked OAuth navigation has no document to load.
+    await button.click({ noWaitAfter: true });
     await expect(button).toBeDisabled();
     await expect(page.getByText("your session expired")).toBeVisible();
     expect(await button.boundingBox()).toEqual(before);
