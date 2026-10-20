@@ -32,6 +32,26 @@ test.describe("shell search form", () => {
     await expect(searchInput).not.toBeFocused();
   });
 
+  test("home page explains search query syntax", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc({
+      GetUserSettings: userSettings(),
+    });
+
+    await authenticatedPage.goto("/");
+
+    await authenticatedPage.getByRole("button", { name: "search tips" }).hover();
+    const tips = authenticatedPage.getByRole("dialog");
+    await expect(tips).toContainText(
+      '"the matrix"results must include "the matrix" or "the.matrix" or "the-matrix" or "the_matrix"',
+    );
+    await expect(tips).toContainText("+S01E07results must include S01E07");
+    await expect(tips).toContainText('-camresults must never include "cam"');
+    await expect(tips).toContainText("tt0133093some trackers accept imdb tt codes");
+    await expect(tips).toContainText(
+      "imdb.com/title/tt0133093chill converts imdb share links to tt codes",
+    );
+  });
+
   test("search form navigates to search page with query", async ({
     authenticatedPage,
     mockRpc,
