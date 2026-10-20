@@ -294,7 +294,7 @@ function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesConte
                 image={movie.posterUrl ?? null}
                 imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
                 imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
-                rating={movie.rating != null ? movie.rating.toFixed(1) : null}
+                rating={movie.rating ? movie.rating.toFixed(1) : "N/A"}
                 ratingHref={movie.externalUrl || undefined}
                 year={movie.year != null ? String(movie.year) : null}
                 render={
@@ -354,7 +354,7 @@ function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsCon
               image={show.posterUrl ?? null}
               imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
               imageLoading={index < PRIORITY_POSTER_COUNT ? "eager" : "lazy"}
-              rating={show.rating != null ? show.rating.toFixed(1) : null}
+              rating={show.rating ? show.rating.toFixed(1) : "N/A"}
               ratingHref={show.externalUrl || undefined}
               year={show.year != null ? String(show.year) : null}
               render={

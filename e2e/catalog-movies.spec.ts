@@ -154,6 +154,17 @@ test.describe("movies", () => {
     await expect(articles.nth(1)).toContainText("Signal Orchard");
   });
 
+  test("movie cards without an IMDb rating show N/A", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc(homeMethods({ GetMovies: moviesResponse([{ ...movies[0], rating: 0 }]) }));
+
+    await authenticatedPage.goto("/movies");
+
+    const card = authenticatedPage.locator('[data-slot="poster-card"]');
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText("N/A");
+    await expect(card).not.toContainText("0.0");
+  });
+
   test("empty state", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({
