@@ -15,7 +15,8 @@ test.describe("sign-in page", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/sign-in?error=SessionExpired");
-    await page.route(/\/auth\/putio\/start/, (route) => route.fulfill({ status: 204 }));
+    // Cancel the external navigation so loading assertions stay on the sign-in document.
+    await page.route(/\/auth\/putio\/start/, (route) => route.abort("aborted"));
     const button = page.getByRole("button", { name: "sign in again" });
     const before = await button.boundingBox();
     await button.click();
