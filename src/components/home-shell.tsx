@@ -1,3 +1,4 @@
+import { SearchTips } from "@/components/search-tips";
 import { ShellSearchForm } from "@/components/shell-search-form";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
 import { InstituteBrand, InstituteTabs } from "@/components/top-nav";
@@ -21,6 +22,9 @@ export function HomeShell() {
         <div className="mx-auto w-full max-w-md">
           <ShellSearchForm focusOnMount label="What can we hook you up with?" />
         </div>
+      </div>
+      <div className="flex justify-center px-4 pt-3">
+        <SearchTips />
       </div>
       <div className="flex-1" />
       <InstituteFooter />
