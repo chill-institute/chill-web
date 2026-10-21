@@ -55,8 +55,6 @@ typography:
 rounded:
   xs: 2px
   sm: 4px
-  md: 6px
-  lg: 8px
   xl: 12px
 spacing:
   px: 1px
@@ -87,14 +85,14 @@ components:
     textColor: "{colors.foreground}"
     typography: "{typography.body}"
     rounded: "{rounded.sm}"
-    height: "{spacing.control}"
+    height: 2rem
     padding: 0.5rem
   select:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.foreground}"
     typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    height: "{spacing.control}"
+    rounded: "{rounded.sm}"
+    height: "{spacing.control-md}"
     padding: 0.5rem
   card:
     backgroundColor: "{colors.surface}"
@@ -121,7 +119,7 @@ components:
   active-state:
     backgroundColor: "{colors.active}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.sm}"
   metadata:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.foregroundSubtle}"
@@ -192,8 +190,8 @@ Accents are sparse and semantic:
 - red: destructive and error states only
 - hot pink and purple: brand assets and special moments, never product chrome
 
-Gradients only for movie and TV detail image scrims. Blur only for the catalog
-sticky header, image scrims, and overlay primitives that already have it.
+Gradients only for movie and TV detail image scrims. Blur only on the dialog and
+drawer overlays and the modal close button; the sticky header is opaque.
 
 ## shadcn Compatibility
 
@@ -222,7 +220,8 @@ reset.
 - Metric is the UI and body font. Family, regular weight only, is the serif for
   app names, headings, table narration, and titles. No third font, no bold
   serif, no monospace anywhere in product UI.
-- Inputs, textareas, and native selects stay `0.875rem` on every breakpoint.
+- Inputs, textareas, and native selects are `1rem` below `sm` and `0.875rem`
+  from `sm` up.
 - Keep `tracking-[-0.01em]` aligned with `font-serif` and the heading styles.
 - Labels are mostly lowercase (`movies`, `tv shows`, `seeders`, `send to
   put.io`); longer headings may use sentence case. The voice is one operator
@@ -238,20 +237,21 @@ interactive objects, modals, and mobile result cards.
 
 ## Elevation & Depth
 
-- `shadow-press`, a 1px hard stamp, marks default and primary buttons, active
-  tab-like controls, popovers, tooltips, and toasts. On press, stamped controls
-  shift 1px and drop it; circular icon controls may scale instead.
-- Cards use borders, not shadows. Modals use `shadow-modal`, detail posters
-  `shadow-poster`, drawers `shadow-drawer`.
+- `shadow-press`, a 1px hard stamp, marks default and primary buttons,
+  popovers, tooltips, toasts, and the auth and status panels. On press, stamped
+  buttons shift 1px and drop it; ghost and icon buttons scale instead.
+- Other cards use borders, not shadows. Modals use `shadow-modal`, detail
+  posters `shadow-poster`, drawers `shadow-drawer`.
 
 ## Shapes
 
-- 2px: checkbox indicators and tiny marks
-- 4px: buttons, inputs, cards, result cards
-- 6px: tab triggers and select-like controls
-- 8px: nested detail rows; the maximum for non-modal cards
-- 12px: desktop modals and drawer tops
-- full: circular icon controls and intentional pills
+- 2px: tiny marks
+- 4px: buttons, inputs, selects, tab triggers, checkboxes, cards, result
+  cards, popovers, tooltips
+- 12px: desktop modals, the default drawer top, auth and status panels, empty
+  states
+- 24px: settings and movie or TV detail drawer tops
+- full: circular icon controls, avatars, and intentional pills
 
 ## Components
 
@@ -262,8 +262,8 @@ Reuse before writing markup: `Button`, `IconButton`, `Tabs`/`TabsList`/
 drawer primitives for overlays.
 
 Use lucide icons with component-supported sizing and `data-icon` where
-expected. No emoji icons beyond existing moments such as the results-table
-action-column marker.
+expected. Emoji appear only in the results-table action-column marker (🤠) and
+the search empty states (🤠, 🤨).
 
 ## Loading transitions
 

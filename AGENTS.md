@@ -15,8 +15,8 @@ pnpm exec vp run verify
 ## Rules
 
 - Use the local Vite+ CLI through `pnpm exec vp`.
-- Read [DESIGN.md](./DESIGN.md) before UI work. Run shadcn from the repo root
-  and map generated classes to the semantic tokens.
+- Before UI work or a shadcn add, read [DESIGN.md](./DESIGN.md): tokens,
+  components, and the shadcn class mapping.
 - `src/ui/` must not import auth or API code; directory owners are in
   [architecture](./docs/architecture.md#ownership).
 - Keep API resolution in `src/lib/env.ts`, auth route behavior in
