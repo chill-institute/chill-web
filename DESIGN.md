@@ -15,12 +15,13 @@ colors:
   foregroundSubtle: "#57534e"
   foregroundFaint: "#78716c"
   borderStrong: "#0c0a09"
-  borderDark: "#44403c"
+  borderDark: "#78716c"
   darkApp: "#292524"
   darkSurface: "#1c1917"
   darkForeground: "#f5f5f4"
   rating: "#f59e0b"
-  success: "#16a34a"
+  success: "#036819"
+  darkSuccess: "#2da73d"
   error: "#dc2626"
 typography:
   heading:
@@ -147,6 +148,8 @@ components:
     backgroundColor: "{colors.rating}"
   success-state:
     backgroundColor: "{colors.success}"
+  dark-success-state:
+    backgroundColor: "{colors.darkSuccess}"
   error-state:
     backgroundColor: "{colors.error}"
 ---
@@ -169,16 +172,22 @@ The code wins when this file disagrees; update this file to match.
 
 Stone neutrals carry the palette. Light: stone-300 app, stone-100 surfaces,
 stone-950 text and hard border. Dark: stone-800 app, stone-900 surfaces,
-stone-100 text, stone-700 borders.
+stone-100 text, stone-500 borders.
 
 Use the semantic utilities in `src/ui/styles.css`, such as `bg-app`,
 `bg-surface`, `text-fg-1`, `text-fg-3`, `border-border-strong`,
 `border-border-faint`, `text-success`, and `text-error`. No raw blue, indigo,
 gray, slate, purple, or marketing gradients.
 
+Contrast floors: 4.5:1 for text, 3:1 for icons, control borders, and focus
+rings, against the background each actually sits on. In light mode
+`text-fg-4` meets 4.5:1 only on `bg-surface-2`; use `text-fg-3` for text on
+`bg-app` or `bg-surface`, and keep `text-fg-4` for separators and icons there.
+
 Accents are sparse and semantic:
 
-- amber: ratings and filled stars only
+- amber: ratings and filled stars only; the star is decorative beside the
+  rating value, so never let amber carry meaning alone
 - green: successful transfers and put.io follow-up actions only
 - red: destructive and error states only
 - hot pink and purple: brand assets and special moments, never product chrome

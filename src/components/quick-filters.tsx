@@ -156,7 +156,7 @@ export function QuickFilters({
               onCheckedChange={groupReleases.onChange}
             >
               group releases
-              <span className="border-border-hairline text-fg-4 ml-1 rounded-xs border px-1 text-[10px] leading-4">
+              <span className="border-border-hairline text-fg-3 ml-1 rounded-xs border px-1 text-[10px] leading-4">
                 beta
               </span>
             </CheckboxField>

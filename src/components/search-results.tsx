@@ -113,7 +113,7 @@ function GroupToggle({
         aria-hidden="true"
       />
       <span className="text-fg-1 break-words [overflow-wrap:anywhere]">{group.title}</span>
-      <span className="text-fg-4 shrink-0 whitespace-nowrap tabular-nums">
+      <span className="text-fg-3 shrink-0 whitespace-nowrap tabular-nums">
         {[identity, count].filter(Boolean).join(" · ")}
       </span>
     </button>

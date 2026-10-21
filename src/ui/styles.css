@@ -27,10 +27,10 @@
   --color-border-hairline: color-mix(in oklab, var(--color-stone-950) 12%, transparent);
 
   --color-ring-offset: var(--color-stone-100);
-  --color-ring-focus: color-mix(in oklab, var(--color-stone-950) 35%, transparent);
+  --color-ring-focus: color-mix(in oklab, var(--color-stone-950) 55%, transparent);
 
   --color-rating-amber: oklch(0.769 0.188 70.08);
-  --color-success: oklch(0.62 0.18 145);
+  --color-success: oklch(0.45 0.14 145);
   --color-error: oklch(0.577 0.245 27.325);
   --color-error-bg: color-mix(in oklab, var(--color-error) 8%, transparent);
   --color-error-border: color-mix(in oklab, var(--color-error) 40%, transparent);
@@ -146,13 +146,15 @@
     --color-fg-4: var(--color-stone-400);
     --color-fg-inverse: var(--color-stone-950);
 
-    --color-border-strong: var(--color-stone-700);
+    --color-border-strong: var(--color-stone-500);
     --color-border-soft: color-mix(in oklab, var(--color-stone-700) 70%, transparent);
     --color-border-faint: color-mix(in oklab, var(--color-stone-700) 30%, transparent);
     --color-border-hairline: color-mix(in oklab, var(--color-stone-700) 35%, transparent);
 
     --color-ring-offset: var(--color-stone-800);
-    --color-ring-focus: color-mix(in oklab, var(--color-stone-100) 40%, transparent);
+    --color-ring-focus: color-mix(in oklab, var(--color-stone-100) 45%, transparent);
+
+    --color-success: oklch(0.64 0.18 145);
 
     --color-error-bg: color-mix(in oklab, var(--color-error) 18%, transparent);
     --color-error-border: color-mix(in oklab, var(--color-error) 35%, transparent);
@@ -161,7 +163,7 @@
     --color-warn-border: color-mix(in oklab, oklch(0.85 0.15 80) 35%, transparent);
     --color-warn-text: oklch(0.78 0.16 80);
 
-    --shadow-press: 1px 1px 0 var(--color-stone-700);
+    --shadow-press: 1px 1px 0 var(--color-stone-500);
     --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.6);
     --shadow-poster: 0 8px 24px rgba(0, 0, 0, 0.55);
     --shadow-drawer: 0 -24px 48px rgba(0, 0, 0, 0.5);
@@ -395,11 +397,11 @@
 /* Tailwind v4 bakes `--tw-shadow` for the `shadow-press` utility at compile
    time with the LIGHT mode value (stone-950), and the runtime
    `.dark { --shadow-press: ...; }` token override doesn't propagate. Override
-   the utility's `--tw-shadow` directly in dark mode so the stamp uses
-   stone-700 (matching prod's `.dark .btn { box-shadow: 1px 1px #44403c; }`).
+   the utility's `--tw-shadow` directly in dark mode so the stamp matches the
+   dark `--color-border-strong`.
    Lives outside @layer base so it actually beats Tailwind's utility layer. */
 .dark .shadow-press {
-  --tw-shadow: 1px 1px 0 var(--color-stone-700);
+  --tw-shadow: 1px 1px 0 var(--color-stone-500);
 }
 
 @utility animate-collapsible-down {
