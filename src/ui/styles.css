@@ -406,6 +406,23 @@
   --tw-shadow: 1px 1px 0 var(--color-stone-700);
 }
 
+/* Tailwind has no theme namespace for transition durations, so
+   `duration-fast` and friends need their own utilities. */
+@utility duration-fast {
+  --tw-duration: var(--duration-fast);
+  transition-duration: var(--duration-fast);
+}
+
+@utility duration-base {
+  --tw-duration: var(--duration-base);
+  transition-duration: var(--duration-base);
+}
+
+@utility duration-slow {
+  --tw-duration: var(--duration-slow);
+  transition-duration: var(--duration-slow);
+}
+
 @utility animate-collapsible-down {
   @variant motion-safe {
     animation: collapsible-down 240ms cubic-bezier(0.32, 0.72, 0, 1);

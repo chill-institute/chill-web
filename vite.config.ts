@@ -121,12 +121,17 @@ export default defineConfig({
   },
   lint: {
     plugins: ["eslint", "unicorn", "typescript", "oxc", "react"],
+    jsPlugins: ["@shadcn/lint"],
     options: {
       typeAware: true,
       typeCheck: true,
     },
     rules: {
       "react/exhaustive-deps": "error",
+      "shadcn/no-raw-colors": "error",
+      // `toaster` only marks Sonner's root for the `group-[.toaster]:` toast styles.
+      "shadcn/no-unknown-classes": ["error", { allow: ["toaster"] }],
+      "shadcn/require-static-classes": "error",
       "no-restricted-imports": [
         "error",
         {
