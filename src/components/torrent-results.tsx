@@ -131,13 +131,13 @@ export function TorrentResultList({
               <div className={cn("min-w-0 flex-1", columns && "lg:flex-none")}>
                 <div
                   title={result.title}
-                  className={cn("break-words text-[15px] text-fg-1", columns && "lg:truncate")}
+                  className={cn("break-words text-row text-fg-1", columns && "lg:truncate")}
                 >
                   {result.title}
                 </div>
                 <div
                   className={cn(
-                    "mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-fg-4",
+                    "mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-meta text-fg-4",
                     columns && "lg:hidden",
                   )}
                 >
@@ -181,12 +181,12 @@ export function TorrentResultList({
               {columns ? (
                 <>
                   <span
-                    className="hidden min-w-0 truncate text-[13px] text-fg-3 lg:block"
+                    className="hidden min-w-0 truncate text-meta text-fg-3 lg:block"
                     title={sourceLabel}
                   >
                     {sourceLabel}
                   </span>
-                  <span className="hidden items-center gap-1 text-[13px] text-fg-4 tabular-nums lg:flex">
+                  <span className="hidden items-center gap-1 text-meta text-fg-4 tabular-nums lg:flex">
                     {resolution ? (
                       <>
                         <Monitor className="size-3 shrink-0" />
@@ -194,7 +194,7 @@ export function TorrentResultList({
                       </>
                     ) : null}
                   </span>
-                  <span className="hidden items-center gap-1 text-[13px] text-fg-4 lg:flex">
+                  <span className="hidden items-center gap-1 text-meta text-fg-4 lg:flex">
                     {codec ? (
                       <>
                         <Film className="size-3 shrink-0" />
@@ -202,7 +202,7 @@ export function TorrentResultList({
                       </>
                     ) : null}
                   </span>
-                  <span className="hidden items-center gap-1 text-[13px] text-fg-4 tabular-nums lg:flex">
+                  <span className="hidden items-center gap-1 text-meta text-fg-4 tabular-nums lg:flex">
                     {sizeLabel ? (
                       <>
                         <HardDrive className="size-3 shrink-0" />
@@ -210,7 +210,7 @@ export function TorrentResultList({
                       </>
                     ) : null}
                   </span>
-                  <span className="hidden items-center gap-1 text-[13px] text-fg-4 tabular-nums lg:flex">
+                  <span className="hidden items-center gap-1 text-meta text-fg-4 tabular-nums lg:flex">
                     {seederCount ? (
                       <>
                         <Users className="size-3 shrink-0" />
@@ -219,7 +219,7 @@ export function TorrentResultList({
                     ) : null}
                   </span>
                   <span
-                    className="hidden items-center gap-1 whitespace-nowrap text-[13px] text-fg-4 tabular-nums lg:flex"
+                    className="hidden items-center gap-1 whitespace-nowrap text-meta text-fg-4 tabular-nums lg:flex"
                     title={uploadedAtLabel}
                   >
                     {ageLabel ? (

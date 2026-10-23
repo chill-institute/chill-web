@@ -229,7 +229,11 @@ reset.
   serif, no monospace anywhere in product UI.
 - Inputs, textareas, and native selects are `1rem` below `sm` and `0.875rem`
   from `sm` up.
-- Keep `tracking-[-0.01em]` aligned with `font-serif` and the heading styles.
+- Keep `tracking-heading` (-0.01em) aligned with `font-serif` and the heading
+  styles.
+- Off-scale sizes are theme tokens, not arbitrary values: `text-2xs` (10px),
+  `text-meta` (13px), `text-row` (15px), and `leading-display` (1.05),
+  `leading-hero` (1.08), `leading-title` (1.2), `leading-row` (1.4).
 - Labels are mostly lowercase (`movies`, `tv shows`, `seeders`, `send to
   put.io`); longer headings may use sentence case. The voice is one operator
   running a useful thing, not a SaaS brand.
@@ -267,6 +271,16 @@ Reuse before writing markup: `Button`, `IconButton`, `Tabs`/`TabsList`/
 `Empty` or `EmptyState`, `Alert` and `UserErrorAlert`, `Skeleton`,
 `PosterCard`, and `ResponsiveModal`, `SettingsModal`, or the shadcn dialog and
 drawer primitives for overlays.
+
+Pick appearance with a variant or size instead of classes: `Badge`
+`subtle`, `success`, `error`, and `muted`; `Skeleton` `shape`;
+`NativeSelect` `size` (`sm`, `sm-dense`, `xs`); `Button` size `sm-icon`;
+`PopoverContent` `size` (`sm`, `flush`) and `elevation="raised"`;
+`Empty` `size="lg"` and `EmptyTitle` `variant="display"`; and
+`ResponsiveModal` `desktopContentVariant="panel"` and
+`drawerContentVariant="raised"`. Outside `src/ui/components/`, `vp lint`
+reports classes that restyle a component, arbitrary values, and inline styles;
+the allowed exceptions and contracts live in `vite.config.ts`.
 
 Use lucide icons with component-supported sizing and `data-icon` where
 expected. Emoji appear only in the results-table action-column marker (🤠) and

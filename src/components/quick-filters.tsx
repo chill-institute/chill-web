@@ -156,7 +156,7 @@ export function QuickFilters({
               onCheckedChange={groupReleases.onChange}
             >
               group releases
-              <span className="border-border-hairline text-fg-3 ml-1 rounded-xs border px-1 text-[10px] leading-4">
+              <span className="border-border-hairline text-fg-3 ml-1 rounded-xs border px-1 text-2xs leading-4">
                 beta
               </span>
             </CheckboxField>
@@ -183,7 +183,7 @@ export function QuickFilters({
             disabled={disabled}
             aria-label="Sort results"
             wrapperClassName="w-32"
-            className="h-[1.875rem] py-1 pr-7 pl-2 text-xs sm:text-xs"
+            size="xs"
             value={activeSortValue}
             onChange={(event) => {
               const option = sortOptions.find(

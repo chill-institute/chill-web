@@ -59,6 +59,17 @@
   --color-input: var(--color-border-control);
   --color-ring: var(--color-ring-focus);
 
+  --text-2xs: 10px;
+  --text-meta: 13px;
+  --text-row: 15px;
+
+  --leading-display: 1.05;
+  --leading-hero: 1.08;
+  --leading-title: 1.2;
+  --leading-row: 1.4;
+
+  --tracking-heading: -0.01em;
+
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -68,6 +79,7 @@
   --duration-slow: 240ms;
 
   --shadow-press: 1px 1px 0 var(--color-stone-950);
+  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.18), var(--shadow-press);
   --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.3);
   --shadow-poster: 0 8px 24px rgba(0, 0, 0, 0.3);
   --shadow-drawer: 0 -24px 48px rgba(0, 0, 0, 0.24);
@@ -529,6 +541,7 @@
 @utility animate-reveal {
   @variant motion-safe {
     animation: content-reveal 180ms var(--ease-out) both;
+    animation-delay: var(--reveal-delay, 0ms);
   }
 }
 

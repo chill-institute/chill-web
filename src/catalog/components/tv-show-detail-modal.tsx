@@ -66,7 +66,7 @@ function formatAirDate(value?: string) {
 }
 
 function EpisodeActionSkeleton() {
-  return <Skeleton className="h-[var(--control-h)] w-[34px] shrink-0 rounded" />;
+  return <Skeleton className="h-[var(--control-h)] w-[34px] shrink-0" />;
 }
 
 function SeasonSummarySkeleton() {
@@ -79,7 +79,7 @@ function SeasonSummarySkeleton() {
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-8 w-48 max-w-full" />
       </div>
-      <Skeleton className="h-[var(--control-h)] w-full rounded sm:w-40" />
+      <Skeleton className="h-[var(--control-h)] w-full sm:w-40" />
     </div>
   );
 }
@@ -205,7 +205,7 @@ function TvShowDetailContent({
           ) : detailQuery.isPending ? (
             <div className="mb-4 flex gap-1">
               {SEASON_TAB_SKELETON_SLOTS.map((slot) => (
-                <Skeleton key={slot} className="h-7 w-16 rounded" />
+                <Skeleton key={slot} className="h-7 w-16" />
               ))}
             </div>
           ) : (

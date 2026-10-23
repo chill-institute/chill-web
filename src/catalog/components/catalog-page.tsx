@@ -289,7 +289,7 @@ function MoviesContent({ query, source, sort, onPickAnotherSource }: MoviesConte
               <PosterCard
                 key={movie.id}
                 className="animate-reveal"
-                style={staggerDelay(index)}
+                style={{ "--reveal-delay": `${staggerDelayMs(index)}ms` } as CSSProperties}
                 title={movie.title}
                 image={movie.posterUrl ?? null}
                 imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
@@ -349,7 +349,7 @@ function TVShowsContent({ query, source, sort, onPickAnotherSource }: TVShowsCon
             <PosterCard
               key={show.imdbId}
               className="animate-reveal"
-              style={staggerDelay(index)}
+              style={{ "--reveal-delay": `${staggerDelayMs(index)}ms` } as CSSProperties}
               title={show.title}
               image={show.posterUrl ?? null}
               imageFetchPriority={index < PRIORITY_POSTER_COUNT ? "high" : "auto"}
@@ -381,9 +381,8 @@ function PosterGrid({ children }: { children: ReactNode }) {
   );
 }
 
-function staggerDelay(index: number): CSSProperties {
-  const ms = Math.min(index * 25, 350);
-  return { animationDelay: `${ms}ms` };
+function staggerDelayMs(index: number) {
+  return Math.min(index * 25, 350);
 }
 
 const POSTER_SKELETON_SLOTS = Array.from({ length: 18 }, (_, i) => `poster-skel-${i}`);
@@ -396,15 +395,15 @@ function PosterGridSkeleton({ tab }: { tab: CatalogTab }) {
           key={slot}
           className="border-border-strong bg-surface flex flex-col overflow-hidden rounded border"
         >
-          <Skeleton className="border-border-strong aspect-[2/3] w-full rounded-none border-b" />
+          <div className="border-border-strong relative aspect-[2/3] w-full border-b">
+            <Skeleton shape="none" className="absolute inset-0" />
+          </div>
           <div className="flex flex-col gap-2 px-3 pt-2.5 pb-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <Skeleton className="h-5 w-3/4 sm:h-[22.5px]" />
               <Skeleton className="h-6 w-full sm:h-5" />
             </div>
-            {tab === "movies" ? (
-              <Skeleton className="h-6 w-full rounded sm:size-7 sm:shrink-0" />
-            ) : null}
+            {tab === "movies" ? <Skeleton className="h-6 w-full sm:size-7 sm:shrink-0" /> : null}
           </div>
         </article>
       ))}
@@ -415,15 +414,15 @@ function PosterGridSkeleton({ tab }: { tab: CatalogTab }) {
 function SortRowSkeleton() {
   return (
     <SortRow className="mb-0 grid grid-cols-2 gap-2 min-[375px]:grid-cols-[3fr_2fr] sm:flex sm:justify-end lg:mb-0">
-      <Skeleton className="h-8 w-full rounded sm:w-52" />
-      <Skeleton className="h-8 w-full rounded sm:w-40" />
+      <Skeleton className="h-8 w-full sm:w-52" />
+      <Skeleton className="h-8 w-full sm:w-40" />
     </SortRow>
   );
 }
 
 function EmptyState({ message, onTryAnother }: { message: string; onTryAnother?: () => void }) {
   return (
-    <Empty className="animate-reveal border-0 py-16">
+    <Empty size="lg" className="animate-reveal">
       <EmptyHeader>
         <EmptyMedia className="mb-1">
           <img
@@ -434,7 +433,7 @@ function EmptyState({ message, onTryAnother }: { message: string; onTryAnother?:
             className="border-border-strong rounded border"
           />
         </EmptyMedia>
-        <EmptyTitle className="text-fg-2 font-serif text-xl font-normal">{message}</EmptyTitle>
+        <EmptyTitle variant="display">{message}</EmptyTitle>
       </EmptyHeader>
       {onTryAnother ? (
         <EmptyContent>

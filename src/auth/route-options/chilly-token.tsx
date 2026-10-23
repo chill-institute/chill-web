@@ -30,7 +30,7 @@ function ChillyTokenPage() {
       title="Get your chilly token!"
       description="Connect the chilly CLI, the MCP server, or your own scripts to this account."
     >
-      <div className="border-warn-border bg-warn-bg text-warn-text flex items-start gap-3 rounded border px-4 py-3 text-sm leading-[1.25]">
+      <div className="border-warn-border bg-warn-bg text-warn-text flex items-start gap-3 rounded border px-4 py-3 text-sm leading-tight">
         <span className="flex h-[1.25em] shrink-0 items-center">
           <ShieldAlert className="size-4" />
         </span>
@@ -40,7 +40,7 @@ function ChillyTokenPage() {
         </p>
       </div>
 
-      <ul className="text-fg-3 m-0 flex list-disc flex-col gap-1 pl-5 text-sm leading-[1.25]">
+      <ul className="text-fg-3 m-0 flex list-disc flex-col gap-1 pl-5 text-sm leading-tight">
         <li>
           <span className="text-fg-1 font-medium">chilly CLI:</span> run{" "}
           <span className="text-fg-1 font-medium">chilly auth login</span> and paste the token.
@@ -53,8 +53,8 @@ function ChillyTokenPage() {
 
       <FieldGroup className="gap-2">
         <Field>
-          <FieldLabel htmlFor="chilly-token" className="text-fg-1 text-sm font-medium md:text-base">
-            chill-institute-token
+          <FieldLabel htmlFor="chilly-token">
+            <span className="text-fg-1 leading-snug md:text-base">chill-institute-token</span>
           </FieldLabel>
           <div className="flex items-center gap-2">
             <Input

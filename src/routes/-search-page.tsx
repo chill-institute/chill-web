@@ -187,7 +187,7 @@ export function SearchPage() {
                 <br />
                 Like…{" "}
                 <Link
-                  className="decoration-fg-4 hover-hover:hover:text-fg-1 hover-hover:hover:decoration-fg-1 inline-block underline decoration-1 underline-offset-3 transition-[color,transform,text-decoration-color] duration-fast hover:-translate-y-px"
+                  className="decoration-fg-4 hover-hover:hover:text-fg-1 hover-hover:hover:decoration-fg-1 inline-block underline decoration-1 underline-offset-3 transition-[color,translate,text-decoration-color] duration-fast hover:-translate-y-px"
                   to="/search"
                   search={{ q: "Synthetic Feature Alpha" }}
                 >

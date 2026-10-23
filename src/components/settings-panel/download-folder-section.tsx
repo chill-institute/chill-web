@@ -19,7 +19,7 @@ function DownloadFolderSection({
   persistPatch: PersistPatch;
 }) {
   const content = match(downloadFolderQuery)
-    .with({ status: "pending" }, () => <Skeleton className="h-9 w-full rounded" />)
+    .with({ status: "pending" }, () => <Skeleton className="h-9 w-full" />)
     .with({ status: "error" }, (query) => <UserErrorAlert error={query.error} />)
     .with({ status: "success" }, (dq) => {
       const hasMatchingFolder =
@@ -27,7 +27,7 @@ function DownloadFolderSection({
         dq.data.folder?.id === effective.download.folderId;
 
       if (!hasMatchingFolder) {
-        return <Skeleton className="h-9 w-full rounded" />;
+        return <Skeleton className="h-9 w-full" />;
       }
 
       return (

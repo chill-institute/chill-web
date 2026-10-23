@@ -1,5 +1,5 @@
 import { ChevronRight, Folder, FolderOpen, RotateCcw, TriangleAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { Button } from "@/ui/components/ui/button";
 import { ScrollArea } from "@/ui/components/ui/scroll-area";
@@ -23,10 +23,7 @@ function DownloadFolderList({
   state: "error" | "pending" | "success";
 }) {
   return (
-    <div
-      className="h-[240px] min-w-0 max-w-full overflow-hidden"
-      style={{ height: 240, maxWidth: "100%", minWidth: 0, overflow: "hidden" }}
-    >
+    <div className="h-60 min-w-0 max-w-full overflow-hidden">
       {state === "pending" && <FolderSkeleton />}
 
       {state === "error" && (
@@ -38,7 +35,7 @@ function DownloadFolderList({
             </Button>
           }
           description="maybe it's deleted, or the API hiccupped. you can still pick something else."
-          icon={<TriangleAlert />}
+          icon={<TriangleAlert strokeWidth={1.5} />}
           tone="error"
           title="couldn't load folder"
         />
@@ -47,7 +44,7 @@ function DownloadFolderList({
       {state === "success" && folders.length === 0 && (
         <FolderMessage
           description="that's fine — you can still download into it. confirm below."
-          icon={<FolderOpen />}
+          icon={<FolderOpen strokeWidth={1.5} />}
           title="nothing inside this folder"
         />
       )}
@@ -59,18 +56,9 @@ function DownloadFolderList({
               <button
                 aria-label={`Open folder ${folder.name}`}
                 data-touch-target
-                className="hover-hover:hover:bg-hover active:bg-active grid w-full min-w-0 max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[7px] overflow-hidden rounded px-[7px] py-[5px] text-left text-sm leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+                className="hover-hover:hover:bg-hover active:bg-active grid w-full min-w-0 max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.75 overflow-hidden rounded px-1.75 py-1.25 text-left text-sm leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app"
                 key={String(folder.id)}
                 onClick={() => onOpen(folder)}
-                style={{
-                  display: "grid",
-                  gap: 7,
-                  gridTemplateColumns: "auto minmax(0, 1fr) auto",
-                  maxWidth: "100%",
-                  minWidth: 0,
-                  overflow: "hidden",
-                  width: "100%",
-                }}
                 title={folder.name}
                 type="button"
               >
@@ -92,11 +80,14 @@ function FolderSkeleton() {
     <div aria-hidden="true" className="flex flex-col gap-1 p-2">
       {FOLDER_SKELETON_WIDTHS.map((width) => (
         <div
-          className="grid grid-cols-[14px_minmax(0,1fr)] items-center gap-[7px] px-[7px] py-[5px]"
+          className="grid grid-cols-[14px_minmax(0,1fr)] items-center gap-1.75 px-1.75 py-1.25"
           key={width}
         >
-          <Skeleton className="h-3 w-3.5 rounded-sm" />
-          <Skeleton className="h-3" style={{ width: `${width}%` }} />
+          <Skeleton shape="sm" className="h-3 w-3.5" />
+          <Skeleton
+            className="h-3 w-(--folder-skeleton-width)"
+            style={{ "--folder-skeleton-width": `${width}%` } as CSSProperties}
+          />
         </div>
       ))}
     </div>
@@ -117,25 +108,17 @@ function FolderMessage({
   tone?: "error";
 }) {
   return (
-    <div
-      className="flex h-full flex-col items-center justify-start text-center"
-      style={{ gap: 6, height: "100%", padding: "36px 24px 20px" }}
-    >
+    <div className="flex h-full flex-col items-center justify-start gap-1.5 px-6 pt-9 pb-5 text-center">
       <div
         className={cn(
-          "border-border-soft bg-surface-2 text-fg-3 flex items-center justify-center rounded border",
+          "border-border-soft bg-surface-2 text-fg-3 mb-1 flex size-8 items-center justify-center rounded border",
           tone === "error" && "border-error-border bg-surface text-error-text",
         )}
-        style={{ height: 32, marginBottom: 4, width: 32 }}
       >
-        <span className="[&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.5]">{icon}</span>
+        <span className="[&_svg]:size-4 [&_svg]:shrink-0">{icon}</span>
       </div>
-      <div className="text-fg-1 font-medium" style={{ fontSize: 14, lineHeight: 1.2 }}>
-        {title}
-      </div>
-      <p className="text-fg-3 m-0 text-xs" style={{ marginBottom: action ? 8 : 0, maxWidth: 224 }}>
-        {description}
-      </p>
+      <div className="text-fg-1 text-sm leading-title font-medium">{title}</div>
+      <p className={cn("text-fg-3 m-0 max-w-56 text-xs", action && "mb-2")}>{description}</p>
       {action}
     </div>
   );

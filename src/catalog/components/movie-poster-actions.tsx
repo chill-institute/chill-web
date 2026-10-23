@@ -105,8 +105,8 @@ export function MoviePosterActions({ movie }: { movie: Movie }) {
     <div className="flex w-full gap-1.5 sm:w-auto">
       <Button
         variant="default"
-        size="sm"
-        className="w-full justify-center gap-1.5 sm:size-7 sm:gap-0 sm:px-0 [&_svg:not([class*='size-'])]:size-3.5"
+        size="sm-icon"
+        className="w-full"
         disabled={status === "pending"}
         aria-label={`Download top result for ${movie.title}`}
         title={label ? `Download top ${label} result` : "Download top result"}

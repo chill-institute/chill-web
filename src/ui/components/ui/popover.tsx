@@ -1,6 +1,28 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "../../lib/cn";
+
+const popoverContentVariants = cva(
+  "ui-popup border-border-strong bg-surface text-fg-1 w-72 rounded border outline-none",
+  {
+    variants: {
+      size: {
+        default: "p-4",
+        sm: "px-3 py-2",
+        flush: "overflow-hidden p-0",
+      },
+      elevation: {
+        default: "shadow-press",
+        raised: "shadow-popover",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+      elevation: "default",
+    },
+  },
+);
 
 const Popover = PopoverPrimitive.Root;
 
@@ -18,10 +40,13 @@ function PopoverContent({
   portalContainer,
   side = "bottom",
   sideOffset = 0,
+  size,
+  elevation,
   className,
   children,
   ...props
 }: ComponentProps<typeof PopoverPrimitive.Popup> &
+  VariantProps<typeof popoverContentVariants> &
   Pick<
     ComponentProps<typeof PopoverPrimitive.Positioner>,
     "side" | "sideOffset" | "align" | "alignOffset"
@@ -36,14 +61,10 @@ function PopoverContent({
         align={align}
         alignOffset={alignOffset}
         className="z-[60]"
-        style={{ zIndex: 60 }}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          className={cn(
-            "ui-popup border-border-strong bg-surface text-fg-1 shadow-press w-72 rounded border p-4 outline-none",
-            className,
-          )}
+          className={cn(popoverContentVariants({ size, elevation }), className)}
           {...props}
         >
           {children}

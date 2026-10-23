@@ -94,7 +94,7 @@ function StremioSetup({ token }: { token: string }) {
           <UserErrorAlert error={downloadFolder.error} />
         ) : null}
         {downloadFolder.isPending ? (
-          <Skeleton className="h-9 w-full rounded" />
+          <Skeleton className="h-9 w-full" />
         ) : (
           <div
             className="border-border-control bg-surface flex h-9 w-full items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30"
@@ -207,10 +207,10 @@ function StremioSetup({ token }: { token: string }) {
         }}
         title="Disconnect Stremio?"
         description={disconnectEffect}
-        desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,448px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-surface p-6 shadow-modal"
-        drawerContentClassName="bg-surface p-6"
+        desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,448px)] -translate-x-1/2 -translate-y-1/2"
+        desktopContentVariant="panel"
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 p-6">
           <h2 className="font-serif text-2xl">Disconnect Stremio?</h2>
           <p>{disconnectEffect}</p>
           {disconnect.error ? <StremioErrorAlert error={disconnect.error} /> : null}

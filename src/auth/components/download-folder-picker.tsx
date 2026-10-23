@@ -60,18 +60,12 @@ export function DownloadFolderPicker({
         <PopoverContent
           align="center"
           aria-label={`choose ${purpose}`}
-          className="w-[296px] min-w-[296px] max-w-[296px] overflow-hidden p-0 shadow-[0_12px_32px_rgba(0,0,0,0.18),var(--shadow-press)]"
+          size="flush"
+          elevation="raised"
+          className="w-[296px] min-w-[296px] max-w-[296px]"
           portalContainer={portalContainer}
           role="dialog"
           sideOffset={8}
-          style={{
-            fontSize: 14,
-            lineHeight: 1.2,
-            maxWidth: 296,
-            minWidth: 296,
-            overflow: "hidden",
-            width: 296,
-          }}
         >
           <PickerBody
             key={open ? "open" : "closed"}
@@ -132,7 +126,7 @@ function PickerBody({
   const canNavigateBack = path.length > 1;
 
   return (
-    <div style={{ maxWidth: 296, minWidth: 0, overflow: "hidden", width: 296 }}>
+    <div className="w-[296px] min-w-0 max-w-[296px] overflow-hidden text-sm leading-title">
       <div className="flex min-w-0 items-center gap-1 py-2 pr-2 pl-1.5">
         {canNavigateBack ? (
           <button

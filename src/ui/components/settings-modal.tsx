@@ -48,8 +48,9 @@ export function SettingsModal({ open, onOpenChange, description, children }: Set
       onOpenChange={onOpenChange}
       title="Settings"
       description={description}
-      desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,720px)] -translate-x-1/2 -translate-y-1/2 p-0"
-      drawerContentClassName="bg-surface shadow-drawer max-h-[92dvh] overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 p-0"
+      desktopContentClassName="top-1/2 left-1/2 w-[min(92vw,720px)] -translate-x-1/2 -translate-y-1/2"
+      drawerContentClassName="max-h-[92dvh] overflow-hidden"
+      drawerContentVariant="raised"
     >
       <SettingsModalBody isDesktop={isDesktop} onClose={() => onOpenChange(false)}>
         {children}
