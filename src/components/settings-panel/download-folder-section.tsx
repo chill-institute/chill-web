@@ -32,7 +32,7 @@ function DownloadFolderSection({
 
       return (
         <div
-          className="border-border-strong bg-surface flex h-9 w-full items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30"
+          className="border-border-control bg-surface flex h-9 w-full items-center justify-between gap-2 rounded border px-2.5 py-1.5 dark:bg-surface-2/30"
           title={dq.data.folder?.name ?? "no folder selected"}
         >
           <span className="flex min-w-0 flex-1 items-center gap-2">

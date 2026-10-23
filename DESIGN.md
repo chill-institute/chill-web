@@ -15,7 +15,8 @@ colors:
   foregroundSubtle: "#57534e"
   foregroundFaint: "#78716c"
   borderStrong: "#0c0a09"
-  borderDark: "#78716c"
+  borderDark: "#44403c"
+  borderDarkControl: "#78716c"
   darkApp: "#292524"
   darkSurface: "#1c1917"
   darkForeground: "#f5f5f4"
@@ -142,6 +143,8 @@ components:
     rounded: "{rounded.sm}"
   dark-border:
     backgroundColor: "{colors.borderDark}"
+  dark-control-border:
+    backgroundColor: "{colors.borderDarkControl}"
   rating-star:
     backgroundColor: "{colors.rating}"
   success-state:
@@ -170,15 +173,18 @@ The code wins when this file disagrees; update this file to match.
 
 Stone neutrals carry the palette. Light: stone-300 app, stone-100 surfaces,
 stone-950 text and hard border. Dark: stone-800 app, stone-900 surfaces,
-stone-100 text, stone-500 borders.
+stone-100 text, stone-700 borders, and stone-500 control borders.
 
 Use the semantic utilities in `src/ui/styles.css`, such as `bg-app`,
 `bg-surface`, `text-fg-1`, `text-fg-3`, `border-border-strong`,
-`border-border-faint`, `text-success`, and `text-error`. No raw blue, indigo,
+`border-border-control`, `border-border-faint`, `text-success`, and `text-error`. No raw blue, indigo,
 gray, slate, purple, or marketing gradients.
 
 Contrast floors: 4.5:1 for text, 3:1 for icons, control borders, and focus
-rings, against the background each actually sits on. In light mode
+rings, against the background each actually sits on. Inputs, selects,
+checkboxes, and bordered buttons use `border-border-control`; dividers, cards,
+and panels use `border-border-strong`, which is decorative and sits under
+3:1 in dark mode. In light mode
 `text-fg-4` meets 4.5:1 only on `bg-surface-2`; use `text-fg-3` for text on
 `bg-app` or `bg-surface`, and keep `text-fg-4` for separators and icons there.
 
@@ -208,7 +214,8 @@ code uses the Institute utility:
 | `accent`             | `hover`                  |
 | `primary`            | `fg-1` with `fg-inverse` |
 | `destructive`        | `error`                  |
-| `border`, `input`    | `border-strong`          |
+| `border`             | `border-strong`          |
+| `input`              | `border-control`         |
 | `ring`               | `ring-focus`             |
 
 Run the shadcn CLI from the repo root, review the diff, and translate classes
