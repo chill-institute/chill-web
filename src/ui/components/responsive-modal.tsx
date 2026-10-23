@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "./ui/drawer";
@@ -10,7 +10,9 @@ type ResponsiveModalProps = {
   title: string;
   description?: string;
   desktopContentClassName?: string;
+  desktopContentVariant?: ComponentProps<typeof DialogContent>["variant"];
   drawerContentClassName?: string;
+  drawerContentVariant?: ComponentProps<typeof DrawerContent>["variant"];
   showCloseButton?: boolean;
   drawerDirection?: "bottom" | "top" | "left" | "right";
   drawerProps?: {
@@ -26,7 +28,9 @@ export function ResponsiveModal({
   title,
   description,
   desktopContentClassName,
+  desktopContentVariant,
   drawerContentClassName,
+  drawerContentVariant,
   showCloseButton = false,
   drawerDirection = "bottom",
   drawerProps,
@@ -37,7 +41,11 @@ export function ResponsiveModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent showCloseButton={showCloseButton} className={desktopContentClassName}>
+        <DialogContent
+          showCloseButton={showCloseButton}
+          variant={desktopContentVariant}
+          className={desktopContentClassName}
+        >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           {description ? (
             <DialogDescription className="sr-only">{description}</DialogDescription>
@@ -56,7 +64,7 @@ export function ResponsiveModal({
       modal={drawerProps?.modal ?? true}
       shouldScaleBackground={drawerProps?.shouldScaleBackground ?? false}
     >
-      <DrawerContent className={drawerContentClassName}>
+      <DrawerContent variant={drawerContentVariant} className={drawerContentClassName}>
         <DrawerTitle className="sr-only">{title}</DrawerTitle>
         {description ? (
           <DrawerDescription className="sr-only">{description}</DrawerDescription>

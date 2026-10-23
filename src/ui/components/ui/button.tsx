@@ -9,12 +9,12 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border-border-strong bg-surface text-fg-1 shadow-press hover-hover:hover:bg-hover active:translate-x-px active:translate-y-px active:shadow-none active:duration-100",
+          "border-border-control bg-surface text-fg-1 shadow-press hover-hover:hover:bg-hover active:translate-x-px active:translate-y-px active:shadow-none active:duration-100",
         primary:
           "border-border-strong bg-fg-1 text-fg-inverse shadow-press hover-hover:hover:bg-fg-2 active:translate-x-px active:translate-y-px active:shadow-none active:duration-100",
         ghost:
           "text-fg-2 hover-hover:hover:bg-hover hover-hover:hover:text-fg-1 active:scale-[0.97] active:duration-100",
-        outline: "border-border-strong bg-surface text-fg-1 hover-hover:hover:bg-hover",
+        outline: "border-border-control bg-surface text-fg-1 hover-hover:hover:bg-hover",
         done: "border-border-soft bg-transparent text-success cursor-default",
         off: "border-border-soft bg-transparent text-fg-3 cursor-not-allowed",
         link: "text-fg-1 underline-offset-4 hover-hover:hover:underline",
@@ -26,6 +26,9 @@ const buttonVariants = cva(
         icon: "size-8 px-0",
         "icon-sm": "size-7 px-0 [&_svg:not([class*='size-'])]:size-3.5",
         "icon-lg": "size-10 px-0",
+        // A labeled full-width button on phones that becomes a small icon button from `sm`.
+        "sm-icon":
+          "gap-1.5 px-2 text-sm [min-height:var(--control-h-sm)] sm:size-7 sm:gap-0 sm:px-0 [&_svg:not([class*='size-'])]:size-3.5",
       },
     },
     defaultVariants: {

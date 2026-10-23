@@ -22,6 +22,7 @@
   --color-fg-inverse: var(--color-stone-100);
 
   --color-border-strong: var(--color-stone-950);
+  --color-border-control: var(--color-border-strong);
   --color-border-soft: color-mix(in oklab, var(--color-stone-950) 15%, transparent);
   --color-border-faint: color-mix(in oklab, var(--color-stone-950) 10%, transparent);
   --color-border-hairline: color-mix(in oklab, var(--color-stone-950) 12%, transparent);
@@ -55,8 +56,19 @@
   --color-destructive: var(--color-error);
   --color-destructive-foreground: var(--color-fg-inverse);
   --color-border: var(--color-border-strong);
-  --color-input: var(--color-border-strong);
+  --color-input: var(--color-border-control);
   --color-ring: var(--color-ring-focus);
+
+  --text-2xs: 10px;
+  --text-meta: 13px;
+  --text-row: 15px;
+
+  --leading-display: 1.05;
+  --leading-hero: 1.08;
+  --leading-title: 1.2;
+  --leading-row: 1.4;
+
+  --tracking-heading: -0.01em;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -67,6 +79,7 @@
   --duration-slow: 240ms;
 
   --shadow-press: 1px 1px 0 var(--color-stone-950);
+  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.18), var(--shadow-press);
   --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.3);
   --shadow-poster: 0 8px 24px rgba(0, 0, 0, 0.3);
   --shadow-drawer: 0 -24px 48px rgba(0, 0, 0, 0.24);
@@ -146,7 +159,8 @@
     --color-fg-4: var(--color-stone-400);
     --color-fg-inverse: var(--color-stone-950);
 
-    --color-border-strong: var(--color-stone-500);
+    --color-border-strong: var(--color-stone-700);
+    --color-border-control: var(--color-stone-500);
     --color-border-soft: color-mix(in oklab, var(--color-stone-700) 70%, transparent);
     --color-border-faint: color-mix(in oklab, var(--color-stone-700) 30%, transparent);
     --color-border-hairline: color-mix(in oklab, var(--color-stone-700) 35%, transparent);
@@ -163,7 +177,7 @@
     --color-warn-border: color-mix(in oklab, oklch(0.85 0.15 80) 35%, transparent);
     --color-warn-text: oklch(0.78 0.16 80);
 
-    --shadow-press: 1px 1px 0 var(--color-stone-500);
+    --shadow-press: 1px 1px 0 var(--color-stone-700);
     --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.6);
     --shadow-poster: 0 8px 24px rgba(0, 0, 0, 0.55);
     --shadow-drawer: 0 -24px 48px rgba(0, 0, 0, 0.5);
@@ -401,7 +415,24 @@
    dark `--color-border-strong`.
    Lives outside @layer base so it actually beats Tailwind's utility layer. */
 .dark .shadow-press {
-  --tw-shadow: 1px 1px 0 var(--color-stone-500);
+  --tw-shadow: 1px 1px 0 var(--color-stone-700);
+}
+
+/* Tailwind has no theme namespace for transition durations, so
+   `duration-fast` and friends need their own utilities. */
+@utility duration-fast {
+  --tw-duration: var(--duration-fast);
+  transition-duration: var(--duration-fast);
+}
+
+@utility duration-base {
+  --tw-duration: var(--duration-base);
+  transition-duration: var(--duration-base);
+}
+
+@utility duration-slow {
+  --tw-duration: var(--duration-slow);
+  transition-duration: var(--duration-slow);
 }
 
 @utility animate-collapsible-down {
@@ -510,6 +541,7 @@
 @utility animate-reveal {
   @variant motion-safe {
     animation: content-reveal 180ms var(--ease-out) both;
+    animation-delay: var(--reveal-delay, 0ms);
   }
 }
 

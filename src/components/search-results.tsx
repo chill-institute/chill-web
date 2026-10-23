@@ -73,7 +73,7 @@ function TitleCell({
     );
 
   const titleSpan = (
-    <span className="text-fg-1 block min-h-[2lh] text-sm leading-[1.4] lg:min-h-0 break-words [overflow-wrap:anywhere]">
+    <span className="text-fg-1 block min-h-[2lh] text-sm leading-row lg:min-h-0 break-words [overflow-wrap:anywhere]">
       {wrap(result.title)}
     </span>
   );
@@ -104,7 +104,7 @@ function GroupToggle({
       aria-label={[group.title, identity, count].filter(Boolean).join(" ")}
       onClick={onToggle}
       className={cn(
-        "group/toggle flex min-h-[1.875rem] cursor-pointer items-center gap-1.5 text-left text-sm leading-[1.4]",
+        "group/toggle flex min-h-[1.875rem] cursor-pointer items-center gap-1.5 text-left text-sm leading-row",
         hangChevron && "-ml-5",
       )}
     >
@@ -262,7 +262,7 @@ export function SearchResults({
                     aria-sort={ariaSort}
                     className={
                       isTitle
-                        ? "pr-2 pb-1.5 text-left font-serif text-base leading-5 font-normal tracking-[-0.01em] whitespace-nowrap"
+                        ? "pr-2 pb-1.5 text-left font-serif text-base leading-5 font-normal tracking-heading whitespace-nowrap"
                         : "px-2 pb-1 text-center text-sm font-normal whitespace-nowrap"
                     }
                   >

@@ -121,12 +121,46 @@ export default defineConfig({
   },
   lint: {
     plugins: ["eslint", "unicorn", "typescript", "oxc", "react"],
+    jsPlugins: ["@shadcn/lint"],
     options: {
       typeAware: true,
       typeCheck: true,
     },
     rules: {
       "react/exhaustive-deps": "error",
+      "shadcn/no-restyle": [
+        "error",
+        {
+          // Entrance animations are page choreography, not component styling.
+          allow: ["layout", "animate-reveal"],
+          contracts: [
+            // Base UI triggers and closes render unstyled; their classes are the caller's.
+            {
+              pattern: "^(PopoverTrigger|PopoverClose|TooltipTrigger)$",
+              allow: [
+                "layout",
+                "color",
+                "typography",
+                "spacing",
+                "shape",
+                "effects",
+                "motion",
+                "kbd",
+              ],
+            },
+            // The focus ring offset has to match the surface the button sits on.
+            { pattern: "^Button$", allow: ["layout", "animate-reveal", "ring-offset-*"] },
+            { pattern: "^FieldGroup$", allow: ["layout", "gap"] },
+          ],
+        },
+      ],
+      "shadcn/no-raw-colors": "error",
+      // Transition property lists name properties, not design values.
+      "shadcn/no-arbitrary-values": ["error", { allow: ["layout", "transition"] }],
+      "shadcn/no-inline-styles": "error",
+      // `toaster` only marks Sonner's root for the `group-[.toaster]:` toast styles.
+      "shadcn/no-unknown-classes": ["error", { allow: ["toaster"] }],
+      "shadcn/require-static-classes": "error",
       "no-restricted-imports": [
         "error",
         {
@@ -142,6 +176,14 @@ export default defineConfig({
       ],
     },
     overrides: [
+      {
+        files: ["src/ui/components/**"],
+        rules: {
+          "shadcn/no-restyle": "off",
+          "shadcn/no-arbitrary-values": "off",
+          "shadcn/require-static-classes": "off",
+        },
+      },
       {
         files: ["src/ui/hooks/use-effects.ts"],
         rules: {

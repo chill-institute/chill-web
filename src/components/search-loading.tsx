@@ -15,7 +15,7 @@ function SearchResultCardLoading() {
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Skeleton className="h-[1.875rem] w-8 rounded" />
+          <Skeleton className="h-[1.875rem] w-8" />
           <Skeleton className="h-[1.875rem] w-28" />
         </div>
       </div>
@@ -72,10 +72,10 @@ function SearchResultRowLoading() {
         <Skeleton className="mx-auto h-4 w-14" />
       </td>
       <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
-        <Skeleton className="mx-auto size-7 rounded" />
+        <Skeleton className="mx-auto size-7" />
       </td>
       <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
-        <Skeleton className="h-7 w-[130px] rounded" />
+        <Skeleton className="h-7 w-[130px]" />
       </td>
     </tr>
   );

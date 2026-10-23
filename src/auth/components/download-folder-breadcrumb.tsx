@@ -24,8 +24,7 @@ function DownloadFolderBreadcrumb({
   return (
     <nav
       aria-label="folder path"
-      className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-xs"
-      style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden" }}
+      className="flex min-w-0 flex-auto items-center gap-1 overflow-hidden text-xs"
     >
       {displayed.map((item, displayedIndex) => {
         const isLast = displayedIndex === displayed.length - 1;
@@ -34,13 +33,10 @@ function DownloadFolderBreadcrumb({
         return (
           <span
             key={`${key}-${displayedIndex}`}
-            className={cn("flex min-w-0 items-center gap-1", isLast && "flex-1")}
-            style={{
-              display: "flex",
-              flex: isLast ? "1 1 auto" : "0 0 auto",
-              minWidth: 0,
-              overflow: "hidden",
-            }}
+            className={cn(
+              "flex min-w-0 items-center gap-1 overflow-hidden",
+              isLast ? "flex-auto" : "flex-none",
+            )}
           >
             {item.type === "ellipsis" ? (
               <button
@@ -62,7 +58,7 @@ function DownloadFolderBreadcrumb({
                 aria-label={item.crumb.name}
                 data-touch-target={!isLast ? "" : undefined}
                 className={cn(
-                  "min-w-0 rounded px-1 py-0.5 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app",
+                  "inline-flex min-w-0 max-w-full overflow-hidden whitespace-nowrap rounded px-1 py-0.5 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app",
                   isLast && "w-full text-left",
                   isLast
                     ? "text-fg-1 font-medium"
@@ -70,14 +66,6 @@ function DownloadFolderBreadcrumb({
                 )}
                 disabled={isLast}
                 onClick={() => onJump(item.index)}
-                style={{
-                  display: "inline-flex",
-                  maxWidth: "100%",
-                  minWidth: 0,
-                  overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  width: isLast ? "100%" : undefined,
-                }}
                 title={item.crumb.name}
                 type="button"
               >

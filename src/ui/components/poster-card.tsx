@@ -40,7 +40,7 @@ function PosterCard({
       {
         ...slotAttr("poster-card"),
         className: cn(
-          "group bg-surface border-border-strong motion-safe:ease-out motion-safe:duration-base flex flex-col overflow-hidden rounded border no-underline motion-safe:transition-[transform]",
+          "group bg-surface border-border-strong motion-safe:ease-out motion-safe:duration-base flex flex-col overflow-hidden rounded border no-underline motion-safe:transition-transform",
           interactive &&
             "cursor-pointer motion-safe:hover-hover:hover:-translate-y-px active:translate-y-0 active:duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app",
           className,

@@ -19,7 +19,7 @@ export function CatalogSortSelect({
       name="catalog-sort"
       value={value}
       wrapperClassName="w-full sm:w-40"
-      className="h-8 min-w-0 py-0 pr-6 pl-2 text-sm"
+      size="sm-dense"
       onChange={(event) => {
         const sort = parseCatalogSort(event.currentTarget.value);
         if (sort !== undefined) onChange(sort);

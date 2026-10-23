@@ -42,8 +42,9 @@ export function DetailResponsiveModal({
       onOpenChange={(open) => !open && onClose()}
       title={title}
       description={description}
-      desktopContentClassName="fixed top-6 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2 gap-0 border-0 bg-transparent p-0 shadow-none"
-      drawerContentClassName="max-h-[92dvh] overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
+      desktopContentClassName="fixed top-6 left-1/2 max-h-[min(calc(100dvh-48px),760px)] w-[min(100vw-1rem,760px)] min-h-0 -translate-x-1/2"
+      drawerContentClassName="max-h-[92dvh] overflow-hidden"
+      drawerContentVariant="raised"
     >
       {children}
     </ResponsiveModal>
@@ -98,7 +99,7 @@ export function DetailModalHeader({
         {posterUrl ? (
           <DetailPosterImage key={posterUrl} url={posterUrl} alt={posterAlt} />
         ) : (
-          <Skeleton className="aspect-[2/3] w-[92px] shrink-0 rounded sm:w-[110px]" />
+          <Skeleton className="aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]" />
         )}
 
         <div className="min-w-0 flex-1">{children}</div>
@@ -126,7 +127,7 @@ export function DetailModalHeaderText({
 }) {
   return (
     <div className="text-fg-1 max-w-[560px]">
-      <h2 id={titleId} className="m-0 text-2xl leading-[1.05] sm:text-3xl">
+      <h2 id={titleId} className="m-0 text-2xl leading-display sm:text-3xl">
         {title}
       </h2>
       <div className="text-fg-2 mt-2 flex flex-wrap items-center gap-2 text-sm/5">{metadata}</div>
@@ -187,7 +188,7 @@ export function DetailGenreBadges({
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {genres.map((genre) => (
-        <Badge key={genre} variant="outline" className="border-border-faint bg-surface-2/50">
+        <Badge key={genre} variant="subtle">
           {genre}
         </Badge>
       ))}

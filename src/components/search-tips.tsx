@@ -27,7 +27,8 @@ export function SearchTips() {
         align="center"
         side="bottom"
         sideOffset={6}
-        className="w-max max-w-[calc(100vw-2rem)] px-3 py-2"
+        size="sm"
+        className="w-max max-w-[calc(100vw-2rem)]"
       >
         <dl
           aria-label="search tips"

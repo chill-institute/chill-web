@@ -3,17 +3,27 @@ import type { ComponentProps } from "react";
 
 import { cn } from "../../lib/cn";
 
-function Empty({ className, ...props }: ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="empty"
-      className={cn(
-        "flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance",
-        className,
-      )}
-      {...props}
-    />
-  );
+const emptyVariants = cva(
+  "flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed text-center text-balance",
+  {
+    variants: {
+      size: {
+        default: "p-6",
+        lg: "px-6 py-16",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  },
+);
+
+function Empty({
+  className,
+  size,
+  ...props
+}: ComponentProps<"div"> & VariantProps<typeof emptyVariants>) {
+  return <div data-slot="empty" className={cn(emptyVariants({ size }), className)} {...props} />;
 }
 
 function EmptyHeader({ className, ...props }: ComponentProps<"div">) {
@@ -56,11 +66,27 @@ function EmptyMedia({
   );
 }
 
-function EmptyTitle({ className, ...props }: ComponentProps<"div">) {
+const emptyTitleVariants = cva("tracking-tight", {
+  variants: {
+    variant: {
+      default: "text-sm font-medium",
+      display: "text-fg-2 font-serif text-xl font-normal",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
+function EmptyTitle({
+  className,
+  variant,
+  ...props
+}: ComponentProps<"div"> & VariantProps<typeof emptyTitleVariants>) {
   return (
     <div
       data-slot="empty-title"
-      className={cn("text-sm font-medium tracking-tight", className)}
+      className={cn(emptyTitleVariants({ variant }), className)}
       {...props}
     />
   );

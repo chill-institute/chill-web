@@ -14,7 +14,7 @@ export function HomeShell() {
     <div className="flex min-h-dvh flex-col">
       <StickyHeader brand={headerBrand} tabs={headerTabs} right={headerRight} />
       <header className="mx-auto max-w-md px-4 pt-9 pb-7 sm:pt-10 sm:pb-8">
-        <h1 className="m-0 text-center text-2xl leading-[1.08] sm:text-4xl">
+        <h1 className="m-0 text-center text-2xl leading-hero sm:text-4xl">
           Welcome to The Institute
         </h1>
       </header>
