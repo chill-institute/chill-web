@@ -35,8 +35,9 @@ function ChillyTokenPage() {
           <ShieldAlert className="size-4" />
         </span>
         <p className="m-0">
-          Treat this token like a password. Anyone with it can act as your account until you sign
-          out or replace it.
+          Treat this token like a password. Anyone with it can act as your account. Signing out
+          doesn't revoke it; removing chill.institute's access in your put.io settings does, within
+          a day.
         </p>
       </div>
 
