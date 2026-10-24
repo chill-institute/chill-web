@@ -10,6 +10,8 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "../support/fixtures";
 import { stableElementBox } from "../support/layout";
 import {
+  binge,
+  bingesResponse,
   downloadFolderResponse,
   indexer,
   indexersResponse,
@@ -94,6 +96,7 @@ function defaultMethods(overrides?: Record<string, unknown>) {
     }),
     GetMovies: moviesResponse(movies),
     GetTVShows: tvShowsResponse([]),
+    ListBinges: bingesResponse([]),
     GetIndexers: indexersResponse([
       indexer({ id: "tracker-one", name: "Tracker One" }),
       indexer({ id: "tracker-two", name: "Tracker Two" }),
@@ -173,6 +176,17 @@ test("not found screen", async ({ page }) => {
   await page.goto("/definitely-not-here");
   await expect(page.getByRole("heading", { name: "page not found" })).toBeVisible();
   await expect(page).toHaveScreenshot("not-found-screen.png", visualOptions);
+});
+
+test("home latest binge", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods({ ListBinges: bingesResponse([binge()], { canCurate: true }) }));
+  await authenticatedPage.goto("/");
+  await expect(
+    authenticatedPage.getByRole("heading", { name: "Signals in the dark" }),
+  ).toBeVisible();
+  await expect(authenticatedPage.getByText("season one only")).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("home-latest-binge.png", visualOptions);
 });
 
 test("PWA update prompt", async ({ authenticatedPage, mockRpc }) => {

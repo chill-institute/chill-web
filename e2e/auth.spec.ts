@@ -1,8 +1,9 @@
 import { test, expect } from "./support/fixtures";
-import { indexersResponse, userSettings } from "./support/seeds";
+import { bingesResponse, indexersResponse, userSettings } from "./support/seeds";
 
 const authenticatedShellMethods = () => ({
   GetDownloadFolder: {},
+  ListBinges: bingesResponse([]),
   GetIndexers: indexersResponse([]),
   GetUserProfile: {},
   GetUserSettings: userSettings(),

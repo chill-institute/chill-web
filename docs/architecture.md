@@ -12,6 +12,7 @@ owns browser state, requests, and rendering.
 | `src/api/`                   | Connect transport, API helpers, defaults, timeouts     |
 | `src/auth/`                  | Tokens, API context, auth routes and route options     |
 | `src/catalog/`               | Movie and TV queries, routes, modals, sort             |
+| `src/binges/`                | Curated binge queries, home section, picker, editor    |
 | `src/queries/`, `src/hooks/` | Search and settings queries and hooks                  |
 | `src/lib/`                   | Environment, crash reporting, PWA updates, search data |
 | `src/workers/`               | Static-asset Worker, headers, redirects                |

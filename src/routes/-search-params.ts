@@ -54,6 +54,10 @@ const tvShowDetailSearchSchema = v.object({
   sort: catalogSortSearchParam,
 });
 
+const homeSearchSchema = v.object({
+  binge: stringSearchParam,
+});
+
 const searchRouteSearchSchema = v.object({
   q: stringSearchParam,
 });
@@ -70,6 +74,7 @@ const signOutSearchSchema = v.object({
 type SignInSearch = v.InferOutput<typeof signInSearchSchema>;
 
 export {
+  homeSearchSchema,
   movieCatalogSearchSchema,
   searchRouteSearchSchema,
   signInSearchSchema,

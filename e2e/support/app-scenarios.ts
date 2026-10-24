@@ -5,6 +5,7 @@ import {
 import type { Page } from "@playwright/test";
 
 import {
+  bingesResponse,
   downloadFolderResponse,
   folderResponse,
   indexer,
@@ -72,6 +73,7 @@ export function appScenarioMethods(overrides?: Record<string, unknown>) {
     GetUserSettings: userSettings({
       searchResultDisplayBehavior: SearchResultDisplayBehavior.ALL,
     }),
+    ListBinges: bingesResponse([]),
     GetMovies: moviesResponse(scenarioMovies),
     GetTVShows: tvShowsResponse(scenarioShows),
     GetIndexers: indexersResponse([

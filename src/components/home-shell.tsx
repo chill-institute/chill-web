@@ -1,3 +1,4 @@
+import { BingeSection } from "@/binges/components/binge-section";
 import { ShellSearchForm } from "@/components/shell-search-form";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
 import { InstituteBrand, InstituteTabs } from "@/components/top-nav";
@@ -22,6 +23,7 @@ export function HomeShell() {
           <ShellSearchForm focusOnMount label="What can we hook you up with?" />
         </div>
       </div>
+      <BingeSection />
       <div className="flex-1" />
       <InstituteFooter />
     </div>

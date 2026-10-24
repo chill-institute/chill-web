@@ -1,5 +1,11 @@
 import { test, expect } from "./support/fixtures";
-import { indexer, indexersResponse, searchResponse, userSettings } from "./support/seeds";
+import {
+  bingesResponse,
+  indexer,
+  indexersResponse,
+  searchResponse,
+  userSettings,
+} from "./support/seeds";
 
 test.describe("shell search form", () => {
   test("home search input autofocuses and / keyboard shortcut refocuses it", async ({
@@ -8,6 +14,7 @@ test.describe("shell search form", () => {
   }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      ListBinges: bingesResponse([]),
     });
 
     await authenticatedPage.goto("/");
@@ -38,6 +45,7 @@ test.describe("shell search form", () => {
   }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      ListBinges: bingesResponse([]),
       GetIndexers: indexersResponse([]),
     });
 
@@ -57,6 +65,7 @@ test.describe("shell search form", () => {
   }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      ListBinges: bingesResponse([]),
       GetIndexers: indexersResponse([indexer()]),
       Search: searchResponse("tt9000001", []),
     });
@@ -77,6 +86,7 @@ test.describe("shell search form", () => {
   }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      ListBinges: bingesResponse([]),
       GetIndexers: indexersResponse([indexer()]),
       Search: searchResponse("test query", []),
     });
@@ -97,6 +107,7 @@ test.describe("shell search form", () => {
   test("empty search is not submitted", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc({
       GetUserSettings: userSettings(),
+      ListBinges: bingesResponse([]),
       GetIndexers: indexersResponse([indexer()]),
       Search: searchResponse("test query", []),
     });
