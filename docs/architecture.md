@@ -8,7 +8,8 @@ owns browser state, requests, and rendering.
 ## Ownership
 
 The source tree groups API transport under [src/api](../src/api/), auth under
-[src/auth](../src/auth/), and catalog flows under [src/catalog](../src/catalog/).
+[src/auth](../src/auth/), catalog flows under [src/catalog](../src/catalog/), and curated binges under
+[src/binges](../src/binges/).
 [src/ui](../src/ui/) contains reusable UI and must not import auth or API code.
 
 ## Requests

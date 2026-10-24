@@ -42,6 +42,11 @@ function createApiStub() {
     getTVShowDetail: vi.fn(async () => create(GetTVShowDetailResponseSchema, {})),
     getTVShowSeason: vi.fn(async () => create(GetTVShowSeasonResponseSchema, {})),
     getTVShowSeasonDownloads: vi.fn(async () => create(GetTVShowSeasonDownloadsResponseSchema, {})),
+    listBinges: unusedCall,
+    getBinge: unusedCall,
+    createBinge: unusedCall,
+    updateBinge: unusedCall,
+    deleteBinge: unusedCall,
   } satisfies ChillApi;
 }
 

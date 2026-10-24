@@ -1,3 +1,4 @@
+import { BingeSection } from "@/binges/components/binge-section";
 import { SearchTips } from "@/components/search-tips";
 import { ShellSearchForm } from "@/components/shell-search-form";
 import { ShellSettingsMenu } from "@/components/shell-settings-menu";
@@ -26,6 +27,7 @@ export function HomeShell() {
       <div className="flex justify-center px-4 pt-3">
         <SearchTips />
       </div>
+      <BingeSection />
       <div className="flex-1" />
       <InstituteFooter />
     </div>
