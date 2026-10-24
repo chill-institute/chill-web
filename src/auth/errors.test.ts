@@ -88,6 +88,38 @@ describe("localizeError", () => {
   });
 });
 
+describe("localizeError invalid queries", () => {
+  const expected = {
+    message: "Add at least one word to search for, and keep it to 256 characters or fewer.",
+  };
+
+  it("explains a query the API rejects by error code", () => {
+    const error = new ConnectError(
+      "invalid query",
+      Code.InvalidArgument,
+      new Headers({ "Chill-Error-Code": "invalid_query" }),
+    );
+
+    expect(localizeError(error)).toEqual(expected);
+  });
+
+  it("explains a query the API rejects without the error code header", () => {
+    expect(localizeError(new ConnectError("invalid query", Code.InvalidArgument))).toEqual(
+      expected,
+    );
+  });
+
+  it("leaves other invalid arguments alone", () => {
+    const error = new ConnectError(
+      "invalid indexer",
+      Code.InvalidArgument,
+      new Headers({ "Chill-Error-Code": "invalid_indexer" }),
+    );
+
+    expect(localizeError(error)).toEqual({ message: "invalid indexer" });
+  });
+});
+
 describe("toErrorMessage", () => {
   it("reuses the localized put.io outage message", () => {
     expect(toErrorMessage(new Error("putio provider unavailable"))).toBe(

@@ -6,6 +6,9 @@ import { CodecFilter, OtherFilter, ResolutionFilter, SortBy, SortDirection } fro
 
 const IMDB_URL_PATTERN = /imdb\.com\/title\/(tt\d+)/i;
 
+// The API rejects longer queries; it counts runes, inputs count UTF-16 units.
+export const MAX_SEARCH_QUERY_LENGTH = 256;
+
 export function normalizeQuery(query: string): string {
   const trimmed = query.trim();
   const match = trimmed.match(IMDB_URL_PATTERN);

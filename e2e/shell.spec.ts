@@ -14,6 +14,7 @@ test.describe("shell search form", () => {
 
     const searchInput = authenticatedPage.locator("#search-global");
     await expect(searchInput).toBeVisible();
+    await expect(searchInput).toHaveAttribute("maxlength", "256");
     await expect(searchInput).toBeFocused();
 
     await authenticatedPage.keyboard.press("Escape");
@@ -45,7 +46,7 @@ test.describe("shell search form", () => {
       '"the matrix"results must include "the matrix" or "the.matrix" or "the-matrix" or "the_matrix"',
     );
     await expect(tips).toContainText("+S01E07results must include S01E07");
-    await expect(tips).toContainText('-camresults must never include "cam"');
+    await expect(tips).toContainText('-camresults never include the word "cam"');
     await expect(tips).toContainText("tt0133093some trackers accept imdb tt codes");
     await expect(tips).toContainText(
       "imdb.com/title/tt0133093chill converts imdb share links to tt codes",

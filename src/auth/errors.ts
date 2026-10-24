@@ -2,6 +2,7 @@ import { ConnectError, Code } from "@connectrpc/connect";
 
 import { isClientRequestTimeoutError } from "@/api/request-timeout";
 import { isAbortLikeError } from "@/lib/runtime-errors";
+import { MAX_SEARCH_QUERY_LENGTH } from "@/lib/search";
 
 export type LocalizedErrorRecoveryAction =
   | {
@@ -48,6 +49,19 @@ function messageIncludesBackendFailure(message: string) {
     message.includes("unexpected token '<'") ||
     message.includes("timed out") ||
     message.includes("timeout")
+  );
+}
+
+// The API sends a stable error code in this header beside the Connect error.
+const ERROR_CODE_HEADER = "chill-error-code";
+
+function isInvalidQueryError(error: ConnectError) {
+  if (error.code !== Code.InvalidArgument) {
+    return false;
+  }
+  return (
+    error.metadata.get(ERROR_CODE_HEADER) === "invalid_query" ||
+    error.rawMessage === "invalid query"
   );
 }
 
@@ -115,6 +129,11 @@ export function localizeError(error: unknown): LocalizedError {
     if (error.code === Code.Unauthenticated || error.code === Code.PermissionDenied) {
       return {
         message: "Session expired. Please sign in again.",
+      };
+    }
+    if (isInvalidQueryError(error)) {
+      return {
+        message: `Add at least one word to search for, and keep it to ${MAX_SEARCH_QUERY_LENGTH} characters or fewer.`,
       };
     }
     if (error.rawMessage) {

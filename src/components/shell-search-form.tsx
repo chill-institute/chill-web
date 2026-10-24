@@ -7,7 +7,7 @@ import { IconButton } from "@/ui/components/icon-button";
 import { Field, FieldLabel } from "@/ui/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/ui/components/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/ui/tooltip";
-import { normalizeQuery } from "@/lib/search";
+import { MAX_SEARCH_QUERY_LENGTH, normalizeQuery } from "@/lib/search";
 import { useMountEffect } from "@/ui/hooks/use-effects";
 
 export function ShellSearchForm({
@@ -138,6 +138,7 @@ export function ShellSearchForm({
               required
               type="text"
               name="q"
+              maxLength={MAX_SEARCH_QUERY_LENGTH}
               aria-label={label ? undefined : "Search query"}
               value={value}
               onFocus={() => setInputFocused(true)}
