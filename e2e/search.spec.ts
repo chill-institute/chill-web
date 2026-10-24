@@ -318,6 +318,27 @@ test.describe("search page", () => {
     ).toBeVisible({ timeout: 5000 });
   });
 
+  test("explains a query the API rejects", async ({ authenticatedPage, mockRpc }) => {
+    await mockRpc(defaultMethods());
+    await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        headers: { "Chill-Error-Code": "invalid_query" },
+        body: JSON.stringify({ code: "invalid_argument", message: "invalid query" }),
+      });
+    });
+
+    await authenticatedPage.goto("/search?q=-cam");
+
+    await expect(
+      authenticatedPage.getByText(
+        "Add at least one word to search for, and keep it to 256 characters or fewer.",
+      ),
+    ).toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.getByText("invalid query", { exact: true })).toBeHidden();
+  });
+
   test("sends x-request-id header on rpc requests", async ({ authenticatedPage, mockRpc }) => {
     let capturedRequestID = "";
 

@@ -14,6 +14,7 @@ test.describe("shell search form", () => {
 
     const searchInput = authenticatedPage.locator("#search-global");
     await expect(searchInput).toBeVisible();
+    await expect(searchInput).toHaveAttribute("maxlength", "256");
     await expect(searchInput).toBeFocused();
 
     await authenticatedPage.keyboard.press("Escape");
