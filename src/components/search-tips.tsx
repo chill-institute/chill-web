@@ -8,7 +8,7 @@ const tips = [
     meaning: 'results must include "the matrix" or "the.matrix" or "the-matrix" or "the_matrix"',
   },
   { example: "+S01E07", meaning: "results must include S01E07" },
-  { example: "-cam", meaning: 'results must never include "cam"' },
+  { example: "-cam", meaning: 'results never include the word "cam"' },
   { example: "tt0133093", meaning: "some trackers accept imdb tt codes" },
   { example: "imdb.com/title/tt0133093", meaning: "chill converts imdb share links to tt codes" },
 ] as const;
