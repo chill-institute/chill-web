@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus } from "lucide-react";
+import { ArrowUpRight, Pencil, Plus, Star } from "lucide-react";
 
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { BingeEditor } from "@/binges/components/binge-editor";
@@ -8,12 +8,11 @@ import { BingeItemDetail } from "@/binges/components/binge-item-detail";
 import { BingePicker } from "@/binges/components/binge-picker";
 import { BingeMediaType, type Binge, type BingeItem } from "@/binges/lib/types";
 import { useBingeQuery, useBingesQuery } from "@/binges/queries/binges";
-import { PosterCard } from "@/ui/components/poster-card";
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 
 const routeApi = getRouteApi("/");
-const SKELETON_SLOTS = Array.from({ length: 6 }, (_, index) => `binge-skel-${index}`);
+const SKELETON_SLOTS = Array.from({ length: 3 }, (_, index) => `binge-skel-${index}`);
 
 type Overlay =
   | { kind: "none" }
@@ -60,7 +59,7 @@ export function BingeSection() {
   return (
     <BingeFrame>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-fg-3 m-0 text-xs uppercase tracking-[0.08em]">
+        <p className="text-fg-3 m-0 text-sm">
           {current && current.id !== latest?.id ? "binge" : "latest binge"}
         </p>
         <div className="flex items-center gap-2">
@@ -134,7 +133,7 @@ function BingeFrame({ children }: { children: React.ReactNode }) {
     <section
       aria-label="Binges"
       data-slot="binge-section"
-      className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-7 pb-10 sm:pt-8"
+      className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-7 pb-10 sm:pt-8"
     >
       {children}
     </section>
@@ -144,51 +143,145 @@ function BingeFrame({ children }: { children: React.ReactNode }) {
 function BingeBody({ binge, onOpenItem }: { binge: Binge; onOpenItem: (item: BingeItem) => void }) {
   return (
     <>
-      <div className="flex max-w-2xl flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <h2 className="m-0 text-2xl leading-[1.08] sm:text-3xl">{binge.title}</h2>
         {binge.blurb ? (
           <p className="text-fg-2 m-0 text-sm whitespace-pre-line sm:text-base">{binge.blurb}</p>
         ) : null}
       </div>
-      <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+      <ol className="border-border-faint m-0 flex list-none flex-col border-t p-0">
         {binge.items.map((item, index) => (
           <li
             key={item.imdbId}
             data-slot="binge-item"
-            className="animate-reveal flex min-w-0 flex-col gap-1.5"
+            className="border-border-faint animate-reveal border-b"
             style={staggerDelay(index)}
           >
-            {item.mediaType === BingeMediaType.UNSPECIFIED ? (
-              <PosterCard
-                title={item.imdbId}
-                image={null}
-                ratingHref={item.externalUrl || `https://imdb.com/title/${item.imdbId}`}
-              />
-            ) : (
-              <PosterCard
-                title={item.title}
-                image={item.posterUrl || null}
-                imageFetchPriority={index < 6 ? "high" : "auto"}
-                imageLoading={index < 6 ? "eager" : "lazy"}
-                rating={item.rating > 0 ? item.rating.toFixed(1) : null}
-                ratingHref={item.externalUrl || undefined}
-                year={item.year > 0 ? String(item.year) : null}
-                render={
-                  <button
-                    type="button"
-                    aria-label={`${item.title} details`}
-                    onClick={() => onOpenItem(item)}
-                  />
-                }
-              />
-            )}
-            {item.comment ? (
-              <p className="text-fg-2 m-0 px-0.5 text-sm leading-snug">{item.comment}</p>
-            ) : null}
+            <BingeRow item={item} position={index + 1} onOpen={() => onOpenItem(item)} />
           </li>
         ))}
-      </ul>
+      </ol>
     </>
+  );
+}
+
+function BingeRow({
+  item,
+  position,
+  onOpen,
+}: {
+  item: BingeItem;
+  position: number;
+  onOpen: () => void;
+}) {
+  const resolved = item.mediaType !== BingeMediaType.UNSPECIFIED;
+  const title = resolved ? item.title : item.imdbId;
+  const imdbHref = item.externalUrl || `https://imdb.com/title/${item.imdbId}`;
+  const body = (
+    <>
+      <span
+        aria-hidden="true"
+        className="text-fg-3 w-5 shrink-0 pt-1 text-right font-serif text-base tabular-nums sm:w-6 sm:text-lg"
+      >
+        {position}
+      </span>
+      <span className="bg-app border-border-strong relative aspect-[2/3] w-[72px] shrink-0 overflow-hidden rounded border sm:w-[92px]">
+        {resolved && item.posterUrl ? (
+          <img
+            src={item.posterUrl}
+            alt=""
+            decoding="async"
+            loading={position <= 3 ? "eager" : "lazy"}
+            className="absolute inset-0 size-full object-cover"
+          />
+        ) : (
+          <span className="text-fg-3 flex h-full w-full items-end p-2 font-serif text-xs">
+            {title}
+          </span>
+        )}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-fg-1 font-serif text-xl leading-tight tracking-[-0.01em] sm:text-2xl">
+          {title}
+        </span>
+        <span className="text-fg-2 flex flex-wrap items-center gap-1.5 text-sm tabular-nums">
+          {resolved && item.rating > 0 ? (
+            <span className="flex items-center gap-1">
+              <Star
+                className="fill-rating-amber text-rating-amber size-3.5"
+                strokeWidth={0}
+                aria-hidden="true"
+              />
+              <span className="text-fg-1">{item.rating.toFixed(1)}</span>
+            </span>
+          ) : null}
+          {resolved && item.rating > 0 ? <span className="text-fg-4">·</span> : null}
+          <ExternalIMDbLink href={imdbHref} />
+          {resolved && item.year > 0 ? (
+            <>
+              <span className="text-fg-4">·</span>
+              <span>{item.year}</span>
+            </>
+          ) : null}
+          <span className="text-fg-4">·</span>
+          <span className="text-fg-3">
+            {item.mediaType === BingeMediaType.TV_SHOW
+              ? "tv show"
+              : resolved
+                ? "movie"
+                : "not found"}
+          </span>
+        </span>
+        {item.comment ? (
+          <span className="text-fg-2 mt-1 block max-w-[62ch] text-sm leading-snug whitespace-pre-line sm:text-base">
+            {item.comment}
+          </span>
+        ) : null}
+      </span>
+    </>
+  );
+  const rowClassName =
+    "flex w-full items-start gap-3 py-3.5 text-left sm:gap-4 sm:py-4 -mx-2 px-2 rounded";
+
+  if (!resolved) {
+    return <div className={rowClassName}>{body}</div>;
+  }
+  return (
+    <button
+      type="button"
+      aria-label={`${item.title} details`}
+      onClick={onOpen}
+      className={`${rowClassName} hover-hover:hover:bg-hover motion-safe:transition-colors motion-safe:duration-fast cursor-pointer focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app focus-visible:outline-none`}
+    >
+      {body}
+    </button>
+  );
+}
+
+function ExternalIMDbLink({ href }: { href: string }) {
+  const open = () => window.open(href, "_blank", "noopener,noreferrer");
+  return (
+    <span
+      role="link"
+      tabIndex={0}
+      title="View on IMDb"
+      className="text-fg-2 hover-hover:hover:text-fg-1 inline-flex cursor-pointer items-center gap-0.5 transition-colors"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        open();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          open();
+        }
+      }}
+    >
+      <span>IMDb</span>
+      <ArrowUpRight className="size-3 shrink-0" strokeWidth={1.25} />
+    </span>
   );
 }
 
@@ -199,11 +292,20 @@ function BingeSkeleton() {
         <Skeleton className="h-7 w-56 rounded sm:h-8" />
         <Skeleton className="h-4 w-80 max-w-full rounded" />
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+      <div className="border-border-faint flex flex-col border-t">
         {SKELETON_SLOTS.map((slot) => (
-          <div key={slot} className="flex flex-col gap-1.5">
-            <Skeleton className="aspect-[2/3] w-full rounded" />
-            <Skeleton className="h-4 w-3/4 rounded" />
+          <div
+            key={slot}
+            className="border-border-faint flex gap-3 border-b py-3.5 sm:gap-4 sm:py-4"
+          >
+            <Skeleton className="h-4 w-5 rounded sm:w-6" />
+            <Skeleton className="aspect-[2/3] w-[72px] rounded sm:w-[92px]" />
+            <div className="flex flex-1 flex-col gap-2">
+              <Skeleton className="h-6 w-2/5 rounded" />
+              <Skeleton className="h-4 w-1/4 rounded" />
+              <Skeleton className="h-4 w-4/5 rounded" />
+              <Skeleton className="h-4 w-3/5 rounded" />
+            </div>
           </div>
         ))}
       </div>
