@@ -10,6 +10,9 @@ import {
   curatorLabel,
   normalizeCuratorName,
   normalizeIMDbId,
+  bingeMediaTypeLabel,
+  bingeTitleLabel,
+  bingeToDraft,
   validateBingeDraft,
   type BingeDraft,
 } from "./types";
@@ -18,7 +21,7 @@ function draft(overrides: Partial<BingeDraft> = {}): BingeDraft {
   return {
     title: "Slow burns",
     blurb: "",
-    items: [{ key: "a", imdbId: "tt0903747", comment: "" }],
+    items: [{ key: "a", imdbId: "tt0903747", label: "", comment: "" }],
     ...overrides,
   };
 }
@@ -49,8 +52,8 @@ describe("validateBingeDraft", () => {
       validateBingeDraft(
         draft({
           items: [
-            { key: "a", imdbId: "tt0903747", comment: "" },
-            { key: "b", imdbId: "", comment: "" },
+            { key: "a", imdbId: "tt0903747", label: "", comment: "" },
+            { key: "b", imdbId: "", label: "", comment: "" },
           ],
         }),
       ),
@@ -67,15 +70,20 @@ describe("validateBingeDraft", () => {
     const errors = validateBingeDraft(
       draft({
         items: [
-          { key: "a", imdbId: "not-an-id", comment: "" },
-          { key: "b", imdbId: "tt0903747", comment: "" },
-          { key: "c", imdbId: "TT0903747", comment: "" },
-          { key: "d", imdbId: "tt0111161", comment: "x".repeat(BINGE_COMMENT_MAX_LENGTH + 1) },
+          { key: "a", imdbId: "not-an-id", label: "", comment: "" },
+          { key: "b", imdbId: "tt0903747", label: "", comment: "" },
+          { key: "c", imdbId: "TT0903747", label: "", comment: "" },
+          {
+            key: "d",
+            imdbId: "tt0111161",
+            label: "",
+            comment: "x".repeat(BINGE_COMMENT_MAX_LENGTH + 1),
+          },
         ],
       }),
     );
     expect(errors?.itemErrors).toEqual({
-      a: "needs an IMDb title id like tt0903747",
+      a: "pick a title",
       c: "already in this binge",
       d: `keep the comment under ${BINGE_COMMENT_MAX_LENGTH} characters`,
     });
@@ -95,8 +103,13 @@ describe("bingeDraftToInput", () => {
           title: " Slow burns ",
           blurb: " patience ",
           items: [
-            { key: "a", imdbId: " https://imdb.com/title/tt0903747 ", comment: " start here " },
-            { key: "b", imdbId: "", comment: "" },
+            {
+              key: "a",
+              imdbId: " https://imdb.com/title/tt0903747 ",
+              label: "",
+              comment: " start here ",
+            },
+            { key: "b", imdbId: "", label: "", comment: "" },
           ],
         }),
       ),
@@ -142,5 +155,36 @@ describe("curatorLabel", () => {
     expect(curatorLabel("Alberto")).toBe("Alberto");
     expect(curatorLabel("  ")).toBe("a curator");
     expect(curatorLabel(undefined)).toBe("a curator");
+  });
+});
+
+describe("bingeTitleLabel", () => {
+  it("joins title and year, and tolerates unknown years and titles", () => {
+    expect(bingeTitleLabel("The Long Kiss Goodnight", 1996)).toBe("The Long Kiss Goodnight (1996)");
+    expect(bingeTitleLabel(" Breaking Bad ", 0)).toBe("Breaking Bad");
+    expect(bingeTitleLabel("", 1996)).toBe("");
+  });
+
+  it("names media types for the picker", () => {
+    expect(bingeMediaTypeLabel(BingeMediaType.MOVIE)).toBe("movie");
+    expect(bingeMediaTypeLabel(BingeMediaType.TV_SHOW)).toBe("tv show");
+    expect(bingeMediaTypeLabel(BingeMediaType.UNSPECIFIED)).toBe("");
+  });
+
+  it("labels resolved items in a draft and leaves unresolved ones to the id", () => {
+    const draft = bingeToDraft(
+      {
+        id: "b1",
+        title: "t",
+        blurb: "",
+        curatorName: "",
+        items: [
+          { imdbId: "tt0903747", title: "Breaking Bad", year: 2008, comment: "" },
+          { imdbId: "tt0000001", title: "", year: 0, comment: "" },
+        ],
+      } as never,
+      () => "k",
+    );
+    expect(draft.items.map((item) => item.label)).toEqual(["Breaking Bad (2008)", ""]);
   });
 });

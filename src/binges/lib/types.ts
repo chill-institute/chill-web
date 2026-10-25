@@ -7,11 +7,12 @@ import {
   type Binge,
   type BingeItem,
   type BingeSummary,
+  type BingeTitleMatch,
   type Movie,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 export { BingeMediaType };
-export type { Binge, BingeItem, BingeSummary };
+export type { Binge, BingeItem, BingeSummary, BingeTitleMatch };
 
 export const BINGE_TITLE_MAX_LENGTH = 120;
 const BINGE_BLURB_MAX_LENGTH = 1000;
@@ -33,6 +34,8 @@ const IMDB_URL_PATTERN = /imdb\.com\/title\/(tt\d{7,8})/i;
 type BingeItemDraft = {
   key: string;
   imdbId: string;
+  /** What the curator picked, for display; empty when only the ID is known. */
+  label: string;
   comment: string;
 };
 
@@ -82,7 +85,7 @@ export function validateBingeDraft(draft: BingeDraft): BingeDraftErrors | null {
   for (const item of filled) {
     const imdbId = normalizeIMDbId(item.imdbId);
     if (imdbId === "") {
-      errors.itemErrors[item.key] = "needs an IMDb title id like tt0903747";
+      errors.itemErrors[item.key] = "pick a title";
       continue;
     }
     if (seen.has(imdbId)) {
@@ -134,7 +137,7 @@ export function bingeDraftToInput(draft: BingeDraft) {
 
 export function bingeToDraft(binge: Binge | undefined, newKey: () => string): BingeDraft {
   if (!binge) {
-    return { title: "", blurb: "", items: [{ key: newKey(), imdbId: "", comment: "" }] };
+    return { title: "", blurb: "", items: [{ key: newKey(), imdbId: "", label: "", comment: "" }] };
   }
   return {
     title: binge.title,
@@ -142,9 +145,28 @@ export function bingeToDraft(binge: Binge | undefined, newKey: () => string): Bi
     items: binge.items.map((item) => ({
       key: newKey(),
       imdbId: item.imdbId,
+      label: bingeTitleLabel(item.title, item.year),
       comment: item.comment,
     })),
   };
+}
+
+/** "Title (1996)", or "" when the title is unknown. */
+export function bingeTitleLabel(title: string, year: number): string {
+  const trimmed = title.trim();
+  if (trimmed.length === 0) return "";
+  return year > 0 ? `${trimmed} (${year})` : trimmed;
+}
+
+export function bingeMediaTypeLabel(mediaType: BingeMediaType): string {
+  switch (mediaType) {
+    case BingeMediaType.MOVIE:
+      return "movie";
+    case BingeMediaType.TV_SHOW:
+      return "tv show";
+    default:
+      return "";
+  }
 }
 
 /** The movie detail modal reads a catalog Movie; a resolved binge item carries enough to build one. */

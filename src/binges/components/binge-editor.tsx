@@ -13,6 +13,7 @@ import {
   type BingeDraft,
   type BingeDraftErrors,
 } from "@/binges/lib/types";
+import { BingeTitlePicker } from "@/binges/components/binge-title-picker";
 import { IconButton } from "@/ui/components/icon-button";
 import { ModalCloseButton } from "@/ui/components/modal-close-button";
 import { ResponsiveModal } from "@/ui/components/responsive-modal";
@@ -65,7 +66,10 @@ export function BingeEditor({
   const editing = binge !== undefined;
   const needsName = curatorName.trim().length === 0 || editingName;
 
-  const updateItem = (key: string, patch: Partial<{ imdbId: string; comment: string }>) =>
+  const updateItem = (
+    key: string,
+    patch: Partial<{ imdbId: string; label: string; comment: string }>,
+  ) =>
     setDraft((prev) => ({
       ...prev,
       items: prev.items.map((item) => (item.key === key ? { ...item, ...patch } : item)),
@@ -75,7 +79,7 @@ export function BingeEditor({
   const addItem = () =>
     setDraft((prev) => ({
       ...prev,
-      items: [...prev.items, { key: newItemKey(), imdbId: "", comment: "" }],
+      items: [...prev.items, { key: newItemKey(), imdbId: "", label: "", comment: "" }],
     }));
 
   const submit = () => {
@@ -103,7 +107,7 @@ export function BingeEditor({
       open
       onOpenChange={(open) => !open && !busy && onClose()}
       title={editing ? "Edit binge" : "New binge"}
-      description="Title, blurb, and the IMDb titles that make up this binge"
+      description="Title, blurb, and the movies and shows that make up this binge"
       desktopContentClassName="fixed top-6 left-1/2 max-h-[calc(100dvh-48px)] w-[min(100vw-1rem,640px)] -translate-x-1/2 gap-0 rounded-xl border border-border-strong bg-surface p-0 text-fg-1 shadow-modal"
       drawerContentClassName="max-h-[92dvh] overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
     >
@@ -187,24 +191,14 @@ export function BingeEditor({
                   className="border-border-faint bg-surface-2 flex flex-col gap-2 rounded border p-2.5"
                 >
                   <div className="flex items-start gap-2">
-                    <Input
-                      aria-label={`IMDb id ${index + 1}`}
-                      placeholder="tt0903747 or an IMDb link"
-                      value={item.imdbId}
-                      aria-invalid={itemError ? true : undefined}
+                    <BingeTitlePicker
+                      index={index}
+                      imdbId={item.imdbId}
+                      label={item.label}
                       disabled={busy}
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="sm:max-w-56"
-                      onChange={(event) => updateItem(item.key, { imdbId: event.target.value })}
-                    />
-                    <Input
-                      aria-label={`comment ${index + 1}`}
-                      placeholder="optional comment"
-                      value={item.comment}
-                      disabled={busy}
-                      autoComplete="off"
-                      onChange={(event) => updateItem(item.key, { comment: event.target.value })}
+                      invalid={itemError !== undefined}
+                      onPick={(imdbId, label) => updateItem(item.key, { imdbId, label })}
+                      onClear={() => updateItem(item.key, { imdbId: "", label: "" })}
                     />
                     <IconButton
                       type="button"
@@ -215,6 +209,14 @@ export function BingeEditor({
                       <X />
                     </IconButton>
                   </div>
+                  <Input
+                    aria-label={`comment ${index + 1}`}
+                    placeholder="optional comment"
+                    value={item.comment}
+                    disabled={busy}
+                    autoComplete="off"
+                    onChange={(event) => updateItem(item.key, { comment: event.target.value })}
+                  />
                   {itemError ? <p className="text-error-text m-0 text-xs">{itemError}</p> : null}
                 </div>
               );

@@ -1,10 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { BingeInput } from "@/api/api";
 import { useApi } from "@/auth/api-context";
 import { useAuth } from "@/auth/auth";
 
-import { BINGES_QUERY_KEY, bingeQueryOptions, bingesQueryOptions } from "./options";
+import {
+  BINGES_QUERY_KEY,
+  bingeQueryOptions,
+  bingeTitleSearchQueryOptions,
+  bingesQueryOptions,
+} from "./options";
 
 export function useBingesQuery() {
   const api = useApi();
@@ -46,5 +51,15 @@ export function useSetCuratorName() {
     mutationFn: async (displayName: string) =>
       (await api.setBingeCuratorName(displayName)).displayName,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY }),
+  });
+}
+
+/** Searches titles for a binge entry; idle until the query has two characters. */
+export function useBingeTitleSearch(query: string) {
+  const api = useApi();
+  const auth = useAuth();
+  return useQuery({
+    ...bingeTitleSearchQueryOptions(api, query, auth.isAuthenticated),
+    placeholderData: keepPreviousData,
   });
 }

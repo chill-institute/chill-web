@@ -13,6 +13,7 @@ import {
   type DeleteBingeResponse,
   type GetBingeResponse,
   type ListBingesResponse,
+  type SearchBingeTitlesResponse,
   type SetBingeCuratorNameResponse,
   type UpdateBingeResponse,
   type GetDownloadFolderResponse,
@@ -274,6 +275,14 @@ export function createApi({
     setBingeCuratorName: (displayName: string): Promise<SetBingeCuratorNameResponse> =>
       call("Set curator name request", (s, requestHeaders) =>
         userClient.setBingeCuratorName({ displayName }, { headers: requestHeaders, signal: s }),
+      ),
+
+    searchBingeTitles: (query: string, signal?: AbortSignal): Promise<SearchBingeTitlesResponse> =>
+      call(
+        "Binge title search request",
+        (s, requestHeaders) =>
+          userClient.searchBingeTitles({ query }, { headers: requestHeaders, signal: s }),
+        signal,
       ),
 
     getMovies: (signal?: AbortSignal): Promise<GetMoviesResponse> =>

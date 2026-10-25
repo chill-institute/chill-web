@@ -48,6 +48,7 @@ function createApiStub() {
     updateBinge: unusedCall,
     deleteBinge: unusedCall,
     setBingeCuratorName: unusedCall,
+    searchBingeTitles: unusedCall,
   } satisfies ChillApi;
 }
 
