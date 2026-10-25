@@ -256,7 +256,7 @@ function BingeRow({
       type="button"
       aria-label={`${item.title} details`}
       onClick={onOpen}
-      className={`${rowClassName} hover-hover:hover:bg-hover motion-safe:transition-colors motion-safe:duration-fast cursor-pointer focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app focus-visible:outline-none`}
+      className={`${rowClassName} hover-hover:hover:bg-surface motion-safe:transition-colors motion-safe:duration-fast cursor-pointer focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app focus-visible:outline-none`}
     >
       {body}
     </button>
@@ -318,7 +318,7 @@ function EarlierBinges({
               type="button"
               onClick={() => onSelect(binge.id)}
               className={cn(
-                "hover-hover:hover:bg-hover focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer flex-col gap-0.5 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
+                "hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer flex-col gap-0.5 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
               )}
             >
               <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-[-0.01em]">
