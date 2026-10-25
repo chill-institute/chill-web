@@ -9,6 +9,7 @@ import {
   DeleteBingeResponseSchema,
   GetBingeResponseSchema,
   ListBingesResponseSchema,
+  SetBingeCuratorNameResponseSchema,
   UpdateBingeResponseSchema,
   type Binge,
   type BingeSummary,
@@ -442,6 +443,7 @@ export function binge(init?: BingeInit) {
         comment: "season one only",
       }),
     ],
+    curatorName: "the night shift",
     createdAt: bingeTimestamp,
     updatedAt: bingeTimestamp,
     ...init,
@@ -454,19 +456,31 @@ export function bingeSummary(source: Binge): BingeSummary {
     title: source.title,
     blurb: source.blurb,
     itemCount: source.items.length,
+    curatorName: source.curatorName,
     createdAt: source.createdAt,
     updatedAt: source.updatedAt,
   });
 }
 
-export function bingesResponse(binges: Binge[], options?: { canCurate?: boolean }) {
+export function bingesResponse(
+  binges: Binge[],
+  options?: { canCurate?: boolean; curatorName?: string },
+) {
   return toJson(
     ListBingesResponseSchema,
     create(ListBingesResponseSchema, {
       binges: binges.map(bingeSummary),
       canCurate: options?.canCurate ?? false,
+      curatorName: options?.curatorName ?? "",
       latest: binges[0],
     }),
+  );
+}
+
+export function setBingeCuratorNameResponse(displayName: string) {
+  return toJson(
+    SetBingeCuratorNameResponseSchema,
+    create(SetBingeCuratorNameResponseSchema, { displayName }),
   );
 }
 

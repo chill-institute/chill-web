@@ -19,6 +19,8 @@ export const BINGE_COMMENT_MAX_LENGTH = 500;
 const BINGE_MAX_ITEMS = 50;
 
 const IMDB_ID_PATTERN = /^tt\d{7,8}$/;
+const CURATOR_NAME_MIN_LENGTH = 2;
+const CURATOR_NAME_MAX_LENGTH = 40;
 
 /** Counts characters the way the engine does (Unicode code points, not UTF-16 units). */
 function lengthOf(value: string): number {
@@ -99,6 +101,23 @@ export function validateBingeDraft(draft: BingeDraft): BingeDraftErrors | null {
     errors.items !== undefined ||
     Object.keys(errors.itemErrors).length > 0;
   return hasErrors ? errors : null;
+}
+
+/** Collapses whitespace like the engine does and reports why a name is rejected. */
+export function normalizeCuratorName(value: string): { name: string; error?: string } {
+  const name = value.trim().split(/\s+/).filter(Boolean).join(" ");
+  const length = lengthOf(name);
+  if (length < CURATOR_NAME_MIN_LENGTH) {
+    return { name, error: `pick a name of at least ${CURATOR_NAME_MIN_LENGTH} characters` };
+  }
+  if (length > CURATOR_NAME_MAX_LENGTH) {
+    return { name, error: `keep the name under ${CURATOR_NAME_MAX_LENGTH} characters` };
+  }
+  return { name };
+}
+
+export function curatorLabel(name: string): string {
+  return name.trim().length > 0 ? name : "a curator";
 }
 
 export function bingeDraftToInput(draft: BingeDraft) {

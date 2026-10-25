@@ -1,22 +1,29 @@
 import { useState, type CSSProperties } from "react";
+import { cn } from "@/ui/lib/cn";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight, Pencil, Plus, Star } from "lucide-react";
 
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { BingeEditor } from "@/binges/components/binge-editor";
 import { BingeItemDetail } from "@/binges/components/binge-item-detail";
-import { BingePicker } from "@/binges/components/binge-picker";
-import { BingeMediaType, type Binge, type BingeItem } from "@/binges/lib/types";
+import {
+  BingeMediaType,
+  curatorLabel,
+  formatBingeDate,
+  type Binge,
+  type BingeItem,
+  type BingeSummary,
+} from "@/binges/lib/types";
 import { useBingeQuery, useBingesQuery } from "@/binges/queries/binges";
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 
 const routeApi = getRouteApi("/");
 const SKELETON_SLOTS = Array.from({ length: 3 }, (_, index) => `binge-skel-${index}`);
+const EARLIER_BINGES_PREVIEW = 5;
 
 type Overlay =
   | { kind: "none" }
-  | { kind: "picker" }
   | { kind: "editor"; binge?: Binge }
   | { kind: "item"; item: BingeItem };
 
@@ -48,7 +55,7 @@ export function BingeSection() {
     );
   }
 
-  const { binges, canCurate } = bingesQuery.data;
+  const { binges, canCurate, curatorName } = bingesQuery.data;
   const current = wantsOther ? bingeQuery.data?.binge : latest;
   const loadingOther = wantsOther && bingeQuery.status === "pending";
 
@@ -63,11 +70,6 @@ export function BingeSection() {
           {current && current.id !== latest?.id ? "binge" : "latest binge"}
         </p>
         <div className="flex items-center gap-2">
-          {binges.length > 1 ? (
-            <Button size="sm" onClick={() => setOverlay({ kind: "picker" })}>
-              other binges
-            </Button>
-          ) : null}
           {canCurate && current ? (
             <Button
               size="sm"
@@ -98,20 +100,19 @@ export function BingeSection() {
         <p className="text-fg-2 m-0 text-sm">no binges yet. publish the first one.</p>
       )}
 
-      {overlay.kind === "picker" ? (
-        <BingePicker
+      {binges.length > 1 ? (
+        <EarlierBinges
           binges={binges}
-          activeId={current?.id}
-          onSelect={(id) => {
-            showBinge(id === latest?.id ? undefined : id);
-            close();
-          }}
-          onClose={close}
+          currentId={current?.id}
+          latestId={latest?.id}
+          onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
         />
       ) : null}
+
       {overlay.kind === "editor" ? (
         <BingeEditor
           binge={overlay.binge}
+          curatorName={curatorName}
           onClose={close}
           onSaved={(saved) => {
             close();
@@ -145,6 +146,10 @@ function BingeBody({ binge, onOpenItem }: { binge: Binge; onOpenItem: (item: Bin
     <>
       <div className="flex flex-col gap-2">
         <h2 className="m-0 text-2xl leading-[1.08] sm:text-3xl">{binge.title}</h2>
+        <p className="text-fg-3 m-0 text-sm">
+          by {curatorLabel(binge.curatorName)}
+          {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
+        </p>
         {binge.blurb ? (
           <p className="text-fg-2 m-0 text-sm whitespace-pre-line sm:text-base">{binge.blurb}</p>
         ) : null}
@@ -282,6 +287,61 @@ function ExternalIMDbLink({ href }: { href: string }) {
       <span>IMDb</span>
       <ArrowUpRight className="size-3 shrink-0" strokeWidth={1.25} />
     </span>
+  );
+}
+
+function EarlierBinges({
+  binges,
+  currentId,
+  latestId,
+  onSelect,
+}: {
+  binges: BingeSummary[];
+  currentId: string | undefined;
+  latestId: string | undefined;
+  onSelect: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const others = binges.filter((binge) => binge.id !== currentId);
+  const visible = expanded ? others : others.slice(0, EARLIER_BINGES_PREVIEW);
+  const hidden = others.length - visible.length;
+
+  return (
+    <div data-slot="earlier-binges" className="mt-2 flex flex-col gap-2">
+      <p className="text-fg-3 m-0 text-sm">
+        {currentId === latestId ? "earlier binges" : "other binges"}
+      </p>
+      <ul className="border-border-faint m-0 flex list-none flex-col border-t p-0">
+        {visible.map((binge) => (
+          <li key={binge.id} className="border-border-faint border-b">
+            <button
+              type="button"
+              onClick={() => onSelect(binge.id)}
+              className={cn(
+                "hover-hover:hover:bg-hover focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer flex-col gap-0.5 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
+              )}
+            >
+              <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-[-0.01em]">
+                {binge.title}
+                {binge.id === latestId ? (
+                  <span className="text-fg-3 text-sm"> · latest</span>
+                ) : null}
+              </span>
+              <span className="text-fg-3 shrink-0 text-sm tabular-nums">
+                by {curatorLabel(binge.curatorName)} · {binge.itemCount}{" "}
+                {binge.itemCount === 1 ? "title" : "titles"}
+                {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {hidden > 0 ? (
+        <Button size="sm" variant="ghost" className="self-start" onClick={() => setExpanded(true)}>
+          show all {others.length} binges
+        </Button>
+      ) : null}
+    </div>
   );
 }
 

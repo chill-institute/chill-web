@@ -7,6 +7,8 @@ import {
   BINGE_TITLE_MAX_LENGTH,
   bingeDraftToInput,
   bingeItemToMovie,
+  curatorLabel,
+  normalizeCuratorName,
   normalizeIMDbId,
   validateBingeDraft,
   type BingeDraft,
@@ -124,5 +126,20 @@ describe("bingeItemToMovie", () => {
     expect(movie.year).toBe(1994);
     expect(movie.rating).toBe(9.3);
     expect(movie.genres).toEqual(["Drama"]);
+  });
+});
+
+describe("normalizeCuratorName", () => {
+  it("collapses whitespace and bounds the length", () => {
+    expect(normalizeCuratorName("  the   night\nshift ")).toEqual({ name: "the night shift" });
+    expect(normalizeCuratorName(" x ").error).toContain("at least");
+    expect(normalizeCuratorName("x".repeat(41)).error).toContain("under");
+  });
+});
+
+describe("curatorLabel", () => {
+  it("falls back when no name was chosen", () => {
+    expect(curatorLabel("Alberto")).toBe("Alberto");
+    expect(curatorLabel("  ")).toBe("a curator");
   });
 });

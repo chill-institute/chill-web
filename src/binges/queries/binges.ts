@@ -38,3 +38,13 @@ export function useDeleteBinge() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY }),
   });
 }
+
+export function useSetCuratorName() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (displayName: string) =>
+      (await api.setBingeCuratorName(displayName)).displayName,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY }),
+  });
+}

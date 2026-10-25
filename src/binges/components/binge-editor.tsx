@@ -3,10 +3,11 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { Plus, Trash2, X } from "lucide-react";
 
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { useDeleteBinge, useSaveBinge } from "@/binges/queries/binges";
+import { useDeleteBinge, useSaveBinge, useSetCuratorName } from "@/binges/queries/binges";
 import {
   bingeDraftToInput,
   bingeToDraft,
+  normalizeCuratorName,
   validateBingeDraft,
   type Binge,
   type BingeDraft,
@@ -22,6 +23,7 @@ import { Textarea } from "@/ui/components/ui/textarea";
 
 type Props = {
   binge?: Binge;
+  curatorName: string;
   onClose: () => void;
   onSaved: (binge: Binge) => void;
   onDeleted: () => void;
@@ -42,14 +44,19 @@ function requestMessage(error: unknown): string | null {
   return null;
 }
 
-export function BingeEditor({ binge, onClose, onSaved, onDeleted }: Props) {
+export function BingeEditor({ binge, curatorName, onClose, onSaved, onDeleted }: Props) {
   const [draft, setDraft] = useState<BingeDraft>(() => bingeToDraft(binge, newItemKey));
   const [errors, setErrors] = useState<BingeDraftErrors>(NO_ERRORS);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editingName, setEditingName] = useState(curatorName.trim().length === 0);
+  const [nameDraft, setNameDraft] = useState(curatorName);
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
   const save = useSaveBinge();
   const remove = useDeleteBinge();
-  const busy = save.isPending || remove.isPending;
+  const setName = useSetCuratorName();
+  const busy = save.isPending || remove.isPending || setName.isPending;
   const editing = binge !== undefined;
+  const needsName = curatorName.trim().length === 0 || editingName;
 
   const updateItem = (key: string, patch: Partial<{ imdbId: string; comment: string }>) =>
     setDraft((prev) => ({
@@ -67,14 +74,22 @@ export function BingeEditor({ binge, onClose, onSaved, onDeleted }: Props) {
   const submit = () => {
     const validation = validateBingeDraft(draft);
     setErrors(validation ?? NO_ERRORS);
-    if (validation) return;
-    save.mutate(
-      { id: binge?.id, input: bingeDraftToInput(draft) },
-      { onSuccess: (saved) => saved && onSaved(saved) },
-    );
+    const name = needsName ? normalizeCuratorName(nameDraft) : undefined;
+    setNameError(name?.error);
+    if (validation || name?.error) return;
+    const publish = () =>
+      save.mutate(
+        { id: binge?.id, input: bingeDraftToInput(draft) },
+        { onSuccess: (saved) => saved && onSaved(saved) },
+      );
+    if (name && name.name !== curatorName) {
+      setName.mutate(name.name, { onSuccess: publish });
+      return;
+    }
+    publish();
   };
 
-  const saveMessage = requestMessage(save.error);
+  const saveMessage = requestMessage(save.error) ?? requestMessage(setName.error);
 
   return (
     <ResponsiveModal
@@ -99,6 +114,34 @@ export function BingeEditor({ binge, onClose, onSaved, onDeleted }: Props) {
         </div>
 
         <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-5">
+          {needsName ? (
+            <Field data-invalid={nameError ? "true" : undefined}>
+              <FieldLabel htmlFor="binge-curator-name">your curator name</FieldLabel>
+              <Input
+                id="binge-curator-name"
+                value={nameDraft}
+                aria-invalid={nameError ? true : undefined}
+                disabled={busy}
+                autoComplete="off"
+                placeholder="shown on your binges instead of your put.io name"
+                onChange={(event) => setNameDraft(event.target.value)}
+              />
+              {nameError ? <p className="text-error-text m-0 text-xs">{nameError}</p> : null}
+            </Field>
+          ) : (
+            <p className="text-fg-3 m-0 text-sm">
+              publishing as <span className="text-fg-1">{curatorName}</span>
+              {" · "}
+              <button
+                type="button"
+                className="hover-hover:hover:text-fg-1 cursor-pointer underline-offset-4 hover:underline"
+                onClick={() => setEditingName(true)}
+              >
+                change
+              </button>
+            </p>
+          )}
+
           <Field data-invalid={errors.title ? "true" : undefined}>
             <FieldLabel htmlFor="binge-title">title</FieldLabel>
             <Input
@@ -188,6 +231,8 @@ export function BingeEditor({ binge, onClose, onSaved, onDeleted }: Props) {
             </p>
           ) : save.error ? (
             <UserErrorAlert error={save.error} />
+          ) : setName.error ? (
+            <UserErrorAlert error={setName.error} />
           ) : null}
           {remove.error ? <UserErrorAlert error={remove.error} /> : null}
         </div>

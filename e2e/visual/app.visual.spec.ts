@@ -176,7 +176,17 @@ test("not found screen", async ({ page }) => {
 
 test("home latest binge", async ({ authenticatedPage, mockRpc }) => {
   await freezeVisualClock(authenticatedPage);
-  await mockRpc(defaultMethods({ ListBinges: bingesResponse([binge()], { canCurate: true }) }));
+  await mockRpc(
+    defaultMethods({
+      ListBinges: bingesResponse(
+        [
+          binge(),
+          binge({ id: "binge-older", title: "Comfort rewatches", items: [binge().items[0]] }),
+        ],
+        { canCurate: true, curatorName: "the night shift" },
+      ),
+    }),
+  );
   await authenticatedPage.goto("/");
   await expect(
     authenticatedPage.getByRole("heading", { name: "Signals in the dark" }),
