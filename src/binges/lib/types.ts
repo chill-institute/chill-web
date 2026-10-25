@@ -116,8 +116,10 @@ export function normalizeCuratorName(value: string): { name: string; error?: str
   return { name };
 }
 
-export function curatorLabel(name: string): string {
-  return name.trim().length > 0 ? name : "a curator";
+/** Tolerates a missing field: a cached response from an older contract carries none. */
+export function curatorLabel(name: string | undefined): string {
+  const trimmed = name?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : "a curator";
 }
 
 export function bingeDraftToInput(draft: BingeDraft) {

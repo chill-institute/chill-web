@@ -141,5 +141,6 @@ describe("curatorLabel", () => {
   it("falls back when no name was chosen", () => {
     expect(curatorLabel("Alberto")).toBe("Alberto");
     expect(curatorLabel("  ")).toBe("a curator");
+    expect(curatorLabel(undefined)).toBe("a curator");
   });
 });

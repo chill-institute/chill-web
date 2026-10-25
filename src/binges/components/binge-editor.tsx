@@ -23,7 +23,7 @@ import { Textarea } from "@/ui/components/ui/textarea";
 
 type Props = {
   binge?: Binge;
-  curatorName: string;
+  curatorName: string | undefined;
   onClose: () => void;
   onSaved: (binge: Binge) => void;
   onDeleted: () => void;
@@ -44,7 +44,14 @@ function requestMessage(error: unknown): string | null {
   return null;
 }
 
-export function BingeEditor({ binge, curatorName, onClose, onSaved, onDeleted }: Props) {
+export function BingeEditor({
+  binge,
+  curatorName: initialName,
+  onClose,
+  onSaved,
+  onDeleted,
+}: Props) {
+  const curatorName = initialName ?? "";
   const [draft, setDraft] = useState<BingeDraft>(() => bingeToDraft(binge, newItemKey));
   const [errors, setErrors] = useState<BingeDraftErrors>(NO_ERRORS);
   const [confirmDelete, setConfirmDelete] = useState(false);
