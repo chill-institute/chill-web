@@ -69,6 +69,45 @@ describe("createApi request metadata", () => {
     expect(capturedRequest?.headers.get("X-Request-Id")).toBeTruthy();
   });
 
+  it("sends the auth token as a bearer Authorization header", async () => {
+    let capturedRequest: Request | undefined;
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedRequest = new Request(input, init);
+      return new Response("{}", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
+    const api = createApi({ authToken: "sample-token", baseUrl: "https://api.example.test" });
+    await api.getUserProfile();
+
+    expect(capturedRequest?.headers.get("Authorization")).toBe("Bearer sample-token");
+  });
+
+  it("reports an unauthenticated Connect response to onAuthFailure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response('{"code":"unauthenticated","message":"session expired"}', {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
+    const onAuthFailure = vi.fn();
+
+    const api = createApi({
+      authToken: "sample-token",
+      baseUrl: "https://api.example.test",
+      onAuthFailure,
+    });
+    const error = await api.getUserSettings().catch((reason: unknown) => reason);
+
+    expect(error).toMatchObject({ code: Code.Unauthenticated });
+    expect(onAuthFailure).toHaveBeenCalledTimes(1);
+    expect(onAuthFailure).toHaveBeenCalledWith(error);
+  });
+
   it("sends catalog origin on attributed AddTransfer requests", async () => {
     let capturedBody: unknown;
     vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
