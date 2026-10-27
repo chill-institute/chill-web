@@ -38,5 +38,5 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Check required jobs
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        if: ${{ needs.workflow-security.result != 'success' || needs.verify-app.result != 'success' || (needs.e2e.result != 'success' && needs.e2e.result != 'skipped') }}
         run: exit 1
