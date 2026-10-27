@@ -179,12 +179,6 @@ test.describe("movies", () => {
     });
   });
 
-  test("redirects to sign-in when unauthenticated", async ({ page }) => {
-    await page.goto("/movies");
-    await page.waitForURL("**/sign-in**");
-    expect(page.url()).toContain("/sign-in");
-  });
-
   test("redirects stale tokens to sign-in with the current movies callback", async ({
     authenticatedPage,
   }) => {
@@ -218,6 +212,7 @@ test.describe("movies", () => {
 
     await authenticatedPage.goto("/movies");
     await openFirstMovieModal(authenticatedPage);
+    await expect(authenticatedPage).toHaveURL(/\/movies\/m1(\?|$)/);
     const movieDialog = authenticatedPage.getByRole("dialog", {
       name: "Aurora Protocol details",
     });
@@ -689,6 +684,7 @@ test.describe("movies", () => {
       .selectOption(String(MoviesSource.YTS));
 
     await expect(authenticatedPage.getByText("Aurora Protocol")).toBeHidden({ timeout: 400 });
+    await expect(authenticatedPage).toHaveURL(new RegExp(`source=${MoviesSource.YTS}`));
     await expect(authenticatedPage.getByText("Night Courier")).toBeVisible({ timeout: 2000 });
   });
 

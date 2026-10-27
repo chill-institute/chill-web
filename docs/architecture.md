@@ -27,12 +27,6 @@ page for the CLI, MCP, and scripts. Build variables: [`src/env.d.ts`](../src/env
 [`src/lib/env.ts`](../src/lib/env.ts). Sentry runs only with a public DSN and
 environment; filters live in [`src/lib/sentry.ts`](../src/lib/sentry.ts).
 
-## Catalog sort
-
-One saved `UserSettings.catalog.sort` covers movies, TV, and every provider; a
-`sort` search param overrides it for that URL. Values and ties live in
-[`src/catalog/lib/sort.ts`](../src/catalog/lib/sort.ts).
-
 ## Stremio setup
 
 `/stremio` gets add-on links from the chill API, sending the token only in an

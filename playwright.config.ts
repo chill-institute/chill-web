@@ -10,7 +10,7 @@ const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: ["**/a11y/**", "**/perf/**", "**/visual/**"],
+  testIgnore: ["**/visual/**"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

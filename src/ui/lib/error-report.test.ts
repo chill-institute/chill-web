@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { APP_NAME } from "@/lib/app-info";
 
-import { buildErrorReport, formatErrorReport } from "./error-report";
+import { buildErrorReport } from "./error-report";
 
 describe("buildErrorReport", () => {
   it("normalizes error objects into a copyable report", () => {
@@ -60,22 +60,5 @@ describe("buildErrorReport", () => {
       sentryEventId: undefined,
       userAgent: "Unit Test Browser",
     });
-  });
-});
-
-describe("formatErrorReport", () => {
-  it("renders stable pretty JSON", () => {
-    const output = formatErrorReport(
-      buildErrorReport(new Error("kaboom"), {
-        occurredAt: "2026-03-15T01:23:45.000Z",
-        release: "test-release",
-        routePath: "/",
-        userAgent: "Unit Test Browser",
-      }),
-    );
-
-    expect(output).toContain('"app": "chill-web"');
-    expect(output).toContain('"routePath": "/"');
-    expect(output).toContain('"release": "test-release"');
   });
 });

@@ -116,6 +116,17 @@ export default defineConfig({
   staged: {
     "*": "vp check --fix",
   },
+  run: {
+    tasks: {
+      check: { command: ["vp check", "knip --no-config-hints"] },
+      test: { command: "vp test" },
+      bundle: { command: "vp build" },
+      verify: {
+        command: "node scripts/check-build.ts",
+        dependsOn: ["check", "test", "bundle"],
+      },
+    },
+  },
   fmt: {
     ignorePatterns: ["src/routeTree.gen.ts", "dist/**", ".agents/skills/**"],
   },

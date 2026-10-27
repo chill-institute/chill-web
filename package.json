@@ -7,20 +7,12 @@
     "dev": "vp dev --host 0.0.0.0 --port 58300",
     "build": "vp build && node scripts/check-build.ts",
     "preview": "vp preview --host 0.0.0.0 --port 58300",
-    "test": "vp test",
-    "check": "vp check && vp exec knip --no-config-hints",
-    "smoke": "vp exec playwright test e2e/smoke.spec.ts",
     "e2e": "vp exec playwright test",
     "visual": "vp exec playwright test -c playwright.visual.config.ts",
     "visual:update": "vp exec playwright test -c playwright.visual.config.ts --update-snapshots",
     "format": "vp fmt --write",
-    "format:check": "vp fmt --check",
-    "lint": "vp lint",
-    "knip": "vp exec knip --no-config-hints",
     "sst": "sst",
-    "verify": "vp run check && vp test && vp run build",
-    "prepare": "vp config",
-    "quality": "vp run verify && vp run e2e && vp run visual"
+    "prepare": "vp config"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -39,11 +39,6 @@ export function expectStableBox(before: ElementBox, after: ElementBox) {
   expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(1);
 }
 
-export function expectStablePosition(before: ElementBox, after: ElementBox) {
-  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
-}
-
 export async function expectNoExcessBottomSpace(
   container: Locator,
   content: Locator,
