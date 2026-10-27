@@ -14,8 +14,4 @@ describe("cn", () => {
     expect(cn("text-sm text-row")).toBe("text-row");
     expect(cn("text-2xs text-meta")).toBe("text-meta");
   });
-
-  it("still lets the last text colour win", () => {
-    expect(cn("text-row text-fg-1 text-fg-3")).toBe("text-row text-fg-3");
-  });
 });

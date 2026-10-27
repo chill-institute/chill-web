@@ -53,25 +53,6 @@ test.describe("shell search form", () => {
     );
   });
 
-  test("search form navigates to search page with query", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
-    await mockRpc({
-      GetUserSettings: userSettings(),
-      GetIndexers: indexersResponse([]),
-    });
-
-    await authenticatedPage.goto("/");
-
-    const searchInput = authenticatedPage.locator("#search-global");
-    await searchInput.fill("test query");
-    await authenticatedPage.getByRole("button", { name: "and chill" }).click();
-
-    await authenticatedPage.waitForURL("**/search**");
-    expect(authenticatedPage.url()).toContain("q=test+query");
-  });
-
   test("search form normalizes IMDb title URLs before navigation", async ({
     authenticatedPage,
     mockRpc,

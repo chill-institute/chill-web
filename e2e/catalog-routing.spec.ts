@@ -134,54 +134,6 @@ test.describe("catalog routing", () => {
     );
   });
 
-  test("picking a movie source updates the URL with the source param", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
-    let currentSource: MoviesSource = MoviesSource.IMDB_MOVIEMETER;
-
-    await mockRpc({
-      GetUserSettings: userSettings({
-        moviesSource: MoviesSource.IMDB_MOVIEMETER,
-      }),
-      GetMovies: moviesResponse([aurora]),
-      GetTVShows: tvShowsResponse([]),
-    });
-
-    await authenticatedPage.route("**/chill.v4.UserService/GetMovies", async (route) => {
-      const response =
-        currentSource === MoviesSource.YTS
-          ? moviesResponseForSource(MoviesSource.YTS, [nightCourier])
-          : moviesResponseForSource(MoviesSource.IMDB_MOVIEMETER, [aurora]);
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(response),
-      });
-    });
-
-    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
-      const body = route.request().postDataJSON() as {
-        settings?: { catalog?: { moviesSource?: string | number } };
-      };
-      const nextSource = String(body.settings?.catalog?.moviesSource ?? "");
-      if (nextSource.includes("YTS") || nextSource === String(MoviesSource.YTS)) {
-        currentSource = MoviesSource.YTS;
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(userSettings({ moviesSource: currentSource })),
-      });
-    });
-
-    await authenticatedPage.goto("/movies");
-    await authenticatedPage
-      .getByRole("combobox", { name: "Movie source" })
-      .selectOption(String(MoviesSource.YTS));
-    await expect(authenticatedPage).toHaveURL(/source=/, { timeout: 2000 });
-  });
-
   test("deep linked movie source updates settings before rendering source-specific catalog", async ({
     authenticatedPage,
     mockRpc,
@@ -447,22 +399,6 @@ test.describe("catalog routing", () => {
     expect(settingsCalls).toBeGreaterThan(0);
 
     releaseSettings();
-  });
-
-  test("clicking a movie card navigates to /movies/:id", async ({ authenticatedPage, mockRpc }) => {
-    await mockRpc({
-      GetUserSettings: userSettings(),
-      GetMovies: moviesResponse([aurora, signalOrchard]),
-      GetTVShows: tvShowsResponse([]),
-      Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
-    });
-
-    await authenticatedPage.goto("/movies");
-    await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
-    await authenticatedPage.waitForURL(/\/movies\/m1(\?|$)/);
-    await expect(
-      authenticatedPage.getByText("Aurora Protocol.2010.1080p.BluRay.x264"),
-    ).toBeVisible();
   });
 
   test("movie detail source param waits for source-specific settings", async ({

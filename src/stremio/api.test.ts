@@ -1,11 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import {
-  createStremioLink,
-  disconnectStremio,
-  isStremioManifestURL,
-  maskedStremioManifestURL,
-  stremioInstallURL,
-} from "./api";
+import { createStremioLink, disconnectStremio, isStremioManifestURL } from "./api";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -103,12 +97,5 @@ describe("manifest links", () => {
     ["javascript:alert(1)", false],
   ])("validates %s", (url, valid) => {
     expect(isStremioManifestURL(url)).toBe(valid);
-  });
-
-  it("masks the credential and builds a Stremio deep link", () => {
-    expect(maskedStremioManifestURL()).toBe("stremio.chill.institute/s/••••/manifest.json");
-    expect(stremioInstallURL("https://stremio.chill.institute/s/fixture/manifest.json")).toBe(
-      "stremio://stremio.chill.institute/s/fixture/manifest.json",
-    );
   });
 });

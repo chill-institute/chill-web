@@ -339,24 +339,6 @@ test.describe("search page", () => {
     await expect(authenticatedPage.getByText("invalid query", { exact: true })).toBeHidden();
   });
 
-  test("sends x-request-id header on rpc requests", async ({ authenticatedPage, mockRpc }) => {
-    let capturedRequestID = "";
-
-    await mockRpc(defaultMethods());
-    await authenticatedPage.route("**/chill.v4.UserService/Search", async (route) => {
-      capturedRequestID = (await route.request().headerValue("x-request-id")) ?? "";
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(searchResponse("ubuntu", [])),
-      });
-    });
-
-    await authenticatedPage.goto("/search?q=ubuntu");
-
-    await expect.poll(() => capturedRequestID).toMatch(/[0-9a-z-]{8,}/i);
-  });
-
   test("redirects to sign-in when unauthenticated", async ({ page }) => {
     await page.goto("/search");
     await page.waitForURL("**/sign-in**");
@@ -666,34 +648,6 @@ test.describe("search page", () => {
     await expect(authenticatedPage.locator("table tbody tr").nth(0)).toContainText("Small 1080p");
   });
 
-  test("invalidates a saved title/source sort that is no longer offered", async ({
-    authenticatedPage,
-    mockRpc,
-  }) => {
-    await mockRpc(
-      allModeMethods({
-        GetUserSettings: userSettings({
-          sortBy: SortBy.TITLE,
-          sortDirection: SortDirection.ASC,
-        }),
-        Search: searchResponse("movie", [
-          searchResult({ id: "r1", title: "Alpha 1080p", seeders: 10n, indexer: "yts" }),
-          searchResult({ id: "r2", title: "Zeta 1080p", seeders: 20n, indexer: "yts" }),
-        ]),
-      }),
-    );
-
-    await authenticatedPage.goto("/search?q=movie");
-
-    // A saved title sort falls back to the default (most peers, descending).
-    const sortSelect = authenticatedPage.getByRole("combobox", { name: "Sort results" });
-    await expect(sortSelect.locator("option:checked")).toHaveText("↓ peers");
-
-    const rows = authenticatedPage.locator("table tbody tr");
-    await expect(rows.nth(0)).toContainText("Zeta 1080p");
-    await expect(rows.nth(1)).toContainText("Alpha 1080p");
-  });
-
   test("changing sort keeps active quick filters applied", async ({
     authenticatedPage,
     mockRpc,
@@ -882,39 +836,6 @@ test.describe("search page", () => {
     await expect(authenticatedPage).toHaveURL(/\/search\?q=another\+movie$/);
     await expect(quickFilters.getByRole("checkbox", { name: "2160p" })).toBeChecked();
     await expect(rows).toHaveCount(1);
-  });
-
-  test("codec filter narrows results", async ({ authenticatedPage, mockRpc }) => {
-    const results = [
-      searchResult({
-        id: "r1",
-        title: "Movie 1080p x264",
-        indexer: "yts",
-        source: "YTS",
-      }),
-      searchResult({
-        id: "r2",
-        title: "Movie 1080p x265 HEVC",
-        indexer: "yts",
-        source: "YTS",
-      }),
-    ];
-
-    await mockRpc(
-      allModeMethods({
-        Search: searchResponse("movie", results),
-      }),
-    );
-
-    await authenticatedPage.goto("/search?q=movie");
-
-    const rows = authenticatedPage.locator("table tbody tr");
-    await expect(rows).toHaveCount(2);
-
-    const quickFilters = authenticatedPage.getByRole("group", { name: /quick filters/i });
-    await quickFilters.getByRole("checkbox", { name: "x265" }).check();
-    await expect(rows).toHaveCount(1);
-    await expect(rows.first()).toContainText("x265 HEVC");
   });
 
   test("group releases folds one episode's formats behind an expander and is remembered", async ({

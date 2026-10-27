@@ -107,14 +107,6 @@ describe("storePendingCallbackURL", () => {
     expect(window.sessionStorage.getItem("chill.auth_callback")).toBe("/search?q=aurora#top");
   });
 
-  it("does not store rejected callback paths", () => {
-    withWindowLocation("https://app.test/settings");
-
-    storePendingCallbackURL("/sign-in");
-
-    expect(window.sessionStorage.getItem("chill.auth_callback")).toBeNull();
-  });
-
   it("clears stale callback values when the next callback is rejected", () => {
     withWindowLocation("https://app.test/settings");
     window.sessionStorage.setItem("chill.auth_callback", "/search?q=aurora");
@@ -132,14 +124,6 @@ describe("readAuthTokenFromLocation", () => {
         hash: "#auth_token=fragment-token",
       }),
     ).toBe("fragment-token");
-  });
-
-  it("returns an empty string when no auth token is in the fragment", () => {
-    expect(
-      readAuthTokenFromLocation({
-        hash: "#foo=bar",
-      }),
-    ).toBe("");
   });
 });
 

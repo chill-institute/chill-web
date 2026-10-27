@@ -134,29 +134,20 @@ describe("defaultSortDirection", () => {
 });
 
 describe("normalizeQuery", () => {
-  it("extracts IMDb ID from a full IMDb URL", () => {
-    expect(normalizeQuery("https://www.imdb.com/title/tt9000001/?ref_=ext_shr_lnk")).toBe(
-      "tt9000001",
-    );
-  });
-
-  it("extracts IMDb ID from an IMDb URL without query params", () => {
-    expect(normalizeQuery("https://www.imdb.com/title/tt9000001/")).toBe("tt9000001");
+  it.each([
+    "https://www.imdb.com/title/tt9000001/?ref_=ext_shr_lnk",
+    "https://www.imdb.com/title/tt9000001/",
+    "https://m.imdb.com/title/tt9000001/",
+  ])("extracts IMDb ID from %s", (url) => {
+    expect(normalizeQuery(url)).toBe("tt9000001");
   });
 
   it("extracts IMDb ID from an IMDb URL with trailing whitespace", () => {
     expect(normalizeQuery("  https://www.imdb.com/title/tt9000001/  ")).toBe("tt9000001");
   });
 
-  it("extracts IMDb ID from a mobile IMDb URL", () => {
-    expect(normalizeQuery("https://m.imdb.com/title/tt9000001/")).toBe("tt9000001");
-  });
-
-  it("returns the original query trimmed when not an IMDb URL", () => {
+  it("returns non-URL queries, including bare IMDb IDs, trimmed", () => {
     expect(normalizeQuery("  Synthetic Feature Alpha  ")).toBe("Synthetic Feature Alpha");
-  });
-
-  it("returns the original query when it is already an IMDb ID", () => {
     expect(normalizeQuery("tt9000001")).toBe("tt9000001");
   });
 

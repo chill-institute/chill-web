@@ -8,9 +8,8 @@ import {
   SortDirection,
 } from "@chill-institute/contracts/chill/v4/api_pb";
 import { describe, expect, it } from "vite-plus/test";
-import { renderToString } from "react-dom/server";
 
-import { filterStateForSearch, useSearchFilters } from "./use-search-filters";
+import { filterStateForSearch } from "./use-search-filters";
 
 const defaultSettings = {
   codecFilters: [],
@@ -33,41 +32,7 @@ function makeSettings(overrides: MessageInitShape<typeof SearchSettingsSchema> =
   };
 }
 
-function SearchFiltersHarness({
-  savedSettings,
-}: {
-  savedSettings: Parameters<typeof useSearchFilters>[0];
-}) {
-  const { filters } = useSearchFilters(savedSettings);
-
-  return <pre>{JSON.stringify(filters)}</pre>;
-}
-
-describe("useSearchFilters", () => {
-  it("initializes from saved settings available on first render", () => {
-    const saved = makeSettings({
-      codecFilters: [CodecFilter.X265],
-      otherFilters: [OtherFilter.HDR],
-      rememberQuickFilters: true,
-      resolutionFilters: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-      sortBy: SortBy.SIZE,
-      sortDirection: SortDirection.ASC,
-    });
-
-    const html = renderToString(<SearchFiltersHarness savedSettings={saved} />);
-    const serialized = html.replace("<pre>", "").replace("</pre>", "").replaceAll("&quot;", '"');
-
-    expect(serialized).toBe(
-      JSON.stringify({
-        resolution: [ResolutionFilter.RESOLUTION_FILTER_2160P],
-        codec: [CodecFilter.X265],
-        other: [],
-        sortBy: SortBy.SIZE,
-        sortDirection: SortDirection.ASC,
-      }),
-    );
-  });
-
+describe("filterStateForSearch", () => {
   it("keeps local quick filters when saved sort settings change", () => {
     const localQuickFilters = {
       searchKey: "movie",

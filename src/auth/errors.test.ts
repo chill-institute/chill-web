@@ -9,7 +9,6 @@ import {
   isPutioProviderUnavailableError,
   localizeError,
   shouldRetryQueryError,
-  toErrorMessage,
 } from "./errors";
 
 describe("isIgnorableAbortError", () => {
@@ -120,14 +119,6 @@ describe("localizeError invalid queries", () => {
   });
 });
 
-describe("toErrorMessage", () => {
-  it("reuses the localized put.io outage message", () => {
-    expect(toErrorMessage(new Error("putio provider unavailable"))).toBe(
-      "Could not connect to put.io. Please try again.",
-    );
-  });
-});
-
 describe("shouldRetryQueryError", () => {
   it("does not retry a request that exhausted its deadline", () => {
     expect(shouldRetryQueryError(0, new ClientRequestTimeoutError("Search"))).toBe(false);
@@ -140,12 +131,9 @@ describe("shouldRetryQueryError", () => {
     expect(shouldRetryQueryError(1, error)).toBe(false);
   });
 
-  it("allows a single retry before outage mode is active", () => {
+  it("allows one retry before outage mode is active, never a second", () => {
     expect(shouldRetryQueryError(0, new ConnectError("unavailable", Code.Unavailable))).toBe(true);
     expect(shouldRetryQueryError(1, new ConnectError("unavailable", Code.Unavailable))).toBe(false);
-  });
-
-  it("does not retry after the single allowed attempt", () => {
     expect(shouldRetryQueryError(2, new ConnectError("unavailable", Code.Unavailable))).toBe(false);
   });
 

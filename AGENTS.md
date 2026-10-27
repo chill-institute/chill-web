@@ -12,6 +12,9 @@ pnpm exec vp run dev
 pnpm exec vp run verify
 ```
 
+`vp run verify` replays cached results when inputs are unchanged;
+`pnpm exec vp run --no-cache verify` forces a full run.
+
 ## Rules
 
 - Use the local Vite+ CLI through `pnpm exec vp`.

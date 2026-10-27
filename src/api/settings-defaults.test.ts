@@ -15,8 +15,6 @@ import {
 } from "@chill-institute/contracts/chill/v4/api_pb";
 
 import {
-  CATALOG_SETTINGS_FALLBACKS,
-  SEARCH_SETTINGS_FALLBACKS,
   withSaveUserSettingsResponseDefaults,
   withSearchSettingsDefaults,
   withUserSettingsDefaults,
@@ -37,14 +35,10 @@ describe("withSearchSettingsDefaults", () => {
   it("fills missing and UNSPECIFIED search fields with the fallback set", () => {
     const out = withSearchSettingsDefaults(unspecifiedSettings());
 
-    expect(out.search?.searchResultDisplayBehavior).toBe(
-      SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
-    );
-    expect(out.search?.searchResultTitleBehavior).toBe(
-      SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
-    );
-    expect(out.search?.sortBy).toBe(SEARCH_SETTINGS_FALLBACKS.sortBy);
-    expect(out.search?.sortDirection).toBe(SEARCH_SETTINGS_FALLBACKS.sortDirection);
+    expect(out.search?.searchResultDisplayBehavior).toBe(SearchResultDisplayBehavior.FASTEST);
+    expect(out.search?.searchResultTitleBehavior).toBe(SearchResultTitleBehavior.TEXT);
+    expect(out.search?.sortBy).toBe(SortBy.SEEDERS);
+    expect(out.search?.sortDirection).toBe(SortDirection.DESC);
   });
 
   it("preserves explicit search enum values", () => {
@@ -80,16 +74,9 @@ describe("withUserSettingsDefaults", () => {
   it("fills missing search, catalog, and download domains", () => {
     const out = withUserSettingsDefaults(create(UserSettingsSchema, {}));
 
-    expect(out.search?.searchResultDisplayBehavior).toBe(
-      SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
-    );
-    expect(out.search?.searchResultTitleBehavior).toBe(
-      SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
-    );
-    expect(out.search?.sortBy).toBe(SEARCH_SETTINGS_FALLBACKS.sortBy);
-    expect(out.search?.sortDirection).toBe(SEARCH_SETTINGS_FALLBACKS.sortDirection);
-    expect(out.catalog?.moviesSource).toBe(CATALOG_SETTINGS_FALLBACKS.moviesSource);
-    expect(out.catalog?.tvShowsSource).toBe(CATALOG_SETTINGS_FALLBACKS.tvShowsSource);
+    expect(out.search?.sortBy).toBe(SortBy.SEEDERS);
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.ROTTEN_TOMATOES);
+    expect(out.catalog?.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS);
     expect(out.download).toBeDefined();
   });
 
@@ -103,8 +90,8 @@ describe("withUserSettingsDefaults", () => {
       }),
     );
 
-    expect(out.catalog?.moviesSource).toBe(CATALOG_SETTINGS_FALLBACKS.moviesSource);
-    expect(out.catalog?.tvShowsSource).toBe(CATALOG_SETTINGS_FALLBACKS.tvShowsSource);
+    expect(out.catalog?.moviesSource).toBe(MoviesSource.ROTTEN_TOMATOES);
+    expect(out.catalog?.tvShowsSource).toBe(TVShowsSource.TV_SHOWS_SOURCE_ALL_PROVIDERS);
   });
 
   it("preserves explicit catalog values", () => {

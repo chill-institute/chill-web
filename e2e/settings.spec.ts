@@ -678,7 +678,7 @@ test.describe("settings", () => {
     await expect.poll(() => savedSettings?.search?.filterNastyResults).toBe(true);
     expect(savedSettings?.search?.rememberQuickFilters ?? false).toBe(false);
     expect(String(savedSettings?.download?.folderId)).toBe("42");
-    expect(String(savedSettings?.catalog?.moviesSource)).toMatch(/YTS|2/);
+    expect(savedSettings?.catalog?.moviesSource).toBe("MOVIES_SOURCE_YTS");
   });
 
   test("sign-out link navigates to sign-out page", async ({ authenticatedPage, mockRpc }) => {
@@ -940,7 +940,6 @@ test.describe("settings", () => {
   }) => {
     let settingsState = userSettings();
     const savedSearches: NonNullable<RequestSettingsPayload["search"]>[] = [];
-    let saveCalls = 0;
 
     await mockRpc(baseSettingsMethods({ GetUserSettings: settingsState }));
 
@@ -953,7 +952,6 @@ test.describe("settings", () => {
     });
 
     await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
-      saveCalls += 1;
       const body = route.request().postDataJSON() as { settings?: RequestSettingsPayload };
       if (body.settings?.search) {
         savedSearches.push(body.settings.search);
@@ -984,10 +982,14 @@ test.describe("settings", () => {
       )
       .toBeGreaterThan(0);
 
-    // The sort pulldown is present and persists a change.
-    const callsBeforeSort = saveCalls;
+    // The sort pulldown persists the chosen field and direction.
     await prefs.getByRole("combobox", { name: "Sort results" }).selectOption({ label: "↑ size" });
-    await expect.poll(() => saveCalls).toBeGreaterThan(callsBeforeSort);
+    await expect
+      .poll(() => {
+        const search = savedSearches.at(-1) as { sortBy?: unknown; sortDirection?: unknown };
+        return [search?.sortBy, search?.sortDirection];
+      })
+      .toEqual(["SORT_BY_SIZE", "SORT_DIRECTION_ASC"]);
   });
 
   test("theme select changes document theme", async ({ authenticatedPage, mockRpc }) => {

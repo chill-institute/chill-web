@@ -12,7 +12,7 @@ import {
 import { applyChillSettingsPatch, resetChillSettings } from "./types";
 
 describe("applyChillSettingsPatch", () => {
-  it("updates search fields without touching catalog fields", () => {
+  it("updates search fields without touching catalog or download fields", () => {
     const settings = create(UserSettingsSchema, {
       search: create(SearchSettingsSchema, {
         sortBy: SortBy.SEEDERS,
@@ -20,6 +20,7 @@ describe("applyChillSettingsPatch", () => {
       catalog: create(CatalogSettingsSchema, {
         moviesSource: MoviesSource.YTS,
       }),
+      download: create(DownloadSettingsSchema, { folderId: 42n }),
     });
 
     const out = applyChillSettingsPatch(settings, {
@@ -28,6 +29,7 @@ describe("applyChillSettingsPatch", () => {
 
     expect(out.search?.sortBy).toBe(SortBy.SIZE);
     expect(out.catalog?.moviesSource).toBe(MoviesSource.YTS);
+    expect(out.download?.folderId).toBe(42n);
   });
 
   it("does not synthesize missing catalog or download domains", () => {
@@ -44,21 +46,6 @@ describe("applyChillSettingsPatch", () => {
     expect(out.catalog).toBeUndefined();
     expect(out.download).toBeUndefined();
     expect(out.search?.sortBy).toBe(SortBy.SIZE);
-  });
-
-  it("preserves download settings when search fields change", () => {
-    const settings = create(UserSettingsSchema, {
-      search: create(SearchSettingsSchema, {
-        sortBy: SortBy.SEEDERS,
-      }),
-      download: create(DownloadSettingsSchema, { folderId: 42n }),
-    });
-
-    const out = applyChillSettingsPatch(settings, {
-      sortBy: SortBy.SIZE,
-    });
-
-    expect(out.download?.folderId).toBe(42n);
   });
 });
 

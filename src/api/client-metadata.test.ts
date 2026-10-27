@@ -12,18 +12,10 @@ describe("setClientMetadata", () => {
     expect(headers.get("X-Chill-Client-Version")).toBe("0.0.339");
   });
 
-  it("uses an explicit unknown version when the app version is empty", () => {
+  it.each([" ", undefined])("uses an explicit unknown version for app version %j", (version) => {
     const headers = new Headers();
 
-    setClientMetadata(headers, " ");
-
-    expect(headers.get("X-Chill-Client-Version")).toBe("unknown");
-  });
-
-  it("uses an explicit unknown version when the app version is unavailable", () => {
-    const headers = new Headers();
-
-    setClientMetadata(headers, undefined);
+    setClientMetadata(headers, version);
 
     expect(headers.get("X-Chill-Client-Version")).toBe("unknown");
   });

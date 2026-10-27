@@ -33,32 +33,21 @@ test.describe("sign-in page", () => {
     await expect(page.getByRole("button", { name: "try again" })).toBeVisible();
   });
 
-  test("shows session expired error with sign in again action", async ({ page }) => {
-    await page.goto("/sign-in?error=SessionExpired");
-
-    await expect(page.getByText("your session expired")).toBeVisible();
-    await expect(page.getByRole("button", { name: "sign in again" })).toBeVisible();
-  });
-
-  test("shows put.io verification failure with retry and help actions", async ({ page }) => {
-    await page.goto("/sign-in?error=PutioVerificationFailed");
-
-    await expect(page.getByText("did not confirm an active account")).toBeVisible();
-    await expect(page.getByRole("button", { name: "learn more" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "try again" })).toBeVisible();
-  });
-
-  for (const [errorCode, expectedMessage] of [
-    ["OAuthDenied", "put.io sign-in was cancelled"],
-    ["AuthFlowExpired", "that sign-in link expired"],
-    ["OAuthExchangeFailed", "put.io did not finish the sign-in handshake"],
-    ["PutioUnavailable", "we could not reach put.io"],
+  for (const [errorCode, expectedMessage, hasLearnMore] of [
+    ["PutioVerificationFailed", "did not confirm an active account", true],
+    ["OAuthDenied", "put.io sign-in was cancelled", false],
+    ["AuthFlowExpired", "that sign-in link expired", false],
+    ["OAuthExchangeFailed", "put.io did not finish the sign-in handshake", false],
+    ["PutioUnavailable", "we could not reach put.io", false],
   ] as const) {
     test(`shows ${errorCode} callback failure message`, async ({ page }) => {
       await page.goto(`/sign-in?error=${errorCode}`);
 
       await expect(page.getByText(expectedMessage)).toBeVisible();
       await expect(page.getByRole("button", { name: "try again" })).toBeVisible();
+      if (hasLearnMore) {
+        await expect(page.getByRole("button", { name: "learn more" })).toBeVisible();
+      }
     });
   }
 
@@ -317,7 +306,9 @@ test.describe("sign-out", () => {
     await authenticatedPage.goto("/sign-out");
 
     await authenticatedPage.waitForURL("**/sign-in**");
-    expect(authenticatedPage.url()).toContain("/sign-in");
+    expect(
+      await authenticatedPage.evaluate(() => window.localStorage.getItem("chill.auth_token")),
+    ).toBeNull();
   });
 
   test("passes error parameter through to sign-in", async ({ authenticatedPage, mockRpc }) => {
