@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>chill-institute/.github:renovate-config"]
+  "extends": ["github>chill-institute/.github:renovate-config"],
+  "packageRules": [
+    {
+      "description": "vite-plus and the vite-plus-core alias behind vite must share a version",
+      "matchPackageNames": ["vite-plus", "@voidzero-dev/vite-plus-core"],
+      "groupName": "Vite+"
+    }
+  ]
 }
