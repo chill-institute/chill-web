@@ -35,7 +35,10 @@ export function moviesQueryOptions(
 }
 
 function movieSearchQuery(movie: Movie) {
-  return [movie.title, movie.year].filter(Boolean).join(" ").trim();
+  // The quoted title asks the engine for that exact phrase, which drops the
+  // loose prefix matches some indexers return for multi-word titles.
+  const title = movie.title.replace(/"/g, "").trim();
+  return [title ? `"${title}"` : "", movie.year].filter(Boolean).join(" ").trim();
 }
 
 export function movieSearchQueryOptions(api: ChillApi, movie: Movie, enabled = true) {
