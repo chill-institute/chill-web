@@ -87,7 +87,17 @@ describe("catalog query options", () => {
     expect(movieSearchQueryOptions(api, movie).queryKey).not.toEqual(
       movieSearchQueryOptions(api, remake).queryKey,
     );
-    expect(api.search).toHaveBeenCalledWith("Aurora 2026", undefined, expect.any(AbortSignal));
+    expect(api.search).toHaveBeenCalledWith('"Aurora" 2026', undefined, expect.any(AbortSignal));
+  });
+
+  it("drops quotes inside a title so the phrase stays well formed", async () => {
+    const api = createApiStub();
+    const client = createQueryClient();
+    const movie = create(MovieSchema, { id: "m2", title: 'Say "Hi"', year: 2001 });
+
+    await client.fetchQuery(movieSearchQueryOptions(api, movie));
+
+    expect(api.search).toHaveBeenCalledWith('"Say Hi" 2001', undefined, expect.any(AbortSignal));
   });
 
   it("gates and calls TV show detail and season queries with route params", async () => {
