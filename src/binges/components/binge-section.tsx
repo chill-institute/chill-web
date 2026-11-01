@@ -8,6 +8,7 @@ import { BingeEditor } from "@/binges/components/binge-editor";
 import { BingeItemDetail } from "@/binges/components/binge-item-detail";
 import {
   BingeMediaType,
+  curatorKey,
   curatorLabel,
   formatBingeDate,
   type Binge,
@@ -28,16 +29,19 @@ type Overlay =
   | { kind: "item"; item: BingeItem };
 
 export function BingeSection() {
-  const { binge: requestedId } = routeApi.useSearch();
+  const { binge: requestedId, curator } = routeApi.useSearch();
   const navigate = useNavigate();
   const bingesQuery = useBingesQuery();
   const latest = bingesQuery.data?.latest;
-  const wantsOther = requestedId !== undefined && requestedId !== latest?.id;
+  const curatorFilter = curatorKey(curator);
+  const wantsOther = !curatorFilter && requestedId !== undefined && requestedId !== latest?.id;
   const bingeQuery = useBingeQuery(wantsOther ? requestedId : undefined);
   const [overlay, setOverlay] = useState<Overlay>({ kind: "none" });
 
   const showBinge = (id: string | undefined) =>
     void navigate({ to: "/", search: id ? { binge: id } : {}, replace: true });
+  const showCurator = (name: string | undefined) =>
+    void navigate({ to: "/", search: name ? { curator: name } : {}, replace: true });
   const close = () => setOverlay({ kind: "none" });
 
   if (bingesQuery.status === "pending") {
@@ -56,7 +60,7 @@ export function BingeSection() {
   }
 
   const { binges, canCurate, curatorName } = bingesQuery.data;
-  const current = wantsOther ? bingeQuery.data?.binge : latest;
+  const current = curatorFilter ? undefined : wantsOther ? bingeQuery.data?.binge : latest;
   const loadingOther = wantsOther && bingeQuery.status === "pending";
 
   if (!latest && !canCurate) {
@@ -67,7 +71,11 @@ export function BingeSection() {
     <BingeFrame>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-fg-3 m-0 text-sm">
-          {current && current.id !== latest?.id ? "binge" : "latest binge"}
+          {curatorFilter
+            ? "binges"
+            : current && current.id !== latest?.id
+              ? "binge"
+              : "latest binge"}
         </p>
         <div className="flex items-center gap-2">
           {canCurate && current ? (
@@ -90,22 +98,37 @@ export function BingeSection() {
         </div>
       </div>
 
-      {loadingOther ? (
+      {curatorFilter ? (
+        <EarlierBinges
+          binges={binges}
+          currentId={undefined}
+          latestId={latest?.id}
+          curator={curatorFilter}
+          onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
+          onOpenCurator={showCurator}
+        />
+      ) : loadingOther ? (
         <BingeSkeleton />
       ) : wantsOther && bingeQuery.status === "error" ? (
         <UserErrorAlert error={bingeQuery.error} />
       ) : current ? (
-        <BingeBody binge={current} onOpenItem={(item) => setOverlay({ kind: "item", item })} />
+        <BingeBody
+          binge={current}
+          onOpenItem={(item) => setOverlay({ kind: "item", item })}
+          onOpenCurator={showCurator}
+        />
       ) : (
         <p className="text-fg-2 m-0 text-sm">no binges yet. publish the first one.</p>
       )}
 
-      {binges.length > 1 ? (
+      {!curatorFilter && binges.length > 1 ? (
         <EarlierBinges
           binges={binges}
           currentId={current?.id}
           latestId={latest?.id}
+          curator={undefined}
           onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
+          onOpenCurator={showCurator}
         />
       ) : null}
 
@@ -141,13 +164,21 @@ function BingeFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function BingeBody({ binge, onOpenItem }: { binge: Binge; onOpenItem: (item: BingeItem) => void }) {
+function BingeBody({
+  binge,
+  onOpenItem,
+  onOpenCurator,
+}: {
+  binge: Binge;
+  onOpenItem: (item: BingeItem) => void;
+  onOpenCurator: (name: string) => void;
+}) {
   return (
     <>
       <div className="flex flex-col gap-2">
         <h2 className="m-0 text-2xl leading-[1.08] sm:text-3xl">{binge.title}</h2>
         <p className="text-fg-3 m-0 text-sm">
-          by {curatorLabel(binge.curatorName)}
+          by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} />
           {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
         </p>
         {binge.blurb ? (
@@ -290,27 +321,87 @@ function ExternalIMDbLink({ href }: { href: string }) {
   );
 }
 
+/**
+ * A curator's name that lists their binges. It is a span, not a button, because it also sits
+ * inside the clickable rows of the binge list.
+ */
+function CuratorName({
+  name,
+  onOpen,
+}: {
+  name: string | undefined;
+  onOpen: (name: string) => void;
+}) {
+  const key = curatorKey(name);
+  if (!key) {
+    return <>{curatorLabel(name)}</>;
+  }
+  const open = (event: React.SyntheticEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onOpen(key);
+  };
+  return (
+    <span
+      role="link"
+      tabIndex={0}
+      title={`binges by ${key}`}
+      data-slot="binge-curator"
+      className="text-fg-2 hover-hover:hover:text-fg-1 cursor-pointer underline decoration-dotted underline-offset-2 transition-colors"
+      onClick={open}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          open(event);
+        }
+      }}
+    >
+      {key}
+    </span>
+  );
+}
+
 function EarlierBinges({
   binges,
   currentId,
   latestId,
+  curator,
   onSelect,
+  onOpenCurator,
 }: {
   binges: BingeSummary[];
   currentId: string | undefined;
   latestId: string | undefined;
+  curator: string | undefined;
   onSelect: (id: string) => void;
+  onOpenCurator: (name: string | undefined) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const others = binges.filter((binge) => binge.id !== currentId);
+  const filter = curatorKey(curator);
+  const others = binges.filter(
+    (binge) => binge.id !== currentId && (!filter || curatorKey(binge.curatorName) === filter),
+  );
   const visible = expanded ? others : others.slice(0, EARLIER_BINGES_PREVIEW);
   const hidden = others.length - visible.length;
 
   return (
     <div data-slot="earlier-binges" className="mt-2 flex flex-col gap-2">
-      <p className="text-fg-3 m-0 text-sm">
-        {currentId === latestId ? "earlier binges" : "other binges"}
-      </p>
+      {filter ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-fg-3 m-0 text-sm">
+            binges by <span className="text-fg-1">{filter}</span>
+          </p>
+          <Button size="sm" variant="ghost" onClick={() => onOpenCurator(undefined)}>
+            all binges
+          </Button>
+        </div>
+      ) : (
+        <p className="text-fg-3 m-0 text-sm">
+          {currentId === latestId ? "earlier binges" : "other binges"}
+        </p>
+      )}
+      {filter && others.length === 0 ? (
+        <p className="text-fg-2 m-0 text-sm">no binges by {filter} yet.</p>
+      ) : null}
       <ul className="border-border-faint m-0 flex list-none flex-col border-t p-0">
         {visible.map((binge) => (
           <li key={binge.id} className="border-border-faint border-b">
@@ -328,8 +419,8 @@ function EarlierBinges({
                 ) : null}
               </span>
               <span className="text-fg-3 shrink-0 text-sm tabular-nums">
-                by {curatorLabel(binge.curatorName)} · {binge.itemCount}{" "}
-                {binge.itemCount === 1 ? "title" : "titles"}
+                by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} /> ·{" "}
+                {binge.itemCount} {binge.itemCount === 1 ? "title" : "titles"}
                 {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
               </span>
             </button>

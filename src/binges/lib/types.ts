@@ -119,6 +119,11 @@ export function normalizeCuratorName(value: string): { name: string; error?: str
   return { name };
 }
 
+/** The trimmed curator name, or "" for a binge whose curator has not picked one. */
+export function curatorKey(name: string | undefined): string {
+  return name?.trim() ?? "";
+}
+
 /** Tolerates a missing field: a cached response from an older contract carries none. */
 export function curatorLabel(name: string | undefined): string {
   const trimmed = name?.trim() ?? "";

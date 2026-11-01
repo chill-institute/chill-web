@@ -86,6 +86,47 @@ test.describe("binges on the home page", () => {
     ).toBeVisible();
   });
 
+  test("lists a curator's binges from their name", async ({ authenticatedPage, mockRpc }) => {
+    const byOther = binge({
+      id: "binge-other-curator",
+      title: "Slow cinema",
+      items: [bingeItem({ comment: "" })],
+      curatorName: "late reels",
+    });
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest, older, byOther]),
+        GetBinge: bingeResponse(byOther),
+      }),
+    );
+
+    await authenticatedPage.goto("/");
+    const section = bingeSection(authenticatedPage);
+    const earlier = section.locator('[data-slot="earlier-binges"]');
+    await expect(
+      earlier.getByRole("button", { name: /Comfort rewatches|Slow cinema/ }),
+    ).toHaveCount(2);
+
+    await section.getByRole("link", { name: "the night shift" }).first().click();
+    await authenticatedPage.waitForURL(/curator=the(\+|%20)night(\+|%20)shift/);
+    await expect(section.getByRole("heading", { name: "Signals in the dark" })).toHaveCount(0);
+    await expect(earlier.getByText("binges by the night shift")).toBeVisible();
+    await expect(earlier.getByRole("button", { name: /Signals in the dark/ })).toBeVisible();
+    await expect(earlier.getByRole("button", { name: /Comfort rewatches/ })).toBeVisible();
+    await expect(earlier.getByRole("button", { name: /Slow cinema/ })).toHaveCount(0);
+
+    await earlier.getByRole("button", { name: "all binges" }).click();
+    await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
+
+    await earlier.getByRole("link", { name: "late reels" }).click();
+    await expect(earlier.getByText("binges by late reels")).toBeVisible();
+    await expect(earlier.getByRole("button")).toHaveCount(2);
+
+    await earlier.getByRole("button", { name: /Slow cinema/ }).click();
+    await authenticatedPage.waitForURL("**/?binge=binge-other-curator");
+    await expect(section.getByRole("heading", { name: "Slow cinema" })).toBeVisible();
+  });
+
   test("opens movie and tv show details from binge items", async ({
     authenticatedPage,
     mockRpc,

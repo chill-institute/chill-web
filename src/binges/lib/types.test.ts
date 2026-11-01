@@ -7,6 +7,7 @@ import {
   BINGE_TITLE_MAX_LENGTH,
   bingeDraftToInput,
   bingeItemToMovie,
+  curatorKey,
   curatorLabel,
   normalizeCuratorName,
   normalizeIMDbId,
@@ -186,5 +187,13 @@ describe("bingeTitleLabel", () => {
       () => "k",
     );
     expect(draft.items.map((item) => item.label)).toEqual(["Breaking Bad (2008)", ""]);
+  });
+});
+
+describe("curatorKey", () => {
+  it("trims names and maps a missing name to empty", () => {
+    expect(curatorKey("  the night shift ")).toBe("the night shift");
+    expect(curatorKey(undefined)).toBe("");
+    expect(curatorKey("   ")).toBe("");
   });
 });

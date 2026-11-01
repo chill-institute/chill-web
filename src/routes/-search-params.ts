@@ -56,6 +56,7 @@ const tvShowDetailSearchSchema = v.object({
 
 const homeSearchSchema = v.object({
   binge: stringSearchParam,
+  curator: stringSearchParam,
 });
 
 const searchRouteSearchSchema = v.object({
