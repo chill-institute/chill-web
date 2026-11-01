@@ -281,6 +281,73 @@ test.describe("search page", () => {
     await expect(toastLocator).toBeVisible({ timeout: 5000 });
   });
 
+  test("copies the magnet an API download link resolves to", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const downloadLink = "https://api.chill.institute/download/limetorrents?download_token=fixture";
+    const magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=Ubuntu";
+    await authenticatedPage.addInitScript(() => {
+      let copied = "";
+      Object.defineProperty(navigator, "clipboard", {
+        value: {
+          write: async (items: ClipboardItem[]) => {
+            copied = await (await items[0].getType("text/plain")).text();
+          },
+          writeText: async (text: string) => {
+            copied = text;
+          },
+          readText: async () => copied,
+        },
+      });
+    });
+    const accepts: (string | undefined)[] = [];
+    await authenticatedPage.route("https://api.chill.institute/download/**", async (route) => {
+      accepts.push(route.request().headers().accept);
+      await route.fulfill({ json: { magnet } });
+    });
+    await mockRpc(
+      defaultMethods({
+        Search: searchResponse("ubuntu", [
+          searchResult({
+            id: "r1",
+            title: "Ubuntu LimeTorrents",
+            indexer: "limetorrents",
+            link: downloadLink,
+          }),
+          searchResult({
+            id: "r2",
+            title: "Ubuntu magnet",
+            indexer: "yts",
+            link: magnet.replace("0123", "4567"),
+          }),
+        ]),
+      }),
+    );
+
+    await authenticatedPage.goto("/search?q=ubuntu");
+    const rows = authenticatedPage.locator("table tbody tr");
+    await expect(rows).toHaveCount(2);
+    const clipboard = () => authenticatedPage.evaluate(() => navigator.clipboard.readText());
+
+    await rows
+      .filter({ hasText: "Ubuntu LimeTorrents" })
+      .getByRole("button", { name: "Copy link" })
+      .click();
+    await expect(
+      rows.filter({ hasText: "Ubuntu LimeTorrents" }).getByRole("button", { name: "Copied link" }),
+    ).toBeVisible();
+    expect(await clipboard()).toBe(magnet);
+    expect(accepts).toEqual(["application/json"]);
+
+    await rows
+      .filter({ hasText: "Ubuntu magnet" })
+      .getByRole("button", { name: "Copy link" })
+      .click();
+    await expect.poll(clipboard).toBe(magnet.replace("0123", "4567"));
+    expect(accepts).toHaveLength(1);
+  });
+
   test("empty state", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       defaultMethods({

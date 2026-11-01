@@ -7,14 +7,23 @@ import { Button } from "./ui/button";
 
 type CopyButtonProps = {
   value: string;
+  // Resolves the text to copy at click time; value is copied when it is absent.
+  resolveValue?: () => Promise<string>;
   variant?: "stamp" | "icon";
   className?: string;
 };
 
-async function copyText(value: string): Promise<boolean> {
+async function copyText(value: string | Promise<string>): Promise<boolean> {
   try {
     if (window.isSecureContext && navigator.clipboard) {
-      await navigator.clipboard.writeText(value);
+      if (typeof value !== "string" && typeof ClipboardItem !== "undefined") {
+        // Safari drops the click's permission across an await; a pending
+        // ClipboardItem keeps it while the value resolves.
+        const blob = value.then((text) => new Blob([text], { type: "text/plain" }));
+        await navigator.clipboard.write([new ClipboardItem({ "text/plain": blob })]);
+        return true;
+      }
+      await navigator.clipboard.writeText(await value);
       return true;
     }
   } catch {
@@ -22,7 +31,7 @@ async function copyText(value: string): Promise<boolean> {
   }
   try {
     const textarea = document.createElement("textarea");
-    textarea.value = value;
+    textarea.value = await value;
     textarea.setAttribute("readonly", "");
     textarea.style.position = "fixed";
     textarea.style.opacity = "0";
@@ -36,7 +45,7 @@ async function copyText(value: string): Promise<boolean> {
   }
 }
 
-function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
+function CopyButton({ value, resolveValue, variant = "stamp", className }: CopyButtonProps) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,7 +69,7 @@ function CopyButton({ value, variant = "stamp", className }: CopyButtonProps) {
       size={variant === "stamp" ? "default" : "icon-sm"}
       className={cn(variant === "stamp" && "min-w-8 px-2", className)}
       onClick={async () => {
-        setState((await copyText(value)) ? "copied" : "error");
+        setState((await copyText(resolveValue ? resolveValue() : value)) ? "copied" : "error");
         scheduleReset();
       }}
       aria-label={
