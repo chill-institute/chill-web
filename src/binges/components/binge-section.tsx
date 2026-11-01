@@ -176,7 +176,7 @@ function BingeBody({
   return (
     <>
       <div className="flex flex-col gap-2">
-        <h2 className="m-0 text-2xl leading-[1.08] sm:text-3xl">{binge.title}</h2>
+        <h2 className="m-0 text-2xl leading-hero sm:text-3xl">{binge.title}</h2>
         <p className="text-fg-3 m-0 text-sm">
           by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} />
           {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
@@ -191,7 +191,7 @@ function BingeBody({
             key={item.imdbId}
             data-slot="binge-item"
             className="border-border-faint animate-reveal border-b"
-            style={staggerDelay(index)}
+            style={{ "--reveal-delay": `${staggerDelayMs(index)}ms` } as CSSProperties}
           >
             <BingeRow item={item} position={index + 1} onOpen={() => onOpenItem(item)} />
           </li>
@@ -237,7 +237,7 @@ function BingeRow({
         )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-fg-1 font-serif text-xl leading-tight tracking-[-0.01em] sm:text-2xl">
+        <span className="text-fg-1 font-serif text-xl leading-tight tracking-heading sm:text-2xl">
           {title}
         </span>
         <span className="text-fg-2 flex flex-wrap items-center gap-1.5 text-sm tabular-nums">
@@ -412,7 +412,7 @@ function EarlierBinges({
                 "hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer flex-col gap-0.5 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
               )}
             >
-              <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-[-0.01em]">
+              <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-heading">
                 {binge.title}
                 {binge.id === latestId ? (
                   <span className="text-fg-3 text-sm"> · latest</span>
@@ -440,8 +440,8 @@ function BingeSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-hidden="true">
       <div className="flex flex-col gap-2">
-        <Skeleton className="h-7 w-56 rounded sm:h-8" />
-        <Skeleton className="h-4 w-80 max-w-full rounded" />
+        <Skeleton className="h-7 w-56 sm:h-8" />
+        <Skeleton className="h-4 w-80 max-w-full" />
       </div>
       <div className="border-border-faint flex flex-col border-t">
         {SKELETON_SLOTS.map((slot) => (
@@ -449,13 +449,13 @@ function BingeSkeleton() {
             key={slot}
             className="border-border-faint flex gap-3 border-b py-3.5 sm:gap-4 sm:py-4"
           >
-            <Skeleton className="h-4 w-5 rounded sm:w-6" />
-            <Skeleton className="aspect-[2/3] w-[72px] rounded sm:w-[92px]" />
+            <Skeleton className="h-4 w-5 sm:w-6" />
+            <Skeleton className="aspect-[2/3] w-[72px] sm:w-[92px]" />
             <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-6 w-2/5 rounded" />
-              <Skeleton className="h-4 w-1/4 rounded" />
-              <Skeleton className="h-4 w-4/5 rounded" />
-              <Skeleton className="h-4 w-3/5 rounded" />
+              <Skeleton className="h-6 w-2/5" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-4 w-3/5" />
             </div>
           </div>
         ))}
@@ -464,6 +464,6 @@ function BingeSkeleton() {
   );
 }
 
-function staggerDelay(index: number): CSSProperties {
-  return { animationDelay: `${Math.min(index * 25, 350)}ms` };
+function staggerDelayMs(index: number) {
+  return Math.min(index * 25, 350);
 }

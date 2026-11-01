@@ -108,8 +108,10 @@ export function BingeEditor({
       onOpenChange={(open) => !open && !busy && onClose()}
       title={editing ? "Edit binge" : "New binge"}
       description="Title, blurb, and the movies and shows that make up this binge"
-      desktopContentClassName="fixed top-6 left-1/2 max-h-[calc(100dvh-48px)] w-[min(100vw-1rem,640px)] -translate-x-1/2 gap-0 rounded-xl border border-border-strong bg-surface p-0 text-fg-1 shadow-modal"
-      drawerContentClassName="max-h-[92dvh] overflow-hidden rounded-t-3xl border-x-0 border-t-0 border-b-0 bg-surface p-0 shadow-drawer"
+      desktopContentClassName="fixed top-6 left-1/2 max-h-[calc(100dvh-48px)] w-[min(100vw-1rem,640px)] -translate-x-1/2"
+      desktopContentVariant="panel"
+      drawerContentClassName="max-h-[92dvh] overflow-hidden"
+      drawerContentVariant="raised"
     >
       {/* eslint-disable-next-line react-doctor/no-prevent-default -- the form never submits natively */}
       <form
@@ -254,7 +256,6 @@ export function BingeEditor({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-error-text"
                   disabled={busy}
                   onClick={() => remove.mutate(binge.id, { onSuccess: onDeleted })}
                 >
