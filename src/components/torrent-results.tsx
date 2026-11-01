@@ -238,7 +238,7 @@ export function TorrentResultList({
                   <CopyButton
                     variant="icon"
                     value={result.link}
-                    resolveValue={() => resolveCopyLink(result.link)}
+                    resolveValue={resolveCopyLink}
                     className="shrink-0"
                   />
                 ) : null}

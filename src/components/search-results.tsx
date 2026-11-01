@@ -158,11 +158,7 @@ function DesktopResultCells({ result }: { result: SearchResult }) {
         {formatAge(result.uploadedAt)}
       </td>
       <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
-        <CopyButton
-          variant="icon"
-          value={result.link}
-          resolveValue={() => resolveCopyLink(result.link)}
-        />
+        <CopyButton variant="icon" value={result.link} resolveValue={resolveCopyLink} />
       </td>
       <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
         <AddTransferButton className="w-full" url={result.link}>
@@ -201,7 +197,7 @@ function MobileResultBody({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CopyButton value={result.link} resolveValue={() => resolveCopyLink(result.link)} />
+        <CopyButton value={result.link} resolveValue={resolveCopyLink} />
         <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
       </div>
     </div>

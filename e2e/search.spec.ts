@@ -302,8 +302,13 @@ test.describe("search page", () => {
       });
     });
     const accepts: (string | undefined)[] = [];
+    let releaseDownload = () => {};
+    const downloadHeld = new Promise<void>((resolve) => {
+      releaseDownload = resolve;
+    });
     await authenticatedPage.route("https://api.chill.institute/download/**", async (route) => {
       accepts.push(route.request().headers().accept);
+      await downloadHeld;
       await route.fulfill({ json: { magnet } });
     });
     await mockRpc(
@@ -330,13 +335,11 @@ test.describe("search page", () => {
     await expect(rows).toHaveCount(2);
     const clipboard = () => authenticatedPage.evaluate(() => navigator.clipboard.readText());
 
-    await rows
-      .filter({ hasText: "Ubuntu LimeTorrents" })
-      .getByRole("button", { name: "Copy link" })
-      .click();
-    await expect(
-      rows.filter({ hasText: "Ubuntu LimeTorrents" }).getByRole("button", { name: "Copied link" }),
-    ).toBeVisible();
+    const limeRow = rows.filter({ hasText: "Ubuntu LimeTorrents" });
+    await limeRow.getByRole("button", { name: "Copy link" }).click();
+    await expect(limeRow.getByRole("button", { name: "Copying link" })).toBeDisabled();
+    releaseDownload();
+    await expect(limeRow.getByRole("button", { name: "Copied link" })).toBeVisible();
     expect(await clipboard()).toBe(magnet);
     expect(accepts).toEqual(["application/json"]);
 

@@ -36,6 +36,17 @@ describe("resolveCopyLink", () => {
     await expect(resolveCopyLink(downloadLink, failing)).resolves.toBe(downloadLink);
   });
 
+  it("keeps the link when the API does not answer before the timeout", async () => {
+    const hanging = vi.fn<typeof fetch>(
+      (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        }),
+    );
+
+    await expect(resolveCopyLink(downloadLink, hanging, 20)).resolves.toBe(downloadLink);
+  });
+
   it("copies magnets and links outside the API download path without a request", async () => {
     const fetchImpl = respond(200, { magnet });
 

@@ -5,7 +5,11 @@ const RESOLVE_TIMEOUT_MS = 6000;
 // An API /download link may redirect to a magnet, which put.io cannot follow
 // from a pasted link. Ask the API for the magnet instead; any other link,
 // result, or failure copies the link unchanged.
-export async function resolveCopyLink(link: string, fetchImpl: typeof fetch = fetch) {
+export async function resolveCopyLink(
+  link: string,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = RESOLVE_TIMEOUT_MS,
+) {
   let url: URL;
   try {
     url = new URL(link);
@@ -23,7 +27,7 @@ export async function resolveCopyLink(link: string, fetchImpl: typeof fetch = fe
     const response = await fetchImpl(url, {
       credentials: "omit",
       headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(RESOLVE_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok) return link;
     const payload: unknown = await response.json();
