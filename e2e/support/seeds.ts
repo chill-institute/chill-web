@@ -451,7 +451,7 @@ export function binge(init?: BingeInit) {
   });
 }
 
-export function bingeSummary(source: Binge): BingeSummary {
+function bingeSummary(source: Binge): BingeSummary {
   return create(BingeSummarySchema, {
     id: source.id,
     title: source.title,
