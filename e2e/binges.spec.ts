@@ -1,4 +1,5 @@
 import { expect, test } from "./support/fixtures";
+import { BingeMediaType } from "@chill-institute/contracts/chill/v4/api_pb";
 import { appScenarioMethods } from "./support/app-scenarios";
 import {
   binge,
@@ -7,6 +8,7 @@ import {
   bingesResponse,
   createBingeResponse,
   deleteBingeResponse,
+  searchBingeTitlesResponse,
   setBingeCuratorNameResponse,
   updateBingeResponse,
 } from "./support/seeds";
@@ -164,6 +166,14 @@ test.describe("binge curation", () => {
         SetBingeCuratorName: setBingeCuratorNameResponse("Night Shift"),
         CreateBinge: createBingeResponse(published),
         GetBinge: bingeResponse(published),
+        SearchBingeTitles: searchBingeTitlesResponse([
+          {
+            imdbId: "tt9000003",
+            mediaType: BingeMediaType.TV_SHOW,
+            title: "Synthetic Show Gamma",
+            year: 2025,
+          },
+        ]),
       }),
     );
 
@@ -181,14 +191,18 @@ test.describe("binge curation", () => {
     await editor.getByLabel("your curator name").fill("  Night   Shift ");
     await editor.getByLabel("title", { exact: true }).fill("Fresh binge");
     await editor.getByLabel("blurb", { exact: true }).fill("Just added.");
-    await editor.getByLabel("IMDb id 1").fill("not an id");
-    await editor.getByRole("button", { name: "publish binge" }).click();
-    await expect(editor.getByText("needs an IMDb title id like tt0903747")).toBeVisible();
-
-    await editor.getByLabel("IMDb id 1").fill("https://www.imdb.com/title/tt9000001/");
+    await editor
+      .getByLabel("title 1", { exact: true })
+      .fill("https://www.imdb.com/title/tt9000001/");
+    await editor.getByRole("option", { name: "use tt9000001" }).click();
+    await expect(editor.locator('[data-slot="binge-title-picked"]')).toContainText("tt9000001");
     await editor.getByLabel("comment 1").fill("start here");
     await editor.getByRole("button", { name: "add title" }).click();
-    await editor.getByLabel("IMDb id 2").fill("TT9000003");
+    await editor.getByLabel("title 2", { exact: true }).fill("gamma");
+    await editor.getByRole("option", { name: /Synthetic Show Gamma \(2025\)/ }).click();
+    await expect(editor.locator('[data-slot="binge-title-picked"]').nth(1)).toContainText(
+      "tt9000003",
+    );
 
     const named = authenticatedPage.waitForRequest(/UserService\/SetBingeCuratorName/);
     const request = authenticatedPage.waitForRequest(/UserService\/CreateBinge/);
@@ -224,7 +238,9 @@ test.describe("binge curation", () => {
     await expect(editor.getByText("publishing as the night shift")).toBeVisible();
     await expect(editor.getByLabel("your curator name")).toHaveCount(0);
     await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Signals in the dark");
-    await expect(editor.getByLabel("IMDb id 2")).toHaveValue("tt9000003");
+    await expect(editor.locator('[data-slot="binge-title-picked"]').nth(1)).toContainText(
+      "tt9000003",
+    );
     await expect(editor.getByLabel("comment 2")).toHaveValue("season one only");
 
     await editor.getByRole("button", { name: "remove title 2" }).click();
@@ -272,7 +288,8 @@ test.describe("binge curation", () => {
     await bingeSection(authenticatedPage).getByRole("button", { name: "new binge" }).click();
     const editor = authenticatedPage.getByRole("dialog");
     await editor.getByLabel("title", { exact: true }).fill("Broken");
-    await editor.getByLabel("IMDb id 1").fill("tt9999999");
+    await editor.getByLabel("title 1", { exact: true }).fill("tt9999999");
+    await editor.getByLabel("title 1", { exact: true }).press("Enter");
     await editor.getByRole("button", { name: "publish binge" }).click();
 
     await expect(editor.getByRole("alert")).toHaveText(

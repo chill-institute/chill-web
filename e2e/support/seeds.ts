@@ -9,6 +9,7 @@ import {
   DeleteBingeResponseSchema,
   GetBingeResponseSchema,
   ListBingesResponseSchema,
+  SearchBingeTitlesResponseSchema,
   SetBingeCuratorNameResponseSchema,
   UpdateBingeResponseSchema,
   type Binge,
@@ -474,6 +475,15 @@ export function bingesResponse(
       curatorName: options?.curatorName ?? "",
       latest: binges[0],
     }),
+  );
+}
+
+export function searchBingeTitlesResponse(
+  matches: MessageInitShape<typeof SearchBingeTitlesResponseSchema>["matches"],
+) {
+  return toJson(
+    SearchBingeTitlesResponseSchema,
+    create(SearchBingeTitlesResponseSchema, { matches }),
   );
 }
 
