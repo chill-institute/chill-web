@@ -12,7 +12,6 @@ pnpm exec vp run visual  # visual:update only for intended baseline changes
 - Read [DESIGN.md](./DESIGN.md) before changing UI. Visual tests cover desktop
   and mobile in both themes; CI owns the canonical screenshots.
 - Functional tests live in `e2e/*.spec.ts`, screenshot tests in `e2e/visual/`.
-- Update docs and tests with user-visible behavior.
 - If Vite+ reports `Unrecognized database version`, run
   `pnpm exec vp cache clean` and retry.
 - If hooks do not run, reset the hooks path:

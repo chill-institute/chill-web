@@ -24,8 +24,7 @@ pnpm exec vp run verify
   [architecture](./docs/architecture.md#ownership).
 - Keep API resolution in `src/lib/env.ts`, auth route behavior in
   `src/auth/route-options/`, and hook behavior in `.vite-hooks/`.
-- With production auto-deploy enabled, every `main` push deploys after verify
-  and e2e pass on that commit.
+- Delivery: [main.yml](./.github/workflows/main.yml).
 
 ## Proof map
 
@@ -43,6 +42,5 @@ Browser lanes use mocked API responses and leave `playwright-report/`.
 
 Gaps:
 
-- Pull requests get no workflow lint; only the `main` push does.
 - No lane runs against a live API or checks deployed hosts; run the
   [post-deploy checks](./docs/deployment.md#delivery) by hand.
