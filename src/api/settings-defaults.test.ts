@@ -208,6 +208,9 @@ describe("catalog sort defaults", () => {
   it.each([
     create(UserSettingsSchema),
     create(UserSettingsSchema, { catalog: create(CatalogSettingsSchema) }),
+    create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { sort: CatalogSort.UNSPECIFIED }),
+    }),
   ])("defaults absent or unspecified catalog sort", (input) => {
     expect(withUserSettingsDefaults(input).catalog?.sort).toBe(CatalogSort.POPULARITY);
   });
