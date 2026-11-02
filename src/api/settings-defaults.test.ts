@@ -205,20 +205,15 @@ describe("withSaveUserSettingsResponseDefaults", () => {
 });
 
 describe("catalog sort defaults", () => {
-  it.each([undefined, CatalogSort.UNSPECIFIED])(
-    "defaults missing or unspecified shared sort (%s)",
-    (sort) => {
-      const settings = withUserSettingsDefaults(
-        create(UserSettingsSchema, {
-          catalog: create(CatalogSettingsSchema, { sort }),
-        }),
-      );
-      expect(settings.catalog?.sort).toBe(CatalogSort.POPULARITY);
-      expect(withUserSettingsDefaults(create(UserSettingsSchema)).catalog?.sort).toBe(
-        CatalogSort.POPULARITY,
-      );
-    },
-  );
+  it.each([
+    create(UserSettingsSchema),
+    create(UserSettingsSchema, { catalog: create(CatalogSettingsSchema) }),
+    create(UserSettingsSchema, {
+      catalog: create(CatalogSettingsSchema, { sort: CatalogSort.UNSPECIFIED }),
+    }),
+  ])("defaults absent or unspecified catalog sort", (input) => {
+    expect(withUserSettingsDefaults(input).catalog?.sort).toBe(CatalogSort.POPULARITY);
+  });
 
   it("preserves an explicit shared sort", () => {
     const settings = withUserSettingsDefaults(

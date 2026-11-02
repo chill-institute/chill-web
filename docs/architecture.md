@@ -7,16 +7,9 @@ owns browser state, requests, and rendering.
 
 ## Ownership
 
-| Path                         | Owns                                                   |
-| ---------------------------- | ------------------------------------------------------ |
-| `src/api/`                   | Connect transport, API helpers, defaults, timeouts     |
-| `src/auth/`                  | Tokens, API context, auth routes and route options     |
-| `src/catalog/`               | Movie and TV queries, routes, modals, sort             |
-| `src/queries/`, `src/hooks/` | Search and settings queries and hooks                  |
-| `src/lib/`                   | Environment, crash reporting, PWA updates, search data |
-| `src/workers/`               | Static-asset Worker, headers, redirects                |
-| `src/ui/`                    | Tokens, primitives, pure hooks; no auth or API imports |
-| `src/components/`            | App shell, search, settings, shared UI                 |
+The source tree groups API transport under [src/api](../src/api/), auth under
+[src/auth](../src/auth/), and catalog flows under [src/catalog](../src/catalog/).
+[src/ui](../src/ui/) contains reusable UI and must not import auth or API code.
 
 ## Requests
 

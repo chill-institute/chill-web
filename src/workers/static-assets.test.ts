@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import staticAssetsWorker from "./static-assets";
-import { handleStaticAssetRequest, type StaticAssetEnv } from "./static-assets";
+import type { StaticAssetEnv } from "./static-assets";
 
 function createEnv(response: Response): StaticAssetEnv {
   return {
@@ -11,13 +11,9 @@ function createEnv(response: Response): StaticAssetEnv {
   };
 }
 
-describe("handleStaticAssetRequest", () => {
-  it("exposes the Cloudflare module worker fetch entrypoint", () => {
-    expect(staticAssetsWorker.fetch).toBe(handleStaticAssetRequest);
-  });
-
+describe("static assets worker", () => {
   it("adds conservative security headers to successful html responses", async () => {
-    const response = await handleStaticAssetRequest(
+    const response = await staticAssetsWorker.fetch(
       new Request("https://chill.institute/movies"),
       createEnv(
         new Response("<!doctype html>", {
@@ -48,7 +44,7 @@ describe("handleStaticAssetRequest", () => {
     });
 
     await expect(
-      handleStaticAssetRequest(
+      staticAssetsWorker.fetch(
         new Request("https://chill.institute/robots.txt"),
         createEnv(upstream),
       ),
@@ -56,7 +52,7 @@ describe("handleStaticAssetRequest", () => {
   });
 
   it("keeps real asset responses cacheable and nosniffed", async () => {
-    const response = await handleStaticAssetRequest(
+    const response = await staticAssetsWorker.fetch(
       new Request("https://chill.institute/assets/index-DqBKRWUW.js"),
       createEnv(
         new Response("console.log('ok')", {
@@ -73,7 +69,7 @@ describe("handleStaticAssetRequest", () => {
   });
 
   it("turns SPA HTML fallbacks for assets into real misses", async () => {
-    const response = await handleStaticAssetRequest(
+    const response = await staticAssetsWorker.fetch(
       new Request("https://chill.institute/assets/stale-chunk.js"),
       createEnv(
         new Response("<!doctype html>", {
@@ -98,7 +94,7 @@ describe("handleStaticAssetRequest", () => {
     });
 
     await expect(
-      handleStaticAssetRequest(
+      staticAssetsWorker.fetch(
         new Request("https://chill.institute/assets/index-DqBKRWUW.js"),
         createEnv(upstream),
       ),

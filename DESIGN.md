@@ -1,168 +1,11 @@
----
-version: alpha
-name: chill.institute
-description: Code-first design system for chill.institute.
-colors:
-  primary: "#0c0a09"
-  onPrimary: "#f5f5f4"
-  app: "#d6d3d1"
-  surface: "#f5f5f4"
-  surface2: "#fafaf9"
-  hover: "#e7e5e4"
-  active: "#d6d3d1"
-  foreground: "#0c0a09"
-  foregroundMuted: "#44403c"
-  foregroundSubtle: "#57534e"
-  foregroundFaint: "#78716c"
-  borderStrong: "#0c0a09"
-  borderDark: "#44403c"
-  borderDarkControl: "#78716c"
-  darkApp: "#292524"
-  darkSurface: "#1c1917"
-  darkForeground: "#f5f5f4"
-  rating: "#f59e0b"
-  success: "#036819"
-  darkSuccess: "#2da73d"
-  error: "#dc2626"
-typography:
-  heading:
-    fontFamily: Family
-    fontSize: 2.25rem
-    fontWeight: 400
-    lineHeight: 1.05
-    letterSpacing: "-0.01em"
-  heading-md:
-    fontFamily: Family
-    fontSize: 1.875rem
-    fontWeight: 400
-    lineHeight: 1.2
-    letterSpacing: "-0.01em"
-  heading-sm:
-    fontFamily: Family
-    fontSize: 1.5rem
-    fontWeight: 400
-    lineHeight: 1.2
-    letterSpacing: "-0.01em"
-  body:
-    fontFamily: Metric
-    fontSize: 0.875rem
-    fontWeight: 400
-    lineHeight: 1.4
-  micro:
-    fontFamily: Metric
-    fontSize: 0.6875rem
-    fontWeight: 400
-    lineHeight: 1rem
-rounded:
-  xs: 2px
-  sm: 4px
-  xl: 12px
-spacing:
-  px: 1px
-  xs: 0.25rem
-  sm: 0.5rem
-  md: 0.75rem
-  lg: 1rem
-  xl: 1.5rem
-  control-xs: 1.125rem
-  control-sm: 1.5rem
-  control: 1.875rem
-  control-md: 2.25rem
-components:
-  button:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.sm}"
-    height: "{spacing.control}"
-    padding: 0.375rem
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.onPrimary}"
-    rounded: "{rounded.sm}"
-    height: "{spacing.control}"
-    padding: 0.375rem
-  input:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foreground}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    height: 2rem
-    padding: 0.5rem
-  select:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foreground}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    height: "{spacing.control-md}"
-    padding: 0.5rem
-  card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.sm}"
-    padding: "{spacing.lg}"
-  modal:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.xl}"
-    padding: "{spacing.xl}"
-  app-shell:
-    backgroundColor: "{colors.app}"
-    textColor: "{colors.foreground}"
-  surface-inset:
-    backgroundColor: "{colors.surface2}"
-    textColor: "{colors.foregroundMuted}"
-    rounded: "{rounded.sm}"
-    padding: "{spacing.md}"
-  hover-state:
-    backgroundColor: "{colors.hover}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.sm}"
-  active-state:
-    backgroundColor: "{colors.active}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.sm}"
-  metadata:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foregroundSubtle}"
-    typography: "{typography.micro}"
-  placeholder:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.foregroundSubtle}"
-    typography: "{typography.micro}"
-  faint-ink:
-    backgroundColor: "{colors.foregroundFaint}"
-  hard-border:
-    backgroundColor: "{colors.borderStrong}"
-    textColor: "{colors.onPrimary}"
-  dark-shell:
-    backgroundColor: "{colors.darkApp}"
-    textColor: "{colors.darkForeground}"
-  dark-surface:
-    backgroundColor: "{colors.darkSurface}"
-    textColor: "{colors.darkForeground}"
-    rounded: "{rounded.sm}"
-  dark-border:
-    backgroundColor: "{colors.borderDark}"
-  dark-control-border:
-    backgroundColor: "{colors.borderDarkControl}"
-  rating-star:
-    backgroundColor: "{colors.rating}"
-  success-state:
-    backgroundColor: "{colors.success}"
-  dark-success-state:
-    backgroundColor: "{colors.darkSuccess}"
-  error-state:
-    backgroundColor: "{colors.error}"
----
-
-## Overview
+# Design
 
 `chill.institute` uses stone-and-paper surfaces, Metric and Family type, hard
 1px borders, compact controls, and stamped button motion. Search is dense:
 table-first on desktop, card-first on mobile. Catalog browsing is image-first:
 poster grids and detail modals.
 
-The code wins when this file disagrees; update this file to match.
+Token values and component variants live in the source files below.
 
 - Tokens, fonts, motion, heading styles: `src/ui/styles.css`
 - shadcn/base primitives: `src/ui/components/ui/`
@@ -170,10 +13,6 @@ The code wins when this file disagrees; update this file to match.
 - App and catalog surfaces: `src/components/`, `src/catalog/components/`
 
 ## Colors
-
-Stone neutrals carry the palette. Light: stone-300 app, stone-100 surfaces,
-stone-950 text and hard border. Dark: stone-800 app, stone-900 surfaces,
-stone-100 text, stone-700 borders, and stone-500 control borders.
 
 Use the semantic utilities in `src/ui/styles.css`, such as `bg-app`,
 `bg-surface`, `text-fg-1`, `text-fg-3`, `border-border-strong`,
@@ -201,22 +40,8 @@ drawer overlays and the modal close button; the sticky header is opaque.
 
 ## shadcn Compatibility
 
-`components.json` enables `cssVariables`, and `src/ui/styles.css` maps the
-shadcn aliases to Institute tokens. Treat the aliases as a bridge; committed
-code uses the Institute utility:
-
-| shadcn               | Institute                |
-| -------------------- | ------------------------ |
-| `background`         | `app`                    |
-| `foreground`         | `fg-1`                   |
-| `card`, `popover`    | `surface`                |
-| `secondary`, `muted` | `surface-2`              |
-| `accent`             | `hover`                  |
-| `primary`            | `fg-1` with `fg-inverse` |
-| `destructive`        | `error`                  |
-| `border`             | `border-strong`          |
-| `input`              | `border-control`         |
-| `ring`               | `ring-focus`             |
+The alias mapping lives in [styles.css](./src/ui/styles.css), and CLI paths
+in [components.json](./components.json).
 
 Run the shadcn CLI from the repo root, review the diff, and translate classes
 before shipping. Use `--overwrite` only when the user asks for an upstream
@@ -227,13 +52,8 @@ reset.
 - Metric is the UI and body font. Family, regular weight only, is the serif for
   app names, headings, table narration, and titles. No third font, no bold
   serif, no monospace anywhere in product UI.
-- Inputs, textareas, and native selects are `1rem` below `sm` and `0.875rem`
-  from `sm` up.
-- Keep `tracking-heading` (-0.01em) aligned with `font-serif` and the heading
-  styles.
-- Off-scale sizes are theme tokens, not arbitrary values: `text-2xs` (10px),
-  `text-meta` (13px), `text-row` (15px), and `leading-display` (1.05),
-  `leading-hero` (1.08), `leading-title` (1.2), `leading-row` (1.4).
+- Font sizes, tracking, and responsive input sizing live in
+  [styles.css](./src/ui/styles.css). Use theme tokens for off-scale sizes.
 - Labels are mostly lowercase (`movies`, `tv shows`, `seeders`, `send to
   put.io`); longer headings may use sentence case. The voice is one operator
   running a useful thing, not a SaaS brand.
@@ -254,16 +74,6 @@ interactive objects, modals, and mobile result cards.
 - Other cards use borders, not shadows. Modals use `shadow-modal`, detail
   posters `shadow-poster`, drawers `shadow-drawer`.
 
-## Shapes
-
-- 2px: tiny marks
-- 4px: buttons, inputs, selects, tab triggers, checkboxes, cards, result
-  cards, popovers, tooltips
-- 12px: desktop modals, the default drawer top, auth and status panels, empty
-  states
-- 24px: settings and movie or TV detail drawer tops
-- full: circular icon controls, avatars, and intentional pills
-
 ## Components
 
 Reuse before writing markup: `Button`, `IconButton`, `Tabs`/`TabsList`/
@@ -272,15 +82,10 @@ Reuse before writing markup: `Button`, `IconButton`, `Tabs`/`TabsList`/
 `PosterCard`, and `ResponsiveModal`, `SettingsModal`, or the shadcn dialog and
 drawer primitives for overlays.
 
-Pick appearance with a variant or size instead of classes: `Badge`
-`subtle`, `success`, `error`, and `muted`; `Skeleton` `shape`;
-`NativeSelect` `size` (`sm`, `sm-dense`, `xs`); `Button` size `sm-icon`;
-`PopoverContent` `size` (`sm`, `flush`) and `elevation="raised"`;
-`Empty` `size="lg"` and `EmptyTitle` `variant="display"`; and
-`ResponsiveModal` `desktopContentVariant="panel"` and
-`drawerContentVariant="raised"`. Outside `src/ui/components/`, `vp lint`
-reports classes that restyle a component, arbitrary values, and inline styles;
-the allowed exceptions and contracts live in `vite.config.ts`.
+Pick appearance with the component's variant and size props. Outside
+`src/ui/components/`, lint rejects classes that restyle a component, arbitrary
+values, and inline styles. Exceptions and contracts live in
+[vite.config.ts](./vite.config.ts).
 
 Use lucide icons with component-supported sizing and `data-icon` where
 expected. Emoji appear only in the results-table action-column marker (🤠) and
