@@ -425,7 +425,7 @@ function EarlierBinges({
             <button
               type="button"
               onClick={() => onSelect(binge.id)}
-              className="hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer items-center gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer items-start gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <BingePosterStrip urls={binge.posterUrls} />
               <span
