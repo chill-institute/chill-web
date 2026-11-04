@@ -17,7 +17,7 @@
   "dependencies": {
     "@base-ui/react": "^1.9.0",
     "@bufbuild/protobuf": "^2.16.0",
-    "@chill-institute/contracts": "github:chill-institute/chill-contracts#fa1cbcc65ef9beec96b688c5337d3dbeed2eb9af",
+    "@chill-institute/contracts": "github:chill-institute/chill-contracts#5e35ec7e61e80c6f46bc7f112e5477b08a826b64",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",
     "@sentry/react": "^11.7.0",

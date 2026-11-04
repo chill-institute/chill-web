@@ -425,21 +425,26 @@ function EarlierBinges({
             <button
               type="button"
               onClick={() => onSelect(binge.id)}
-              className={cn(
-                "hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer flex-col gap-0.5 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
-                sidebar && "lg:flex-col lg:items-start lg:gap-0.5",
-              )}
+              className="hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer items-center gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
-              <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-heading">
-                {binge.title}
-                {binge.id === latestId ? (
-                  <span className="text-fg-3 text-sm"> · latest</span>
-                ) : null}
-              </span>
-              <span className="text-fg-3 shrink-0 text-sm tabular-nums">
-                by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} /> ·{" "}
-                {binge.itemCount} {binge.itemCount === 1 ? "title" : "titles"}
-                {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
+              <BingePosterStrip urls={binge.posterUrls} />
+              <span
+                className={cn(
+                  "flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
+                  sidebar && "lg:flex-col lg:items-start lg:gap-0.5",
+                )}
+              >
+                <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-heading">
+                  {binge.title}
+                  {binge.id === latestId ? (
+                    <span className="text-fg-3 text-sm"> · latest</span>
+                  ) : null}
+                </span>
+                <span className="text-fg-3 shrink-0 text-sm tabular-nums">
+                  by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} /> ·{" "}
+                  {binge.itemCount} {binge.itemCount === 1 ? "title" : "titles"}
+                  {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
+                </span>
               </span>
             </button>
           </li>
@@ -451,6 +456,30 @@ function EarlierBinges({
         </Button>
       ) : null}
     </div>
+  );
+}
+
+function BingePosterStrip({ urls }: { urls: readonly string[] }) {
+  if (urls.length === 0) {
+    return null;
+  }
+  return (
+    <span aria-hidden="true" data-slot="binge-poster-strip" className="flex shrink-0 gap-1">
+      {urls.map((url, position) => (
+        <span
+          key={`${position}:${url}`}
+          className="bg-app border-border-strong relative aspect-[2/3] w-8 overflow-hidden rounded-sm border"
+        >
+          <img
+            src={url}
+            alt=""
+            decoding="async"
+            loading="lazy"
+            className="absolute inset-0 size-full object-cover"
+          />
+        </span>
+      ))}
+    </span>
   );
 }
 

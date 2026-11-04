@@ -185,8 +185,8 @@ importers:
         specifier: ^2.16.0
         version: 2.16.0
       '@chill-institute/contracts':
-        specifier: github:chill-institute/chill-contracts#fa1cbcc65ef9beec96b688c5337d3dbeed2eb9af
-        version: https://codeload.github.com/chill-institute/chill-contracts/tar.gz/fa1cbcc65ef9beec96b688c5337d3dbeed2eb9af
+        specifier: github:chill-institute/chill-contracts#5e35ec7e61e80c6f46bc7f112e5477b08a826b64
+        version: https://codeload.github.com/chill-institute/chill-contracts/tar.gz/5e35ec7e61e80c6f46bc7f112e5477b08a826b64
       '@connectrpc/connect':
         specifier: ^2.2.0
         version: 2.3.0(@bufbuild/protobuf@2.16.0)
@@ -901,8 +901,8 @@ packages:
   '@bufbuild/protobuf@2.16.0':
     resolution: {integrity: sha512-FWa0sPlqYGJgpTs6OxBRcL/AW4JT0OIO+W1ajerluoTVh8CV0B7XM1qsNCRgnkSCkRCgOICKHRQlY17jrsm0+Q==}
 
-  '@chill-institute/contracts@https://codeload.github.com/chill-institute/chill-contracts/tar.gz/fa1cbcc65ef9beec96b688c5337d3dbeed2eb9af':
-    resolution: {gitHosted: true, integrity: sha512-zrGU4PjTTbdeYzp4z6tYY6iqUYAluy/JnXihLjDiQOlgAq3LRkhN0dkH/NFehEwVRAbio1dn/2RxSJyRkeY2rQ==, tarball: https://codeload.github.com/chill-institute/chill-contracts/tar.gz/fa1cbcc65ef9beec96b688c5337d3dbeed2eb9af}
+  '@chill-institute/contracts@https://codeload.github.com/chill-institute/chill-contracts/tar.gz/5e35ec7e61e80c6f46bc7f112e5477b08a826b64':
+    resolution: {gitHosted: true, integrity: sha512-vw36mRQPNiUDn2DvltxAEEyCWB54x2m/SvSfDnfQwdK1xOh8sHTEAkSFsepA9REkt5NLc/uzqpvwyOMUGVLSdA==, tarball: https://codeload.github.com/chill-institute/chill-contracts/tar.gz/5e35ec7e61e80c6f46bc7f112e5477b08a826b64}
     version: 3.4.0
 
   '@connectrpc/connect-web@2.3.0':
@@ -5374,7 +5374,7 @@ snapshots:
 
   '@bufbuild/protobuf@2.16.0': {}
 
-  '@chill-institute/contracts@https://codeload.github.com/chill-institute/chill-contracts/tar.gz/fa1cbcc65ef9beec96b688c5337d3dbeed2eb9af':
+  '@chill-institute/contracts@https://codeload.github.com/chill-institute/chill-contracts/tar.gz/5e35ec7e61e80c6f46bc7f112e5477b08a826b64':
     dependencies:
       '@bufbuild/protobuf': 2.16.0
 
