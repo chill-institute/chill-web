@@ -168,7 +168,7 @@ function BingeFrame({ wide = false, children }: { wide?: boolean; children: Reac
       data-slot="binge-section"
       className={cn(
         "mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-7 pb-10 sm:pt-8",
-        wide && "lg:max-w-5xl",
+        wide && "sm:px-5 lg:max-w-7xl",
       )}
     >
       {children}
