@@ -237,6 +237,7 @@ export function tvShow(init?: TVShowInit) {
     year: 2025,
     posterUrl: "/test/poster.svg",
     rating: 8.7,
+    overview: "A single-shift medical drama.",
     externalUrl: "https://www.imdb.com/title/tt9000003/",
     seasonCount: 1,
     status: TVShowStatus.TV_SHOW_STATUS_RETURNING,
