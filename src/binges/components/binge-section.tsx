@@ -67,37 +67,51 @@ export function BingeSection() {
     return null;
   }
 
-  return (
-    <BingeFrame>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-fg-3 m-0 text-sm">
-          {curatorFilter
-            ? "binges"
-            : current && current.id !== latest?.id
-              ? "binge"
-              : "latest binge"}
-        </p>
-        <div className="flex items-center gap-2">
-          {canCurate && current ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-label="Edit this binge"
-              onClick={() => setOverlay({ kind: "editor", binge: current })}
-            >
-              <Pencil />
-              edit
-            </Button>
-          ) : null}
-          {canCurate ? (
-            <Button size="sm" variant="primary" onClick={() => setOverlay({ kind: "editor" })}>
-              <Plus />
-              new binge
-            </Button>
-          ) : null}
-        </div>
-      </div>
+  const withSidebar = !curatorFilter && binges.length > 1;
+  const body = loadingOther ? (
+    <BingeSkeleton />
+  ) : wantsOther && bingeQuery.status === "error" ? (
+    <UserErrorAlert error={bingeQuery.error} />
+  ) : current ? (
+    <BingeBody
+      binge={current}
+      onOpenItem={(item) => setOverlay({ kind: "item", item })}
+      onOpenCurator={showCurator}
+    />
+  ) : (
+    <p className="text-fg-2 m-0 text-sm">no binges yet. publish the first one.</p>
+  );
 
+  const header = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <p className="text-fg-3 m-0 text-sm">
+        {curatorFilter ? "binges" : current && current.id !== latest?.id ? "binge" : "latest binge"}
+      </p>
+      <div className="flex items-center gap-2">
+        {canCurate && current ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Edit this binge"
+            onClick={() => setOverlay({ kind: "editor", binge: current })}
+          >
+            <Pencil />
+            edit
+          </Button>
+        ) : null}
+        {canCurate ? (
+          <Button size="sm" variant="primary" onClick={() => setOverlay({ kind: "editor" })}>
+            <Plus />
+            new binge
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  return (
+    <BingeFrame wide={withSidebar}>
+      {withSidebar ? null : header}
       {curatorFilter ? (
         <EarlierBinges
           binges={binges}
@@ -107,30 +121,25 @@ export function BingeSection() {
           onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
           onOpenCurator={showCurator}
         />
-      ) : loadingOther ? (
-        <BingeSkeleton />
-      ) : wantsOther && bingeQuery.status === "error" ? (
-        <UserErrorAlert error={bingeQuery.error} />
-      ) : current ? (
-        <BingeBody
-          binge={current}
-          onOpenItem={(item) => setOverlay({ kind: "item", item })}
-          onOpenCurator={showCurator}
-        />
+      ) : withSidebar ? (
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-10">
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
+            {header}
+            {body}
+          </div>
+          <EarlierBinges
+            binges={binges}
+            currentId={current?.id}
+            latestId={latest?.id}
+            curator={undefined}
+            sidebar
+            onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
+            onOpenCurator={showCurator}
+          />
+        </div>
       ) : (
-        <p className="text-fg-2 m-0 text-sm">no binges yet. publish the first one.</p>
+        body
       )}
-
-      {!curatorFilter && binges.length > 1 ? (
-        <EarlierBinges
-          binges={binges}
-          currentId={current?.id}
-          latestId={latest?.id}
-          curator={undefined}
-          onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
-          onOpenCurator={showCurator}
-        />
-      ) : null}
 
       {overlay.kind === "editor" ? (
         <BingeEditor
@@ -152,12 +161,15 @@ export function BingeSection() {
   );
 }
 
-function BingeFrame({ children }: { children: React.ReactNode }) {
+function BingeFrame({ wide = false, children }: { wide?: boolean; children: React.ReactNode }) {
   return (
     <section
       aria-label="Binges"
       data-slot="binge-section"
-      className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-7 pb-10 sm:pt-8"
+      className={cn(
+        "mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-7 pb-10 sm:pt-8",
+        wide && "lg:max-w-5xl",
+      )}
     >
       {children}
     </section>
@@ -365,6 +377,7 @@ function EarlierBinges({
   currentId,
   latestId,
   curator,
+  sidebar = false,
   onSelect,
   onOpenCurator,
 }: {
@@ -372,6 +385,7 @@ function EarlierBinges({
   currentId: string | undefined;
   latestId: string | undefined;
   curator: string | undefined;
+  sidebar?: boolean;
   onSelect: (id: string) => void;
   onOpenCurator: (name: string | undefined) => void;
 }) {
@@ -384,7 +398,10 @@ function EarlierBinges({
   const hidden = others.length - visible.length;
 
   return (
-    <div data-slot="earlier-binges" className="mt-2 flex flex-col gap-2">
+    <div
+      data-slot="earlier-binges"
+      className={cn("flex flex-col gap-2", sidebar ? "lg:sticky lg:top-6" : "mt-2")}
+    >
       {filter ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-fg-3 m-0 text-sm">
@@ -410,6 +427,7 @@ function EarlierBinges({
               onClick={() => onSelect(binge.id)}
               className={cn(
                 "hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-full cursor-pointer flex-col gap-0.5 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-4",
+                sidebar && "lg:flex-col lg:items-start lg:gap-0.5",
               )}
             >
               <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-heading">
