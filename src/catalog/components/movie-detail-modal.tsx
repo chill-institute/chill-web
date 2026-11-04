@@ -18,6 +18,7 @@ import {
   DetailGenreBadges,
   DetailModalHeader,
   DetailModalHeaderText,
+  DetailOverview,
   DetailRatingMeta,
   DetailResponsiveModal,
   DetailYearMeta,
@@ -99,6 +100,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
         posterAlt={movie.title}
         closeLabel="Close movie details"
         onClose={onClose}
+        overview={<DetailOverview text={movie.overview} />}
       >
         <MovieHeaderText movie={movie} metadataTags={metadataTags} />
       </DetailModalHeader>

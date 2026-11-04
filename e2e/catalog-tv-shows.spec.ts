@@ -469,6 +469,8 @@ test.describe("tv shows home", () => {
     await expect(
       modal.getByRole("heading", { level: 2, name: "Harbor Ward" }).last(),
     ).toBeVisible();
+    await expect(modal.getByText("A single-shift medical drama.")).toBeVisible();
+    await expect(modal.getByRole("button", { name: "more" })).toHaveCount(0);
     await expect(modal.getByRole("tab", { name: "Season 1", exact: true })).toBeVisible();
     await expect(modal.getByText("7:00 A.M.")).toBeVisible();
     const sendSeasonButton = modal.getByRole("button", { name: /send season to put.io/i });

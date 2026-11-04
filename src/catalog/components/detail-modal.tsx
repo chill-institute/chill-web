@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useCallback, useId, useState, type ReactNode } from "react";
 import { ArrowUpRight, Star } from "lucide-react";
 
 import { ModalCloseButton } from "@/ui/components/modal-close-button";
@@ -78,6 +78,7 @@ type DetailModalHeaderProps = {
   posterAlt: string;
   closeLabel: string;
   onClose: () => void;
+  overview?: ReactNode;
   children: ReactNode;
 };
 
@@ -87,22 +88,28 @@ export function DetailModalHeader({
   posterAlt,
   closeLabel,
   onClose,
+  overview,
   children,
 }: DetailModalHeaderProps) {
   return (
-    <div className="relative flex h-[200px] shrink-0 items-end overflow-hidden sm:h-[220px]">
+    <div className="relative flex min-h-[200px] shrink-0 items-end overflow-hidden sm:min-h-[220px]">
       <DetailBackdropImage key={backdropUrl ?? "no-backdrop"} url={backdropUrl} />
-      <div className="from-surface via-surface/80 absolute inset-0 bg-linear-to-t via-30% to-transparent" />
+      <div className="from-surface via-surface/85 absolute inset-0 bg-linear-to-t via-55% to-surface/20" />
       <div className="from-surface/50 absolute inset-0 bg-linear-to-r to-transparent to-60%" />
 
-      <div className="relative z-10 flex w-full items-end gap-3.5 px-4 pb-4 sm:gap-4 sm:px-6 sm:pb-5">
-        {posterUrl ? (
-          <DetailPosterImage key={posterUrl} url={posterUrl} alt={posterAlt} />
-        ) : (
-          <Skeleton className="aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]" />
-        )}
+      <div className="relative z-10 grid w-full grid-cols-[auto_minmax(0,1fr)] items-start sm:grid-rows-[auto_1fr] gap-x-3.5 px-4 pt-12 pb-4 sm:gap-x-4 sm:px-6 sm:pt-14 sm:pb-5">
+        <div className="sm:row-span-2">
+          {posterUrl ? (
+            <DetailPosterImage key={posterUrl} url={posterUrl} alt={posterAlt} />
+          ) : (
+            <Skeleton className="aspect-[2/3] w-[92px] shrink-0 sm:w-[110px]" />
+          )}
+        </div>
 
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0">{children}</div>
+        {overview ? (
+          <div className="col-span-2 sm:col-span-1 sm:col-start-2">{overview}</div>
+        ) : null}
       </div>
 
       <ModalCloseButton
@@ -223,6 +230,59 @@ export function DetailModalBody({
       )}
     >
       {children}
+    </div>
+  );
+}
+
+export function DetailOverview({ text }: { text?: string }) {
+  const overview = text?.trim();
+  if (!overview) return null;
+  return <DetailOverviewText key={overview} text={overview} />;
+}
+
+function DetailOverviewText({ text }: { text: string }) {
+  const textId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const watchOverflow = useCallback(
+    (node: HTMLParagraphElement | null) => {
+      if (!node || expanded) return;
+      const observer = new ResizeObserver(() => {
+        setOverflowing(node.scrollHeight > node.clientHeight);
+      });
+      observer.observe(node);
+      return () => observer.disconnect();
+    },
+    [expanded],
+  );
+
+  const toggle = (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      aria-controls={textId}
+      onClick={() => setExpanded((value) => !value)}
+      className="text-fg-3 hover:text-fg-1 focus-visible:ring-ring-focus cursor-pointer rounded text-sm/5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+    >
+      {expanded ? "less" : "more"}
+    </button>
+  );
+
+  return (
+    <div data-detail-overview className="relative mt-3">
+      <p
+        id={textId}
+        ref={watchOverflow}
+        className={cn("text-fg-2 m-0 text-sm/5", !expanded && "line-clamp-3")}
+      >
+        {text}
+        {expanded ? <> {toggle}</> : null}
+      </p>
+      {overflowing && !expanded ? (
+        <span className="from-transparent via-surface to-surface absolute right-0 bottom-0 bg-linear-to-r via-40% pl-10">
+          {toggle}
+        </span>
+      ) : null}
     </div>
   );
 }

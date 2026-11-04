@@ -235,6 +235,52 @@ test.describe("movies", () => {
     });
   });
 
+  test("movie modal collapses a long overview and hides a missing one", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const overview =
+      "A night-shift archivist finds a signal buried in decades of station logs. " +
+      "Every answer she decodes points to a broadcast that has not happened yet, " +
+      "and the people who sent it are running out of time to be believed. " +
+      "She has until the next transmission window to convince anyone that the " +
+      "future is calling, and that it sounds exactly like her own voice.";
+    await mockRpc(
+      homeMethods({
+        GetMovies: moviesResponse([{ ...movies[0], overview }, movies[1]]),
+        Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+      }),
+    );
+
+    await authenticatedPage.setViewportSize({ width: 390, height: 844 });
+    await authenticatedPage.goto("/movies");
+    await openFirstMovieModal(authenticatedPage);
+    const auroraDialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
+    const overviewText = auroraDialog.getByText(overview);
+    await expect(overviewText).toBeVisible();
+
+    const collapsedHeight = (await overviewText.boundingBox())?.height ?? 0;
+    const toggle = auroraDialog.getByRole("button", { name: "more" });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await toggle.click();
+    await expect(auroraDialog.getByRole("button", { name: "less" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    const expandedHeight = (await overviewText.boundingBox())?.height ?? 0;
+    expect(expandedHeight).toBeGreaterThan(collapsedHeight);
+
+    await authenticatedPage.keyboard.press("Escape");
+    await expect(auroraDialog).toBeHidden();
+    await authenticatedPage
+      .locator('[data-slot="poster-card"]')
+      .filter({ hasText: "Signal Orchard" })
+      .click();
+    const orchardDialog = authenticatedPage.getByRole("dialog", { name: "Signal Orchard details" });
+    await expect(orchardDialog.locator("[data-detail-modal-body]")).toBeVisible();
+    await expect(orchardDialog.locator("[data-detail-overview]")).toHaveCount(0);
+  });
+
   test("movie quick-send carries the catalog source", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({

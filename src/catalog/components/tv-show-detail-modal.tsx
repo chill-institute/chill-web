@@ -20,6 +20,7 @@ import {
   DetailModalHeaderSkeleton,
   DetailModalHeaderText,
   DetailMetadataSeparator,
+  DetailOverview,
   DetailModalShell,
   DetailRatingMeta,
   DetailResponsiveModal,
@@ -151,6 +152,7 @@ function TvShowDetailContent({
         posterAlt={show?.title ?? "TV show poster"}
         closeLabel="Close TV show details"
         onClose={onClose}
+        overview={<DetailOverview text={show?.overview} />}
       >
         {show ? (
           <DetailModalHeaderText
