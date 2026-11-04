@@ -21,7 +21,7 @@ import { Skeleton } from "@/ui/components/ui/skeleton";
 
 const routeApi = getRouteApi("/");
 const SKELETON_SLOTS = Array.from({ length: 3 }, (_, index) => `binge-skel-${index}`);
-const EARLIER_BINGES_PREVIEW = 5;
+const EARLIER_BINGES_PREVIEW = 20;
 
 type Overlay =
   | { kind: "none" }
