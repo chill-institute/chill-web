@@ -15,7 +15,7 @@ import {
   type BingeItem,
   type BingeSummary,
 } from "@/binges/lib/types";
-import { useBingeQuery, useBingesQuery } from "@/binges/queries/binges";
+import { useBingeQuery, useBingesQuery, useForgetBinge } from "@/binges/queries/binges";
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 
@@ -37,9 +37,10 @@ export function BingeSection() {
   const wantsOther = !curatorFilter && requestedId !== undefined && requestedId !== latest?.id;
   const bingeQuery = useBingeQuery(wantsOther ? requestedId : undefined);
   const [overlay, setOverlay] = useState<Overlay>({ kind: "none" });
+  const forgetBinge = useForgetBinge();
 
   const showBinge = (id: string | undefined) =>
-    void navigate({ to: "/", search: id ? { binge: id } : {}, replace: true });
+    navigate({ to: "/", search: id ? { binge: id } : {}, replace: true });
   const showCurator = (name: string | undefined) =>
     void navigate({ to: "/", search: name ? { curator: name } : {}, replace: true });
   const close = () => setOverlay({ kind: "none" });
@@ -107,7 +108,7 @@ export function BingeSection() {
           currentId={undefined}
           latestId={latest?.id}
           curator={curatorFilter}
-          onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
+          onSelect={(id) => void showBinge(id === latest?.id ? undefined : id)}
           onOpenCurator={showCurator}
         />
       ) : withSidebar ? (
@@ -124,7 +125,7 @@ export function BingeSection() {
               latestId={latest?.id}
               curator={undefined}
               sidebar
-              onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
+              onSelect={(id) => void showBinge(id === latest?.id ? undefined : id)}
               onOpenCurator={showCurator}
             />
           </div>
@@ -140,11 +141,11 @@ export function BingeSection() {
           onClose={close}
           onSaved={(saved) => {
             close();
-            showBinge(saved.id);
+            void showBinge(saved.id);
           }}
-          onDeleted={() => {
+          onDeleted={(id) => {
             close();
-            showBinge(undefined);
+            void showBinge(undefined).then(() => forgetBinge(id));
           }}
         />
       ) : null}
@@ -348,10 +349,6 @@ function ExternalIMDbLink({ href }: { href: string }) {
   );
 }
 
-/**
- * A curator's name that lists their binges. It is a span, not a button, because it also sits
- * inside the clickable rows of the binge list.
- */
 function CuratorName({
   name,
   onOpen,

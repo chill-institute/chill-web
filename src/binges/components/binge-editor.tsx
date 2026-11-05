@@ -29,7 +29,7 @@ type Props = {
   curatorName: string | undefined;
   onClose: () => void;
   onSaved: (binge: Binge) => void;
-  onDeleted: () => void;
+  onDeleted: (id: string) => void;
 };
 
 const NO_ERRORS: BingeDraftErrors = { itemErrors: {} };
@@ -120,7 +120,6 @@ export function BingeEditor({
       drawerContentClassName="max-h-[92dvh] overflow-hidden"
       drawerContentVariant="raised"
     >
-      {/* eslint-disable-next-line react-doctor/no-prevent-default -- the form never submits natively */}
       <form
         className="flex min-h-0 flex-col"
         onSubmit={(event) => {
@@ -206,7 +205,9 @@ export function BingeEditor({
                     variant="outline"
                     size="sm"
                     disabled={busy}
-                    onClick={() => remove.mutate(binge.id, { onSuccess: onDeleted })}
+                    onClick={() =>
+                      remove.mutate(binge.id, { onSuccess: () => onDeleted(binge.id) })
+                    }
                   >
                     <Trash2 />
                     really delete

@@ -312,6 +312,147 @@ test.describe("binge curation", () => {
     expect(new URL(authenticatedPage.url()).search).toBe("");
   });
 
+  test("enter adds the match for the text just typed, not the previous search", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([], { canCurate: true, curatorName: "the night shift" }),
+      }),
+    );
+    let releaseSecondSearch = () => {};
+    const secondSearchHeld = new Promise<void>((resolve) => {
+      releaseSecondSearch = resolve;
+    });
+    const matchesByQuery: Record<string, Parameters<typeof searchBingeTitlesResponse>[0]> = {
+      signal: [
+        { imdbId: "tt9100001", mediaType: BingeMediaType.MOVIE, title: "Signal Fires", year: 2001 },
+      ],
+      signals: [
+        {
+          imdbId: "tt9100002",
+          mediaType: BingeMediaType.MOVIE,
+          title: "Signals Return",
+          year: 2004,
+        },
+      ],
+    };
+    await authenticatedPage.route(/UserService\/SearchBingeTitles/, async (route) => {
+      const { query } = route.request().postDataJSON() as { query: string };
+      if (query === "signals") await secondSearchHeld;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(searchBingeTitlesResponse(matchesByQuery[query] ?? [])),
+      });
+    });
+
+    await authenticatedPage.goto("/");
+    await bingeSection(authenticatedPage).getByRole("button", { name: "new binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    const addTitle = editor.getByLabel("add a title");
+    await addTitle.fill("signal");
+    await expect(editor.getByRole("option", { name: /Signal Fires \(2001\)/ })).toBeVisible();
+
+    await addTitle.fill("signals");
+    await expect(editor.getByRole("option", { name: /Signal Fires \(2001\)/ })).toBeDisabled();
+    await addTitle.press("Enter");
+    const rows = editor.locator('[data-slot="binge-editor-item"]');
+    await expect(rows).toHaveCount(0);
+    releaseSecondSearch();
+
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("Signals Return");
+    await expect(addTitle).toHaveValue("");
+  });
+
+  test("a note stays open and focused while its text is cleared", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
+      }),
+    );
+
+    await authenticatedPage.goto("/");
+    await bingeSection(authenticatedPage).getByRole("button", { name: "Edit this binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    const note = editor.getByLabel("note for Synthetic Feature Alpha");
+    await expect(note).toHaveValue("start here, no spoilers");
+
+    await note.press("ControlOrMeta+a");
+    await note.press("Backspace");
+    await expect(note).toHaveValue("");
+    await expect(note).toBeFocused();
+    await authenticatedPage.keyboard.type("watch with the lights off");
+    await expect(note).toHaveValue("watch with the lights off");
+  });
+
+  test("deleting a linked binge returns home without asking for it again", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let deleted = false;
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest, older], {
+          canCurate: true,
+          curatorName: "the night shift",
+        }),
+        DeleteBinge: deleteBingeResponse(),
+      }),
+    );
+    await authenticatedPage.route(/UserService\/ListBinges/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          bingesResponse(deleted ? [latest] : [latest, older], {
+            canCurate: true,
+            curatorName: "the night shift",
+          }),
+        ),
+      }),
+    );
+    const bingeRequestsAfterDelete: string[] = [];
+    await authenticatedPage.route(/UserService\/GetBinge/, (route) => {
+      if (!deleted) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(bingeResponse(older)),
+        });
+      }
+      bingeRequestsAfterDelete.push(route.request().postData() ?? "");
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "not_found", message: "binge not found" }),
+      });
+    });
+
+    await authenticatedPage.goto("/?binge=binge-older");
+    const section = bingeSection(authenticatedPage);
+    await expect(section.getByRole("heading", { name: "Comfort rewatches" })).toBeVisible();
+    await section.getByRole("button", { name: "Edit this binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    await editor.getByRole("button", { name: "delete" }).click();
+    const remove = authenticatedPage.waitForRequest(/UserService\/DeleteBinge/);
+    deleted = true;
+    await editor.getByRole("button", { name: "really delete" }).click();
+    await remove;
+
+    await expect(editor).toHaveCount(0);
+    expect(new URL(authenticatedPage.url()).search).toBe("");
+    await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
+    await expect(section.getByRole("button", { name: /Comfort rewatches/ })).toHaveCount(0);
+    await expect(authenticatedPage.getByRole("alert")).toHaveCount(0);
+    expect(bingeRequestsAfterDelete).toEqual([]);
+  });
+
   test("shows the engine's reason when a binge is rejected", async ({
     authenticatedPage,
     mockRpc,

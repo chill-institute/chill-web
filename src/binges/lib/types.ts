@@ -23,15 +23,13 @@ const IMDB_ID_PATTERN = /^tt\d{7,8}$/;
 const CURATOR_NAME_MIN_LENGTH = 2;
 const CURATOR_NAME_MAX_LENGTH = 40;
 
-/** Counts characters the way the engine does (Unicode code points, not UTF-16 units). */
-function lengthOf(value: string): number {
+function codePointCount(value: string): number {
   let count = 0;
   for (const _ of value) count++;
   return count;
 }
 const IMDB_URL_PATTERN = /imdb\.com\/title\/(tt\d{7,8})/i;
 
-/** What the editor shows for a picked title; a pasted IMDb ID carries only the ID. */
 export type BingeTitlePick = Pick<
   BingeTitleMatch,
   "imdbId" | "mediaType" | "title" | "year" | "posterUrl"
@@ -55,7 +53,6 @@ export type BingeDraftErrors = {
   itemErrors: Record<string, string>;
 };
 
-/** Accepts a bare title ID or an IMDb title URL; returns the lowercase ID or "" */
 export function normalizeIMDbId(value: string): string {
   const trimmed = value.trim();
   const fromUrl = IMDB_URL_PATTERN.exec(trimmed)?.[1];
@@ -68,10 +65,10 @@ export function validateBingeDraft(draft: BingeDraft): BingeDraftErrors | null {
   const title = draft.title.trim();
   if (title.length === 0) {
     errors.title = "give the binge a title";
-  } else if (lengthOf(title) > BINGE_TITLE_MAX_LENGTH) {
+  } else if (codePointCount(title) > BINGE_TITLE_MAX_LENGTH) {
     errors.title = `keep the title under ${BINGE_TITLE_MAX_LENGTH} characters`;
   }
-  if (lengthOf(draft.blurb.trim()) > BINGE_BLURB_MAX_LENGTH) {
+  if (codePointCount(draft.blurb.trim()) > BINGE_BLURB_MAX_LENGTH) {
     errors.blurb = `keep the blurb under ${BINGE_BLURB_MAX_LENGTH} characters`;
   }
 
@@ -96,7 +93,7 @@ export function validateBingeDraft(draft: BingeDraft): BingeDraftErrors | null {
       continue;
     }
     seen.add(imdbId);
-    if (lengthOf(item.comment.trim()) > BINGE_COMMENT_MAX_LENGTH) {
+    if (codePointCount(item.comment.trim()) > BINGE_COMMENT_MAX_LENGTH) {
       errors.itemErrors[item.key] = `keep the comment under ${BINGE_COMMENT_MAX_LENGTH} characters`;
     }
   }
@@ -109,10 +106,9 @@ export function validateBingeDraft(draft: BingeDraft): BingeDraftErrors | null {
   return hasErrors ? errors : null;
 }
 
-/** Collapses whitespace like the engine does and reports why a name is rejected. */
 export function normalizeCuratorName(value: string): { name: string; error?: string } {
   const name = value.trim().split(/\s+/).filter(Boolean).join(" ");
-  const length = lengthOf(name);
+  const length = codePointCount(name);
   if (length < CURATOR_NAME_MIN_LENGTH) {
     return { name, error: `pick a name of at least ${CURATOR_NAME_MIN_LENGTH} characters` };
   }
@@ -122,12 +118,10 @@ export function normalizeCuratorName(value: string): { name: string; error?: str
   return { name };
 }
 
-/** The trimmed curator name, or "" for a binge whose curator has not picked one. */
 export function curatorKey(name: string | undefined): string {
   return name?.trim() ?? "";
 }
 
-/** Tolerates a missing field: a cached response from an older contract carries none. */
 export function curatorLabel(name: string | undefined): string {
   const trimmed = name?.trim() ?? "";
   return trimmed.length > 0 ? trimmed : "a curator";
@@ -162,7 +156,6 @@ export function bingeToDraft(binge: Binge | undefined, newKey: () => string): Bi
   };
 }
 
-/** "Title (1996)", or "" when the title is unknown. */
 export function bingeTitleLabel(title: string, year: number): string {
   const trimmed = title.trim();
   if (trimmed.length === 0) return "";
@@ -194,7 +187,6 @@ export function bingeMediaTypeLabel(mediaType: BingeMediaType): string {
   }
 }
 
-/** The movie detail modal reads a catalog Movie; a resolved binge item carries enough to build one. */
 export function bingeItemToMovie(item: BingeItem): Movie {
   return create(MovieSchema, {
     id: item.imdbId,

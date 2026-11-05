@@ -9,8 +9,12 @@ import {
   type BingeTitleMatch,
   type BingeTitlePick,
 } from "@/binges/lib/types";
-import { BINGE_TITLE_SEARCH_MIN_LENGTH, normalizeBingeTitleQuery } from "@/binges/queries/options";
-import { useBingeTitleSearch } from "@/binges/queries/binges";
+import {
+  BINGE_TITLE_SEARCH_MIN_LENGTH,
+  bingeTitleSearchTerm,
+  normalizeBingeTitleQuery,
+} from "@/binges/queries/options";
+import { useBingeTitleSearch, useFindBingeTitles } from "@/binges/queries/binges";
 import { useMountEffect } from "@/ui/hooks/use-effects";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/ui/components/ui/input-group";
 import { Spinner } from "@/ui/components/ui/spinner";
@@ -30,11 +34,10 @@ function searchErrorMessage(error: unknown): string {
   return "title search failed";
 }
 
-/** Adds a title to the binge from a search; a pasted ID or IMDb link also works. */
 export function BingeTitleAdder({ disabled, onAdd }: Props) {
   const [text, setText] = useState("");
-  // The query trails the text by a short pause so each keystroke is not a request.
   const [query, setQuery] = useState("");
+  const latestTextRef = useRef("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listId = useId();
   useMountEffect(() => () => {
@@ -42,22 +45,35 @@ export function BingeTitleAdder({ disabled, onAdd }: Props) {
   });
   const pastedId = normalizeIMDbId(text);
   const search = useBingeTitleSearch(pastedId ? "" : query);
+  const findTitles = useFindBingeTitles();
 
   const updateText = (value: string) => {
     setText(value);
+    latestTextRef.current = value;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => setQuery(value), SEARCH_DEBOUNCE_MS);
   };
   const matches = search.data?.matches ?? [];
   const searching = normalizeBingeTitleQuery(query).length >= BINGE_TITLE_SEARCH_MIN_LENGTH;
-  const pending = searching && (search.isPending || search.isFetching);
+  const matchesAreForText =
+    bingeTitleSearchTerm(query) === bingeTitleSearchTerm(text) && !search.isPlaceholderData;
+  const pending = searching && (!matchesAreForText || search.isPending || search.isFetching);
   const open = pastedId !== "" || (searching && text.length > 0);
 
   const add = (pick: BingeTitlePick) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setText("");
+    latestTextRef.current = "";
     setQuery("");
     onAdd(pick);
+  };
+
+  const addFirstMatchForText = async () => {
+    const submitted = latestTextRef.current;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setQuery(submitted);
+    const [first] = await findTitles(submitted).catch(() => []);
+    if (first && latestTextRef.current === submitted) add(first);
   };
 
   return (
@@ -91,8 +107,7 @@ export function BingeTitleAdder({ disabled, onAdd }: Props) {
               add(pastedTitlePick(pastedId));
               return;
             }
-            const first = matches[0];
-            if (first) add(first);
+            void addFirstMatchForText();
           }}
         />
       </InputGroup>
@@ -115,7 +130,12 @@ export function BingeTitleAdder({ disabled, onAdd }: Props) {
             </p>
           ) : matches.length > 0 ? (
             matches.map((match) => (
-              <MatchRow key={`${match.mediaType}-${match.imdbId}`} match={match} onPick={add} />
+              <MatchRow
+                key={`${match.mediaType}-${match.imdbId}`}
+                match={match}
+                outdated={!matchesAreForText}
+                onPick={add}
+              />
             ))
           ) : pending ? (
             <p className="text-fg-3 m-0 flex items-center gap-2 px-2.5 py-2 text-xs">
@@ -130,13 +150,22 @@ export function BingeTitleAdder({ disabled, onAdd }: Props) {
   );
 }
 
-function MatchButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+function MatchButton({
+  children,
+  disabled = false,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       role="option"
       aria-selected={false}
-      className="hover-hover:hover:bg-surface-2 focus-visible:bg-surface-2 flex w-full cursor-pointer items-center gap-2.5 px-2.5 py-1.5 text-left outline-none"
+      disabled={disabled}
+      className="hover-hover:enabled:hover:bg-surface-2 focus-visible:bg-surface-2 flex w-full cursor-pointer items-center gap-2.5 px-2.5 py-1.5 text-left outline-none disabled:cursor-default disabled:opacity-50"
       onClick={onClick}
     >
       {children}
@@ -146,15 +175,17 @@ function MatchButton({ children, onClick }: { children: React.ReactNode; onClick
 
 function MatchRow({
   match,
+  outdated,
   onPick,
 }: {
   match: BingeTitleMatch;
+  outdated: boolean;
   onPick: (pick: BingeTitlePick) => void;
 }) {
   const label = bingeTitleLabel(match.title, match.year);
   const kind = bingeMediaTypeLabel(match.mediaType);
   return (
-    <MatchButton onClick={() => onPick(match)}>
+    <MatchButton disabled={outdated} onClick={() => onPick(match)}>
       {match.posterUrl ? (
         <img
           src={match.posterUrl}
