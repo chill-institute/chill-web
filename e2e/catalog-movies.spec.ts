@@ -93,6 +93,13 @@ const auroraSearchResults = [
   }),
 ];
 
+const longOverview =
+  "A night-shift archivist finds a signal buried in decades of station logs. " +
+  "Every answer she decodes points to a broadcast that has not happened yet, " +
+  "and the people who sent it are running out of time to be believed. " +
+  "She has until the next transmission window to convince anyone that the " +
+  "future is calling, and that it sounds exactly like her own voice.";
+
 const homeMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings(),
   GetMovies: moviesResponse(movies),
@@ -239,15 +246,9 @@ test.describe("movies", () => {
     authenticatedPage,
     mockRpc,
   }) => {
-    const overview =
-      "A night-shift archivist finds a signal buried in decades of station logs. " +
-      "Every answer she decodes points to a broadcast that has not happened yet, " +
-      "and the people who sent it are running out of time to be believed. " +
-      "She has until the next transmission window to convince anyone that the " +
-      "future is calling, and that it sounds exactly like her own voice.";
     await mockRpc(
       homeMethods({
-        GetMovies: moviesResponse([{ ...movies[0], overview }, movies[1]]),
+        GetMovies: moviesResponse([{ ...movies[0], overview: longOverview }, movies[1]]),
         Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
       }),
     );
@@ -256,19 +257,28 @@ test.describe("movies", () => {
     await authenticatedPage.goto("/movies");
     await openFirstMovieModal(authenticatedPage);
     const auroraDialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
-    const overviewText = auroraDialog.getByText(overview);
+    const overviewText = auroraDialog.getByText(longOverview);
     await expect(overviewText).toBeVisible();
 
     const collapsedHeight = (await overviewText.boundingBox())?.height ?? 0;
-    const toggle = auroraDialog.getByRole("button", { name: "more" });
+    const toggle = auroraDialog.getByRole("button", { name: /synopsis/ });
+    await expect(toggle).toHaveAccessibleName("show more of the synopsis");
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await toggle.click();
-    await expect(auroraDialog.getByRole("button", { name: "less" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
+
+    await toggle.focus();
+    await authenticatedPage.keyboard.press("Enter");
+    await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(toggle).toHaveAccessibleName("show less of the synopsis");
     const expandedHeight = (await overviewText.boundingBox())?.height ?? 0;
     expect(expandedHeight).toBeGreaterThan(collapsedHeight);
+
+    await authenticatedPage.keyboard.press("Space");
+    await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect
+      .poll(async () => (await overviewText.boundingBox())?.height ?? 0)
+      .toBe(collapsedHeight);
 
     await authenticatedPage.keyboard.press("Escape");
     await expect(auroraDialog).toBeHidden();
@@ -280,6 +290,49 @@ test.describe("movies", () => {
     await expect(orchardDialog.locator("[data-detail-modal-body]")).toBeVisible();
     await expect(orchardDialog.locator("[data-detail-overview]")).toHaveCount(0);
   });
+
+  for (const { name, viewport } of [
+    { name: "a landscape phone", viewport: { width: 700, height: 330 } },
+    { name: "a small phone", viewport: { width: 320, height: 480 } },
+  ]) {
+    test(`movie modal keeps the title and torrent results reachable with an expanded synopsis on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await mockRpc(
+        homeMethods({
+          GetMovies: moviesResponse([
+            { ...movies[0], overview: `${longOverview} ${longOverview}` },
+          ]),
+          Search: searchResponse("Aurora Protocol 2010", auroraSearchResults),
+        }),
+      );
+
+      await authenticatedPage.setViewportSize(viewport);
+      await authenticatedPage.goto("/movies");
+      await openFirstMovieModal(authenticatedPage);
+      const dialog = authenticatedPage.getByRole("dialog", { name: "Aurora Protocol details" });
+      const firstResult = dialog.getByText("Aurora Protocol.2010.1080p.BluRay.x264");
+      await expect(firstResult).toBeAttached();
+      await dialog.getByRole("button", { name: "show more of the synopsis" }).click();
+      await expect(
+        dialog.getByRole("button", { name: "show less of the synopsis" }),
+      ).toHaveAttribute("aria-expanded", "true");
+
+      const body = dialog.locator("[data-detail-modal-body]");
+      expect((await body.boundingBox())?.height ?? 0).toBeGreaterThan(100);
+      await firstResult.scrollIntoViewIfNeeded();
+      await expect(firstResult).toBeInViewport();
+
+      const title = dialog.getByRole("heading", {
+        level: 2,
+        name: "Aurora Protocol",
+        exact: true,
+      });
+      await title.scrollIntoViewIfNeeded();
+      await expect(title).toBeInViewport({ ratio: 1 });
+    });
+  }
 
   test("movie quick-send carries the catalog source", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(

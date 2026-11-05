@@ -53,6 +53,12 @@ const movies = [
     year: 2010,
     rating: 8.8,
     genres: ["Science Fiction", "Action"],
+    overview:
+      "A night-shift archivist finds a signal buried in decades of station logs. " +
+      "Every answer she decodes points to a broadcast that has not happened yet, " +
+      "and the people who sent it are running out of time to be believed. " +
+      "She has until the next transmission window to convince anyone that the " +
+      "future is calling, and that it sounds exactly like her own voice.",
     posterUrl: "/test/poster.svg",
     source: MoviesSource.IMDB_MOVIEMETER,
   }),
@@ -343,6 +349,20 @@ test("movie detail modal", async ({ authenticatedPage, mockRpc }) => {
     dialog.getByText("Synthetic.Feature.Alpha.2010.1080p.BluRay.x264-FIXTURE"),
   ).toBeVisible();
   await expect(dialog).toHaveScreenshot("movie-detail-modal.png", visualOptions);
+});
+
+test("movie detail modal expanded synopsis", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(defaultMethods({ Search: searchResponse("Synthetic Feature Alpha 2010", []) }));
+
+  await authenticatedPage.goto("/movies");
+  await authenticatedPage.locator('[data-slot="poster-card"]').first().click();
+
+  const dialog = authenticatedPage.getByRole("dialog", { name: "Synthetic Feature Alpha details" });
+  await expect(dialog.getByText("no torrent results found")).toBeVisible();
+  await dialog.getByRole("button", { name: "show more of the synopsis" }).click();
+  await expect(dialog.getByRole("button", { name: "show less of the synopsis" })).toBeVisible();
+  await expect(dialog).toHaveScreenshot("movie-detail-modal-expanded-synopsis.png", visualOptions);
 });
 
 test("movie detail modal loading", async ({ authenticatedPage, mockRpc }) => {

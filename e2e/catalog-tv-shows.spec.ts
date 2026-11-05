@@ -59,6 +59,18 @@ const defaultEpisodes = [
   tvShowEpisode({ seasonNumber: 1, episodeNumber: 2, name: "8:00 A.M.", airDate: "2025-01-16" }),
 ];
 
+const listOverview =
+  "A trauma surgeon returns to the hospital where she trained, only to find the night shift " +
+  "running on borrowed equipment, unpaid favors, and a chief who has not slept in a week. " +
+  "Every patient who comes through the doors brings a story the city would rather forget, " +
+  "and the ward has one season left to prove it still deserves to stay open.";
+
+const detailOverview =
+  "Across one relentless shift, a returning trauma surgeon fights a failing ward, a hostile " +
+  "board, and her own memories of the night that drove her away. Every patient who comes " +
+  "through the doors brings a story the city would rather forget, and some of them follow her " +
+  "home long after the lights in the ward go dark and the next shift begins.";
+
 const homeMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings({
     tvShowsSource: TVShowsSource.TV_SHOWS_SOURCE_NETFLIX,
@@ -623,6 +635,118 @@ test.describe("tv shows home", () => {
       releaseDetail();
       await expect(modal.getByRole("tab", { name: "Season 8", exact: true })).toBeVisible();
       expectStableBox(beforeBody, await stableElementBox(modalBody));
+    });
+
+    test(`tv deep link reserves the synopsis while details load on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize(viewport);
+      await mockRpc(
+        homeMethods({
+          GetTVShowSeason: tvShowSeasonResponse(
+            defaultShow.imdbId,
+            1,
+            defaultSeasons[0],
+            defaultEpisodes,
+          ),
+          GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
+        }),
+      );
+
+      let releaseDetail: () => void = () => {};
+      const delayedDetail = new Promise<void>((resolve) => {
+        releaseDetail = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+        await delayedDetail;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            tvShowDetailResponse(
+              tvShowDetail({
+                imdbId: defaultShow.imdbId,
+                title: defaultShow.title,
+                networks: defaultShow.networks,
+                overview: detailOverview,
+              }),
+              defaultSeasons,
+            ),
+          ),
+        });
+      });
+
+      await authenticatedPage.goto(`/tv-shows/${defaultShow.imdbId}`);
+      const modal = authenticatedPage.getByRole("dialog");
+      const modalBody = modal.locator("[data-detail-modal-body]");
+      const beforeBody = await stableElementBox(modalBody);
+
+      releaseDetail();
+      await expect(modal.getByText(detailOverview)).toBeVisible();
+      expectStableBox(beforeBody, await stableElementBox(modalBody));
+    });
+
+    test(`tv detail keeps the synopsis expanded when live details replace it on ${name}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await authenticatedPage.setViewportSize(viewport);
+      await mockRpc(
+        homeMethods({
+          GetTVShows: tvShowsResponseForSource(TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX, [
+            { ...defaultShow, overview: listOverview },
+          ]),
+          GetTVShowSeason: tvShowSeasonResponse(
+            defaultShow.imdbId,
+            1,
+            defaultSeasons[0],
+            defaultEpisodes,
+          ),
+          GetTVShowSeasonDownloads: tvShowSeasonDownloadsResponse(undefined, []),
+        }),
+      );
+
+      let releaseDetail: () => void = () => {};
+      const delayedDetail = new Promise<void>((resolve) => {
+        releaseDetail = resolve;
+      });
+      await authenticatedPage.route("**/chill.v4.UserService/GetTVShowDetail", async (route) => {
+        await delayedDetail;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            tvShowDetailResponse(
+              tvShowDetail({
+                imdbId: defaultShow.imdbId,
+                title: defaultShow.title,
+                networks: defaultShow.networks,
+                overview: detailOverview,
+              }),
+              defaultSeasons,
+            ),
+          ),
+        });
+      });
+
+      await authenticatedPage.goto(`/tv-shows?source=${TVShowsSource.TV_SHOWS_SOURCE_HBO_MAX}`);
+      await authenticatedPage
+        .locator('[data-slot="poster-card"]')
+        .filter({ hasText: "Harbor Ward" })
+        .first()
+        .click();
+
+      const modal = authenticatedPage.getByRole("dialog", { name: "Harbor Ward" });
+      await expect(modal.getByText(listOverview)).toBeVisible();
+      await modal.getByRole("button", { name: "show more of the synopsis" }).click();
+
+      releaseDetail();
+      await expect(modal.getByText(detailOverview)).toBeVisible();
+      await expect(modal.getByRole("button", { name: /synopsis/ })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
     });
 
     test(`tv detail keeps IMDb link stable while downloads load on ${name}`, async ({
