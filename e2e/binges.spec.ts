@@ -38,12 +38,17 @@ test.describe("binges on the home page", () => {
     await expect(section.getByText("latest binge")).toBeVisible();
     await expect(section.getByText("handpicked by a real person")).toBeVisible();
     await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
-    await expect(section.getByText("by the night shift")).toBeVisible();
+    await expect(section.getByText("by the night shift · Oct 20, 2026")).toBeVisible();
     await expect(section.getByText("Three nights of quiet dread")).toBeVisible();
     await expect(section.locator('[data-slot="binge-item"]')).toHaveCount(2);
     await expect(section.getByText("start here, no spoilers")).toBeVisible();
     await expect(section.getByText("season one only")).toBeVisible();
-    await expect(section.locator('[data-slot="earlier-binges"]')).toHaveCount(0);
+    const index = section.locator('[data-slot="binge-index"]');
+    await expect(index.getByRole("button")).toHaveCount(1);
+    await expect(index.getByRole("button", { name: /Signals in the dark/ })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
     await expect(section.locator('[data-slot="binge-handpicked"]')).toBeVisible();
     await expect(section.getByRole("button", { name: "new binge" })).toHaveCount(0);
     await expect(section.getByRole("button", { name: "Edit this binge" })).toHaveCount(0);
@@ -87,7 +92,10 @@ test.describe("binges on the home page", () => {
     await expect(bingeSection(authenticatedPage)).toHaveCount(0);
   });
 
-  test("lists earlier binges and deep links to them", async ({ authenticatedPage, mockRpc }) => {
+  test("lists every binge, marks the shown one, and deep links to them", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
     await mockRpc(
       appScenarioMethods({
         ListBinges: bingesResponse([latest, older]),
@@ -97,19 +105,20 @@ test.describe("binges on the home page", () => {
 
     await authenticatedPage.goto("/");
     const section = bingeSection(authenticatedPage);
-    const earlier = section.locator('[data-slot="earlier-binges"]');
-    await expect(earlier.getByText("earlier binges")).toBeVisible();
-    await expect(earlier.getByRole("button")).toHaveCount(1);
-    await expect(earlier.getByRole("button", { name: /Comfort rewatches/ })).toContainText(
+    const index = section.locator('[data-slot="binge-index"]');
+    await expect(index.getByText("all binges")).toBeVisible();
+    await expect(index.getByRole("button")).toHaveCount(2);
+    await expect(index.locator('[aria-current="true"]')).toHaveText(/Signals in the dark/);
+    await expect(index.getByRole("button", { name: /Comfort rewatches/ })).toContainText(
       "by the night shift · 1 title",
     );
-    await earlier.getByRole("button", { name: /Comfort rewatches/ }).click();
+    await index.getByRole("button", { name: /Comfort rewatches/ }).click();
 
     await authenticatedPage.waitForURL("**/?binge=binge-older");
     await expect(section.getByRole("heading", { name: "Comfort rewatches" })).toBeVisible();
     await expect(section.locator('[data-slot="binge-item"]')).toHaveCount(1);
-    await expect(earlier.getByText("other binges")).toBeVisible();
-    await expect(earlier.getByRole("button", { name: /Signals in the dark/ })).toContainText(
+    await expect(index.locator('[aria-current="true"]')).toHaveText(/Comfort rewatches/);
+    await expect(index.getByRole("button", { name: /Signals in the dark/ })).toContainText(
       "latest",
     );
 
@@ -135,27 +144,27 @@ test.describe("binges on the home page", () => {
 
     await authenticatedPage.goto("/");
     const section = bingeSection(authenticatedPage);
-    const earlier = section.locator('[data-slot="earlier-binges"]');
-    await expect(
-      earlier.getByRole("button", { name: /Comfort rewatches|Slow cinema/ }),
-    ).toHaveCount(2);
+    const index = section.locator('[data-slot="binge-index"]');
+    await expect(index.getByRole("button", { name: /Comfort rewatches|Slow cinema/ })).toHaveCount(
+      2,
+    );
 
     await section.getByRole("link", { name: "the night shift" }).first().click();
     await authenticatedPage.waitForURL(/curator=the(\+|%20)night(\+|%20)shift/);
     await expect(section.getByRole("heading", { name: "Signals in the dark" })).toHaveCount(0);
-    await expect(earlier.getByText("binges by the night shift")).toBeVisible();
-    await expect(earlier.getByRole("button", { name: /Signals in the dark/ })).toBeVisible();
-    await expect(earlier.getByRole("button", { name: /Comfort rewatches/ })).toBeVisible();
-    await expect(earlier.getByRole("button", { name: /Slow cinema/ })).toHaveCount(0);
+    await expect(index.getByText("binges by the night shift")).toBeVisible();
+    await expect(index.getByRole("button", { name: /Signals in the dark/ })).toBeVisible();
+    await expect(index.getByRole("button", { name: /Comfort rewatches/ })).toBeVisible();
+    await expect(index.getByRole("button", { name: /Slow cinema/ })).toHaveCount(0);
 
-    await earlier.getByRole("button", { name: "all binges" }).click();
+    await index.getByRole("button", { name: "all binges" }).click();
     await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
 
-    await earlier.getByRole("link", { name: "late reels" }).click();
-    await expect(earlier.getByText("binges by late reels")).toBeVisible();
-    await expect(earlier.getByRole("button")).toHaveCount(2);
+    await index.getByRole("link", { name: "late reels" }).click();
+    await expect(index.getByText("binges by late reels")).toBeVisible();
+    await expect(index.getByRole("button")).toHaveCount(2);
 
-    await earlier.getByRole("button", { name: /Slow cinema/ }).click();
+    await index.getByRole("button", { name: /Slow cinema/ }).click();
     await authenticatedPage.waitForURL("**/?binge=binge-other-curator");
     await expect(section.getByRole("heading", { name: "Slow cinema" })).toBeVisible();
   });
@@ -186,7 +195,10 @@ test.describe("binge curation", () => {
 
     await authenticatedPage.goto("/");
 
-    await expect(bingeSection(authenticatedPage).getByRole("button")).toHaveCount(2);
+    const section = bingeSection(authenticatedPage);
+    await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
+    await expect(section.getByRole("button", { name: "new binge" })).toHaveCount(0);
+    await expect(section.getByRole("button", { name: "Edit this binge" })).toHaveCount(0);
   });
 
   test("a curator publishes a new binge", async ({ authenticatedPage, mockRpc }) => {

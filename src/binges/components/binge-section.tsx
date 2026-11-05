@@ -21,7 +21,7 @@ import { Skeleton } from "@/ui/components/ui/skeleton";
 
 const routeApi = getRouteApi("/");
 const SKELETON_SLOTS = Array.from({ length: 3 }, (_, index) => `binge-skel-${index}`);
-const EARLIER_BINGES_PREVIEW = 20;
+const BINGE_INDEX_PREVIEW = 20;
 
 type Overlay =
   | { kind: "none" }
@@ -102,7 +102,7 @@ export function BingeSection() {
     <BingeFrame wide={withSidebar}>
       {withSidebar ? null : header}
       {curatorFilter ? (
-        <EarlierBinges
+        <BingeIndex
           binges={binges}
           currentId={undefined}
           latestId={latest?.id}
@@ -118,7 +118,7 @@ export function BingeSection() {
           </div>
           <div className="flex flex-col gap-6 lg:sticky lg:top-6">
             <HandpickedCallout />
-            <EarlierBinges
+            <BingeIndex
               binges={binges}
               currentId={current?.id}
               latestId={latest?.id}
@@ -387,7 +387,7 @@ function CuratorName({
   );
 }
 
-function EarlierBinges({
+function BingeIndex({
   binges,
   currentId,
   latestId,
@@ -406,17 +406,12 @@ function EarlierBinges({
 }) {
   const [expanded, setExpanded] = useState(false);
   const filter = curatorKey(curator);
-  const others = binges.filter(
-    (binge) => binge.id !== currentId && (!filter || curatorKey(binge.curatorName) === filter),
-  );
-  const visible = expanded ? others : others.slice(0, EARLIER_BINGES_PREVIEW);
-  if (!filter && others.length === 0) {
-    return null;
-  }
-  const hidden = others.length - visible.length;
+  const listed = binges.filter((binge) => !filter || curatorKey(binge.curatorName) === filter);
+  const visible = expanded ? listed : listed.slice(0, BINGE_INDEX_PREVIEW);
+  const hidden = listed.length - visible.length;
 
   return (
-    <div data-slot="earlier-binges" className={cn("flex flex-col gap-2", !sidebar && "mt-2")}>
+    <div data-slot="binge-index" className={cn("flex flex-col gap-2", !sidebar && "mt-2")}>
       {filter ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-fg-3 m-0 text-sm">
@@ -427,11 +422,9 @@ function EarlierBinges({
           </Button>
         </div>
       ) : (
-        <p className="text-fg-3 m-0 text-sm">
-          {currentId === latestId ? "earlier binges" : "other binges"}
-        </p>
+        <p className="text-fg-3 m-0 text-sm">all binges</p>
       )}
-      {filter && others.length === 0 ? (
+      {filter && listed.length === 0 ? (
         <p className="text-fg-2 m-0 text-sm">no binges by {filter} yet.</p>
       ) : null}
       <ul className="border-border-faint m-0 flex list-none flex-col border-t p-0">
@@ -439,8 +432,9 @@ function EarlierBinges({
           <li key={binge.id} className="border-border-faint border-b">
             <button
               type="button"
+              aria-current={binge.id === currentId ? "true" : undefined}
               onClick={() => onSelect(binge.id)}
-              className="hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app flex w-full cursor-pointer items-start gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="aria-[current=true]:bg-surface hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app flex w-full cursor-pointer items-start gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <BingePosterStrip urls={binge.posterUrls} />
               <span
@@ -467,7 +461,7 @@ function EarlierBinges({
       </ul>
       {hidden > 0 ? (
         <Button size="sm" variant="ghost" className="self-start" onClick={() => setExpanded(true)}>
-          show all {others.length} binges
+          show all {listed.length} binges
         </Button>
       ) : null}
     </div>
