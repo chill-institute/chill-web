@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import { cn } from "@/ui/lib/cn";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight, Pencil, Plus, Star } from "lucide-react";
+import { ArrowUpRight, HandHeart, Pencil, Plus, Star } from "lucide-react";
 
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { BingeEditor } from "@/binges/components/binge-editor";
@@ -84,16 +84,9 @@ export function BingeSection() {
 
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-col gap-0.5">
-        <p className="text-fg-3 m-0 text-sm">
-          {curatorFilter
-            ? "binges"
-            : current && current.id !== latest?.id
-              ? "binge"
-              : "latest binge"}
-        </p>
-        <p className="text-fg-2 m-0 text-sm">handpicked by a real person</p>
-      </div>
+      <p className="text-fg-3 m-0 text-sm">
+        {curatorFilter ? "binges" : current && current.id !== latest?.id ? "binge" : "latest binge"}
+      </p>
       <div className="flex items-center gap-2">
         {canCurate && current ? (
           <Button
@@ -134,18 +127,24 @@ export function BingeSection() {
             {header}
             {body}
           </div>
-          <EarlierBinges
-            binges={binges}
-            currentId={current?.id}
-            latestId={latest?.id}
-            curator={undefined}
-            sidebar
-            onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
-            onOpenCurator={showCurator}
-          />
+          <div className="flex flex-col gap-6 lg:sticky lg:top-6">
+            <HandpickedCallout />
+            <EarlierBinges
+              binges={binges}
+              currentId={current?.id}
+              latestId={latest?.id}
+              curator={undefined}
+              sidebar
+              onSelect={(id) => showBinge(id === latest?.id ? undefined : id)}
+              onOpenCurator={showCurator}
+            />
+          </div>
         </div>
       ) : (
-        body
+        <>
+          {body}
+          {current ? <HandpickedCallout /> : null}
+        </>
       )}
 
       {overlay.kind === "editor" ? (
@@ -180,6 +179,29 @@ function BingeFrame({ wide = false, children }: { wide?: boolean; children: Reac
     >
       {children}
     </section>
+  );
+}
+
+function HandpickedCallout() {
+  return (
+    <aside
+      data-slot="binge-handpicked"
+      className="border-border-soft bg-surface-2 flex items-start gap-3 rounded border p-4"
+    >
+      <HandHeart
+        className="text-fg-2 mt-0.5 size-5 shrink-0"
+        strokeWidth={1.5}
+        aria-hidden="true"
+      />
+      <div className="flex flex-col gap-1">
+        <p className="text-fg-1 m-0 font-serif text-lg leading-tight tracking-heading">
+          handpicked by a real person
+        </p>
+        <p className="text-fg-2 m-0 text-sm">
+          every binge is chosen and written up by a person, not an algorithm.
+        </p>
+      </div>
+    </aside>
   );
 }
 
@@ -405,10 +427,7 @@ function EarlierBinges({
   const hidden = others.length - visible.length;
 
   return (
-    <div
-      data-slot="earlier-binges"
-      className={cn("flex flex-col gap-2", sidebar ? "lg:sticky lg:top-6" : "mt-2")}
-    >
+    <div data-slot="earlier-binges" className={cn("flex flex-col gap-2", !sidebar && "mt-2")}>
       {filter ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-fg-3 m-0 text-sm">
