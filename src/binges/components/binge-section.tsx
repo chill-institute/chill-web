@@ -56,7 +56,7 @@ export function BingeSection() {
     return null;
   }
 
-  const withSidebar = !curatorFilter && binges.length > 1;
+  const withSidebar = !curatorFilter && latest !== undefined;
   const body = loadingOther ? (
     <BingeSkeleton />
   ) : wantsOther && bingeQuery.status === "error" ? (
@@ -130,10 +130,7 @@ export function BingeSection() {
           </div>
         </div>
       ) : (
-        <>
-          {body}
-          {current ? <HandpickedCallout /> : null}
-        </>
+        body
       )}
 
       {overlay.kind === "editor" ? (
@@ -413,6 +410,9 @@ function EarlierBinges({
     (binge) => binge.id !== currentId && (!filter || curatorKey(binge.curatorName) === filter),
   );
   const visible = expanded ? others : others.slice(0, EARLIER_BINGES_PREVIEW);
+  if (!filter && others.length === 0) {
+    return null;
+  }
   const hidden = others.length - visible.length;
 
   return (

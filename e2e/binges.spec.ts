@@ -44,6 +44,7 @@ test.describe("binges on the home page", () => {
     await expect(section.getByText("start here, no spoilers")).toBeVisible();
     await expect(section.getByText("season one only")).toBeVisible();
     await expect(section.locator('[data-slot="earlier-binges"]')).toHaveCount(0);
+    await expect(section.locator('[data-slot="binge-handpicked"]')).toBeVisible();
     await expect(section.getByRole("button", { name: "new binge" })).toHaveCount(0);
     await expect(section.getByRole("button", { name: "Edit this binge" })).toHaveCount(0);
   });
