@@ -36,6 +36,7 @@ test.describe("binges on the home page", () => {
 
     const section = bingeSection(authenticatedPage);
     await expect(section.getByText("latest binge")).toBeVisible();
+    await expect(section.getByText("handpicked by a real person")).toBeVisible();
     await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
     await expect(section.getByText("by the night shift")).toBeVisible();
     await expect(section.getByText("Three nights of quiet dread")).toBeVisible();

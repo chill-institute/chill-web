@@ -84,9 +84,16 @@ export function BingeSection() {
 
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <p className="text-fg-3 m-0 text-sm">
-        {curatorFilter ? "binges" : current && current.id !== latest?.id ? "binge" : "latest binge"}
-      </p>
+      <div className="flex flex-col gap-0.5">
+        <p className="text-fg-3 m-0 text-sm">
+          {curatorFilter
+            ? "binges"
+            : current && current.id !== latest?.id
+              ? "binge"
+              : "latest binge"}
+        </p>
+        <p className="text-fg-2 m-0 text-sm">handpicked by a real person</p>
+      </div>
       <div className="flex items-center gap-2">
         {canCurate && current ? (
           <Button
