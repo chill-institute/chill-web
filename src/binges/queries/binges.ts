@@ -6,9 +6,12 @@ import { useAuth } from "@/auth/auth";
 
 import {
   BINGES_QUERY_KEY,
+  BINGE_TITLE_SEARCH_MIN_LENGTH,
+  bingeQueryKey,
   bingeQueryOptions,
   bingeTitleSearchQueryOptions,
   bingesQueryOptions,
+  normalizeBingeTitleQuery,
 } from "./options";
 
 export function useBingesQuery() {
@@ -31,7 +34,13 @@ export function useSaveBinge() {
       const response = id ? await api.updateBinge(id, input) : await api.createBinge(input);
       return response.binge;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY }),
+    onSuccess: (saved) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true }),
+        saved
+          ? queryClient.invalidateQueries({ queryKey: bingeQueryKey(saved.id), exact: true })
+          : undefined,
+      ]),
   });
 }
 
@@ -40,8 +49,13 @@ export function useDeleteBinge() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteBinge(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true }),
   });
+}
+
+export function useForgetBinge() {
+  const queryClient = useQueryClient();
+  return (id: string) => queryClient.removeQueries({ queryKey: bingeQueryKey(id), exact: true });
 }
 
 export function useSetCuratorName() {
@@ -54,7 +68,6 @@ export function useSetCuratorName() {
   });
 }
 
-/** Searches titles for a binge entry; idle until the query has two characters. */
 export function useBingeTitleSearch(query: string) {
   const api = useApi();
   const auth = useAuth();
@@ -62,4 +75,14 @@ export function useBingeTitleSearch(query: string) {
     ...bingeTitleSearchQueryOptions(api, query, auth.isAuthenticated),
     placeholderData: keepPreviousData,
   });
+}
+
+export function useFindBingeTitles() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return async (query: string) => {
+    if (normalizeBingeTitleQuery(query).length < BINGE_TITLE_SEARCH_MIN_LENGTH) return [];
+    const response = await queryClient.fetchQuery(bingeTitleSearchQueryOptions(api, query));
+    return response.matches;
+  };
 }

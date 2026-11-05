@@ -18,7 +18,6 @@ type Props = {
 
 const ROW_SELECTOR = '[data-slot="binge-editor-item"]';
 
-/** The binge's titles in order; drag a handle, or focus it and use the arrow keys, to reorder. */
 export function BingeEditorList({
   items,
   itemErrors,
@@ -29,7 +28,9 @@ export function BingeEditorList({
 }: Props) {
   const listRef = useRef<HTMLOListElement>(null);
   const [draggingKey, setDraggingKey] = useState<string | null>(null);
-  const [openNotes, setOpenNotes] = useState<ReadonlySet<string>>(() => new Set());
+  const [openNotes, setOpenNotes] = useState<ReadonlySet<string>>(
+    () => new Set(items.filter((item) => item.comment.length > 0).map((item) => item.key)),
+  );
 
   const dropIndex = (clientY: number, from: number) => {
     const rows = Array.from(listRef.current?.querySelectorAll(ROW_SELECTOR) ?? []);
@@ -65,7 +66,7 @@ export function BingeEditorList({
       {items.map((item, index) => {
         const name = item.title || item.imdbId;
         const kind = bingeMediaTypeLabel(item.mediaType);
-        const noteOpen = item.comment.length > 0 || openNotes.has(item.key);
+        const noteOpen = openNotes.has(item.key);
         const error = itemErrors[item.key];
         return (
           <li
