@@ -221,18 +221,23 @@ test.describe("binge curation", () => {
     await editor.getByLabel("your curator name").fill("  Night   Shift ");
     await editor.getByLabel("title", { exact: true }).fill("Fresh binge");
     await editor.getByLabel("blurb", { exact: true }).fill("Just added.");
-    await editor
-      .getByLabel("title 1", { exact: true })
-      .fill("https://www.imdb.com/title/tt9000001/");
-    await editor.getByRole("option", { name: "use tt9000001" }).click();
-    await expect(editor.locator('[data-slot="binge-title-picked"]')).toContainText("tt9000001");
-    await editor.getByLabel("comment 1").fill("start here");
-    await editor.getByRole("button", { name: "add title" }).click();
-    await editor.getByLabel("title 2", { exact: true }).fill("gamma");
+    const addTitle = editor.getByLabel("add a title");
+    const rows = editor.locator('[data-slot="binge-editor-item"]');
+    await addTitle.fill("https://www.imdb.com/title/tt9000001/");
+    await editor.getByRole("option", { name: "add tt9000001" }).click();
+    await expect(addTitle).toHaveValue("");
+    await expect(rows).toHaveCount(1);
+    await rows.first().getByRole("button", { name: "add note" }).click();
+    await editor.getByLabel("note for tt9000001").fill("start here");
+    await addTitle.fill("gamma");
     await editor.getByRole("option", { name: /Synthetic Show Gamma \(2025\)/ }).click();
-    await expect(editor.locator('[data-slot="binge-title-picked"]').nth(1)).toContainText(
-      "tt9000003",
-    );
+    await expect(rows.nth(1)).toContainText("Synthetic Show Gamma");
+    await addTitle.fill("tt9000001");
+    await addTitle.press("Enter");
+    await expect(editor.getByText("tt9000001 is already in this binge")).toBeVisible();
+    await expect(rows).toHaveCount(2);
+    await editor.getByRole("button", { name: /^move Synthetic Show Gamma/ }).press("ArrowUp");
+    await expect(rows.first()).toContainText("Synthetic Show Gamma");
 
     const named = authenticatedPage.waitForRequest(/UserService\/SetBingeCuratorName/);
     const request = authenticatedPage.waitForRequest(/UserService\/CreateBinge/);
@@ -241,7 +246,7 @@ test.describe("binge curation", () => {
     expect((await request).postDataJSON()).toEqual({
       title: "Fresh binge",
       blurb: "Just added.",
-      items: [{ imdbId: "tt9000001", comment: "start here" }, { imdbId: "tt9000003" }],
+      items: [{ imdbId: "tt9000003" }, { imdbId: "tt9000001", comment: "start here" }],
     });
 
     await authenticatedPage.waitForURL("**/?binge=binge-new");
@@ -268,12 +273,12 @@ test.describe("binge curation", () => {
     await expect(editor.getByText("publishing as the night shift")).toBeVisible();
     await expect(editor.getByLabel("your curator name")).toHaveCount(0);
     await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Signals in the dark");
-    await expect(editor.locator('[data-slot="binge-title-picked"]').nth(1)).toContainText(
-      "tt9000003",
-    );
-    await expect(editor.getByLabel("comment 2")).toHaveValue("season one only");
+    const rows = editor.locator('[data-slot="binge-editor-item"]');
+    await expect(rows.nth(1)).toContainText("Synthetic Show Gamma");
+    await expect(editor.getByLabel("note for Synthetic Show Gamma")).toHaveValue("season one only");
 
-    await editor.getByRole("button", { name: "remove title 2" }).click();
+    await editor.getByRole("button", { name: "remove Synthetic Show Gamma" }).click();
+    await expect(rows).toHaveCount(1);
     await editor.getByLabel("title", { exact: true }).fill("Signals in the dark, revisited");
     const update = authenticatedPage.waitForRequest(/UserService\/UpdateBinge/);
     await editor.getByRole("button", { name: "save binge" }).click();
@@ -318,8 +323,8 @@ test.describe("binge curation", () => {
     await bingeSection(authenticatedPage).getByRole("button", { name: "new binge" }).click();
     const editor = authenticatedPage.getByRole("dialog");
     await editor.getByLabel("title", { exact: true }).fill("Broken");
-    await editor.getByLabel("title 1", { exact: true }).fill("tt9999999");
-    await editor.getByLabel("title 1", { exact: true }).press("Enter");
+    await editor.getByLabel("add a title").fill("tt9999999");
+    await editor.getByLabel("add a title").press("Enter");
     await editor.getByRole("button", { name: "publish binge" }).click();
 
     await expect(editor.getByRole("alert")).toHaveText(

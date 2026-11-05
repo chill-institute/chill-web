@@ -1,30 +1,25 @@
 import { useId, useRef, useState } from "react";
 import { Code, ConnectError } from "@connectrpc/connect";
-import { X } from "lucide-react";
 
 import {
   bingeMediaTypeLabel,
   bingeTitleLabel,
   normalizeIMDbId,
+  pastedTitlePick,
   type BingeTitleMatch,
+  type BingeTitlePick,
 } from "@/binges/lib/types";
 import { BINGE_TITLE_SEARCH_MIN_LENGTH, normalizeBingeTitleQuery } from "@/binges/queries/options";
 import { useBingeTitleSearch } from "@/binges/queries/binges";
-import { IconButton } from "@/ui/components/icon-button";
 import { useMountEffect } from "@/ui/hooks/use-effects";
-import { Input } from "@/ui/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/ui/components/ui/input-group";
 import { Spinner } from "@/ui/components/ui/spinner";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 type Props = {
-  index: number;
-  imdbId: string;
-  label: string;
   disabled: boolean;
-  invalid: boolean;
-  onPick: (imdbId: string, label: string) => void;
-  onClear: () => void;
+  onAdd: (pick: BingeTitlePick) => void;
 };
 
 function searchErrorMessage(error: unknown): string {
@@ -35,16 +30,8 @@ function searchErrorMessage(error: unknown): string {
   return "title search failed";
 }
 
-/** A search box that resolves to one IMDb title; a pasted ID or IMDb link also works. */
-export function BingeTitlePicker({
-  index,
-  imdbId,
-  label,
-  disabled,
-  invalid,
-  onPick,
-  onClear,
-}: Props) {
+/** Adds a title to the binge from a search; a pasted ID or IMDb link also works. */
+export function BingeTitleAdder({ disabled, onAdd }: Props) {
   const [text, setText] = useState("");
   // The query trails the text by a short pause so each keystroke is not a request.
   const [query, setQuery] = useState("");
@@ -64,87 +51,71 @@ export function BingeTitlePicker({
   const matches = search.data?.matches ?? [];
   const searching = normalizeBingeTitleQuery(query).length >= BINGE_TITLE_SEARCH_MIN_LENGTH;
   const pending = searching && (search.isPending || search.isFetching);
+  const open = pastedId !== "" || (searching && text.length > 0);
 
-  if (imdbId.length > 0) {
-    return (
-      <div
-        data-slot="binge-title-picked"
-        className="border-border-faint bg-surface flex min-w-0 flex-1 items-center gap-2 rounded border px-2.5 py-1.5"
-      >
-        <span className="text-fg-1 min-w-0 flex-1 truncate text-sm" title={label || imdbId}>
-          {label || imdbId}
-        </span>
-        <span className="text-fg-3 shrink-0 font-mono text-xs">{imdbId}</span>
-        <IconButton
-          type="button"
-          aria-label={`change title ${index + 1}`}
-          disabled={disabled}
-          onClick={() => {
-            updateText("");
-            onClear();
-          }}
-        >
-          <X />
-        </IconButton>
-      </div>
-    );
-  }
-
-  const pick = (id: string, pickedLabel: string) => {
-    updateText("");
-    onPick(id, pickedLabel);
+  const add = (pick: BingeTitlePick) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setText("");
+    setQuery("");
+    onAdd(pick);
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-      <Input
-        aria-label={`title ${index + 1}`}
-        placeholder="search a movie or show, or paste an IMDb link"
-        value={text}
-        aria-invalid={invalid ? true : undefined}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        role="combobox"
-        aria-expanded={pastedId !== "" || matches.length > 0}
-        disabled={disabled}
-        autoComplete="off"
-        spellCheck={false}
-        onChange={(event) => updateText(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter") return;
-          event.preventDefault();
-          if (pastedId) {
-            pick(pastedId, pastedId);
-            return;
-          }
-          const first = matches[0];
-          if (first) pick(first.imdbId, bingeTitleLabel(first.title, first.year));
-        }}
-      />
-      {pastedId ? (
-        <ul id={listId} role="listbox" className="m-0 list-none p-0">
-          <li>
-            <MatchButton onClick={() => pick(pastedId, pastedId)}>
-              <span className="text-fg-1 text-sm">
-                use <span className="font-mono">{pastedId}</span>
-              </span>
-            </MatchButton>
-          </li>
-        </ul>
-      ) : searching ? (
+    <div className="relative flex min-w-0 flex-1">
+      <InputGroup>
+        <InputGroupAddon>
+          <label
+            htmlFor={`${listId}-input`}
+            className="bg-fg-1 text-fg-inverse rounded-sm px-2 py-0.5 text-sm"
+          >
+            add
+          </label>
+        </InputGroupAddon>
+        <InputGroupInput
+          id={`${listId}-input`}
+          aria-label="add a title"
+          placeholder="find a movie or show, or paste an IMDb link"
+          value={text}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(event) => updateText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            if (pastedId) {
+              add(pastedTitlePick(pastedId));
+              return;
+            }
+            const first = matches[0];
+            if (first) add(first);
+          }}
+        />
+      </InputGroup>
+      {open ? (
         <div
           id={listId}
           role="listbox"
           aria-busy={pending ? true : undefined}
-          className="border-border-faint bg-surface max-h-64 overflow-y-auto rounded border"
+          className="border-border-strong bg-surface absolute top-full right-0 left-0 z-10 mt-1 max-h-72 overflow-y-auto rounded border shadow-lg"
         >
-          {search.error ? (
+          {pastedId ? (
+            <MatchButton onClick={() => add(pastedTitlePick(pastedId))}>
+              <span className="text-fg-1 text-sm">
+                add <span className="font-mono">{pastedId}</span>
+              </span>
+            </MatchButton>
+          ) : search.error ? (
             <p className="text-error-text m-0 px-2.5 py-2 text-xs">
               {searchErrorMessage(search.error)}
             </p>
           ) : matches.length > 0 ? (
             matches.map((match) => (
-              <MatchRow key={`${match.mediaType}-${match.imdbId}`} match={match} onPick={pick} />
+              <MatchRow key={`${match.mediaType}-${match.imdbId}`} match={match} onPick={add} />
             ))
           ) : pending ? (
             <p className="text-fg-3 m-0 flex items-center gap-2 px-2.5 py-2 text-xs">
@@ -178,12 +149,12 @@ function MatchRow({
   onPick,
 }: {
   match: BingeTitleMatch;
-  onPick: (imdbId: string, label: string) => void;
+  onPick: (pick: BingeTitlePick) => void;
 }) {
   const label = bingeTitleLabel(match.title, match.year);
   const kind = bingeMediaTypeLabel(match.mediaType);
   return (
-    <MatchButton onClick={() => onPick(match.imdbId, label)}>
+    <MatchButton onClick={() => onPick(match)}>
       {match.posterUrl ? (
         <img
           src={match.posterUrl}

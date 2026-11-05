@@ -31,11 +31,14 @@ function lengthOf(value: string): number {
 }
 const IMDB_URL_PATTERN = /imdb\.com\/title\/(tt\d{7,8})/i;
 
-type BingeItemDraft = {
+/** What the editor shows for a picked title; a pasted IMDb ID carries only the ID. */
+export type BingeTitlePick = Pick<
+  BingeTitleMatch,
+  "imdbId" | "mediaType" | "title" | "year" | "posterUrl"
+>;
+
+export type BingeItemDraft = BingeTitlePick & {
   key: string;
-  imdbId: string;
-  /** What the curator picked, for display; empty when only the ID is known. */
-  label: string;
   comment: string;
 };
 
@@ -142,7 +145,7 @@ export function bingeDraftToInput(draft: BingeDraft) {
 
 export function bingeToDraft(binge: Binge | undefined, newKey: () => string): BingeDraft {
   if (!binge) {
-    return { title: "", blurb: "", items: [{ key: newKey(), imdbId: "", label: "", comment: "" }] };
+    return { title: "", blurb: "", items: [] };
   }
   return {
     title: binge.title,
@@ -150,7 +153,10 @@ export function bingeToDraft(binge: Binge | undefined, newKey: () => string): Bi
     items: binge.items.map((item) => ({
       key: newKey(),
       imdbId: item.imdbId,
-      label: bingeTitleLabel(item.title, item.year),
+      mediaType: item.mediaType,
+      title: item.title,
+      year: item.year,
+      posterUrl: item.posterUrl,
       comment: item.comment,
     })),
   };
@@ -161,6 +167,20 @@ export function bingeTitleLabel(title: string, year: number): string {
   const trimmed = title.trim();
   if (trimmed.length === 0) return "";
   return year > 0 ? `${trimmed} (${year})` : trimmed;
+}
+
+export function pastedTitlePick(imdbId: string): BingeTitlePick {
+  return { imdbId, mediaType: BingeMediaType.UNSPECIFIED, title: "", year: 0, posterUrl: "" };
+}
+
+export function moveDraftItem(draft: BingeDraft, key: string, to: number): BingeDraft {
+  const from = draft.items.findIndex((item) => item.key === key);
+  const target = Math.max(0, Math.min(to, draft.items.length - 1));
+  if (from === -1 || from === target) return draft;
+  const items = [...draft.items];
+  const [moved] = items.splice(from, 1);
+  items.splice(target, 0, moved!);
+  return { ...draft, items };
 }
 
 export function bingeMediaTypeLabel(mediaType: BingeMediaType): string {

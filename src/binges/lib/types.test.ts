@@ -14,15 +14,23 @@ import {
   bingeMediaTypeLabel,
   bingeTitleLabel,
   bingeToDraft,
+  moveDraftItem,
   validateBingeDraft,
   type BingeDraft,
 } from "./types";
+
+const unresolved = {
+  mediaType: BingeMediaType.UNSPECIFIED,
+  title: "",
+  year: 0,
+  posterUrl: "",
+};
 
 function draft(overrides: Partial<BingeDraft> = {}): BingeDraft {
   return {
     title: "Slow burns",
     blurb: "",
-    items: [{ key: "a", imdbId: "tt0903747", label: "", comment: "" }],
+    items: [{ key: "a", imdbId: "tt0903747", ...unresolved, comment: "" }],
     ...overrides,
   };
 }
@@ -53,8 +61,8 @@ describe("validateBingeDraft", () => {
       validateBingeDraft(
         draft({
           items: [
-            { key: "a", imdbId: "tt0903747", label: "", comment: "" },
-            { key: "b", imdbId: "", label: "", comment: "" },
+            { key: "a", imdbId: "tt0903747", ...unresolved, comment: "" },
+            { key: "b", imdbId: "", ...unresolved, comment: "" },
           ],
         }),
       ),
@@ -71,13 +79,13 @@ describe("validateBingeDraft", () => {
     const errors = validateBingeDraft(
       draft({
         items: [
-          { key: "a", imdbId: "not-an-id", label: "", comment: "" },
-          { key: "b", imdbId: "tt0903747", label: "", comment: "" },
-          { key: "c", imdbId: "TT0903747", label: "", comment: "" },
+          { key: "a", imdbId: "not-an-id", ...unresolved, comment: "" },
+          { key: "b", imdbId: "tt0903747", ...unresolved, comment: "" },
+          { key: "c", imdbId: "TT0903747", ...unresolved, comment: "" },
           {
             key: "d",
             imdbId: "tt0111161",
-            label: "",
+            ...unresolved,
             comment: "x".repeat(BINGE_COMMENT_MAX_LENGTH + 1),
           },
         ],
@@ -107,10 +115,10 @@ describe("bingeDraftToInput", () => {
             {
               key: "a",
               imdbId: " https://imdb.com/title/tt0903747 ",
-              label: "",
+              ...unresolved,
               comment: " start here ",
             },
-            { key: "b", imdbId: "", label: "", comment: "" },
+            { key: "b", imdbId: "", ...unresolved, comment: "" },
           ],
         }),
       ),
@@ -172,7 +180,7 @@ describe("bingeTitleLabel", () => {
     expect(bingeMediaTypeLabel(BingeMediaType.UNSPECIFIED)).toBe("");
   });
 
-  it("labels resolved items in a draft and leaves unresolved ones to the id", () => {
+  it("carries what the editor shows for each item", () => {
     const draft = bingeToDraft(
       {
         id: "b1",
@@ -180,13 +188,56 @@ describe("bingeTitleLabel", () => {
         blurb: "",
         curatorName: "",
         items: [
-          { imdbId: "tt0903747", title: "Breaking Bad", year: 2008, comment: "" },
-          { imdbId: "tt0000001", title: "", year: 0, comment: "" },
+          {
+            imdbId: "tt0903747",
+            mediaType: BingeMediaType.TV_SHOW,
+            title: "Breaking Bad",
+            year: 2008,
+            posterUrl: "https://image.test/bb.jpg",
+            comment: "slow start",
+          },
         ],
       } as never,
       () => "k",
     );
-    expect(draft.items.map((item) => item.label)).toEqual(["Breaking Bad (2008)", ""]);
+    expect(draft.items).toEqual([
+      {
+        key: "k",
+        imdbId: "tt0903747",
+        mediaType: BingeMediaType.TV_SHOW,
+        title: "Breaking Bad",
+        year: 2008,
+        posterUrl: "https://image.test/bb.jpg",
+        comment: "slow start",
+      },
+    ]);
+  });
+
+  it("starts a new binge with an empty list", () => {
+    expect(bingeToDraft(undefined, () => "k").items).toEqual([]);
+  });
+});
+
+describe("moveDraftItem", () => {
+  const three = draft({
+    items: ["a", "b", "c"].map((key) => ({
+      key,
+      imdbId: `tt000000${key.charCodeAt(0)}`,
+      ...unresolved,
+      comment: "",
+    })),
+  });
+  const order = (value: BingeDraft) => value.items.map((item) => item.key).join("");
+
+  it("moves an item to a new position", () => {
+    expect(order(moveDraftItem(three, "a", 2))).toBe("bca");
+    expect(order(moveDraftItem(three, "c", 0))).toBe("cab");
+  });
+
+  it("clamps out-of-range targets and ignores unknown keys", () => {
+    expect(order(moveDraftItem(three, "b", 9))).toBe("acb");
+    expect(order(moveDraftItem(three, "b", -1))).toBe("bac");
+    expect(moveDraftItem(three, "z", 0)).toBe(three);
   });
 });
 
