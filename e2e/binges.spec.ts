@@ -57,6 +57,35 @@ test.describe("binges on the home page", () => {
     await expect(bingeSection(authenticatedPage)).toHaveCount(0);
   });
 
+  test("shows nothing while binges load or when they fail", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(appScenarioMethods({ ListBinges: bingesResponse([latest]) }));
+    let releaseBinges = () => {};
+    const bingesHeld = new Promise<void>((resolve) => {
+      releaseBinges = resolve;
+    });
+    await authenticatedPage.route(/UserService\/ListBinges/, async (route) => {
+      await bingesHeld;
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "internal", message: "binges are down" }),
+      });
+    });
+
+    await authenticatedPage.goto("/");
+
+    await expect(authenticatedPage.locator("#search-global")).toBeVisible();
+    await expect(bingeSection(authenticatedPage)).toHaveCount(0);
+    const failedBinges = authenticatedPage.waitForResponse(/UserService\/ListBinges/);
+    releaseBinges();
+    await failedBinges;
+    await expect(authenticatedPage.getByRole("alert")).toHaveCount(0);
+    await expect(bingeSection(authenticatedPage)).toHaveCount(0);
+  });
+
   test("lists earlier binges and deep links to them", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       appScenarioMethods({

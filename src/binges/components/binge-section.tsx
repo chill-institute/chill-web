@@ -44,19 +44,8 @@ export function BingeSection() {
     void navigate({ to: "/", search: name ? { curator: name } : {}, replace: true });
   const close = () => setOverlay({ kind: "none" });
 
-  if (bingesQuery.status === "pending") {
-    return (
-      <BingeFrame>
-        <BingeSkeleton />
-      </BingeFrame>
-    );
-  }
-  if (bingesQuery.status === "error") {
-    return (
-      <BingeFrame>
-        <UserErrorAlert error={bingesQuery.error} />
-      </BingeFrame>
-    );
+  if (bingesQuery.status !== "success") {
+    return null;
   }
 
   const { binges, canCurate, curatorName } = bingesQuery.data;
