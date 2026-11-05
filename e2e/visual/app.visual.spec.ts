@@ -10,6 +10,8 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "../support/fixtures";
 import { stableElementBox } from "../support/layout";
 import {
+  binge,
+  bingesResponse,
   downloadFolderResponse,
   indexer,
   indexersResponse,
@@ -90,6 +92,7 @@ function defaultMethods(overrides?: Record<string, unknown>) {
     }),
     GetMovies: moviesResponse(movies),
     GetTVShows: tvShowsResponse([]),
+    ListBinges: bingesResponse([]),
     GetIndexers: indexersResponse([
       indexer({ id: "tracker-one", name: "Tracker One" }),
       indexer({ id: "tracker-two", name: "Tracker Two" }),
@@ -169,6 +172,45 @@ test("not found screen", async ({ page }) => {
   await page.goto("/definitely-not-here");
   await expect(page.getByRole("heading", { name: "page not found" })).toBeVisible();
   await expect(page).toHaveScreenshot("not-found-screen.png", visualOptions);
+});
+
+test("home latest binge", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(
+    defaultMethods({
+      ListBinges: bingesResponse(
+        [
+          binge(),
+          binge({ id: "binge-older", title: "Comfort rewatches", items: [binge().items[0]] }),
+        ],
+        { canCurate: true, curatorName: "the night shift" },
+      ),
+    }),
+  );
+  await authenticatedPage.goto("/");
+  await expect(
+    authenticatedPage.getByRole("heading", { name: "Signals in the dark" }),
+  ).toBeVisible();
+  await expect(authenticatedPage.getByText("season one only")).toBeVisible();
+  await expect(authenticatedPage).toHaveScreenshot("home-latest-binge.png", visualOptions);
+});
+
+test("binge editor", async ({ authenticatedPage, mockRpc }) => {
+  await freezeVisualClock(authenticatedPage);
+  await mockRpc(
+    defaultMethods({
+      ListBinges: bingesResponse([binge()], { canCurate: true, curatorName: "the night shift" }),
+    }),
+  );
+  await authenticatedPage.goto("/");
+  await authenticatedPage.getByRole("button", { name: "Edit this binge" }).click();
+  const editor = authenticatedPage.getByRole("dialog");
+  await expect(editor.locator('[data-slot="binge-editor-item"]')).toHaveCount(2);
+  await expect(editor.getByLabel("note for Synthetic Show Gamma")).toHaveValue("season one only");
+  await expect(authenticatedPage).toHaveScreenshot("binge-editor.png", {
+    ...visualOptions,
+    fullPage: false,
+  });
 });
 
 test("PWA update prompt", async ({ authenticatedPage, mockRpc }) => {

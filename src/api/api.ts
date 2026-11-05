@@ -8,6 +8,14 @@ import {
   UserService,
   type CatalogOrigin,
   type AddTransferResponse,
+  type BingeItemInput,
+  type CreateBingeResponse,
+  type DeleteBingeResponse,
+  type GetBingeResponse,
+  type ListBingesResponse,
+  type SearchBingeTitlesResponse,
+  type SetBingeCuratorNameResponse,
+  type UpdateBingeResponse,
   type GetDownloadFolderResponse,
   type GetFolderResponse,
   type GetMoviesResponse,
@@ -53,6 +61,12 @@ export function toCatalogOrigin(origin: CatalogOriginInput | undefined): Catalog
     catalog: { case: "tvShowsSource", value: origin.source },
   });
 }
+
+export type BingeInput = {
+  title: string;
+  blurb: string;
+  items: Pick<BingeItemInput, "imdbId" | "comment">[];
+};
 
 const REQUEST_TIMEOUT_MS = 8000;
 const SETTINGS_TIMEOUT_MS = 20000;
@@ -218,6 +232,56 @@ export function createApi({
       call(
         "Folder request",
         (s, requestHeaders) => userClient.getFolder({ id }, { headers: requestHeaders, signal: s }),
+        signal,
+      ),
+
+    listBinges: (signal?: AbortSignal): Promise<ListBingesResponse> =>
+      call(
+        "Binges request",
+        (s, requestHeaders) => userClient.listBinges({}, { headers: requestHeaders, signal: s }),
+        signal,
+      ),
+
+    getBinge: (id: string, signal?: AbortSignal): Promise<GetBingeResponse> =>
+      call(
+        "Binge request",
+        (s, requestHeaders) => userClient.getBinge({ id }, { headers: requestHeaders, signal: s }),
+        signal,
+      ),
+
+    createBinge: (input: BingeInput): Promise<CreateBingeResponse> =>
+      call(
+        "Create binge request",
+        (s, requestHeaders) =>
+          userClient.createBinge(input, { headers: requestHeaders, signal: s }),
+        undefined,
+        SETTINGS_TIMEOUT_MS,
+      ),
+
+    updateBinge: (id: string, input: BingeInput): Promise<UpdateBingeResponse> =>
+      call(
+        "Update binge request",
+        (s, requestHeaders) =>
+          userClient.updateBinge({ id, ...input }, { headers: requestHeaders, signal: s }),
+        undefined,
+        SETTINGS_TIMEOUT_MS,
+      ),
+
+    deleteBinge: (id: string): Promise<DeleteBingeResponse> =>
+      call("Delete binge request", (s, requestHeaders) =>
+        userClient.deleteBinge({ id }, { headers: requestHeaders, signal: s }),
+      ),
+
+    setBingeCuratorName: (displayName: string): Promise<SetBingeCuratorNameResponse> =>
+      call("Set curator name request", (s, requestHeaders) =>
+        userClient.setBingeCuratorName({ displayName }, { headers: requestHeaders, signal: s }),
+      ),
+
+    searchBingeTitles: (query: string, signal?: AbortSignal): Promise<SearchBingeTitlesResponse> =>
+      call(
+        "Binge title search request",
+        (s, requestHeaders) =>
+          userClient.searchBingeTitles({ query }, { headers: requestHeaders, signal: s }),
         signal,
       ),
 

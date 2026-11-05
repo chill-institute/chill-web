@@ -30,6 +30,13 @@ function createApiStub() {
     getTVShowDetail: unusedCall,
     getTVShowSeason: unusedCall,
     getTVShowSeasonDownloads: unusedCall,
+    listBinges: unusedCall,
+    getBinge: unusedCall,
+    createBinge: unusedCall,
+    updateBinge: unusedCall,
+    deleteBinge: unusedCall,
+    setBingeCuratorName: unusedCall,
+    searchBingeTitles: unusedCall,
   } satisfies ChillApi;
 }
 

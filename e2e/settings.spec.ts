@@ -7,6 +7,7 @@ import {
 import { expect, readSubmittedSettings, test } from "./support/fixtures";
 import { expectNoExcessBottomSpace, stableElementBox } from "./support/layout";
 import {
+  bingesResponse,
   downloadFolderResponse,
   folderResponse,
   indexer,
@@ -42,6 +43,7 @@ type RequestSettingsPayload = Record<string, unknown> & {
 
 const baseSettingsMethods = (overrides?: Record<string, unknown>) => ({
   GetUserSettings: userSettings(),
+  ListBinges: bingesResponse([]),
   GetIndexers: indexersResponse([
     indexer({ id: "yts", name: "YTS" }),
     indexer({ id: "rarbg", name: "RARBG" }),

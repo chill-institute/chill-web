@@ -1,5 +1,19 @@
 import { create, toJson, type MessageInitShape } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import {
+  BingeItemSchema,
+  BingeMediaType,
+  BingeSchema,
+  BingeSummarySchema,
+  CreateBingeResponseSchema,
+  DeleteBingeResponseSchema,
+  GetBingeResponseSchema,
+  ListBingesResponseSchema,
+  SearchBingeTitlesResponseSchema,
+  SetBingeCuratorNameResponseSchema,
+  UpdateBingeResponseSchema,
+  type Binge,
+  type BingeSummary,
   type UserIndexer,
   type SearchResult,
   type Movie,
@@ -390,4 +404,112 @@ export function folderResponse(parent: UserFile, files: UserFile[]) {
       files,
     }),
   );
+}
+
+type BingeItemInit = MessageInitShape<typeof BingeItemSchema>;
+type BingeInit = MessageInitShape<typeof BingeSchema>;
+
+const bingeTimestamp = timestampFromDate(new Date("2026-10-20T09:00:00Z"));
+
+export function bingeItem(init?: BingeItemInit) {
+  return create(BingeItemSchema, {
+    imdbId: "tt9000001",
+    mediaType: BingeMediaType.MOVIE,
+    title: "Synthetic Feature Alpha",
+    year: 2010,
+    posterUrl: "/test/poster.svg",
+    backdropUrl: "/test/backdrop.svg",
+    rating: 8.8,
+    externalUrl: "https://imdb.com/title/tt9000001",
+    genres: ["Science Fiction"],
+    ...init,
+  });
+}
+
+export function binge(init?: BingeInit) {
+  return create(BingeSchema, {
+    id: "binge-latest",
+    title: "Signals in the dark",
+    blurb: "Three nights of quiet dread, in the order we would watch them.",
+    items: [
+      bingeItem({ comment: "start here, no spoilers" }),
+      bingeItem({
+        imdbId: "tt9000003",
+        mediaType: BingeMediaType.TV_SHOW,
+        title: "Synthetic Show Gamma",
+        year: 2025,
+        rating: 8.5,
+        externalUrl: "https://www.imdb.com/title/tt9000003/",
+        genres: ["Drama", "Mystery"],
+        comment: "season one only",
+      }),
+    ],
+    curatorName: "the night shift",
+    createdAt: bingeTimestamp,
+    updatedAt: bingeTimestamp,
+    ...init,
+  });
+}
+
+function bingeSummary(source: Binge): BingeSummary {
+  return create(BingeSummarySchema, {
+    id: source.id,
+    title: source.title,
+    blurb: source.blurb,
+    itemCount: source.items.length,
+    curatorName: source.curatorName,
+    posterUrls: source.items
+      .slice(0, 3)
+      .map((item) => item.posterUrl)
+      .filter(Boolean),
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
+  });
+}
+
+export function bingesResponse(
+  binges: Binge[],
+  options?: { canCurate?: boolean; curatorName?: string },
+) {
+  return toJson(
+    ListBingesResponseSchema,
+    create(ListBingesResponseSchema, {
+      binges: binges.map(bingeSummary),
+      canCurate: options?.canCurate ?? false,
+      curatorName: options?.curatorName ?? "",
+      latest: binges[0],
+    }),
+  );
+}
+
+export function searchBingeTitlesResponse(
+  matches: MessageInitShape<typeof SearchBingeTitlesResponseSchema>["matches"],
+) {
+  return toJson(
+    SearchBingeTitlesResponseSchema,
+    create(SearchBingeTitlesResponseSchema, { matches }),
+  );
+}
+
+export function setBingeCuratorNameResponse(displayName: string) {
+  return toJson(
+    SetBingeCuratorNameResponseSchema,
+    create(SetBingeCuratorNameResponseSchema, { displayName }),
+  );
+}
+
+export function bingeResponse(source: Binge) {
+  return toJson(GetBingeResponseSchema, create(GetBingeResponseSchema, { binge: source }));
+}
+
+export function createBingeResponse(source: Binge) {
+  return toJson(CreateBingeResponseSchema, create(CreateBingeResponseSchema, { binge: source }));
+}
+
+export function updateBingeResponse(source: Binge) {
+  return toJson(UpdateBingeResponseSchema, create(UpdateBingeResponseSchema, { binge: source }));
+}
+
+export function deleteBingeResponse() {
+  return toJson(DeleteBingeResponseSchema, create(DeleteBingeResponseSchema, {}));
 }
