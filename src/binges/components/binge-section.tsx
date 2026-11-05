@@ -307,7 +307,7 @@ function BingeRow({
     </>
   );
   const rowClassName =
-    "flex w-[calc(100%+1rem)] items-start gap-3 py-3.5 text-left sm:gap-4 sm:py-4 -mx-2 px-2 rounded";
+    "flex w-full items-start gap-3 py-3.5 text-left sm:gap-4 sm:py-4 px-2 rounded";
 
   if (!resolved) {
     return <div className={rowClassName}>{body}</div>;
@@ -440,7 +440,7 @@ function EarlierBinges({
             <button
               type="button"
               onClick={() => onSelect(binge.id)}
-              className="hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app -mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-start gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app flex w-full cursor-pointer items-start gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <BingePosterStrip urls={binge.posterUrls} />
               <span
