@@ -773,6 +773,14 @@ test.describe("binge curation", () => {
     await editor.getByRole("button", { name: "remove tt9999999" }).click();
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(1)).toContainText("not found: this title could not be resolved");
+    await expect(editor.getByRole("alert")).toHaveText(
+      "1 title could not be found. remove or replace the marked title.",
+    );
+
+    await editor.getByRole("button", { name: "remove Synthetic Show Gamma" }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).not.toContainText("not found");
+    await expect(editor.getByRole("alert")).toHaveCount(0);
   });
 
   test("tells a curator when their name is already taken", async ({

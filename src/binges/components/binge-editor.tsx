@@ -166,17 +166,19 @@ export function BingeEditor({
   const shownNameError = nameError ?? (nameTaken ? "that name is already taken" : undefined);
   const conflict = isConflict(save.error);
   const unresolved = unresolvedImdbIds(save.error);
-  const saveMessage =
-    unresolved.size > 0
-      ? unresolvedMessage(unresolved.size)
-      : (requestMessage(save.error) ?? requestMessage(setName.error));
-  const itemErrors: Record<string, string> = {};
+  const unresolvedItemErrors: Record<string, string> = {};
   for (const item of draft.items) {
     if (unresolved.has(normalizeIMDbId(item.imdbId))) {
-      itemErrors[item.key] = "not found: this title could not be resolved";
+      unresolvedItemErrors[item.key] = "not found: this title could not be resolved";
     }
   }
-  Object.assign(itemErrors, errors.itemErrors);
+  const markedCount = Object.keys(unresolvedItemErrors).length;
+  const saveRequestMessage = unresolved.size > 0 ? null : requestMessage(save.error);
+  const saveMessage =
+    markedCount > 0
+      ? unresolvedMessage(markedCount)
+      : (saveRequestMessage ?? requestMessage(setName.error));
+  const itemErrors: Record<string, string> = { ...unresolvedItemErrors, ...errors.itemErrors };
 
   return (
     <ResponsiveModal
@@ -329,7 +331,7 @@ export function BingeEditor({
             <p role="alert" className="text-error-text m-0 text-sm">
               {saveMessage}
             </p>
-          ) : save.error ? (
+          ) : save.error && unresolved.size === 0 ? (
             <UserErrorAlert error={save.error} />
           ) : setName.error && !nameTaken ? (
             <UserErrorAlert error={setName.error} />
