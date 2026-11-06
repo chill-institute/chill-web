@@ -1,10 +1,11 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { ArrowUpRight, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import type { CSSProperties, ImgHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "../lib/cn";
 import { slotAttr } from "../lib/slot-attr";
+import { ExternalIMDbLink } from "./external-imdb-link";
 
 type PosterCardProps = useRender.ComponentProps<"article"> & {
   title: string;
@@ -90,27 +91,7 @@ function PosterCard({
                     {ratingHref ? (
                       <>
                         {rating != null && <span className="text-fg-4">·</span>}
-                        <span
-                          role="link"
-                          tabIndex={0}
-                          title="View on IMDb"
-                          className="text-fg-2 hover-hover:hover:text-fg-1 inline-flex cursor-pointer items-center gap-0.5 transition-colors"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            window.open(ratingHref, "_blank", "noopener,noreferrer");
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              window.open(ratingHref, "_blank", "noopener,noreferrer");
-                            }
-                          }}
-                        >
-                          <span>IMDb</span>
-                          <ArrowUpRight className="size-3 shrink-0" strokeWidth={1.25} />
-                        </span>
+                        <ExternalIMDbLink href={ratingHref} />
                       </>
                     ) : null}
                     {year != null && (

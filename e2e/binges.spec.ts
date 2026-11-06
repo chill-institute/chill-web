@@ -21,8 +21,32 @@ const older = binge({
   items: [bingeItem({ comment: "" })],
 });
 
-function bingeSection(page: import("@playwright/test").Page) {
+type Page = import("@playwright/test").Page;
+
+function bingeSection(page: Page) {
   return page.locator('[data-slot="binge-section"]');
+}
+
+function connectError(status: number, code: string, message: string) {
+  return {
+    status,
+    contentType: "application/json",
+    body: JSON.stringify({ code, message }),
+  };
+}
+
+async function routeInSequence(page: Page, method: string, responses: unknown[]) {
+  let calls = 0;
+  await page.route(new RegExp(`UserService/${method}$`), async (route) => {
+    const response = responses[Math.min(calls, responses.length - 1)];
+    calls += 1;
+    await route.fulfill(
+      typeof response === "object" && response !== null && "status" in response
+        ? (response as ReturnType<typeof connectError>)
+        : { status: 200, contentType: "application/json", body: JSON.stringify(response) },
+    );
+  });
+  return () => calls;
 }
 
 test.describe("binges on the home page", () => {
@@ -109,9 +133,9 @@ test.describe("binges on the home page", () => {
     await expect(index.getByText("all binges")).toBeVisible();
     await expect(index.getByRole("button")).toHaveCount(2);
     await expect(index.locator('[aria-current="true"]')).toHaveText(/Signals in the dark/);
-    await expect(index.getByRole("button", { name: /Comfort rewatches/ })).toContainText(
-      "by the night shift · 1 title",
-    );
+    await expect(
+      index.getByRole("listitem").filter({ hasText: "Comfort rewatches" }),
+    ).toContainText("by the night shift · 1 title");
     await index.getByRole("button", { name: /Comfort rewatches/ }).click();
 
     await authenticatedPage.waitForURL("**/?binge=binge-older");
@@ -271,12 +295,15 @@ test.describe("binge curation", () => {
     const renamed = binge({ title: "Signals in the dark, revisited" });
     await mockRpc(
       appScenarioMethods({
-        ListBinges: bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
         GetBinge: bingeResponse(renamed),
         UpdateBinge: updateBingeResponse(renamed),
         DeleteBinge: deleteBingeResponse(),
       }),
     );
+    await routeInSequence(authenticatedPage, "ListBinges", [
+      bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
+      connectError(500, "internal", "binges are down"),
+    ]);
 
     await authenticatedPage.goto("/");
     const section = bingeSection(authenticatedPage);
@@ -302,6 +329,14 @@ test.describe("binge curation", () => {
       items: [{ imdbId: "tt9000001", comment: "start here, no spoilers" }],
     });
     await expect(editor).toHaveCount(0);
+    await expect(
+      section.getByRole("heading", { name: "Signals in the dark, revisited" }),
+    ).toBeVisible();
+    await expect(
+      section
+        .locator('[data-slot="binge-index"]')
+        .getByRole("button", { name: /Signals in the dark, revisited/ }),
+    ).toBeVisible();
 
     await section.getByRole("button", { name: "Edit this binge" }).click();
     await editor.getByRole("button", { name: "delete" }).click();
@@ -310,6 +345,62 @@ test.describe("binge curation", () => {
     expect((await remove).postDataJSON()).toEqual({ id: "binge-latest" });
     await expect(editor).toHaveCount(0);
     expect(new URL(authenticatedPage.url()).search).toBe("");
+    await expect(section.getByRole("heading", { name: /Signals in the dark/ })).toHaveCount(0);
+    await expect(section.getByRole("button", { name: "Edit this binge" })).toHaveCount(0);
+  });
+
+  test("renaming the curator while saving keeps the saved binge on screen", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const revised = binge({
+      ...older,
+      title: "Comfort rewatches, again",
+      curatorName: "Day Shift",
+    });
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest, older], {
+          canCurate: true,
+          curatorName: "the night shift",
+        }),
+        SetBingeCuratorName: setBingeCuratorNameResponse("Day Shift"),
+        UpdateBinge: updateBingeResponse(revised),
+      }),
+    );
+    let bingeReads = 0;
+    const heldBingeReads: Array<() => Promise<void>> = [];
+    await authenticatedPage.route(/UserService\/GetBinge$/, (route) => {
+      bingeReads += 1;
+      const fulfill = () =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(bingeResponse(older)),
+        });
+      if (bingeReads === 1) return fulfill();
+      return new Promise<void>((resolve) => heldBingeReads.push(() => fulfill().then(resolve)));
+    });
+
+    await authenticatedPage.goto("/?binge=binge-older");
+    const section = bingeSection(authenticatedPage);
+    await expect(section.getByRole("heading", { name: "Comfort rewatches" })).toBeVisible();
+    await section.getByRole("button", { name: "Edit this binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    await editor.getByRole("button", { name: "change" }).click();
+    await editor.getByLabel("your curator name").fill("Day Shift");
+    await editor.getByLabel("title", { exact: true }).fill("Comfort rewatches, again");
+    const updated = authenticatedPage.waitForResponse(/UserService\/UpdateBinge/);
+    await editor.getByRole("button", { name: "save binge" }).click();
+    await updated;
+    await expect(editor).toHaveCount(0);
+
+    await Promise.all(heldBingeReads.map((release) => release()));
+    await authenticatedPage.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    await expect(section.getByRole("heading", { name: "Comfort rewatches, again" })).toBeVisible();
+    await expect(section.getByText(/^by Day Shift/)).toBeVisible();
   });
 
   test("enter adds the match for the text just typed, not the previous search", async ({
@@ -485,5 +576,70 @@ test.describe("binge curation", () => {
       "binge items could not be resolved: tt9999999",
     );
     await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Broken");
+  });
+
+  test("a failed background refresh keeps the open editor and its draft", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      appScenarioMethods({ SetBingeCuratorName: setBingeCuratorNameResponse("Night Shift") }),
+    );
+    const listCalls = await routeInSequence(authenticatedPage, "ListBinges", [
+      bingesResponse([latest], { canCurate: true }),
+      connectError(500, "internal", "binges are down"),
+    ]);
+    await authenticatedPage.route(/UserService\/CreateBinge/, (route) =>
+      route.fulfill(connectError(400, "invalid_argument", "binge items could not be resolved")),
+    );
+
+    await authenticatedPage.goto("/");
+    const section = bingeSection(authenticatedPage);
+    await section.getByRole("button", { name: "new binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    await editor.getByLabel("your curator name").fill("Night Shift");
+    await editor.getByLabel("title", { exact: true }).fill("Keep me");
+    await editor.getByLabel("add a title").fill("tt9000001");
+    await editor.getByLabel("add a title").press("Enter");
+
+    const refreshFailed = authenticatedPage.waitForResponse(
+      (response) => /UserService\/ListBinges/.test(response.url()) && response.status() === 500,
+    );
+    await editor.getByRole("button", { name: "publish binge" }).click();
+    await refreshFailed;
+
+    await expect(editor.getByRole("alert")).toHaveText("binge items could not be resolved");
+    expect(listCalls()).toBe(2);
+    await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Keep me");
+    await expect(editor.locator('[data-slot="binge-editor-item"]')).toHaveCount(1);
+    await editor.getByRole("button", { name: "cancel" }).click();
+    await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
+  });
+
+  test("tells a curator when their name is already taken", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(appScenarioMethods({ ListBinges: bingesResponse([], { canCurate: true }) }));
+    await authenticatedPage.route(/UserService\/SetBingeCuratorName/, (route) =>
+      route.fulfill(connectError(409, "already_exists", "curator name is taken")),
+    );
+
+    await authenticatedPage.goto("/");
+    await bingeSection(authenticatedPage).getByRole("button", { name: "new binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    const name = editor.getByLabel("your curator name");
+    await name.fill("the night shift");
+    await editor.getByLabel("title", { exact: true }).fill("Mine");
+    await editor.getByLabel("add a title").fill("tt9000001");
+    await editor.getByLabel("add a title").press("Enter");
+    await editor.getByRole("button", { name: "publish binge" }).click();
+
+    await expect(editor.getByText("that name is already taken")).toBeVisible();
+    await expect(name).toHaveAttribute("aria-invalid", "true");
+    await expect(editor.getByRole("alert")).toHaveCount(0);
+
+    await name.fill("the day shift");
+    await expect(editor.getByText("that name is already taken")).toHaveCount(0);
   });
 });
