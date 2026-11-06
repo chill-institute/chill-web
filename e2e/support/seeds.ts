@@ -1,7 +1,9 @@
-import { create, toJson, type MessageInitShape } from "@bufbuild/protobuf";
+import { create, toBinary, toJson, type MessageInitShape } from "@bufbuild/protobuf";
+import { base64Encode } from "@bufbuild/protobuf/wire";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import {
   BingeItemSchema,
+  BingeItemsUnresolvedSchema,
   BingeMediaType,
   BingeSchema,
   BingeSummarySchema,
@@ -512,4 +514,18 @@ export function updateBingeResponse(source: Binge) {
 
 export function deleteBingeResponse() {
   return toJson(DeleteBingeResponseSchema, create(DeleteBingeResponseSchema, {}));
+}
+
+export function bingeItemsUnresolvedError(message: string, imdbIds: string[]) {
+  const detail = toBinary(
+    BingeItemsUnresolvedSchema,
+    create(BingeItemsUnresolvedSchema, { imdbIds }),
+  );
+  return {
+    code: "invalid_argument",
+    message,
+    details: [
+      { type: BingeItemsUnresolvedSchema.typeName, value: base64Encode(detail, "std_raw") },
+    ],
+  };
 }
