@@ -1,3 +1,5 @@
+import { create } from "@bufbuild/protobuf";
+import { GetBingeResponseSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { BingeInput } from "@/api/api";
@@ -34,13 +36,15 @@ export function useSaveBinge() {
       const response = id ? await api.updateBinge(id, input) : await api.createBinge(input);
       return response.binge;
     },
-    onSuccess: (saved) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true }),
-        saved
-          ? queryClient.invalidateQueries({ queryKey: bingeQueryKey(saved.id), exact: true })
-          : undefined,
-      ]),
+    onSuccess: (saved) => {
+      if (saved) {
+        queryClient.setQueryData(
+          bingeQueryKey(saved.id),
+          create(GetBingeResponseSchema, { binge: saved }),
+        );
+      }
+      void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
+    },
   });
 }
 
@@ -64,7 +68,9 @@ export function useSetCuratorName() {
   return useMutation({
     mutationFn: async (displayName: string) =>
       (await api.setBingeCuratorName(displayName)).displayName,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY });
+    },
   });
 }
 
