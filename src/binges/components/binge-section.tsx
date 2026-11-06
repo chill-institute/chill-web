@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import { cn } from "@/ui/lib/cn";
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight, HandHeart, Pencil, Plus, Star } from "lucide-react";
+import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
+import { HandHeart, Pencil, Plus, Star } from "lucide-react";
 
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { BingeEditor } from "@/binges/components/binge-editor";
@@ -16,6 +16,7 @@ import {
   type BingeSummary,
 } from "@/binges/lib/types";
 import { useBingeQuery, useBingesQuery, useForgetBinge } from "@/binges/queries/binges";
+import { ExternalIMDbLink } from "@/ui/components/external-imdb-link";
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 
@@ -41,33 +42,27 @@ export function BingeSection() {
 
   const showBinge = (id: string | undefined) =>
     navigate({ to: "/", search: id ? { binge: id } : {}, replace: true });
-  const showCurator = (name: string | undefined) =>
-    void navigate({ to: "/", search: name ? { curator: name } : {}, replace: true });
   const close = () => setOverlay({ kind: "none" });
 
-  if (bingesQuery.status !== "success") {
+  if (!bingesQuery.data) {
     return null;
   }
 
   const { binges, canCurate, curatorName } = bingesQuery.data;
-  const current = curatorFilter ? undefined : wantsOther ? bingeQuery.data?.binge : latest;
-  const loadingOther = wantsOther && bingeQuery.status === "pending";
+  const other = bingeQuery.data?.binge;
+  const current = curatorFilter ? undefined : wantsOther ? other : latest;
 
   if (!latest && !canCurate) {
     return null;
   }
 
   const withSidebar = !curatorFilter && latest !== undefined;
-  const body = loadingOther ? (
-    <BingeSkeleton />
+  const body = current ? (
+    <BingeBody binge={current} onOpenItem={(item) => setOverlay({ kind: "item", item })} />
   ) : wantsOther && bingeQuery.status === "error" ? (
     <UserErrorAlert error={bingeQuery.error} />
-  ) : current ? (
-    <BingeBody
-      binge={current}
-      onOpenItem={(item) => setOverlay({ kind: "item", item })}
-      onOpenCurator={showCurator}
-    />
+  ) : wantsOther ? (
+    <BingeSkeleton />
   ) : (
     <p className="text-fg-2 m-0 text-sm">no binges yet. publish the first one.</p>
   );
@@ -109,7 +104,7 @@ export function BingeSection() {
           latestId={latest?.id}
           curator={curatorFilter}
           onSelect={(id) => void showBinge(id === latest?.id ? undefined : id)}
-          onOpenCurator={showCurator}
+          onShowAll={() => void showBinge(undefined)}
         />
       ) : withSidebar ? (
         <div className="flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-10">
@@ -126,7 +121,7 @@ export function BingeSection() {
               curator={undefined}
               sidebar
               onSelect={(id) => void showBinge(id === latest?.id ? undefined : id)}
-              onOpenCurator={showCurator}
+              onShowAll={() => void showBinge(undefined)}
             />
           </div>
         </div>
@@ -192,21 +187,13 @@ function HandpickedCallout() {
   );
 }
 
-function BingeBody({
-  binge,
-  onOpenItem,
-  onOpenCurator,
-}: {
-  binge: Binge;
-  onOpenItem: (item: BingeItem) => void;
-  onOpenCurator: (name: string) => void;
-}) {
+function BingeBody({ binge, onOpenItem }: { binge: Binge; onOpenItem: (item: BingeItem) => void }) {
   return (
     <>
       <div className="flex flex-col gap-2">
         <h2 className="m-0 text-2xl leading-hero sm:text-3xl">{binge.title}</h2>
         <p className="text-fg-3 m-0 text-sm">
-          by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} />
+          by <CuratorName name={binge.curatorName} />
           {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
         </p>
         {binge.blurb ? (
@@ -241,8 +228,16 @@ function BingeRow({
   const resolved = item.mediaType !== BingeMediaType.UNSPECIFIED;
   const title = resolved ? item.title : item.imdbId;
   const imdbHref = item.externalUrl || `https://imdb.com/title/${item.imdbId}`;
-  const body = (
-    <>
+  const titleClassName =
+    "text-fg-1 text-left font-serif text-xl leading-tight tracking-heading sm:text-2xl";
+  return (
+    <div
+      className={cn(
+        "relative flex w-full items-start gap-3 rounded px-2 py-3.5 text-left sm:gap-4 sm:py-4",
+        resolved &&
+          "hover-hover:hover:bg-surface motion-safe:transition-colors motion-safe:duration-fast",
+      )}
+    >
       <span
         aria-hidden="true"
         className="text-fg-3 w-5 shrink-0 pt-1 text-right font-serif text-base tabular-nums sm:w-6 sm:text-lg"
@@ -265,9 +260,18 @@ function BingeRow({
         )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-fg-1 font-serif text-xl leading-tight tracking-heading sm:text-2xl">
-          {title}
-        </span>
+        {resolved ? (
+          <button
+            type="button"
+            aria-label={`${item.title} details`}
+            onClick={onOpen}
+            className={cn(titleClassName, stretchedActionClassName)}
+          >
+            {title}
+          </button>
+        ) : (
+          <span className={titleClassName}>{title}</span>
+        )}
         <span className="text-fg-2 flex flex-wrap items-center gap-1.5 text-sm tabular-nums">
           {resolved && item.rating > 0 ? (
             <span className="flex items-center gap-1">
@@ -280,7 +284,7 @@ function BingeRow({
             </span>
           ) : null}
           {resolved && item.rating > 0 ? <span className="text-fg-4">·</span> : null}
-          <ExternalIMDbLink href={imdbHref} />
+          <ExternalIMDbLink href={imdbHref} className="relative z-10" />
           {resolved && item.year > 0 ? (
             <>
               <span className="text-fg-4">·</span>
@@ -302,85 +306,29 @@ function BingeRow({
           </span>
         ) : null}
       </span>
-    </>
-  );
-  const rowClassName =
-    "flex w-full items-start gap-3 py-3.5 text-left sm:gap-4 sm:py-4 px-2 rounded";
-
-  if (!resolved) {
-    return <div className={rowClassName}>{body}</div>;
-  }
-  return (
-    <button
-      type="button"
-      aria-label={`${item.title} details`}
-      onClick={onOpen}
-      className={`${rowClassName} hover-hover:hover:bg-surface motion-safe:transition-colors motion-safe:duration-fast cursor-pointer focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-app focus-visible:outline-none`}
-    >
-      {body}
-    </button>
+    </div>
   );
 }
 
-function ExternalIMDbLink({ href }: { href: string }) {
-  const open = () => window.open(href, "_blank", "noopener,noreferrer");
-  return (
-    <span
-      role="link"
-      tabIndex={0}
-      title="View on IMDb"
-      className="text-fg-2 hover-hover:hover:text-fg-1 inline-flex cursor-pointer items-center gap-0.5 transition-colors"
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        open();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          event.stopPropagation();
-          open();
-        }
-      }}
-    >
-      <span>IMDb</span>
-      <ArrowUpRight className="size-3 shrink-0" strokeWidth={1.25} />
-    </span>
-  );
-}
+const stretchedActionClassName =
+  "cursor-pointer after:absolute after:inset-0 after:rounded after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring-focus focus-visible:after:ring-offset-2 focus-visible:after:ring-offset-app";
 
-function CuratorName({
-  name,
-  onOpen,
-}: {
-  name: string | undefined;
-  onOpen: (name: string) => void;
-}) {
+function CuratorName({ name }: { name: string | undefined }) {
   const key = curatorKey(name);
   if (!key) {
     return <>{curatorLabel(name)}</>;
   }
-  const open = (event: React.SyntheticEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onOpen(key);
-  };
   return (
-    <span
-      role="link"
-      tabIndex={0}
+    <Link
+      to="/"
+      search={{ curator: key }}
+      replace
       title={`binges by ${key}`}
       data-slot="binge-curator"
-      className="text-fg-2 hover-hover:hover:text-fg-1 cursor-pointer underline decoration-dotted underline-offset-2 transition-colors"
-      onClick={open}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          open(event);
-        }
-      }}
+      className="text-fg-2 hover-hover:hover:text-fg-1 relative z-10 underline decoration-dotted underline-offset-2 transition-colors"
     >
       {key}
-    </span>
+    </Link>
   );
 }
 
@@ -391,7 +339,7 @@ function BingeIndex({
   curator,
   sidebar = false,
   onSelect,
-  onOpenCurator,
+  onShowAll,
 }: {
   binges: BingeSummary[];
   currentId: string | undefined;
@@ -399,7 +347,7 @@ function BingeIndex({
   curator: string | undefined;
   sidebar?: boolean;
   onSelect: (id: string) => void;
-  onOpenCurator: (name: string | undefined) => void;
+  onShowAll: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const filter = curatorKey(curator);
@@ -414,7 +362,7 @@ function BingeIndex({
           <p className="text-fg-3 m-0 text-sm">
             binges by <span className="text-fg-1">{filter}</span>
           </p>
-          <Button size="sm" variant="ghost" onClick={() => onOpenCurator(undefined)}>
+          <Button size="sm" variant="ghost" onClick={onShowAll}>
             all binges
           </Button>
         </div>
@@ -427,11 +375,9 @@ function BingeIndex({
       <ul className="border-border-faint m-0 flex list-none flex-col border-t p-0">
         {visible.map((binge) => (
           <li key={binge.id} className="border-border-faint border-b">
-            <button
-              type="button"
-              aria-current={binge.id === currentId ? "true" : undefined}
-              onClick={() => onSelect(binge.id)}
-              className="aria-[current=true]:bg-surface hover-hover:hover:bg-surface focus-visible:ring-ring-focus focus-visible:ring-offset-app flex w-full cursor-pointer items-start gap-3 rounded px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            <div
+              data-slot="binge-index-row"
+              className="has-[[aria-current=true]]:bg-surface hover-hover:hover:bg-surface relative flex w-full items-start gap-3 rounded px-2 py-2.5 text-left"
             >
               <BingePosterStrip urls={binge.posterUrls} />
               <span
@@ -440,19 +386,27 @@ function BingeIndex({
                   sidebar && "lg:flex-col lg:items-start lg:gap-0.5",
                 )}
               >
-                <span className="text-fg-1 min-w-0 font-serif text-lg leading-tight tracking-heading">
+                <button
+                  type="button"
+                  aria-current={binge.id === currentId ? "true" : undefined}
+                  onClick={() => onSelect(binge.id)}
+                  className={cn(
+                    "text-fg-1 min-w-0 text-left font-serif text-lg leading-tight tracking-heading",
+                    stretchedActionClassName,
+                  )}
+                >
                   {binge.title}
                   {binge.id === latestId ? (
                     <span className="text-fg-3 text-sm"> · latest</span>
                   ) : null}
-                </span>
+                </button>
                 <span className="text-fg-3 shrink-0 text-sm tabular-nums">
-                  by <CuratorName name={binge.curatorName} onOpen={onOpenCurator} /> ·{" "}
-                  {binge.itemCount} {binge.itemCount === 1 ? "title" : "titles"}
+                  by <CuratorName name={binge.curatorName} /> · {binge.itemCount}{" "}
+                  {binge.itemCount === 1 ? "title" : "titles"}
                   {binge.createdAt ? ` · ${formatBingeDate(binge.createdAt)}` : ""}
                 </span>
               </span>
-            </button>
+            </div>
           </li>
         ))}
       </ul>

@@ -21,8 +21,32 @@ const older = binge({
   items: [bingeItem({ comment: "" })],
 });
 
-function bingeSection(page: import("@playwright/test").Page) {
+type Page = import("@playwright/test").Page;
+
+function bingeSection(page: Page) {
   return page.locator('[data-slot="binge-section"]');
+}
+
+function connectError(status: number, code: string, message: string) {
+  return {
+    status,
+    contentType: "application/json",
+    body: JSON.stringify({ code, message }),
+  };
+}
+
+async function routeInSequence(page: Page, method: string, responses: unknown[]) {
+  let calls = 0;
+  await page.route(new RegExp(`UserService/${method}$`), async (route) => {
+    const response = responses[Math.min(calls, responses.length - 1)];
+    calls += 1;
+    await route.fulfill(
+      typeof response === "object" && response !== null && "status" in response
+        ? (response as ReturnType<typeof connectError>)
+        : { status: 200, contentType: "application/json", body: JSON.stringify(response) },
+    );
+  });
+  return () => calls;
 }
 
 test.describe("binges on the home page", () => {
@@ -109,9 +133,9 @@ test.describe("binges on the home page", () => {
     await expect(index.getByText("all binges")).toBeVisible();
     await expect(index.getByRole("button")).toHaveCount(2);
     await expect(index.locator('[aria-current="true"]')).toHaveText(/Signals in the dark/);
-    await expect(index.getByRole("button", { name: /Comfort rewatches/ })).toContainText(
-      "by the night shift · 1 title",
-    );
+    await expect(
+      index.getByRole("listitem").filter({ hasText: "Comfort rewatches" }),
+    ).toContainText("by the night shift · 1 title");
     await index.getByRole("button", { name: /Comfort rewatches/ }).click();
 
     await authenticatedPage.waitForURL("**/?binge=binge-older");
@@ -485,5 +509,43 @@ test.describe("binge curation", () => {
       "binge items could not be resolved: tt9999999",
     );
     await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Broken");
+  });
+
+  test("a failed background refresh keeps the open editor and its draft", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      appScenarioMethods({ SetBingeCuratorName: setBingeCuratorNameResponse("Night Shift") }),
+    );
+    const listCalls = await routeInSequence(authenticatedPage, "ListBinges", [
+      bingesResponse([latest], { canCurate: true }),
+      connectError(500, "internal", "binges are down"),
+    ]);
+    await authenticatedPage.route(/UserService\/CreateBinge/, (route) =>
+      route.fulfill(connectError(400, "invalid_argument", "binge items could not be resolved")),
+    );
+
+    await authenticatedPage.goto("/");
+    const section = bingeSection(authenticatedPage);
+    await section.getByRole("button", { name: "new binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    await editor.getByLabel("your curator name").fill("Night Shift");
+    await editor.getByLabel("title", { exact: true }).fill("Keep me");
+    await editor.getByLabel("add a title").fill("tt9000001");
+    await editor.getByLabel("add a title").press("Enter");
+
+    const refreshFailed = authenticatedPage.waitForResponse(
+      (response) => /UserService\/ListBinges/.test(response.url()) && response.status() === 500,
+    );
+    await editor.getByRole("button", { name: "publish binge" }).click();
+    await refreshFailed;
+
+    await expect(editor.getByRole("alert")).toHaveText("binge items could not be resolved");
+    expect(listCalls()).toBe(2);
+    await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Keep me");
+    await expect(editor.locator('[data-slot="binge-editor-item"]')).toHaveCount(1);
+    await editor.getByRole("button", { name: "cancel" }).click();
+    await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
   });
 });
