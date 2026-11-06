@@ -1,4 +1,5 @@
 import { create } from "@bufbuild/protobuf";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import {
   type Binge,
   BingeSummarySchema,
@@ -92,8 +93,18 @@ export function useSaveBinge() {
   const api = useApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id?: string; input: BingeInput }) => {
-      const response = id ? await api.updateBinge(id, input) : await api.createBinge(input);
+    mutationFn: async ({
+      id,
+      input,
+      expectedUpdatedAt,
+    }: {
+      id?: string;
+      input: BingeInput;
+      expectedUpdatedAt?: Timestamp;
+    }) => {
+      const response = id
+        ? await api.updateBinge(id, input, expectedUpdatedAt)
+        : await api.createBinge(input);
       return response.binge;
     },
     onSuccess: async (saved) => {
@@ -107,6 +118,23 @@ export function useSaveBinge() {
         create(GetBingeResponseSchema, { binge: saved }),
       );
       await patchBinges(queryClient, (list) => withSaved(list, saved));
+    },
+  });
+}
+
+export function useLoadLatestBinge() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await queryClient.fetchQuery({
+        ...bingeQueryOptions(api, id),
+        staleTime: 0,
+      });
+      return response.binge;
+    },
+    onSuccess: async (latest) => {
+      if (latest) await patchBinges(queryClient, (list) => withSaved(list, latest));
     },
   });
 }

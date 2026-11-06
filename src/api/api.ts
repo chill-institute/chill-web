@@ -1,4 +1,5 @@
 import { create } from "@bufbuild/protobuf";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
@@ -258,11 +259,18 @@ export function createApi({
         SETTINGS_TIMEOUT_MS,
       ),
 
-    updateBinge: (id: string, input: BingeInput): Promise<UpdateBingeResponse> =>
+    updateBinge: (
+      id: string,
+      input: BingeInput,
+      expectedUpdatedAt?: Timestamp,
+    ): Promise<UpdateBingeResponse> =>
       call(
         "Update binge request",
         (s, requestHeaders) =>
-          userClient.updateBinge({ id, ...input }, { headers: requestHeaders, signal: s }),
+          userClient.updateBinge(
+            { id, ...input, expectedUpdatedAt },
+            { headers: requestHeaders, signal: s },
+          ),
         undefined,
         SETTINGS_TIMEOUT_MS,
       ),

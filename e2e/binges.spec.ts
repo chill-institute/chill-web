@@ -1,9 +1,11 @@
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { expect, test } from "./support/fixtures";
 import { BingeMediaType } from "@chill-institute/contracts/chill/v4/api_pb";
 import { appScenarioMethods } from "./support/app-scenarios";
 import {
   binge,
   bingeItem,
+  bingeItemsUnresolvedError,
   bingeResponse,
   bingesResponse,
   createBingeResponse,
@@ -327,6 +329,7 @@ test.describe("binge curation", () => {
       title: "Signals in the dark, revisited",
       blurb: "Three nights of quiet dread, in the order we would watch them.",
       items: [{ imdbId: "tt9000001", comment: "start here, no spoilers" }],
+      expectedUpdatedAt: "2026-10-20T09:00:00Z",
     });
     await expect(editor).toHaveCount(0);
     await expect(
@@ -614,6 +617,170 @@ test.describe("binge curation", () => {
     await expect(editor.locator('[data-slot="binge-editor-item"]')).toHaveCount(1);
     await editor.getByRole("button", { name: "cancel" }).click();
     await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
+  });
+
+  test("each save expects the version the editor last loaded or saved", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const firstSave = binge({
+      title: "Signals, take two",
+      updatedAt: timestampFromDate(new Date("2026-11-01T12:00:00Z")),
+    });
+    const secondSave = binge({
+      title: "Signals, take three",
+      updatedAt: timestampFromDate(new Date("2026-11-01T12:30:00Z")),
+    });
+    await mockRpc(appScenarioMethods({}));
+    await routeInSequence(authenticatedPage, "ListBinges", [
+      bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
+      connectError(500, "internal", "binges are down"),
+    ]);
+    await routeInSequence(authenticatedPage, "UpdateBinge", [
+      updateBingeResponse(firstSave),
+      updateBingeResponse(secondSave),
+    ]);
+
+    await authenticatedPage.goto("/");
+    const section = bingeSection(authenticatedPage);
+    const editor = authenticatedPage.getByRole("dialog");
+
+    await section.getByRole("button", { name: "Edit this binge" }).click();
+    await editor.getByLabel("title", { exact: true }).fill("Signals, take two");
+    const first = authenticatedPage.waitForRequest(/UserService\/UpdateBinge/);
+    await editor.getByRole("button", { name: "save binge" }).click();
+    expect((await first).postDataJSON()).toMatchObject({
+      title: "Signals, take two",
+      expectedUpdatedAt: "2026-10-20T09:00:00Z",
+    });
+    await expect(editor).toHaveCount(0);
+    await expect(section.getByRole("heading", { name: "Signals, take two" })).toBeVisible();
+
+    await section.getByRole("button", { name: "Edit this binge" }).click();
+    await editor.getByLabel("title", { exact: true }).fill("Signals, take three");
+    const second = authenticatedPage.waitForRequest(/UserService\/UpdateBinge/);
+    await editor.getByRole("button", { name: "save binge" }).click();
+    expect((await second).postDataJSON()).toMatchObject({
+      title: "Signals, take three",
+      expectedUpdatedAt: "2026-11-01T12:00:00Z",
+    });
+    await expect(section.getByRole("heading", { name: "Signals, take three" })).toBeVisible();
+  });
+
+  test("a binge changed elsewhere keeps the draft until the curator loads the latest", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const changedElsewhere = binge({
+      title: "Signals in the dark, director's cut",
+      items: [
+        bingeItem({
+          imdbId: "tt9000005",
+          title: "Synthetic Feature Epsilon",
+          comment: "new opener",
+        }),
+      ],
+      updatedAt: timestampFromDate(new Date("2026-11-02T08:15:00Z")),
+    });
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
+        GetBinge: bingeResponse(changedElsewhere),
+      }),
+    );
+    const updates = await routeInSequence(authenticatedPage, "UpdateBinge", [
+      connectError(400, "failed_precondition", "binge was updated since it was read"),
+      updateBingeResponse(changedElsewhere),
+    ]);
+
+    await authenticatedPage.goto("/");
+    await bingeSection(authenticatedPage).getByRole("button", { name: "Edit this binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    const title = editor.getByLabel("title", { exact: true });
+    const rows = editor.locator('[data-slot="binge-editor-item"]');
+    await title.fill("My local edit");
+    await editor.getByRole("button", { name: "remove Synthetic Show Gamma" }).click();
+    await editor.getByRole("button", { name: "save binge" }).click();
+
+    await expect(editor.getByRole("alert")).toContainText("this binge changed since you opened it");
+    await expect(title).toHaveValue("My local edit");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("Synthetic Feature Alpha");
+    expect(updates()).toBe(1);
+
+    await editor.getByRole("button", { name: "load latest version" }).click();
+    await expect(title).toHaveValue("Signals in the dark, director's cut");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("Synthetic Feature Epsilon");
+    await expect(editor.getByLabel("note for Synthetic Feature Epsilon")).toHaveValue("new opener");
+    await expect(editor.getByRole("alert")).toHaveCount(0);
+    expect(updates()).toBe(1);
+
+    const retry = authenticatedPage.waitForRequest(/UserService\/UpdateBinge/);
+    await editor.getByRole("button", { name: "save binge" }).click();
+    expect((await retry).postDataJSON()).toEqual({
+      id: "binge-latest",
+      title: "Signals in the dark, director's cut",
+      blurb: "Three nights of quiet dread, in the order we would watch them.",
+      items: [{ imdbId: "tt9000005", comment: "new opener" }],
+      expectedUpdatedAt: "2026-11-02T08:15:00Z",
+    });
+    await expect(editor).toHaveCount(0);
+  });
+
+  test("marks the titles the engine could not resolve and keeps the draft", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
+      }),
+    );
+    await authenticatedPage.route(/UserService\/UpdateBinge/, (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify(
+          bingeItemsUnresolvedError("binge items could not be resolved", [
+            "tt9000003",
+            "tt9999999",
+          ]),
+        ),
+      }),
+    );
+
+    await authenticatedPage.goto("/");
+    await bingeSection(authenticatedPage).getByRole("button", { name: "Edit this binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    await editor.getByLabel("title", { exact: true }).fill("Keep this title");
+    await editor.getByLabel("add a title").fill("https://www.imdb.com/title/TT9999999/");
+    await editor.getByRole("option", { name: "add tt9999999" }).click();
+    const rows = editor.locator('[data-slot="binge-editor-item"]');
+    await expect(rows).toHaveCount(3);
+    await editor.getByRole("button", { name: "save binge" }).click();
+
+    await expect(editor.getByRole("alert")).toHaveText(
+      "2 titles could not be found. remove or replace the marked titles.",
+    );
+    await expect(rows.nth(0)).not.toContainText("not found");
+    await expect(rows.nth(1)).toContainText("Synthetic Show Gamma");
+    await expect(rows.nth(1)).toContainText("not found: this title could not be resolved");
+    await expect(rows.nth(2)).toContainText("tt9999999");
+    await expect(rows.nth(2)).toContainText("not found: this title could not be resolved");
+    await expect(editor.getByLabel("title", { exact: true })).toHaveValue("Keep this title");
+
+    await editor.getByRole("button", { name: "remove tt9999999" }).click();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(1)).toContainText("not found: this title could not be resolved");
+    await expect(editor.getByRole("alert")).toHaveText(
+      "1 title could not be found. remove or replace the marked title.",
+    );
+
+    await editor.getByRole("button", { name: "remove Synthetic Show Gamma" }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).not.toContainText("not found");
+    await expect(editor.getByRole("alert")).toHaveCount(0);
   });
 
   test("tells a curator when their name is already taken", async ({

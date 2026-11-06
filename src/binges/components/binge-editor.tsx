@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Code, ConnectError } from "@connectrpc/connect";
+import { BingeItemsUnresolvedSchema } from "@chill-institute/contracts/chill/v4/api_pb";
 import { Trash2 } from "lucide-react";
 
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
-import { useDeleteBinge, useSaveBinge, useSetCuratorName } from "@/binges/queries/binges";
+import {
+  useDeleteBinge,
+  useLoadLatestBinge,
+  useSaveBinge,
+  useSetCuratorName,
+} from "@/binges/queries/binges";
 import {
   bingeDraftToInput,
   bingeToDraft,
   moveDraftItem,
   normalizeCuratorName,
+  normalizeIMDbId,
   validateBingeDraft,
   type Binge,
   type BingeDraft,
@@ -44,6 +51,26 @@ function isNameTaken(error: unknown): boolean {
   return error instanceof ConnectError && error.code === Code.AlreadyExists;
 }
 
+function isConflict(error: unknown): boolean {
+  return error instanceof ConnectError && error.code === Code.FailedPrecondition;
+}
+
+const NO_UNRESOLVED: ReadonlySet<string> = new Set();
+
+function unresolvedImdbIds(error: unknown): ReadonlySet<string> {
+  if (!(error instanceof ConnectError) || error.code !== Code.InvalidArgument) {
+    return NO_UNRESOLVED;
+  }
+  const ids = error.findDetails(BingeItemsUnresolvedSchema).flatMap((detail) => detail.imdbIds);
+  return ids.length > 0 ? new Set(ids) : NO_UNRESOLVED;
+}
+
+function unresolvedMessage(count: number): string {
+  return count === 1
+    ? "1 title could not be found. remove or replace the marked title."
+    : `${count} titles could not be found. remove or replace the marked titles.`;
+}
+
 function requestMessage(error: unknown): string | null {
   if (error instanceof ConnectError && error.code === Code.InvalidArgument) {
     return error.rawMessage;
@@ -59,6 +86,8 @@ export function BingeEditor({
   onDeleted,
 }: Props) {
   const curatorName = initialName ?? "";
+  const [base, setBase] = useState<Binge | undefined>(binge);
+  const [draftVersion, setDraftVersion] = useState(0);
   const [draft, setDraft] = useState<BingeDraft>(() => bingeToDraft(binge, newItemKey));
   const [errors, setErrors] = useState<BingeDraftErrors>(NO_ERRORS);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -68,8 +97,9 @@ export function BingeEditor({
   const save = useSaveBinge();
   const remove = useDeleteBinge();
   const setName = useSetCuratorName();
-  const busy = save.isPending || remove.isPending || setName.isPending;
-  const editing = binge !== undefined;
+  const loadLatest = useLoadLatestBinge();
+  const busy = save.isPending || remove.isPending || setName.isPending || loadLatest.isPending;
+  const editing = base !== undefined;
   const needsName = curatorName.trim().length === 0 || editingName;
 
   const [addError, setAddError] = useState<string | undefined>(undefined);
@@ -99,10 +129,17 @@ export function BingeEditor({
     const name = needsName ? normalizeCuratorName(nameDraft) : undefined;
     setNameError(name?.error);
     if (validation || name?.error) return;
+    loadLatest.reset();
     const publish = () =>
       save.mutate(
-        { id: binge?.id, input: bingeDraftToInput(draft) },
-        { onSuccess: (saved) => saved && onSaved(saved) },
+        { id: base?.id, input: bingeDraftToInput(draft), expectedUpdatedAt: base?.updatedAt },
+        {
+          onSuccess: (saved) => {
+            if (!saved) return;
+            setBase(saved);
+            onSaved(saved);
+          },
+        },
       );
     if (name && name.name !== curatorName) {
       setName.mutate(name.name, { onSuccess: publish });
@@ -111,9 +148,37 @@ export function BingeEditor({
     publish();
   };
 
+  const replaceWithLatest = (id: string) =>
+    loadLatest.mutate(id, {
+      onSuccess: (latest) => {
+        if (!latest) return;
+        setBase(latest);
+        setDraft(bingeToDraft(latest, newItemKey));
+        setDraftVersion((version) => version + 1);
+        setErrors(NO_ERRORS);
+        setAddError(undefined);
+        setConfirmDelete(false);
+        save.reset();
+      },
+    });
+
   const nameTaken = isNameTaken(setName.error);
   const shownNameError = nameError ?? (nameTaken ? "that name is already taken" : undefined);
-  const saveMessage = requestMessage(save.error) ?? requestMessage(setName.error);
+  const conflict = isConflict(save.error);
+  const unresolved = unresolvedImdbIds(save.error);
+  const unresolvedItemErrors: Record<string, string> = {};
+  for (const item of draft.items) {
+    if (unresolved.has(normalizeIMDbId(item.imdbId))) {
+      unresolvedItemErrors[item.key] = "not found: this title could not be resolved";
+    }
+  }
+  const markedCount = Object.keys(unresolvedItemErrors).length;
+  const saveRequestMessage = unresolved.size > 0 ? null : requestMessage(save.error);
+  const saveMessage =
+    markedCount > 0
+      ? unresolvedMessage(markedCount)
+      : (saveRequestMessage ?? requestMessage(setName.error));
+  const itemErrors: Record<string, string> = { ...unresolvedItemErrors, ...errors.itemErrors };
 
   return (
     <ResponsiveModal
@@ -209,16 +274,14 @@ export function BingeEditor({
               {addError ? <p className="text-error-text m-0 text-xs">{addError}</p> : null}
             </div>
             <div className="flex items-center justify-end gap-2">
-              {editing ? (
+              {base ? (
                 confirmDelete ? (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     disabled={busy}
-                    onClick={() =>
-                      remove.mutate(binge.id, { onSuccess: () => onDeleted(binge.id) })
-                    }
+                    onClick={() => remove.mutate(base.id, { onSuccess: () => onDeleted(base.id) })}
                   >
                     <Trash2 />
                     really delete
@@ -245,21 +308,42 @@ export function BingeEditor({
             </div>
           </div>
 
-          {saveMessage ? (
+          {conflict && base ? (
+            <div
+              role="alert"
+              className="border-border-strong bg-surface-2 flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p className="text-fg-1 m-0 text-sm">
+                this binge changed since you opened it. your edits are still here; loading the
+                latest version replaces them.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => replaceWithLatest(base.id)}
+              >
+                {loadLatest.isPending ? "loading…" : "load latest version"}
+              </Button>
+            </div>
+          ) : saveMessage ? (
             <p role="alert" className="text-error-text m-0 text-sm">
               {saveMessage}
             </p>
-          ) : save.error ? (
+          ) : save.error && unresolved.size === 0 ? (
             <UserErrorAlert error={save.error} />
           ) : setName.error && !nameTaken ? (
             <UserErrorAlert error={setName.error} />
           ) : null}
           {remove.error ? <UserErrorAlert error={remove.error} /> : null}
+          {loadLatest.error ? <UserErrorAlert error={loadLatest.error} /> : null}
           {errors.items ? <p className="text-error-text m-0 text-xs">{errors.items}</p> : null}
 
           <BingeEditorList
+            key={draftVersion}
             items={draft.items}
-            itemErrors={errors.itemErrors}
+            itemErrors={itemErrors}
             disabled={busy}
             onComment={(key, comment) => updateComment(key, comment)}
             onRemove={removeItem}
