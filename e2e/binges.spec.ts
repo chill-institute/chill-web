@@ -548,4 +548,31 @@ test.describe("binge curation", () => {
     await editor.getByRole("button", { name: "cancel" }).click();
     await expect(section.getByRole("heading", { name: "Signals in the dark" })).toBeVisible();
   });
+
+  test("tells a curator when their name is already taken", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(appScenarioMethods({ ListBinges: bingesResponse([], { canCurate: true }) }));
+    await authenticatedPage.route(/UserService\/SetBingeCuratorName/, (route) =>
+      route.fulfill(connectError(409, "already_exists", "curator name is taken")),
+    );
+
+    await authenticatedPage.goto("/");
+    await bingeSection(authenticatedPage).getByRole("button", { name: "new binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    const name = editor.getByLabel("your curator name");
+    await name.fill("the night shift");
+    await editor.getByLabel("title", { exact: true }).fill("Mine");
+    await editor.getByLabel("add a title").fill("tt9000001");
+    await editor.getByLabel("add a title").press("Enter");
+    await editor.getByRole("button", { name: "publish binge" }).click();
+
+    await expect(editor.getByText("that name is already taken")).toBeVisible();
+    await expect(name).toHaveAttribute("aria-invalid", "true");
+    await expect(editor.getByRole("alert")).toHaveCount(0);
+
+    await name.fill("the day shift");
+    await expect(editor.getByText("that name is already taken")).toHaveCount(0);
+  });
 });

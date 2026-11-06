@@ -40,6 +40,10 @@ function newItemKey() {
   return `item-${itemKeyCounter}`;
 }
 
+function isNameTaken(error: unknown): boolean {
+  return error instanceof ConnectError && error.code === Code.AlreadyExists;
+}
+
 function requestMessage(error: unknown): string | null {
   if (error instanceof ConnectError && error.code === Code.InvalidArgument) {
     return error.rawMessage;
@@ -107,6 +111,8 @@ export function BingeEditor({
     publish();
   };
 
+  const nameTaken = isNameTaken(setName.error);
+  const shownNameError = nameError ?? (nameTaken ? "that name is already taken" : undefined);
   const saveMessage = requestMessage(save.error) ?? requestMessage(setName.error);
 
   return (
@@ -150,18 +156,23 @@ export function BingeEditor({
                 ) : null}
               </Field>
               {needsName ? (
-                <Field data-invalid={nameError ? "true" : undefined}>
+                <Field data-invalid={shownNameError ? "true" : undefined}>
                   <FieldLabel htmlFor="binge-curator-name">your curator name</FieldLabel>
                   <Input
                     id="binge-curator-name"
                     value={nameDraft}
-                    aria-invalid={nameError ? true : undefined}
+                    aria-invalid={shownNameError ? true : undefined}
                     disabled={busy}
                     autoComplete="off"
                     placeholder="shown on your binges instead of your put.io name"
-                    onChange={(event) => setNameDraft(event.target.value)}
+                    onChange={(event) => {
+                      setNameDraft(event.target.value);
+                      if (nameTaken) setName.reset();
+                    }}
                   />
-                  {nameError ? <p className="text-error-text m-0 text-xs">{nameError}</p> : null}
+                  {shownNameError ? (
+                    <p className="text-error-text m-0 text-xs">{shownNameError}</p>
+                  ) : null}
                 </Field>
               ) : (
                 <p className="text-fg-3 m-0 text-sm">
@@ -240,7 +251,7 @@ export function BingeEditor({
             </p>
           ) : save.error ? (
             <UserErrorAlert error={save.error} />
-          ) : setName.error ? (
+          ) : setName.error && !nameTaken ? (
             <UserErrorAlert error={setName.error} />
           ) : null}
           {remove.error ? <UserErrorAlert error={remove.error} /> : null}
