@@ -72,22 +72,15 @@ export function validateBingeDraft(draft: BingeDraft): BingeDraftErrors | null {
     errors.blurb = `keep the blurb under ${BINGE_BLURB_MAX_LENGTH} characters`;
   }
 
-  const filled = draft.items.filter(
-    (item) => item.imdbId.trim().length > 0 || item.comment.trim().length > 0,
-  );
-  if (filled.length === 0) {
+  if (draft.items.length === 0) {
     errors.items = "add at least one title";
-  } else if (filled.length > BINGE_MAX_ITEMS) {
+  } else if (draft.items.length > BINGE_MAX_ITEMS) {
     errors.items = `keep it under ${BINGE_MAX_ITEMS} titles`;
   }
 
   const seen = new Set<string>();
-  for (const item of filled) {
+  for (const item of draft.items) {
     const imdbId = normalizeIMDbId(item.imdbId);
-    if (imdbId === "") {
-      errors.itemErrors[item.key] = "pick a title";
-      continue;
-    }
     if (seen.has(imdbId)) {
       errors.itemErrors[item.key] = "already in this binge";
       continue;
@@ -131,9 +124,10 @@ export function bingeDraftToInput(draft: BingeDraft) {
   return {
     title: draft.title.trim(),
     blurb: draft.blurb.trim(),
-    items: draft.items
-      .filter((item) => item.imdbId.trim().length > 0 || item.comment.trim().length > 0)
-      .map((item) => ({ imdbId: normalizeIMDbId(item.imdbId), comment: item.comment.trim() })),
+    items: draft.items.map((item) => ({
+      imdbId: normalizeIMDbId(item.imdbId),
+      comment: item.comment.trim(),
+    })),
   };
 }
 
