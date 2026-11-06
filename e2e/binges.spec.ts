@@ -295,12 +295,15 @@ test.describe("binge curation", () => {
     const renamed = binge({ title: "Signals in the dark, revisited" });
     await mockRpc(
       appScenarioMethods({
-        ListBinges: bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
         GetBinge: bingeResponse(renamed),
         UpdateBinge: updateBingeResponse(renamed),
         DeleteBinge: deleteBingeResponse(),
       }),
     );
+    await routeInSequence(authenticatedPage, "ListBinges", [
+      bingesResponse([latest], { canCurate: true, curatorName: "the night shift" }),
+      connectError(500, "internal", "binges are down"),
+    ]);
 
     await authenticatedPage.goto("/");
     const section = bingeSection(authenticatedPage);
@@ -326,6 +329,9 @@ test.describe("binge curation", () => {
       items: [{ imdbId: "tt9000001", comment: "start here, no spoilers" }],
     });
     await expect(editor).toHaveCount(0);
+    await expect(
+      section.getByRole("heading", { name: "Signals in the dark, revisited" }),
+    ).toBeVisible();
 
     await section.getByRole("button", { name: "Edit this binge" }).click();
     await editor.getByRole("button", { name: "delete" }).click();

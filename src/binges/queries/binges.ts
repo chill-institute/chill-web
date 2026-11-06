@@ -1,5 +1,8 @@
 import { create } from "@bufbuild/protobuf";
-import { GetBingeResponseSchema } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  GetBingeResponseSchema,
+  type ListBingesResponse,
+} from "@chill-institute/contracts/chill/v4/api_pb";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { BingeInput } from "@/api/api";
@@ -41,6 +44,9 @@ export function useSaveBinge() {
         queryClient.setQueryData(
           bingeQueryKey(saved.id),
           create(GetBingeResponseSchema, { binge: saved }),
+        );
+        queryClient.setQueryData<ListBingesResponse>(BINGES_QUERY_KEY, (list) =>
+          list?.latest?.id === saved.id ? { ...list, latest: saved } : list,
         );
       }
       void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
