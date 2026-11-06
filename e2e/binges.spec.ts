@@ -332,6 +332,11 @@ test.describe("binge curation", () => {
     await expect(
       section.getByRole("heading", { name: "Signals in the dark, revisited" }),
     ).toBeVisible();
+    await expect(
+      section
+        .locator('[data-slot="binge-index"]')
+        .getByRole("button", { name: /Signals in the dark, revisited/ }),
+    ).toBeVisible();
 
     await section.getByRole("button", { name: "Edit this binge" }).click();
     await editor.getByRole("button", { name: "delete" }).click();
@@ -340,6 +345,62 @@ test.describe("binge curation", () => {
     expect((await remove).postDataJSON()).toEqual({ id: "binge-latest" });
     await expect(editor).toHaveCount(0);
     expect(new URL(authenticatedPage.url()).search).toBe("");
+    await expect(section.getByRole("heading", { name: /Signals in the dark/ })).toHaveCount(0);
+    await expect(section.getByRole("button", { name: "Edit this binge" })).toHaveCount(0);
+  });
+
+  test("renaming the curator while saving keeps the saved binge on screen", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    const revised = binge({
+      ...older,
+      title: "Comfort rewatches, again",
+      curatorName: "Day Shift",
+    });
+    await mockRpc(
+      appScenarioMethods({
+        ListBinges: bingesResponse([latest, older], {
+          canCurate: true,
+          curatorName: "the night shift",
+        }),
+        SetBingeCuratorName: setBingeCuratorNameResponse("Day Shift"),
+        UpdateBinge: updateBingeResponse(revised),
+      }),
+    );
+    let bingeReads = 0;
+    const heldBingeReads: Array<() => Promise<void>> = [];
+    await authenticatedPage.route(/UserService\/GetBinge$/, (route) => {
+      bingeReads += 1;
+      const fulfill = () =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(bingeResponse(older)),
+        });
+      if (bingeReads === 1) return fulfill();
+      return new Promise<void>((resolve) => heldBingeReads.push(() => fulfill().then(resolve)));
+    });
+
+    await authenticatedPage.goto("/?binge=binge-older");
+    const section = bingeSection(authenticatedPage);
+    await expect(section.getByRole("heading", { name: "Comfort rewatches" })).toBeVisible();
+    await section.getByRole("button", { name: "Edit this binge" }).click();
+    const editor = authenticatedPage.getByRole("dialog");
+    await editor.getByRole("button", { name: "change" }).click();
+    await editor.getByLabel("your curator name").fill("Day Shift");
+    await editor.getByLabel("title", { exact: true }).fill("Comfort rewatches, again");
+    const updated = authenticatedPage.waitForResponse(/UserService\/UpdateBinge/);
+    await editor.getByRole("button", { name: "save binge" }).click();
+    await updated;
+    await expect(editor).toHaveCount(0);
+
+    await Promise.all(heldBingeReads.map((release) => release()));
+    await authenticatedPage.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    await expect(section.getByRole("heading", { name: "Comfort rewatches, again" })).toBeVisible();
+    await expect(section.getByText(/^by Day Shift/)).toBeVisible();
   });
 
   test("enter adds the match for the text just typed, not the previous search", async ({

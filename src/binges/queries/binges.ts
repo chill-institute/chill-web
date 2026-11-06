@@ -1,9 +1,17 @@
 import { create } from "@bufbuild/protobuf";
 import {
+  type Binge,
+  BingeSummarySchema,
   GetBingeResponseSchema,
   type ListBingesResponse,
 } from "@chill-institute/contracts/chill/v4/api_pb";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import type { BingeInput } from "@/api/api";
 import { useApi } from "@/auth/api-context";
@@ -31,6 +39,55 @@ export function useBingeQuery(id: string | undefined) {
   return useQuery(bingeQueryOptions(api, id ?? "", auth.isAuthenticated && id !== undefined));
 }
 
+const MAX_SUMMARY_POSTERS = 3;
+
+function summarize(binge: Binge) {
+  return create(BingeSummarySchema, {
+    id: binge.id,
+    title: binge.title,
+    blurb: binge.blurb,
+    itemCount: binge.items.length,
+    createdAt: binge.createdAt,
+    updatedAt: binge.updatedAt,
+    curatorName: binge.curatorName,
+    posterUrls: binge.items
+      .map((item) => item.posterUrl)
+      .filter(Boolean)
+      .slice(0, MAX_SUMMARY_POSTERS),
+  });
+}
+
+function withSaved(list: ListBingesResponse, saved: Binge): ListBingesResponse {
+  const summary = summarize(saved);
+  const known = list.binges.some((entry) => entry.id === saved.id);
+  return {
+    ...list,
+    binges: known
+      ? list.binges.map((entry) => (entry.id === saved.id ? summary : entry))
+      : [summary, ...list.binges],
+    latest: known && list.latest?.id !== saved.id ? list.latest : saved,
+  };
+}
+
+function withoutBinge(list: ListBingesResponse, id: string): ListBingesResponse {
+  return {
+    ...list,
+    binges: list.binges.filter((entry) => entry.id !== id),
+    latest: list.latest?.id === id ? undefined : list.latest,
+  };
+}
+
+async function patchBinges(
+  queryClient: QueryClient,
+  patch: (list: ListBingesResponse) => ListBingesResponse,
+) {
+  await queryClient.cancelQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
+  queryClient.setQueryData<ListBingesResponse>(BINGES_QUERY_KEY, (list) =>
+    list ? patch(list) : list,
+  );
+  void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
+}
+
 export function useSaveBinge() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -39,17 +96,17 @@ export function useSaveBinge() {
       const response = id ? await api.updateBinge(id, input) : await api.createBinge(input);
       return response.binge;
     },
-    onSuccess: (saved) => {
-      if (saved) {
-        queryClient.setQueryData(
-          bingeQueryKey(saved.id),
-          create(GetBingeResponseSchema, { binge: saved }),
-        );
-        queryClient.setQueryData<ListBingesResponse>(BINGES_QUERY_KEY, (list) =>
-          list?.latest?.id === saved.id ? { ...list, latest: saved } : list,
-        );
+    onSuccess: async (saved) => {
+      if (!saved) {
+        void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
+        return;
       }
-      void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
+      await queryClient.cancelQueries({ queryKey: bingeQueryKey(saved.id), exact: true });
+      queryClient.setQueryData(
+        bingeQueryKey(saved.id),
+        create(GetBingeResponseSchema, { binge: saved }),
+      );
+      await patchBinges(queryClient, (list) => withSaved(list, saved));
     },
   });
 }
@@ -59,7 +116,7 @@ export function useDeleteBinge() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteBinge(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true }),
+    onSuccess: (_response, id) => patchBinges(queryClient, (list) => withoutBinge(list, id)),
   });
 }
 
@@ -75,7 +132,12 @@ export function useSetCuratorName() {
     mutationFn: async (displayName: string) =>
       (await api.setBingeCuratorName(displayName)).displayName,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: BINGES_QUERY_KEY, exact: true });
+      void queryClient.invalidateQueries({
+        queryKey: BINGES_QUERY_KEY,
+        predicate: (query) => query.queryKey.length > BINGES_QUERY_KEY.length,
+        refetchType: "none",
+      });
     },
   });
 }
