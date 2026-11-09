@@ -39,9 +39,9 @@
     "workbox-window": "^7.4.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1",
+    "@playwright/test": "1.65.0",
     "@sentry/vite-plugin": "^5.4.1",
-    "@shadcn/lint": "0.2.3",
+    "@shadcn/lint": "0.2.5",
     "@tanstack/router-plugin": "^1.168.45",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
