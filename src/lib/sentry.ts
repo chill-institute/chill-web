@@ -5,6 +5,7 @@ import type { ErrorInfo } from "react";
 
 import { getClientRequestEvidence } from "@/api/request-evidence";
 import { getClientRequestTimeoutDetails } from "@/api/request-timeout";
+import { isRateLimitedError } from "@/auth/errors";
 
 import { APP_NAME } from "./app-info";
 import { isPreloadRecoveryPending, moduleLoadRecoveryTags } from "./runtime-errors";
@@ -171,6 +172,7 @@ function sanitizeSentryEvent(
 ): ErrorEvent | null {
   if (
     hint?.originalException instanceof CancelledError ||
+    isRateLimitedError(hint?.originalException) ||
     isNoisyBrowserExtensionError(event, hint) ||
     isBlockedStorageAccessError(event, hint) ||
     isRecoverableModuleLoadNoise(event)
