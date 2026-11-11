@@ -145,6 +145,35 @@ test.describe("movies", () => {
     });
   }
 
+  for (const path of ["/movies", "/movies/m1"]) {
+    test(`asks the user to wait when settings are rate limited on ${path}`, async ({
+      authenticatedPage,
+      mockRpc,
+    }) => {
+      await mockRpc(homeMethods());
+      await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", (route) =>
+        route.fulfill({
+          status: 429,
+          contentType: "application/json",
+          headers: {
+            "Access-Control-Expose-Headers": "Chill-Error-Code",
+            "Chill-Error-Code": "putio_rate_limited",
+          },
+          body: JSON.stringify({ code: "resource_exhausted", message: "rate limited" }),
+        }),
+      );
+
+      await authenticatedPage.goto(path);
+
+      const alert = authenticatedPage
+        .getByRole("alert")
+        .filter({ hasText: "Too many requests right now. Wait a minute, then try again." })
+        .first();
+      await expect(alert).toBeVisible();
+      await expect(alert.getByRole("button", { name: "retry" })).toBeVisible();
+    });
+  }
+
   test("renders movie cards", async ({ authenticatedPage, mockRpc }) => {
     await mockRpc(
       homeMethods({

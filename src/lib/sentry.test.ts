@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { Code, ConnectError } from "@connectrpc/connect";
 import { CancelledError } from "@tanstack/react-query";
 
 import { annotateClientRequestTimeout, ClientRequestTimeoutError } from "@/api/request-timeout";
@@ -174,6 +175,22 @@ describe("sanitizeSentryEvent", () => {
         { originalException: new Error("CancelledError") },
       ),
     ).not.toBeNull();
+  });
+
+  it("drops rate-limited API responses while keeping other API failures", () => {
+    const event = {
+      type: undefined,
+      exception: { values: [{ type: "ConnectError", value: "[resource_exhausted] rate limited" }] },
+    };
+    const rateLimited = new ConnectError(
+      "rate limited",
+      Code.ResourceExhausted,
+      new Headers({ "chill-error-code": "putio_rate_limited" }),
+    );
+    const oversized = new ConnectError("message too large", Code.ResourceExhausted);
+
+    expect(sanitizeSentryEvent(event, { originalException: rateLimited })).toBeNull();
+    expect(sanitizeSentryEvent(event, { originalException: oversized })).not.toBeNull();
   });
 
   it("removes user and request details before sending browser crash events", () => {

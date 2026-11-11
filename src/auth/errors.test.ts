@@ -87,6 +87,23 @@ describe("localizeError", () => {
   });
 });
 
+describe("rate-limited responses", () => {
+  it("asks the user to wait only when the API names a rate limit", () => {
+    const rateLimited = new ConnectError(
+      "rate limited",
+      Code.ResourceExhausted,
+      new Headers({ "chill-error-code": "account_rate_limited" }),
+    );
+    const oversized = new ConnectError("message too large", Code.ResourceExhausted);
+
+    expect(localizeError(rateLimited)).toEqual({
+      message: "Too many requests right now. Wait a minute, then try again.",
+      recoverySuggestion: { actions: [{ kind: "retry", label: "retry" }] },
+    });
+    expect(localizeError(oversized)).toEqual({ message: "message too large" });
+  });
+});
+
 describe("localizeError invalid queries", () => {
   const expected = {
     message: "Add at least one word to search for, and keep it to 256 characters or fewer.",

@@ -83,6 +83,16 @@ export function isPutioProviderUnavailableError(error: unknown) {
   return false;
 }
 
+const RATE_LIMIT_ERROR_CODES = new Set(["putio_rate_limited", "account_rate_limited"]);
+
+export function isRateLimitedError(error: unknown) {
+  return (
+    error instanceof ConnectError &&
+    error.code === Code.ResourceExhausted &&
+    RATE_LIMIT_ERROR_CODES.has(error.metadata.get(ERROR_CODE_HEADER) ?? "")
+  );
+}
+
 export function isBackendUnavailableError(error: unknown) {
   if (isPutioProviderUnavailableError(error)) {
     return true;
@@ -108,6 +118,14 @@ export function shouldRetryQueryError(failureCount: number, error: unknown) {
 }
 
 export function localizeError(error: unknown): LocalizedError {
+  if (isRateLimitedError(error)) {
+    return {
+      message: "Too many requests right now. Wait a minute, then try again.",
+      recoverySuggestion: {
+        actions: [{ kind: "retry", label: "retry" }],
+      },
+    };
+  }
   if (isPutioProviderUnavailableError(error)) {
     return {
       message: "Could not connect to put.io. Please try again.",
