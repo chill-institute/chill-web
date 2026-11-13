@@ -3,6 +3,7 @@ import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
+  BingeMediaType,
   CatalogOriginSchema,
   MoviesSource,
   TVShowsSource,
@@ -41,7 +42,8 @@ import {
 
 export type CatalogOriginInput =
   | { media: "movie"; source: MoviesSource }
-  | { media: "tv"; source: TVShowsSource };
+  | { media: "tv"; source: TVShowsSource }
+  | { media: "binge"; mediaType: BingeMediaType };
 
 export function toCatalogOrigin(origin: CatalogOriginInput | undefined): CatalogOrigin | undefined {
   if (!origin) {
@@ -53,6 +55,14 @@ export function toCatalogOrigin(origin: CatalogOriginInput | undefined): Catalog
     }
     return create(CatalogOriginSchema, {
       catalog: { case: "moviesSource", value: origin.source },
+    });
+  }
+  if (origin.media === "binge") {
+    if (origin.mediaType === BingeMediaType.UNSPECIFIED) {
+      return undefined;
+    }
+    return create(CatalogOriginSchema, {
+      catalog: { case: "bingeMediaType", value: origin.mediaType },
     });
   }
   if (origin.source === TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED) {

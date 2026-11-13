@@ -1,7 +1,7 @@
-import type { TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
 import { CloudUpload, Loader2 } from "lucide-react";
 import { useMemo } from "react";
 
+import type { CatalogOriginInput } from "@/api/api";
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import { TVShowStatusBadge } from "@/catalog/components/tv-show-status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/ui/components/ui/tabs";
@@ -46,7 +46,7 @@ const AIR_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
 type Props = {
   imdbId: string;
   fallbackShow?: TVShow;
-  catalogSource?: TVShowsSource;
+  catalogOrigin?: CatalogOriginInput;
   activeSeason?: number;
   onSeasonChange: (season: number) => void;
   onClose: () => void;
@@ -91,7 +91,7 @@ type SeasonDownloadsData = NonNullable<ReturnType<typeof useTVShowSeasonDownload
 type ContentProps = {
   isDesktop: boolean;
   show?: TVShow | DetailData["show"];
-  catalogSource?: TVShowsSource;
+  catalogOrigin?: CatalogOriginInput;
   genres: string[];
   backdropUrl?: string;
   posterUrl?: string;
@@ -109,7 +109,7 @@ type ContentProps = {
 function TvShowDetailContent({
   isDesktop,
   show,
-  catalogSource,
+  catalogOrigin,
   genres,
   backdropUrl,
   posterUrl,
@@ -250,11 +250,7 @@ function TvShowDetailContent({
                   <AddTransferButton
                     className="w-full sm:w-auto"
                     url={downloadsQuery.data.seasonPack.link}
-                    catalogOrigin={
-                      catalogSource !== undefined
-                        ? { media: "tv", source: catalogSource }
-                        : undefined
-                    }
+                    catalogOrigin={catalogOrigin}
                     ariaLabel={`Send ${show?.title ?? "TV show"} season ${resolvedSeasonNumber} to put.io`}
                   >
                     send season to put.io
@@ -325,11 +321,7 @@ function TvShowDetailContent({
                       ) : downloadsQuery.status === "error" ? null : episodeDownload?.link ? (
                         <AddTransferButton
                           url={episodeDownload.link}
-                          catalogOrigin={
-                            catalogSource !== undefined
-                              ? { media: "tv", source: catalogSource }
-                              : undefined
-                          }
+                          catalogOrigin={catalogOrigin}
                           ariaLabel={`Send ${show?.title ?? "TV show"} season ${episode.seasonNumber} episode ${episode.episodeNumber} to put.io`}
                         >
                           <CloudUpload />
@@ -357,7 +349,7 @@ function TvShowDetailContent({
 export function TvShowDetailModal({
   imdbId,
   fallbackShow,
-  catalogSource,
+  catalogOrigin,
   activeSeason,
   onSeasonChange,
   onClose,
@@ -407,7 +399,7 @@ export function TvShowDetailModal({
       <TvShowDetailContent
         isDesktop={isDesktop}
         show={show}
-        catalogSource={catalogSource}
+        catalogOrigin={catalogOrigin}
         genres={genres}
         backdropUrl={backdropUrl}
         posterUrl={posterUrl}

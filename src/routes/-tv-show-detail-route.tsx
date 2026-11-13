@@ -58,7 +58,7 @@ function TVShowDetailRoute() {
     <TvShowDetailModal
       imdbId={id}
       fallbackShow={fallbackShow}
-      catalogSource={activeSource}
+      catalogOrigin={{ media: "tv", source: activeSource }}
       activeSeason={season}
       onSeasonChange={setSeason}
       onClose={close}

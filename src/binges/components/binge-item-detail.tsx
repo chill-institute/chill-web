@@ -11,11 +11,18 @@ export function BingeItemDetail({ item, onClose }: { item: BingeItem; onClose: (
     return (
       <TvShowDetailModal
         imdbId={item.imdbId}
+        catalogOrigin={{ media: "binge", mediaType: item.mediaType }}
         activeSeason={season}
         onSeasonChange={setSeason}
         onClose={onClose}
       />
     );
   }
-  return <MovieDetailModal movie={bingeItemToMovie(item)} onClose={onClose} />;
+  return (
+    <MovieDetailModal
+      movie={bingeItemToMovie(item)}
+      catalogOrigin={{ media: "binge", mediaType: item.mediaType }}
+      onClose={onClose}
+    />
+  );
 }
