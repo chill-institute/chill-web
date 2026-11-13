@@ -1,4 +1,8 @@
-import { MoviesSource, TVShowsSource } from "@chill-institute/contracts/chill/v4/api_pb";
+import {
+  BingeMediaType,
+  MoviesSource,
+  TVShowsSource,
+} from "@chill-institute/contracts/chill/v4/api_pb";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
@@ -17,6 +21,9 @@ describe("toCatalogOrigin", () => {
         media: "tv",
         source: TVShowsSource.TV_SHOWS_SOURCE_UNSPECIFIED,
       }),
+    ).toBeUndefined();
+    expect(
+      toCatalogOrigin({ media: "binge", mediaType: BingeMediaType.UNSPECIFIED }),
     ).toBeUndefined();
   });
 
@@ -134,6 +141,41 @@ describe("createApi request metadata", () => {
         catalogOrigin: { moviesSource: "MOVIES_SOURCE_TRAKT" },
       }),
     );
+  });
+
+  it("sends only the media type for AddTransfer requests from a binge", async () => {
+    const capturedBodies: unknown[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedBodies.push(await new Request(input, init).json());
+      return new Response("{}", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
+    const api = createApi({
+      authToken: "placeholder",
+      baseUrl: "https://api.example.test",
+    });
+    await api.addTransfer("magnet:?xt=urn:btih:abc", {
+      media: "binge",
+      mediaType: BingeMediaType.MOVIE,
+    });
+    await api.addTransfer("magnet:?xt=urn:btih:def", {
+      media: "binge",
+      mediaType: BingeMediaType.TV_SHOW,
+    });
+
+    expect(capturedBodies).toEqual([
+      {
+        url: "magnet:?xt=urn:btih:abc",
+        catalogOrigin: { bingeMediaType: "BINGE_MEDIA_TYPE_MOVIE" },
+      },
+      {
+        url: "magnet:?xt=urn:btih:def",
+        catalogOrigin: { bingeMediaType: "BINGE_MEDIA_TYPE_TV_SHOW" },
+      },
+    ]);
   });
 
   it("omits catalog origin on direct AddTransfer requests", async () => {

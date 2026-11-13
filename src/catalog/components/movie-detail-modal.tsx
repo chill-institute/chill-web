@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import type { CatalogOriginInput } from "@/api/api";
 import { UserErrorAlert } from "@/auth/components/user-error-alert";
 import { Skeleton } from "@/ui/components/ui/skeleton";
 import { useIsDesktop } from "@/ui/hooks/use-is-desktop";
@@ -29,6 +30,7 @@ const EMPTY_RESULTS: SearchResult[] = [];
 
 type Props = {
   movie: Movie;
+  catalogOrigin?: CatalogOriginInput;
   onClose: () => void;
 };
 
@@ -51,7 +53,12 @@ function MovieHeaderText({ movie, metadataTags }: { movie: Movie; metadataTags: 
   );
 }
 
-function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: boolean }) {
+function MovieDetailContent({
+  movie,
+  catalogOrigin = { media: "movie", source: movie.source },
+  onClose,
+  isDesktop,
+}: Props & { isDesktop: boolean }) {
   const settingsQuery = useSettingsQuery();
   const appSettings = useMemo(
     () => (settingsQuery.data ? toChillSettings(settingsQuery.data) : undefined),
@@ -148,7 +155,7 @@ function MovieDetailContent({ movie, onClose, isDesktop }: Props & { isDesktop: 
               <TorrentResultList
                 results={visibleResults}
                 columns={false}
-                catalogOrigin={{ media: "movie", source: movie.source }}
+                catalogOrigin={catalogOrigin}
               />
             )}
           </>
@@ -188,7 +195,7 @@ function ResultsListSkeleton() {
   );
 }
 
-export function MovieDetailModal({ movie, onClose }: Props) {
+export function MovieDetailModal({ movie, catalogOrigin, onClose }: Props) {
   const isDesktop = useIsDesktop();
   return (
     <DetailResponsiveModal
@@ -196,7 +203,13 @@ export function MovieDetailModal({ movie, onClose }: Props) {
       description={`Torrent results for ${movie.title} (${movie.year})`}
       onClose={onClose}
     >
-      <MovieDetailContent key={movie.id} movie={movie} onClose={onClose} isDesktop={isDesktop} />
+      <MovieDetailContent
+        key={movie.id}
+        movie={movie}
+        catalogOrigin={catalogOrigin}
+        onClose={onClose}
+        isDesktop={isDesktop}
+      />
     </DetailResponsiveModal>
   );
 }

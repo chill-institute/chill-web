@@ -213,6 +213,39 @@ test.describe("binges on the home page", () => {
     await section.getByRole("button", { name: "Synthetic Show Gamma details" }).click();
     await expect(authenticatedPage.getByText("Pilot")).toBeVisible();
   });
+
+  test("sends binge movies and tv shows to put.io as binge sends", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    await mockRpc(
+      appScenarioMethods({ ListBinges: bingesResponse([latest]), AddTransfer: { status: "OK" } }),
+    );
+
+    await authenticatedPage.goto("/");
+    const section = bingeSection(authenticatedPage);
+
+    await section.getByRole("button", { name: "Synthetic Feature Alpha details" }).click();
+    const movieDialog = authenticatedPage.getByRole("dialog", {
+      name: "Synthetic Feature Alpha details",
+    });
+    const movieRequest = authenticatedPage.waitForRequest("**/chill.v4.UserService/AddTransfer");
+    await movieDialog
+      .getByRole("button", { name: /send to put\.io/i })
+      .first()
+      .click();
+    expect((await movieRequest).postDataJSON().catalogOrigin).toEqual({
+      bingeMediaType: "BINGE_MEDIA_TYPE_MOVIE",
+    });
+    await authenticatedPage.getByRole("button", { name: "Close movie details" }).click();
+
+    await section.getByRole("button", { name: "Synthetic Show Gamma details" }).click();
+    const showRequest = authenticatedPage.waitForRequest("**/chill.v4.UserService/AddTransfer");
+    await authenticatedPage.getByRole("button", { name: /send season to put\.io/i }).click();
+    expect((await showRequest).postDataJSON().catalogOrigin).toEqual({
+      bingeMediaType: "BINGE_MEDIA_TYPE_TV_SHOW",
+    });
+  });
 });
 
 test.describe("binge curation", () => {
