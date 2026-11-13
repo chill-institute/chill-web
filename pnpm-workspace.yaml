@@ -1,9 +1,6 @@
 packages:
   - "."
 
-allowBuilds:
-  "@sentry/cli": true
-
 minimumReleaseAgeExclude:
   - "@chill-institute/*"
 
