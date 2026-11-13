@@ -4,6 +4,7 @@ import { AddTransferButton } from "@/auth/components/add-transfer-button";
 import type { CatalogOriginInput } from "@/api/api";
 import { normalizeCodecFilterValue } from "@/api/release-info";
 import { Button } from "@/ui/components/ui/button";
+import { resolveCopyLink } from "@/api/copy-link";
 import { CopyButton } from "@/ui/components/copy-button";
 import { cn } from "@/ui/lib/cn";
 import { formatAge, formatBytes } from "@/ui/lib/format";
@@ -234,7 +235,12 @@ export function TorrentResultList({
 
               <div className="flex shrink-0 items-center justify-end gap-2 lg:justify-self-end">
                 {isSendable ? (
-                  <CopyButton variant="icon" value={result.link} className="shrink-0" />
+                  <CopyButton
+                    variant="icon"
+                    value={result.link}
+                    resolveValue={resolveCopyLink}
+                    className="shrink-0"
+                  />
                 ) : null}
                 {action}
               </div>
