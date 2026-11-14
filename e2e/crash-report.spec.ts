@@ -86,7 +86,7 @@ test.describe("crash report fallback", () => {
       0,
     );
     await expect(authenticatedPage.getByRole("button", { name: "copy report" })).toBeVisible();
-    await expect(authenticatedPage.getByRole("button", { name: "reload page" })).toBeVisible();
+    await expect(authenticatedPage.getByRole("button", { name: "reload" })).toBeVisible();
     await expect(
       authenticatedPage.getByRole("definition").filter({
         hasText: "Intentional debug crash for the local error fallback.",
