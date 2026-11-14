@@ -9,9 +9,6 @@ function readEnvironment(name: string) {
 
 const app = {
   domain: {
-    staging: {
-      name: readEnvironment("CHILL_STAGING_DOMAIN"),
-    },
     production: {
       name: readEnvironment("CHILL_PRODUCTION_DOMAIN"),
     },
@@ -43,7 +40,6 @@ const redirectTargets = Object.fromEntries(
 );
 
 type DeployTarget = "app" | "redirects";
-type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
     name: string;
@@ -87,7 +83,7 @@ declare const $config: (config: {
     name: string;
     protect: boolean;
     providers: { cloudflare: string };
-    removal: "retain" | "retain-all";
+    removal: "retain";
   };
   run(): Promise<Record<string, unknown>>;
 }) => unknown;
@@ -117,12 +113,12 @@ function resolveDeployTarget(): DeployTarget {
   throw new Error("WEB_DEPLOY_TARGET must be set to app or redirects");
 }
 
-function resolveStage(stage: string): Stage {
-  if (stage === "staging" || stage === "production") {
+function requireProductionStage(stage: string) {
+  if (stage === "production") {
     return stage;
   }
 
-  throw new Error("SST stage must be staging or production");
+  throw new Error("SST stage must be production");
 }
 
 function resolveAccountId() {
@@ -150,22 +146,7 @@ async function resolveZoneId(accountId: string, name: string) {
   return zone.id;
 }
 
-function resolveStaticSiteDomain(stage: Stage): StaticSiteV2Args["domain"] {
-  if (stage === "staging") {
-    return app.domain.staging;
-  }
-
-  return {
-    ...app.domain.production,
-    aliases: [bingeProductionDomain],
-  };
-}
-
-async function configureRedirects(stage: Stage) {
-  if (stage !== "production") {
-    return {};
-  }
-
+async function configureRedirects() {
   const accountId = resolveAccountId();
   const scriptName = "chill-web-binge-redirect";
 
@@ -216,10 +197,7 @@ addEventListener("fetch", (event) => {
 export default $config({
   app(input) {
     const target = resolveDeployTarget();
-    const stage = resolveStage(input.stage);
-    if (target === "redirects" && stage !== "production") {
-      throw new Error("WEB_DEPLOY_TARGET=redirects must use SST stage production");
-    }
+    requireProductionStage(input.stage);
 
     return {
       name: `chill-web-${target}`,
@@ -227,16 +205,16 @@ export default $config({
       providers: {
         cloudflare: "6.15.0",
       },
-      protect: stage === "production",
-      removal: stage === "production" ? "retain" : "retain-all",
+      protect: true,
+      removal: "retain",
     };
   },
   async run() {
     const target = resolveDeployTarget();
-    const stage = resolveStage($app.stage);
+    const stage = requireProductionStage($app.stage);
 
     if (target === "redirects") {
-      const redirects = await configureRedirects(stage);
+      const redirects = await configureRedirects();
 
       return {
         target,
@@ -247,7 +225,10 @@ export default $config({
 
     const site = new sst.cloudflare.StaticSiteV2("Web", {
       path: app.path,
-      domain: resolveStaticSiteDomain(stage),
+      domain: {
+        ...app.domain.production,
+        aliases: [bingeProductionDomain],
+      },
       notFound: "single-page-application",
       transform: {
         server(args) {
