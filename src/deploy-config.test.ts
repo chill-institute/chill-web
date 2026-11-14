@@ -13,7 +13,6 @@ async function loadConfig(target: "app" | "redirects", stage = "production") {
   vi.stubEnv("WEB_DEPLOY_TARGET", target);
   vi.stubEnv("CHILL_PRODUCTION_DOMAIN", "chill.institute");
   vi.stubEnv("BINGE_PRODUCTION_DOMAIN", "binge.institute");
-  vi.stubEnv("BINGE_PRODUCTION_REDIRECT_DOMAIN", "www.binge.institute");
   vi.stubEnv("CLOUDFLARE_DEFAULT_ACCOUNT_ID", "account");
   vi.stubGlobal("$app", { stage });
   vi.stubGlobal("$config", (config: Config) => config);
