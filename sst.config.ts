@@ -17,7 +17,7 @@ const app = {
 } as const;
 
 const bingeProductionDomain = readEnvironment("BINGE_PRODUCTION_DOMAIN");
-const bingeProductionRedirectDomain = readEnvironment("BINGE_PRODUCTION_REDIRECT_DOMAIN");
+const bingeProductionRedirectDomain = `www.${bingeProductionDomain}`;
 const appProductionRedirectDomain = `www.${app.domain.production.name}`;
 
 const redirectRouteGroups = [
