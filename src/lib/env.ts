@@ -1,7 +1,13 @@
 const DEFAULT_API_BASE_URL = "https://api.chill.institute";
-const productionAPIBaseURLs = new Map([
-  ["chill.institute", "https://api.chill.institute"],
-  ["binge.institute", "https://api.binge.institute"],
+const productionBaseURLs = new Map([
+  [
+    "chill.institute",
+    { api: "https://api.chill.institute", stremio: "https://stremio.chill.institute" },
+  ],
+  [
+    "binge.institute",
+    { api: "https://api.binge.institute", stremio: "https://stremio.binge.institute" },
+  ],
 ]);
 const trim = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
@@ -10,13 +16,15 @@ function getPageHostname() {
 }
 
 export function getPublicAPIBaseURL() {
-  const productionURL = productionAPIBaseURLs.get(getPageHostname());
+  const productionURL = productionBaseURLs.get(getPageHostname())?.api;
   if (productionURL) return productionURL;
   const value = trim(import.meta.env.VITE_PUBLIC_API_BASE_URL);
   return value || DEFAULT_API_BASE_URL;
 }
 
 export function getPublicStremioBaseURL() {
+  const productionURL = productionBaseURLs.get(getPageHostname())?.stremio;
+  if (productionURL) return productionURL;
   const value = trim(import.meta.env.VITE_PUBLIC_STREMIO_BASE_URL);
   const url = new URL(value || "https://stremio.chill.institute");
   if (

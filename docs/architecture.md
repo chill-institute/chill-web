@@ -33,5 +33,8 @@ Authorization header ([`src/stremio/api.ts`](../src/stremio/api.ts)).
 - Disconnect stops every link for the account and leaves web and CLI sessions
   signed in.
 
-`VITE_PUBLIC_STREMIO_BASE_URL` must be HTTPS outside local development. Stremio
+On `chill.institute` and `binge.institute`, add-on links use that domain's
+`stremio.` host, as API calls use its `api.` host; elsewhere
+`VITE_PUBLIC_STREMIO_BASE_URL` applies and must be HTTPS outside local
+development. Stremio
 e2e and visual tests use fixtures, never real credentials.
