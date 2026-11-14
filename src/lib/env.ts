@@ -1,7 +1,17 @@
 const DEFAULT_API_BASE_URL = "https://api.chill.institute";
+const productionAPIBaseURLs = new Map([
+  ["chill.institute", "https://api.chill.institute"],
+  ["binge.institute", "https://api.binge.institute"],
+]);
 const trim = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
+function getPageHostname() {
+  return typeof window === "undefined" ? "" : window.location.hostname;
+}
+
 export function getPublicAPIBaseURL() {
+  const productionURL = productionAPIBaseURLs.get(getPageHostname());
+  if (productionURL) return productionURL;
   const value = trim(import.meta.env.VITE_PUBLIC_API_BASE_URL);
   return value || DEFAULT_API_BASE_URL;
 }

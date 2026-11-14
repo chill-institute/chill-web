@@ -27,20 +27,27 @@ const redirectRouteGroups = [
   {
     zoneName: app.domain.production.name,
     domains: [appProductionRedirectDomain],
+    target: app.domain.production.name,
     resourcePrefix: "ChillRedirect",
   },
   {
     zoneName: bingeProductionDomain,
-    domains: [bingeProductionDomain, bingeProductionRedirectDomain],
+    domains: [bingeProductionRedirectDomain],
+    target: bingeProductionDomain,
     resourcePrefix: "BingeRedirect",
   },
 ] as const;
+
+const redirectTargets = Object.fromEntries(
+  redirectRouteGroups.flatMap((group) => group.domains.map((domain) => [domain, group.target])),
+);
 
 type DeployTarget = "app" | "redirects";
 type Stage = "staging" | "production";
 type StaticSiteV2Args = {
   domain: {
     name: string;
+    aliases?: readonly string[];
     redirects?: readonly string[];
   };
   notFound: "single-page-application";
@@ -148,7 +155,10 @@ function resolveStaticSiteDomain(stage: Stage): StaticSiteV2Args["domain"] {
     return app.domain.staging;
   }
 
-  return app.domain.production;
+  return {
+    ...app.domain.production,
+    aliases: [bingeProductionDomain],
+  };
 }
 
 async function configureRedirects(stage: Stage) {
@@ -164,10 +174,11 @@ async function configureRedirects(stage: Stage) {
     compatibilityDate: "2026-05-19",
     scriptName,
     content: `
+const targets = ${JSON.stringify(redirectTargets)};
 addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   url.protocol = "https:";
-  url.hostname = "${app.domain.production.name}";
+  url.hostname = targets[url.hostname] ?? "${app.domain.production.name}";
   event.respondWith(Response.redirect(url.toString(), 301));
 });
 `.trim(),
@@ -195,7 +206,7 @@ addEventListener("fetch", (event) => {
           dependsOn: [redirectWorker],
         },
       );
-      routes[domain] = `https://${app.domain.production.name}`;
+      routes[domain] = `https://${group.target}`;
     }
   }
 
