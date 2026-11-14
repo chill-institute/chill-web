@@ -148,9 +148,9 @@ async function resolveZoneId(accountId: string, name: string) {
 
 async function configureRedirects() {
   const accountId = resolveAccountId();
-  const scriptName = "chill-web-binge-redirect";
+  const scriptName = "chill-web-www-redirects";
 
-  const redirectWorker = new cloudflare.WorkersScript("BingeRedirectWorker", {
+  const redirectWorker = new cloudflare.WorkersScript("WwwRedirectWorker", {
     accountId,
     compatibilityDate: "2026-05-19",
     scriptName,
