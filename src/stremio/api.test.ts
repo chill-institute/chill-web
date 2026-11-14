@@ -28,6 +28,21 @@ describe("createStremioLink", () => {
     );
   });
 
+  it("builds binge.institute links on the binge add-on host", async () => {
+    vi.stubGlobal("window", { location: new URL("https://binge.institute/stremio") });
+    const fetch = stubFetch(Response.json({ credential: "fixture" }));
+    const link = await createStremioLink("fixture-token");
+    expect(link).toBe("https://stremio.binge.institute/s/fixture/manifest.json");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.binge.institute/stremio/credential",
+      expect.anything(),
+    );
+    expect(isStremioManifestURL(link)).toBe(true);
+    expect(isStremioManifestURL("https://stremio.chill.institute/s/fixture/manifest.json")).toBe(
+      false,
+    );
+  });
+
   it("sends a chosen folder as a decimal string", async () => {
     const fetch = stubFetch(Response.json({ credential: "fixture" }));
     await createStremioLink("fixture-token", 42n);
