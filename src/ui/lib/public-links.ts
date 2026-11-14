@@ -5,6 +5,6 @@ export const publicLinks = {
   about: `${WEB_REPOSITORY_URL}/blob/main/docs/about.md`,
   github: GITHUB_ORG_URL,
   x: "https://x.com/chill_institute",
-  email: "mailto:chillardinho@chill.institute",
+  email: "mailto:chill-institute@proton.me",
   reddit: "https://www.reddit.com/r/chillInstitute/",
 } as const;
