@@ -1,6 +1,6 @@
 # chill-web
 
-![chill.institute web](https://chill.institute/banner.png)
+![chill.institute web](https://raw.githubusercontent.com/chill-institute/.github/main/assets/banner.png)
 
 The React client for [chill.institute](https://chill.institute): search, movie
 and TV browsing, account settings, authentication, and transfer handoff.
