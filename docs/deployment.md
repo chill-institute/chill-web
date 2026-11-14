@@ -8,7 +8,7 @@
 [Delivery workflows](../.github/workflows/main.yml). Maintainers own production
 credentials and manual deployments.
 
-After a hosted change, check the app, one redirect, one SPA navigation, and one
+After a hosted change, check the app on each host, one redirect, one SPA navigation, and one
 auth-start URL. `/auth/success` stays on the app host; RSS and download links
 use the API host.
 
