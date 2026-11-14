@@ -9,10 +9,9 @@ const sites: Array<{ domain: { name: string; aliases?: string[]; redirects?: str
 const scripts: Array<{ content: string }> = [];
 const routes: Array<{ pattern: string; zoneId: string }> = [];
 
-async function loadConfig(target: "app" | "redirects", stage: "staging" | "production") {
+async function loadConfig(target: "app" | "redirects", stage = "production") {
   vi.stubEnv("WEB_DEPLOY_TARGET", target);
   vi.stubEnv("CHILL_PRODUCTION_DOMAIN", "chill.institute");
-  vi.stubEnv("CHILL_STAGING_DOMAIN", "staging.chill.institute");
   vi.stubEnv("BINGE_PRODUCTION_DOMAIN", "binge.institute");
   vi.stubEnv("BINGE_PRODUCTION_REDIRECT_DOMAIN", "www.binge.institute");
   vi.stubEnv("CLOUDFLARE_DEFAULT_ACCOUNT_ID", "account");
@@ -80,11 +79,14 @@ describe("deploy config", () => {
     expect(sites[0].domain.aliases).toEqual(["binge.institute"]);
   });
 
-  it("serves staging on its own domain only", async () => {
-    await loadConfig("app", "staging");
-
-    expect(sites[0].domain).toEqual({ name: "staging.chill.institute" });
-  });
+  it.each(["app", "redirects"] as const)(
+    "refuses to deploy %s outside production",
+    async (target) => {
+      await expect(loadConfig(target, "staging")).rejects.toThrow("SST stage must be production");
+      expect(sites).toEqual([]);
+      expect(routes).toEqual([]);
+    },
+  );
 
   it("routes only the www hosts to the redirect worker, each in its own zone", async () => {
     const output = await loadConfig("redirects", "production");

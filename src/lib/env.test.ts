@@ -42,7 +42,7 @@ describe("getPublicAPIBaseURL", () => {
 
   it.each([
     "http://localhost:58300/",
-    "https://staging.chill.institute/",
+    "https://preview.example.test/",
     "https://binge.institute.example.test/",
   ])("keeps the build override on %s", (page) => {
     vi.stubEnv("VITE_PUBLIC_API_BASE_URL", "https://api.example.test");
@@ -53,7 +53,7 @@ describe("getPublicAPIBaseURL", () => {
 
   it("falls back to the chill api on unknown hosts without an override", () => {
     vi.stubEnv("VITE_PUBLIC_API_BASE_URL", "");
-    servePageFrom("https://staging.chill.institute/");
+    servePageFrom("https://preview.example.test/");
 
     expect(getPublicAPIBaseURL()).toBe("https://api.chill.institute");
   });
