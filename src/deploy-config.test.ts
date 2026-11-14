@@ -6,8 +6,8 @@ type Config = { run(): Promise<Record<string, unknown>> };
 type FetchListener = (event: { request: Request; respondWith(response: Response): void }) => void;
 
 const sites: Array<{ domain: { name: string; aliases?: string[]; redirects?: string[] } }> = [];
-const scripts: Array<{ content: string }> = [];
-const routes: Array<{ pattern: string; zoneId: string }> = [];
+const scripts: Array<{ content: string; scriptName: string }> = [];
+const routes: Array<{ name: string; pattern: string; script: string; zoneId: string }> = [];
 
 async function loadConfig(target: "app" | "redirects", stage = "production") {
   vi.stubEnv("WEB_DEPLOY_TARGET", target);
@@ -29,13 +29,13 @@ async function loadConfig(target: "app" | "redirects", stage = "production") {
   vi.stubGlobal("cloudflare", {
     getZones: async ({ name }: { name: string }) => ({ results: [{ id: `zone:${name}`, name }] }),
     WorkersScript: class {
-      constructor(_name: string, args: { content: string }) {
+      constructor(_name: string, args: (typeof scripts)[number]) {
         scripts.push(args);
       }
     },
     WorkersRoute: class {
-      constructor(_name: string, args: { pattern: string; zoneId: string }) {
-        routes.push(args);
+      constructor(name: string, args: Omit<(typeof routes)[number], "name">) {
+        routes.push({ name, ...args });
       }
     },
   });
@@ -90,9 +90,20 @@ describe("deploy config", () => {
   it("routes only the www hosts to the redirect worker, each in its own zone", async () => {
     const output = await loadConfig("redirects", "production");
 
+    expect(scripts.map(({ scriptName }) => scriptName)).toEqual(["chill-web-www-redirects"]);
     expect(routes).toEqual([
-      expect.objectContaining({ pattern: "www.chill.institute/*", zoneId: "zone:chill.institute" }),
-      expect.objectContaining({ pattern: "www.binge.institute/*", zoneId: "zone:binge.institute" }),
+      {
+        name: "ChillRedirectwwwchillinstitute",
+        pattern: "www.chill.institute/*",
+        script: "chill-web-www-redirects",
+        zoneId: "zone:chill.institute",
+      },
+      {
+        name: "BingeRedirectwwwbingeinstitute",
+        pattern: "www.binge.institute/*",
+        script: "chill-web-www-redirects",
+        zoneId: "zone:binge.institute",
+      },
     ]);
     expect(output.redirects).toEqual({
       "www.chill.institute": "https://chill.institute",
