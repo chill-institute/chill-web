@@ -1,5 +1,6 @@
 import { ExternalLink, RefreshCw, ServerCrash } from "lucide-react";
 
+import { publicLinks } from "../lib/public-links";
 import { StatusPanel } from "./status-panel";
 import { Button, buttonVariants } from "./ui/button";
 
@@ -27,7 +28,7 @@ function BackendUnavailableScreen({
           }}
         >
           <RefreshCw data-icon="inline-start" />
-          {reloadAfterRetry ? "reload page" : "try again"}
+          {reloadAfterRetry ? "reload" : "try again"}
         </Button>
         <a
           className={buttonVariants({ variant: "outline" })}
@@ -37,6 +38,15 @@ function BackendUnavailableScreen({
         >
           <ExternalLink data-icon="inline-start" />
           view status page
+        </a>
+        <a
+          className={buttonVariants({ variant: "outline" })}
+          href={publicLinks.x}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <ExternalLink data-icon="inline-start" />
+          updates on x
         </a>
       </div>
     </StatusPanel>

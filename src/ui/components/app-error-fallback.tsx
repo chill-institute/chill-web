@@ -110,7 +110,7 @@ function AppErrorFallback({
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw data-icon="inline-start" />
-          reload page
+          reload
         </Button>
         <Button
           onClick={async () => {
