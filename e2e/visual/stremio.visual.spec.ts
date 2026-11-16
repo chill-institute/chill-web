@@ -3,7 +3,7 @@ import { downloadFolderResponse, userFile } from "../support/seeds";
 
 const screenshot = { fullPage: true, animations: "disabled" } as const;
 
-test("Stremio add-on setup", async ({ authenticatedPage: page, mockRpc }) => {
+test("Stremio add-on setup", async ({ authenticatedPage: page, mockRpc, isMobile }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await mockRpc({
     GetDownloadFolder: downloadFolderResponse(userFile({ id: 0n, name: "your files" })),
@@ -15,7 +15,13 @@ test("Stremio add-on setup", async ({ authenticatedPage: page, mockRpc }) => {
   await expect(page.getByText("your files", { exact: true })).toBeVisible();
   await expect(page).toHaveScreenshot("stremio-setup.png", screenshot);
 
-  await page.getByRole("button", { name: "get add-on link" }).click();
+  const createLink = page.getByRole("button", { name: "get add-on link" });
+  if (isMobile) {
+    await createLink.tap();
+  } else {
+    await createLink.click();
+  }
+  await expect(page.getByRole("button", { name: "get a new link" })).toBeEnabled();
   await expect(page.getByRole("link", { name: "install chill" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
