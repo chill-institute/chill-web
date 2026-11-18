@@ -14,3 +14,4 @@ catalog:
   vite-plus: 1.6.0
 overrides:
   vite@*: "catalog:"
+  "workbox-build@7.4.1>glob": "14.0.5"
