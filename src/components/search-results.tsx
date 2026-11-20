@@ -10,6 +10,7 @@ import {
 import { useMemo, useState, type ReactNode } from "react";
 
 import { AddTransferButton } from "@/auth/components/add-transfer-button";
+import { resolveCopyLink } from "@/api/copy-link";
 import { CopyButton } from "@/ui/components/copy-button";
 import { useMediaQuery } from "@/ui/hooks/use-is-desktop";
 import { cn } from "@/ui/lib/cn";
@@ -157,7 +158,7 @@ function DesktopResultCells({ result }: { result: SearchResult }) {
         {formatAge(result.uploadedAt)}
       </td>
       <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
-        <CopyButton variant="icon" value={result.link} />
+        <CopyButton variant="icon" value={result.link} resolveValue={resolveCopyLink} />
       </td>
       <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
         <AddTransferButton className="w-full" url={result.link}>
@@ -196,7 +197,7 @@ function MobileResultBody({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CopyButton value={result.link} />
+        <CopyButton value={result.link} resolveValue={resolveCopyLink} />
         <AddTransferButton url={result.link}>send to put.io</AddTransferButton>
       </div>
     </div>
