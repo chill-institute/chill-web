@@ -47,6 +47,8 @@ const columns = [
 
 const LARGE_RESULTS_QUERY = "(min-width: 1024px)";
 
+const RESULT_ROW_CLASS =
+  "border-border-faint border-b last:border-b-0 hover-hover:hover:bg-surface motion-safe:transition-colors motion-safe:duration-fast";
 const MOBILE_CARD_CLASS = "border-border-strong bg-surface mb-4 overflow-hidden rounded border";
 
 function TitleCell({
@@ -85,13 +87,10 @@ function GroupToggle({
   group,
   expanded,
   onToggle,
-  hangChevron = false,
 }: {
   group: SearchResultGroup;
   expanded: boolean;
   onToggle: () => void;
-  // Desktop hangs the chevron in the margin so group and release titles share one edge.
-  hangChevron?: boolean;
 }) {
   const identity = groupIdentityLabel(group);
   const count = `${group.releases.length} releases`;
@@ -103,10 +102,7 @@ function GroupToggle({
       aria-expanded={expanded}
       aria-label={[group.title, identity, count].filter(Boolean).join(" ")}
       onClick={onToggle}
-      className={cn(
-        "group/toggle flex min-h-[1.875rem] cursor-pointer items-center gap-1.5 text-left text-sm leading-row",
-        hangChevron && "-ml-5",
-      )}
+      className="group/toggle flex min-h-[1.875rem] cursor-pointer items-center gap-1.5 text-left text-sm leading-row"
     >
       <Chevron
         className="text-fg-4 hover-hover:group-hover/toggle:text-fg-1 size-3.5 shrink-0 self-center transition-colors"
@@ -159,7 +155,7 @@ function DesktopResultCells({ result }: { result: SearchResult }) {
       <td className="px-2 py-2.5 text-center align-middle whitespace-nowrap">
         <CopyButton variant="icon" value={result.link} />
       </td>
-      <td className="w-[130px] py-2.5 pr-0 pl-1 align-middle whitespace-nowrap">
+      <td className="w-[140px] py-2.5 pr-2.5 pl-1 align-middle whitespace-nowrap">
         <AddTransferButton className="w-full" url={result.link}>
           send to put.io
         </AddTransferButton>
@@ -262,7 +258,7 @@ export function SearchResults({
                     aria-sort={ariaSort}
                     className={
                       isTitle
-                        ? "pr-2 pb-1.5 text-left font-serif text-base leading-5 font-normal tracking-heading whitespace-nowrap"
+                        ? "pr-2 pl-2.5 pb-1.5 text-left font-serif text-base leading-5 font-normal tracking-heading whitespace-nowrap"
                         : "px-2 pb-1 text-center text-sm font-normal whitespace-nowrap"
                     }
                   >
@@ -300,7 +296,7 @@ export function SearchResults({
               <th
                 scope="col"
                 aria-label="send to put.io"
-                className="pb-1 text-center text-sm font-normal whitespace-nowrap"
+                className="pr-2.5 pl-1 pb-1 text-center text-sm font-normal whitespace-nowrap"
               >
                 <span className="sr-only">send to put.io</span>
                 <span aria-hidden="true">🤠</span>
@@ -311,13 +307,9 @@ export function SearchResults({
           <tbody>
             {rows.map((row) =>
               row.kind === "group" ? (
-                <tr
-                  key={`group:${row.group.key}`}
-                  className="border-border-faint border-b last:border-b-0"
-                >
-                  <td colSpan={columns.length + 2} className="py-2.5 pr-2 pl-0 align-middle">
+                <tr key={`group:${row.group.key}`} className={RESULT_ROW_CLASS}>
+                  <td colSpan={columns.length + 2} className="py-2.5 pr-2.5 pl-2.5 align-middle">
                     <GroupToggle
-                      hangChevron
                       group={row.group}
                       expanded={expanded.has(row.group.key)}
                       onToggle={() => toggleGroup(row.group.key)}
@@ -325,11 +317,8 @@ export function SearchResults({
                   </td>
                 </tr>
               ) : (
-                <tr
-                  key={searchResultKey(row.result)}
-                  className="border-border-faint border-b last:border-b-0"
-                >
-                  <td className={cn("py-2.5 pr-2 align-middle", row.nested ? "pl-5" : "pl-0")}>
+                <tr key={searchResultKey(row.result)} className={RESULT_ROW_CLASS}>
+                  <td className={cn("py-2.5 pr-2 align-middle", row.nested ? "pl-7.5" : "pl-2.5")}>
                     <TitleCell result={row.result} titleBehavior={titleBehavior} />
                   </td>
                   <DesktopResultCells result={row.result} />

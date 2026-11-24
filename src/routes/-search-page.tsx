@@ -247,6 +247,7 @@ export function SearchPage() {
         <h1 className="sr-only">Search results</h1>
         {submittedQuery.length > 0 ? (
           <QuickFilters
+            className="lg:px-2.5"
             filters={filters}
             disabled={combined.status !== "success"}
             onResolutionChange={(next) => {
