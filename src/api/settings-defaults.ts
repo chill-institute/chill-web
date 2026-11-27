@@ -42,6 +42,7 @@ export function withSearchSettingsDefaults(settings: UserSettings): UserSettings
       otherFilters: search?.otherFilters ?? [],
       rememberQuickFilters: search?.rememberQuickFilters ?? false,
       resolutionFilters: search?.resolutionFilters ?? [],
+      smartSearch: search?.smartSearch ?? false,
       searchResultDisplayBehavior:
         search?.searchResultDisplayBehavior === SearchResultDisplayBehavior.UNSPECIFIED ||
         search?.searchResultDisplayBehavior === undefined
@@ -125,6 +126,12 @@ function mergeSaveSearchResponse(
       response.resolutionFilters.length > 0
         ? response.resolutionFilters
         : fallback?.resolutionFilters,
+    smartSearch: mergeImplicitBool(
+      fallback?.smartSearch,
+      response,
+      SearchSettingsSchema.field.smartSearch,
+      response.smartSearch ?? false,
+    ),
     searchResultDisplayBehavior:
       response.searchResultDisplayBehavior === SearchResultDisplayBehavior.UNSPECIFIED
         ? fallback?.searchResultDisplayBehavior

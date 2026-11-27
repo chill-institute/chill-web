@@ -60,6 +60,14 @@ function SearchSettingsSection({
         >
           Hide results with no peers
         </CheckboxField>
+        <CheckboxField
+          disabled={disabled}
+          id="smart-search"
+          checked={effective.smartSearch === true}
+          onCheckedChange={(checked) => persistPatch({ smartSearch: checked === true })}
+        >
+          Smart search (beta)
+        </CheckboxField>
       </div>
     </SettingsSection>
   );

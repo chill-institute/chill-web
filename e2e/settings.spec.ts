@@ -38,6 +38,7 @@ type RequestSettingsPayload = Record<string, unknown> & {
     filterNastyResults?: boolean;
     filterResultsWithNoSeeders?: boolean;
     rememberQuickFilters?: boolean;
+    smartSearch?: boolean;
   };
 };
 
@@ -821,6 +822,50 @@ test.describe("settings", () => {
     await expect.poll(() => savedFilterNasty).not.toBe(true);
     expect(savedSearches.at(-1)?.filterNastyResults).not.toBe(true);
     expect(savedSearches.at(-1)?.filterResultsWithNoSeeders).toBe(true);
+  });
+
+  test("smart search starts off and the toggle saves the user's choice", async ({
+    authenticatedPage,
+    mockRpc,
+  }) => {
+    let settingsState = userSettings();
+    const savedSmartSearch: (boolean | undefined)[] = [];
+
+    await mockRpc(baseSettingsMethods());
+    await authenticatedPage.route("**/chill.v4.UserService/GetUserSettings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+    await authenticatedPage.route("**/chill.v4.UserService/SaveUserSettings", async (route) => {
+      const body = route.request().postDataJSON() as { settings?: RequestSettingsPayload };
+      savedSmartSearch.push(body.settings?.search?.smartSearch);
+      if (body.settings) {
+        settingsState = body.settings as typeof settingsState;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(settingsState),
+      });
+    });
+
+    await authenticatedPage.goto("/settings");
+    const smartSearch = settingsPage(authenticatedPage).getByRole("checkbox", {
+      name: "Smart search (beta)",
+    });
+    await expect(smartSearch).toHaveAttribute("aria-checked", "false", { timeout: 5000 });
+
+    await smartSearch.click();
+    await expect.poll(() => savedSmartSearch).toEqual([true]);
+
+    await authenticatedPage.reload();
+    await expect(smartSearch).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
+
+    await smartSearch.click();
+    await expect.poll(() => savedSmartSearch).toEqual([true, false]);
   });
 
   test("failed settings saves refetch the server value", async ({ authenticatedPage, mockRpc }) => {
