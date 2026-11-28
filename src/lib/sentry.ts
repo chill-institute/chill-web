@@ -113,6 +113,7 @@ function exceptionText(event: ErrorEvent, hint?: { originalException?: unknown }
 function isNoisyBrowserExtensionError(event: ErrorEvent, hint?: { originalException?: unknown }) {
   return (
     exceptionText(event, hint).includes("__firefox__") ||
+    exceptionText(event, hint).includes("window.ethereum") ||
     exceptionValues(event).some(
       (value) =>
         value.value === "Error invoking log: Java bridge method invocation error" &&
