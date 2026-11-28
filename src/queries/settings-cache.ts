@@ -37,6 +37,7 @@ const cachedSearchSettingsSchema = v.looseObject({
     otherFilters: v.array(v.number()),
     rememberQuickFilters: v.boolean(),
     resolutionFilters: v.array(v.number()),
+    smartSearch: v.optional(v.boolean()),
     searchResultDisplayBehavior: v.number(),
     searchResultTitleBehavior: v.number(),
     sortBy: v.number(),

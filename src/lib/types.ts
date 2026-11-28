@@ -93,6 +93,7 @@ const defaultUserSettings: ChillSettingsDefaults = {
   otherFilters: [],
   rememberQuickFilters: false,
   resolutionFilters: [],
+  smartSearch: false,
   searchResultDisplayBehavior: SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
   searchResultTitleBehavior: SEARCH_SETTINGS_FALLBACKS.searchResultTitleBehavior,
   sortBy: SEARCH_SETTINGS_FALLBACKS.sortBy,
@@ -126,6 +127,7 @@ export function applyChillSettingsPatch(
       otherFilters: normalized.search?.otherFilters ?? [],
       rememberQuickFilters: normalized.search?.rememberQuickFilters ?? false,
       resolutionFilters: normalized.search?.resolutionFilters ?? [],
+      smartSearch: normalized.search?.smartSearch ?? false,
       searchResultDisplayBehavior:
         normalized.search?.searchResultDisplayBehavior ??
         SEARCH_SETTINGS_FALLBACKS.searchResultDisplayBehavior,
