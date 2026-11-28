@@ -303,6 +303,28 @@ describe("sanitizeSentryEvent", () => {
           exception: {
             values: [
               {
+                type: "TypeError",
+                value:
+                  "undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')",
+              },
+            ],
+          },
+        },
+        {
+          originalException: new TypeError(
+            "undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')",
+          ),
+        },
+      ),
+    ).toBeNull();
+
+    expect(
+      sanitizeSentryEvent(
+        {
+          type: undefined,
+          exception: {
+            values: [
+              {
                 type: "SecurityError",
                 value:
                   "Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
